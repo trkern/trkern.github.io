@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script>
+var R1 = [["",1,"I"],["",1,"IU"]]; //xI -> xIU
+var R2 = [["M",1,""],["M",1,"",1,""]]; //Mx -> Mxx
+var R3 = [["",1,"III",2,""],["",1,"U",2,""]]; //xIIIy -> xUy
+var R4 = [["",1,"UU",2,""],["",1,"",2,""]]; //xUUy -> xy
+var RL = [R1,R2,R3,R4];
+
+var graphv = [];//list of coordinates of vertices
+var graphe = [];//[0,1],[0,2],[0,3],[0,4],[2,3],[2,4]]; //list of edges
+var vertextypes = [];
+var vertexvelocities = [];
+var vertexnames = [];
+var draggedvertex = -1;
+var currentvertex = 0;
+
+function tograph(x) {
+	var mn = -10;
+	var mx = 10;
+	var m = -500/(mn-mx);
+	var b = 500*mn/(mn-mx);
+	return(m*x+b);
+	}
+
+function ribet(mn,mx) {
+	return(Math.floor(Math.random()*(mx-mn+1))+mn);
+	}
+
+function circleat(ctx,pt,fill,str) {
+	ctx.beginPath();
+	if (fill == 0) {
+		ctx.fillStyle="black";
+		}
+	if (fill == 1) {
+		ctx.fillStyle="gray";
+		}
+	if (fill == 2) {
+		ctx.fillStyle="blue";
+		}
+	ctx.arc(pt[0],pt[1],5,0,2*Math.PI);
+	ctx.fill();
+	ctx.fillStyle = "green";
+	ctx.fillText(str,pt[0],pt[1]);
+	}
+
+function arrowto(ctx,pt1,pt2) {
+	ctx.beginPath();
+	ctx.moveTo(pt1[0],pt1[1]);
+	ctx.lineTo(pt2[0],pt2[1]);
+	ctx.stroke();
+	lg = Math.sqrt((pt1[0]-pt2[0])*(pt1[0]-pt2[0]) + (pt1[1]-pt2[1])*(pt1[1]-pt2[1]));
+	var x = 5*(pt1[0]-pt2[0])/lg;
+	var y = 5*(pt1[1]-pt2[1])/lg;
+	ctx.fillStyle="black";
+	ctx.moveTo(pt2[0]+x,pt2[1]+y);
+	ctx.lineTo(pt2[0]+3*x+y,pt2[1]+3*y-x);
+	ctx.lineTo(pt2[0]+3*x-y,pt2[1]+3*y+x);
+	ctx.lineTo(pt2[0]+x,pt2[1]+y);
+	ctx.fill();
+	}
+
+function addvecs(v1,v2) {
+	return([Math.floor(v1[0]+v2[0]),Math.floor(v1[1]+v2[1])]);
+	}
+
+function drawgraph() {
+	var i = 0;
+	var ctx = document.getElementById("graph").getContext("2d");
+	ctx.beginPath();
+	ctx.fillStyle = "#FFFFFF";
+	ctx.fillRect(0,0,500,500);
+	ctx.beginPath();
+	var k = 0;
+	for (i = 0; i < graphe.length; i++) {
+		arrowto(ctx,graphv[graphe[i][0]],graphv[graphe[i][1]]);
+		}
+	for (i = 0; i < graphv.length; i++) {
+		k = vertextypes[i];
+		if(i == currentvertex) {
+			k = 2;
+			}
+		circleat(ctx,graphv[i],k,vertexnames[i]);
+		}
+	//for (i = 0; i < graphv.length; i++) {
+	//	arrowto(ctx,graphv[i],addvecs(graphv[i],vertexvelocities[i]));
+	//	}
+	}
+
+function oldertest() {
+	console.log(applylistofrules(RL,"MIIIUUIIII"));
+	var i = 0;
+	var j = 0;
+	for (i = 0; i < 10; i++) {
+		graphv.push([ribet(0,500),ribet(0,500)]);
+		vertexvelocities.push([0,0]);
+		vertextypes.push(ribet(0,1));
+		for(j = 0; j < i; j++) {
+			if(ribet(0,1) == 1) {
+				graphe.push([i,j]);
+				}
+			} 
+		}
+	window.setInterval(tock,20);
+	drawgraph();
+	}
+
+function expandvertex() {
+	//expand not yet expanded vertex
+	var v = currentvertex;
+	vertextypes[v] = 0;
+	var lr = applylistofrules(RL,vertexnames[v]);
+	var i = 0;
+	var j = 0;
+	var t = 0;
+	for (i = 0; i < lr.length; i++) {
+		t = 0;
+		for (j = 0; j < graphv.length; j++) {
+			if (vertexnames[j] == lr[i]) {
+				t = 1;
+				graphe.push([v,j]);
+				}
+			}
+		if(t == 0) {
+			graphv.push([ribet(0,500),ribet(0,500)]);
+			vertexnames.push(lr[i]);
+			vertextypes.push(1);
+			vertexvelocities.push([0,0]);
+			graphe.push([v,graphv.length-1]);
+			}
+		}
+	console.log(graphe);
+	}
+
+function jumpback() {
+	var str = document.getElementById("sel").value;
+	if(str != "") {
+		document.getElementById("currentnode").innerHTML = "";
+		makemove(str);
+		}
+	}
+
+function butt(str) {
+	return("<button onclick='makemove(\""+str+"\")'>" + str);
+	}
+
+function makemove(str) {
+	console.log(vertexnames);
+	console.log(str);
+	var i = 0;
+	var j = -1;
+	for (i = 0; i < graphv.length; i++) {
+		if (vertexnames[i] == str) {
+			j = i;
+			}
+		}
+	console.log(j);
+	currentvertex = j;
+	if(vertextypes[j] == 1) {
+		expandvertex();
+		}
+	document.getElementById("currentnode").innerHTML += (str + "<br>");
+	var lr = applylistofrules(RL,str);
+	document.getElementById("navigation").innerHTML = "";
+	for (i = 0; i < lr.length; i++) {
+		document.getElementById("navigation").innerHTML += butt(lr[i]);
+		}
+	var str = "<select id='sel' oninput='jumpback()'>"
+	str += "<option value=''> Jump back to:";
+	for (i = 0; i < graphv.length; i++) {
+		if(vertextypes[i] == 0) {
+			str += "<option value='" + vertexnames[i] + "'>" + vertexnames[i];
+			}
+		}
+	document.getElementById("selector").innerHTML = str;
+	}
+
+function test() {
+	graphv = [[250,250]];
+	vertexvelocities = [[0,0]];
+	vertextypes = [1];
+	vertexnames = ["MI"];
+	makemove("MI");
+	window.setInterval(tock,20);
+	}
+
+function applylistofrules(rl,st) {
+	//makes list of all possible sequents for st under rule list rl.
+	var j = 0;
+	var i = 0;
+	var rval = [];
+	var temp = [];
+	var thks = [];
+	var tvl = [];
+	//console.log(st);
+	for (j = 0; j < rl.length; j++) {
+		temp = go_hunting(rl[j][0],st);
+		//console.log(temp);
+		temp = huntresultstoprehooks(temp);
+		//console.log(temp);
+		for (i = 0; i < temp.length; i++) {
+			thks = prehookstohooks(temp[i],rl[j][0],st);
+			//console.log(thks);
+			if (thks != false) {
+				tvl = get_vlist(rl[j][0],thks,st);
+				//console.log(tvl);
+				if (tvl != false) {
+					rval.push(plop_vlist(rl[j][1],tvl));
+					//console.log(rval);
+					}
+				}
+			}
+		}
+	return(rval);
+	}
+
+function prehookstohooks(ph, r, st) {
+	//ph is a list of positions where the strings in r appear
+	//returns false or a list of positions where bits of r begin
+	var i = 0;
+	var rval = [];
+	if(ph[0] != 0) {return(false);}
+	for (i = 0; i < ph.length-1; i++) {
+		if(ph[i]+r[2*i].length > ph[i+1]) {return(false);}
+		rval.push(ph[i]);
+		rval.push(ph[i]+r[2*i].length);
+		}
+	rval.push(ph[i]);
+	if(ph[i]+r[2*i].length != st.length) {return(false);}
+	//if(r[2*i].length == 0 && ph[i]+r[2*i].length != st.length) {return(false);}
+	//if(r[2*i].length > 0 && ph[i]+r[2*i].length != st.length) {return(false);}
+	return(rval);
+	}
+
+function addtochunky(chunk,n) {
+	var i = 0;
+	if(chunk.length == 0) {return([]);}
+	var rval = [];
+	for (i = 0; i < chunk.length; i++) {
+		if(chunk[i].length == 0 || chunk[i][chunk[i].length-1] < n) {
+			rval.push(chunk[i].concat([n]));
+			}
+		}
+	return(rval);
+	}
+
+function huntresultstoprehooks(hrs) {
+	//takes in a list of sorted lists of numbers
+	//returns a list of lists of sorted numbers such that the ith element is from the ith list
+	var i = 0;
+	var j = 0;
+	var chunky = [[]];
+	var tempchunk = [];
+	for (i = 0; i < hrs.length; i++) {
+		tempchunk = [];
+		for (j = 0; j < hrs[i].length; j++) {
+			tempchunk = tempchunk.concat(addtochunky(chunky,hrs[i][j]));
+			}
+		chunky = tempchunk;
+		}
+	return(chunky);
+	}
+
+function go_hunting(rl,st) {
+	var i = 0;
+	var huntresults = [];
+	var hookslist = [];
+	for (i = 0; i < rl.length; i = i+2) {
+		if(i == 0) {
+			huntresults.push([0]);
+			}
+		else {
+			huntresults.push(hunter(st,rl[i]));
+			}
+		}
+	return(huntresults);
+	}
+
+function hunter(st, ed) {
+	//hunts through st for all appearances of ed, returns numbers indexing them.
+	var i = 0;
+	var rval = [];
+	for (i = 0; i < st.length; i++) {
+		if(st.slice(i).startsWith(ed)) {
+			rval.push(i);
+			}
+		}
+	if(ed == "") {rval.push(i);}
+	return(rval);
+	}
+
+function get_vlist(rl,hooks,st) {
+	//rl is an alternating list of strings and numbers
+	//hooks is a list of indices telling us where each piece starts
+	//st is the string
+	//returns false on failure, otherwise returns a list of variables.
+	var i = 0;
+	var vlist = [];
+	var tst = "";
+	for(i = 1; i < rl.length; i = i + 2) {
+		tst = st.slice(hooks[i],hooks[i+1]);
+		if(rl[i] in vlist) {
+			if(vlist[rl[i]] != tst) {return(false);}
+			}
+		vlist[rl[i]] = tst;
+		}
+	return(vlist);
+	}
+
+function plop_vlist(rl, vl) {
+	//rl is an alternating list of strings and numbers
+	//vl is the variable list
+	var i = 0;
+	var rval = "";
+	for (i = 0; i < rl.length-1; i = i + 2) {
+		rval += rl[i];
+		rval += vl[rl[i+1]];
+		}
+	rval += rl[i];
+	return(rval);
+	}
+
+function tock() {
+	//each semiedge pulls on vertices at both ends
+	//vertices of type 1 get pushed to circle boundary
+	//boundary vertices all repel each other
+	var forcesx = [];
+	var forcesy = [];
+	var i = 0;
+	var j = 0;
+	var v1 = 0;
+	var v2 = 0;
+	var f = [0,0];
+	var d2 = 0;
+	var pt0 = [];
+	var pt1 = [];
+	var wibble = document.getElementById("wn").value;
+	var force = document.getElementById("fn").value;
+	for (i = 0; i < graphv.length; i++) {
+		forcesx.push(0);
+		forcesy.push(0);
+		}
+	for (i = 0; i < graphv.length; i++) {
+		for (j = 0; j < graphv.length; j++) {
+			if (i != j) {
+				pt0 = graphv[i];
+				pt1 = graphv[j];
+				d2 = (pt0[0]-pt1[0])*(pt0[0]-pt1[0]) + (pt0[1]-pt1[1])*(pt0[1]-pt1[1]);
+				if(d2 != 0) {
+					forcesx[i] += force*(pt0[0]-pt1[0])/d2;
+					forcesy[i] += force*(pt0[1]-pt1[1])/d2;
+					}
+				else {
+					forcesx[i] += ribet(-10,10)/1000;
+					forcesy[i] += ribet(-10,10)/1000;
+					}
+				}
+			}
+		}
+	for (i = 0; i < graphe.length; i++) {
+		v1 = graphe[i][0];
+		v2 = graphe[i][1];
+		pt0 = graphv[v1];
+		pt1 = graphv[v2];
+		forcesx[v1] += (-.1)*(pt0[0]-pt1[0]);
+		forcesy[v1] += (-.1)*(pt0[1]-pt1[1]);
+		forcesx[v2] += (.1)*(pt0[0]-pt1[0]);
+		forcesy[v2] += (.1)*(pt0[1]-pt1[1]);
+		}
+	//------have finished calculating forces by this point------------
+	for (i = 0; i < graphv.length; i++) {
+		vertexvelocities[i][0] = (vertexvelocities[i][0] + forcesx[i])*wibble;
+		vertexvelocities[i][1] = (vertexvelocities[i][1] + forcesy[i])*wibble;
+		}
+	for (i = 0; i < graphv.length; i++) {
+		if (i != draggedvertex) {
+			graphv[i][0] += vertexvelocities[i][0];
+			graphv[i][1] += vertexvelocities[i][1];
+			}
+		}
+	for (i = 0; i < graphv.length; i++) {
+		if (graphv[i][0] > 500) {graphv[i][0] = 500;}
+		if (graphv[i][0] < 0) {graphv[i][0] = 0;}
+		if (graphv[i][1] > 500) {graphv[i][1] = 500;}
+		if (graphv[i][1] < 0) {graphv[i][1] = 0;}
+		}
+	drawgraph();
+	}
+
+function vertexhere(x,y,i) {
+	var vx = graphv[i][0];
+	var vy = graphv[i][1];
+	var d2 = (vx-x)*(vx-x) + (vy-y)*(vy-y);
+	if (d2 <= 25) {return(true);}
+	return(false);
+	}
+
+function mdown(event) {
+	var rect = document.getElementById("graph").getBoundingClientRect();
+	var x = event.clientX - rect.x;
+	var y = event.clientY - rect.y;
+	var i;
+	for (i = 0; i < graphv.length; i++) {
+		if (vertexhere(x,y,i)) {
+			draggedvertex = i;
+			}
+		}
+	}
+
+function mmove(event) {
+	if (draggedvertex != -1) {
+		var rect = document.getElementById("graph").getBoundingClientRect();
+		var x = event.clientX - rect.x;
+		var y = event.clientY - rect.y;
+		graphv[draggedvertex][0] = x;
+		graphv[draggedvertex][1] = y;
+		drawgraph();
+		}
+	}
+
+function mup(event) {
+	draggedvertex = -1;
+	}
+
+function uws() {
+	document.getElementById("wn").value = document.getElementById("ws").value;
+	}
+
+function uwn() {
+	document.getElementById("ws").value = document.getElementById("wn").value;	
+	}
+
+function ufs() {
+	document.getElementById("fn").value = document.getElementById("fs").value;
+	}
+
+function ufn() {
+	document.getElementById("fs").value = document.getElementById("fn").value;	
+	}
+
+</script>
+</head>
+<body onload="test()">
+<h1> <a href="https://en.wikipedia.org/wiki/MU_puzzle"> MU Puzzle </a> </h1>
+Wobble: <input type="range" min="0" max="1" value=".6" step =.01 id="ws" oninput="uws()" style="width:50em"> <input type="number" id="wn" oninput="uwn()" value=.6 step=.05 style="width:4em"> <br>
+Repulsion: <input type="range" min="0" max="200" value="100" step =1 id="fs" oninput="ufs()" style="width:50em"> <input type="number" id="fn" oninput="ufn()" value=100 step=1 style="width:4em"> <br>
+Click and drag vertices to move them around!
+<table> <tr> <td>
+<canvas id = "graph" onmousedown="mdown(event)" onmousemove="mmove(event)" onmouseup="mup(event)" width = 500 height = 500 style="border:1px solid #c3c3c3;"> </canvas></td>
+<td>
+<p id="currentnode"> </p>
+<p id="navigation"> </p>
+<p id="selector"> </p>
+</td></tr></table>
+</body>
+</html>

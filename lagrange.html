@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+p {
+    display: block;
+    margin-top: 0em;
+    margin-bottom: 0em;
+    margin-left: 0;
+    margin-right: 0;
+}
+hr { 
+    display: block;
+    margin-top: 0em;
+    margin-bottom: 0em;
+    margin-left: auto;
+    margin-right: auto;
+    border-style: inset;
+    border-width: 1px;
+}
+sup {
+        font-size: 0.83em;
+        vertical-align: super;
+        line-height: 0;
+    }
+</style>
+<script>
+var p = 0;
+var q = 0;
+var r = 0;
+var s = 0;
+var t = 0;
+var u = 0;
+var v = 0;
+var d0 = 0;
+var d1 = 0;
+var d2 = 0;
+var d3 = 0;
+var d4 = 0;
+var d5 = 0;
+var d6 = 0;
+function plusify(n) {
+	if (n >= 0) {
+		return ("+" + n);
+		}
+	return (n);
+	}
+function gcd(a,b) {
+    a = Math.abs(a);
+    b = Math.abs(b);
+    if (b > a) {var temp = a; a = b; b = temp;}
+    while (true) {
+        if (b == 0) return a;
+        a %= b;
+        if (a == 0) return b;
+        b %= a;
+    }
+}
+function gRI(min, max) {
+	return Math.floor(Math.random() * (max - min + 1) ) + min;
+	}
+function c0() {
+	return(5040*p - 15120*q + 25200*r - 25200*s + 15120*t - 5040*u + 720*v);
+	}
+function c1() {
+	return(-8028*p+ 31644*q - 56940*r + 59040*s - 36180*t + 12228*u- 1764*v);
+	}
+function c2() {
+	return(5104*p - 23574*q + 46680*r - 50900*s + 32160*t - 11094*u + 1624*v);
+	}
+function c3() {
+	return(-1665*p + 8520*q - 18285*r + 21120*s - 13875*t + 4920*u - 735*v);
+	}
+function c4() {
+	return(295*p - 1620*q + 3705*r - 4520*s + 3105*t - 1140*u + 175*v);
+	}
+function c5() {
+	return(-27*p + 156*q - 375*r + 480*s - 345*t + 132*u - 21*v);
+	}
+function c6() {
+	return(p - 6*q + 15*r - 20*s + 15*t - 6*u + v);
+	}
+function magic(c,n) {
+	var rval = " ";
+	var mono = " ";
+	if (c == 0) {
+		return("");
+		}
+	if (c >= 0) {
+		if (n < 6) {
+			rval = rval + "+";
+			}
+		} else {
+		rval = rval + "-";
+		c = -c;
+		}
+	if (n == 0) {
+		mono = "";
+		}
+	if (n == 1) {
+		mono = "x";
+		}
+	if (n > 1) {
+		mono = "x <sup>" + n + "</sup>";
+		}
+	var tgcd = gcd(c,720);
+	if (tgcd == 720) {
+		rval = rval + (c/720).toString() + mono;
+		} else {
+		rval = "<table border = 0 style = 'display:inline-table'> <tr> <td rowspan=3>" + rval + "</td> <td style='text-align:center'>" + (c/tgcd).toString() + "</td> <td rowspan = 3>" + mono + "</td> </tr> <tr> <td bgcolor='black'> </td> </tr> <tr> <td style='text-align:center'>" + (720/tgcd).toString() + "</td> </tr> </table>";
+		}
+	return(rval);
+	}
+function poly(x) {
+	return((d6*x*x*x*x*x*x+d5*x*x*x*x*x+d4*x*x*x*x+d3*x*x*x+d2*x*x+d1*x+d0)/720);
+	}
+function getmax() {
+	var rval = poly(0);
+	var i = 0;
+	for (i = 1; i < 8; i++) {
+		if (poly(i) > rval) {
+			rval = poly(i);
+			}
+		}
+	return(rval+1);
+	}
+function getmin() {
+	var rval = poly(0);
+	var i = 0;
+	for (i = 1; i < 8; i++) {
+		if (poly(i) < rval) {
+			rval = poly(i);
+			}
+		}
+	return(rval-1);
+	}
+function getmax2() {
+	var rval = poly(-2);
+	var i = 0;
+	for (i = -1; i < 10; i++) {
+		if (poly(i) > rval) {
+			rval = poly(i);
+			}
+		}
+	return(rval+1);
+	}
+function getmin2() {
+	var rval = poly(-2);
+	var i = 0;
+	for (i = -1; i < 10; i++) {
+		if (poly(i) < rval) {
+			rval = poly(i);
+			}
+		}
+	return(rval-1);
+	}
+function djfill() {
+	document.getElementById("pi").value = 21808;
+	document.getElementById("qi").value = 21785;
+	document.getElementById("ri").value = 21798;
+	document.getElementById("si").value = 22057;
+	document.getElementById("ti").value = 22119;
+	document.getElementById("ui").value = 22158;
+	document.getElementById("vi").value = 22204;
+	Upd();
+	}
+function weatherfill() {
+	document.getElementById("pi").value = 64;
+	document.getElementById("qi").value = 64;
+	document.getElementById("ri").value = 66;
+	document.getElementById("si").value = 71;
+	document.getElementById("ti").value = 79;
+	document.getElementById("ui").value = 80;
+	document.getElementById("vi").value = 78;
+	Upd();
+	}
+function lottofill() {
+	document.getElementById("pi").value = 04;
+	document.getElementById("qi").value = 15;
+	document.getElementById("ri").value = 7;
+	document.getElementById("si").value = 26;
+	document.getElementById("ti").value = 17;
+	document.getElementById("ui").value = 22;
+	document.getElementById("vi").value = 19;
+	Upd();	
+	}
+function randomfill() {
+	document.getElementById("pi").value = gRI(0,1000);
+	document.getElementById("qi").value = gRI(0,1000);
+	document.getElementById("ri").value = gRI(0,1000);
+	document.getElementById("si").value = gRI(0,1000);
+	document.getElementById("ti").value = gRI(0,1000);
+	document.getElementById("ui").value = gRI(0,1000);
+	document.getElementById("vi").value = gRI(0,1000);
+	Upd();	
+	}
+function parbfill() {
+	document.getElementById("pi").value = 900 + gRI(-3,3);
+	document.getElementById("qi").value = 400 + gRI(-3,3);
+	document.getElementById("ri").value = 100 + gRI(-3,3);
+	document.getElementById("si").value = 0 + gRI(-3,3);
+	document.getElementById("ti").value = 100 + gRI(-3,3);
+	document.getElementById("ui").value = 400 + gRI(-3,3);
+	document.getElementById("vi").value = 900 + gRI(-3,3);
+	Upd();
+	}
+function Upd() {
+	p = Number(document.getElementById("pi").value);
+	q = Number(document.getElementById("qi").value);
+	r = Number(document.getElementById("ri").value);
+	s = Number(document.getElementById("si").value);
+	t = Number(document.getElementById("ti").value);
+	u = Number(document.getElementById("ui").value);
+	v = Number(document.getElementById("vi").value);
+	d0 = c0();
+	d1 = c1();
+	d2 = c2();
+	d3 = c3();
+	d4 = c4();
+	d5 = c5();
+	d6 = c6();
+	document.getElementById("om2").innerHTML = poly(-2);
+	document.getElementById("om1").innerHTML = poly(-1);
+	document.getElementById("o0").innerHTML = poly(0);
+	document.getElementById("o1").innerHTML = poly(1);
+	document.getElementById("o2").innerHTML = poly(2);
+	document.getElementById("o3").innerHTML = poly(3);
+	document.getElementById("o4").innerHTML = poly(4);
+	document.getElementById("o5").innerHTML = poly(5);
+	document.getElementById("o6").innerHTML = poly(6);
+	document.getElementById("o7").innerHTML = poly(7);
+	document.getElementById("o8").innerHTML = poly(8);
+	document.getElementById("o9").innerHTML = poly(9);
+	document.getElementById("o10").innerHTML = poly(10);
+	if (d6 == 0 && d5 == 0 && d4 == 0 && d3 == 0 && d2 == 0 && d1 == 0) {
+		document.getElementById("ou").innerHTML = "0";
+		} else {
+		document.getElementById("ou").innerHTML = "<table border = 0> <tr> <td>" + magic(d6,6) + "</td> <td>" + magic(d5,5) + "</td> <td>" + magic(d4,4) + "</td> <td>" + magic(d3,3) + "</td> <td>" + magic(d2,2) + "</td> <td>" + magic(d1,1) + "</td> <td>" + magic(d0,0) + "</td></tr></table>";
+		}
+	var ctx = document.getElementById("gr").getContext("2d");
+	var i = 0;
+	ctx.beginPath();
+	ctx.fillStyle = "#FFFFFF";
+	ctx.fillRect(0,0,500,500);
+	ctx.moveTo(0,0);
+	var mx = getmax();
+	var mn = getmin();
+	for (i = 0; i < 300; i++) {
+		ctx.lineTo(i,200-((100/(mx-mn)) * poly(8*i/300) + (50*mx-150*mn)/(mx-mn)));
+		}
+	ctx.stroke();
+	for (i = 1; i < 8; i++) {
+		ctx.beginPath();
+		ctx.arc((300*i/8),200-((100/(mx-mn)) * poly(i) + (50*mx-150*mn)/(mx-mn)), 3, 0, 2*Math.PI);
+		ctx.fillStyle="Black";
+		ctx.fill();
+		}
+	var ctx2 = document.getElementById("gr2").getContext("2d");
+	var i = 0;
+	ctx2.beginPath();
+	ctx2.fillStyle = "#FFFFFF";
+	ctx2.fillRect(0,0,300,2000);
+	ctx2.moveTo(0,0);
+	mx = getmax2();
+	mn = getmin2();
+	for (i = 0; i < 300; i++) {
+		ctx2.lineTo(i,2000-((1000/(mx-mn)) * poly(i/20 - 3) + (500*mx-1500*mn)/(mx-mn)));
+		}
+	ctx2.stroke();
+	}
+</script>
+</head>
+<body onLoad="Upd()">
+In class we are learning about linear regression, fitting a line through data, where the line does not have to pass through the data points precisely.
+But we might wonder: Can we find a model for our data that does pass precisely through each point, and won't this model be more useful at predicting the future?
+In the mean time, you might want to play around with linear regression on your own:
+<ul>
+<li> <a href="https://www.desmos.com/calculator/jwquvmikhr"> Desmos Linear Regression Toy</a>
+</ul>
+The following tool will allow you to play around with Lagrange Polynomials. Enter a list of 7 values into the table below, or click on a button to import prefetched data.<br>
+<button type="button" onclick="djfill()"> Dow Jones Industrial Average Closing (9/06/17-9/14/17) </button>
+<button type="button" onclick="lottofill()"> New York Powerball (8/23/17-9/13/17) </button>
+<button type="button" onclick="weatherfill()"> High Temperatures (Oswego, NY, 9/8/17-9/14/17) </button>
+<button type="button" onclick="parbfill()"> Near-Parabola </button>
+<button type="button" onclick="randomfill()"> Pseudo-Random Numbers 0-1000 </button>
+<table border="1">
+<tr> <td> x </td> <td> f(x) </td> </tr>
+<tr>
+<td> 1 </td>
+<td> <input type ="number" id="pi" value="0" oninput="Upd()" style="width: 10em"> </td>
+</tr>
+<td> 2 </td>
+<td> <input type ="number" id="qi" value="0" oninput="Upd()" style="width: 10em"> </td>
+</tr>
+<td> 3 </td>
+<td> <input type ="number" id="ri" value="0" oninput="Upd()" style="width: 10em"> </td>
+</tr>
+<td> 4 </td>
+<td> <input type ="number" id="si" value="0" oninput="Upd()" style="width: 10em"> </td>
+</tr>
+<td> 5 </td>
+<td> <input type ="number" id="ti" value="0" oninput="Upd()" style="width: 10em"> </td>
+</tr>
+<td> 6 </td>
+<td> <input type ="number" id="ui" value="0" oninput="Upd()" style="width: 10em"> </td>
+</tr>
+<td> 7 </td>
+<td> <input type ="number" id="vi" value="0" oninput="Upd()" style="width: 10em"> </td>
+</tr>
+</table>
+The Lagrange Polynomial, below, passes through all the given data points.
+<p id = "ou"> </p>
+Below is a table of values of the polynomial above, for various inputs, including inputs that correspond to past and future values! <br>
+<table border = 1>
+<tr> <td colspan = 3> Past </td> <td colspan = 7> Entered Values </td> <td colspan = 3> Future </td> </tr>
+<tr>
+<td> -2 </td> <td> -1 </td> <td> 0 </td> <td> 1 </td> <td> 2 </td> <td> 3 </td> <td> 4 </td> <td> 5 </td> <td> 6 </td> <td> 7 </td> <td> 8 </td> <td> 9 </td> <td> 10 </td>
+</tr>
+<tr>
+<td> <p id = "om2"> </p> </td>
+<td> <p id = "om1"> </p> </td>
+<td> <p id = "o0"> </p> </td>
+<td> <p id = "o1"> </p> </td>
+<td> <p id = "o2"> </p> </td>
+<td> <p id = "o3"> </p> </td>
+<td> <p id = "o4"> </p> </td>
+<td> <p id = "o5"> </p> </td>
+<td> <p id = "o6"> </p> </td>
+<td> <p id = "o7"> </p> </td>
+<td> <p id = "o8"> </p> </td>
+<td> <p id = "o9"> </p> </td>
+<td> <p id = "o10"> </p> </td>
+</tr>
+</table>
+Graph:<br>
+<canvas id = "gr" width = 300 height = 200 style="border:1px solid #c3c3c3;">
+</canvas><br>
+Questions to think about:
+<ol>
+<li> The Lagrange Polynomial models the data you input exactly. Based on your observations, though, does it make sense to try to use Lagrange Polynomials to try to predict the future?
+<li> To fit n data points, the Lagrange Polynomial is a polynomial of degree n-1. In the above case, n was 7. If you have 2 points, what would the Lagrange Polynomial look like?
+<li> In statistics, we try to find a balance between our model closely describing our observations and our model being simple. Think about the situation where our data points fall very close to a parabola.
+Think about how you might argue that the best model is a parabola, not a line or Lagrange Polynomial.
+</ol>
+Further reading/playing:
+<ul>
+<li> It may help to read about <a href =" https://en.wikipedia.org/wiki/Overfitting"> overfitting </a>. Essentially, the Lagrange Polynomial is reading too much into the data.
+By wanting our polynomial to fit our data exactly, we ignore other, simpler models that fit our data closely, but not precisely.
+<li> Lagrange polynomial through 3 points: <a href="https://www.geogebra.org/material/show/id/258101"> Geogebra </a>, <a href="https://www.desmos.com/calculator/dfnrzj1liv"> Desmos </a>.
+<li> Lagrange polynomial through 4 points: <a href="https://www.desmos.com/calculator/dffnj2jbow"> Desmos </a>.
+</ul>
+<br> Zoomed out graph: <br>
+<canvas id = "gr2" width = 300 height = 2000 style="border:1px solid #c3c3c3;">
+</canvas>
+</body>
+</html>

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+p {
+    display: block;
+    margin-top: 0em;
+    margin-bottom: 0em;
+    margin-left: 0;
+    margin-right: 0;
+}
+hr { 
+    display: block;
+    margin-top: 0em;
+    margin-bottom: 0em;
+    margin-left: auto;
+    margin-right: auto;
+    border-style: inset;
+    border-width: 1px;
+}
+sup {
+        font-size: 0.83em;
+        vertical-align: super;
+        line-height: 0;
+    }
+</style>
+<script>
+var y0 = 0;
+var y1 = 0;
+var z0 = 0;
+var z1 = 0;
+var z2 = 0;
+
+function plusify(n) {
+	if (n >= 0) {
+		return ("+" + n);
+		}
+	return (n);
+	}
+
+function greenify(n,m) {
+	if (n == m) {
+		return ("color:blue");
+		}
+	return ("color:red");
+	}
+
+function gRI(min, max) {
+	return Math.floor(Math.random() * (max - min + 1) ) + min;
+	}
+
+function rnum() {
+	return ((gRI(0,1) * 2) - 1) * gRI(1,4);
+	}
+
+function Ini() {
+	y0 = rnum();
+	y1 = rnum();
+	z0 = rnum();
+	z1 = gRI(-4,4);
+	z2 = rnum();
+	ze = gRI(-4,4);
+	Upd();
+	}
+function Upd() {
+	var vai = parseInt(document.getElementById("ai").value);
+	var vbi = parseInt(document.getElementById("bi").value);
+	var vci = parseInt(document.getElementById("ci").value);
+	var vdi = parseInt(document.getElementById("di").value);
+	var vei = parseInt(document.getElementById("ei").value);
+	document.getElementById("t3").innerHTML = y1 * z2 + "x<sup>3</sup>";
+	document.getElementById("t2").innerHTML = plusify((y1 * z1) + (y0 * z2)) + "x<sup>2</sup>";
+	document.getElementById("t1").innerHTML = plusify((y1 * z0) + (y0 * z1)) + "x";
+	document.getElementById("t0").innerHTML = plusify(ze + y0 * z0);
+	document.getElementById("s4").innerHTML = y1 * vai + "x<sup>4</sup>";
+	document.getElementById("s3").innerHTML = plusify((y0 * vai) + (y1 * vbi)) + "x<sup>3</sup>";
+	document.getElementById("s2").innerHTML = plusify((y0 * vbi) + (y1 * vci)) + "x<sup>2</sup>";
+	document.getElementById("s1").innerHTML = plusify((y0 * vci) + (y1 * vdi)) + "x";
+	document.getElementById("s0").innerHTML = plusify((y0 * vdi) + vei);
+	document.getElementById("sss4").innerHTML = y1 * vai + "x<sup>4</sup>";
+	document.getElementById("sss3").innerHTML = plusify((y0 * vai) + (y1 * vbi)) + "x<sup>3</sup>";
+	document.getElementById("sss2").innerHTML = plusify((y0 * vbi) + (y1 * vci)) + "x<sup>2</sup>";
+	document.getElementById("sss1").innerHTML = plusify((y0 * vci) + (y1 * vdi)) + "x";
+	document.getElementById("sss0").innerHTML = plusify(vei + (y0 * vdi));
+	document.getElementById("a4").innerHTML = y1 * vai + "x<sup>4</sup>";
+	document.getElementById("a3").innerHTML = plusify(y0 * vai) + "x<sup>3</sup>";
+	document.getElementById("b3").innerHTML = y1 * vbi + "x<sup>3</sup>";
+	document.getElementById("b2").innerHTML = plusify(y0 * vbi) + "x<sup>2</sup>";
+	document.getElementById("c2").innerHTML = y1 * vci + "x<sup>2</sup>";
+	document.getElementById("c1").innerHTML = plusify(y0 * vci) + "x";
+	document.getElementById("d1").innerHTML = y1 * vdi + "x";
+	document.getElementById("d0").innerHTML = plusify(y0 * vdi);
+	document.getElementById("e0").innerHTML = vei;
+	document.getElementById("bina").innerHTML = "=(" + y1 + "x" + plusify(y0) + ")";
+	document.getElementById("binb").innerHTML = "=(" + y1 + "x" + plusify(y0) + ")"; 
+	document.getElementById("binc").innerHTML = "=(" + y1 + "x" + plusify(y0) + ")"; 
+	document.getElementById("bind").innerHTML = "=(" + y1 + "x" + plusify(y0) + ")"; 
+	document.getElementById("binss").innerHTML = "=(" + y1 + "x" + plusify(y0) + ")";
+	document.getElementById("s4").style = greenify(y1 * vai, 0);
+	document.getElementById("s3").style = greenify((y0 * vai) + (y1 * vbi), y1 * z2);
+	document.getElementById("s2").style = greenify((y0 * vbi) + (y1 * vci), (y1 * z1) + (y0 * z2));
+	document.getElementById("s1").style = greenify((y0 * vci) + (y1 * vdi), (y1 * z0) + (y0 * z1));
+	document.getElementById("s0").style = greenify((y0 * vdi) + vei,ze + y0 * z0);
+	document.getElementById("binss2").innerHTML = "(" + vai + "x<sup>3</sup>" + plusify(vbi) + "x<sup>2</sup>" + plusify(vci) + "x" + plusify(vdi) + ") +" + vei;
+	document.getElementById("k1").innerHTML = "(" + vai + "x<sup>3</sup>" + plusify(vbi) + "x<sup>2</sup>" + plusify(vci) + "x" + plusify(vdi) + ") +";
+	document.getElementById("k2").innerHTML = vei;
+	document.getElementById("k3").innerHTML = y1 + "x" + plusify(y0);
+	document.getElementById("k4").innerHTML = y1 + "x" + plusify(y0);
+	document.getElementById("k5").innerHTML = "Dividing both sides of the sum by (" + y1 + "x" + plusify(y0) + "):";
+	document.getElementById("expl1").innerHTML = "In this demonstration, we attempt to divide the polynomial " + y1 * z2 + "x<sup>3</sup>" + plusify((y1 * z1) + (y0 * z2)) + "x<sup>2</sup>" + plusify((y1 * z0) + (y0 * z1)) + "x" + plusify(ze + y0 * z0) + " by " + y1 + "x" + plusify(y0) + ".";
+	document.getElementById("expl2").innerHTML = "We then divide both sides of the equality by " + y1 + "x" + plusify(y0) + ".";
+	}
+</script>
+</head>
+<body onload="Ini()">
+
+<table border="0" style="text-align:right">
+<p id="expl1"> </p>
+<ul>
+<li> Refresh the page for new polynomials. </li>
+<li> Adjust the coefficients to reach your target. </li>
+<li> The row "sum" keeps track of the sum of the above five rows on both sides of the equality. </li>
+<li> <p id="expl2"></p> </li>
+<li> When you've adjusted the coefficients correctly, the resulting statement will be the quotient you are looking for. </li>
+<li> Was this helpful? Confusing? Didn't work correctly in your browser? Feedback to <a href="mailto:thomas.kern@oswego.edu"> thomas.kern@oswego.edu </a> is highly appreciated. </li>
+</ul>
+<tr>
+<td></td>
+<td> <p id="a4"></p></td>
+<td> <p id="a3"></p></td>
+<td> </td>
+<td> </td>
+<td> </td>
+<td> <p id="bina"></p></td>
+<td style="text-align:left"> <input type ="number" id="ai" value="0" oninput="Upd()" style="width: 2em"> x<sup>3</sup></td>
+</tr>
+<tr>
+<td> </td>
+<td> </td>
+<td> <p id="b3"></p></td>
+<td> <p id="b2"></p></td>
+<td> </td>
+<td> </td>
+<td> <p id="binb"></p></td>
+<td style="text-align:left"> <input type ="number" id="bi" value="0" oninput="Upd()" style="width: 2em"> x<sup>2</sup></td>
+</tr>
+<tr>
+<td> </td>
+<td> </td>
+<td> </td>
+<td> <p id="c2"></p></td>
+<td> <p id="c1"></p></td>
+<td> </td>
+<td> <p id="binc"></p></td>
+<td style="text-align:left"> <input type ="number" id="ci" value="0" oninput="Upd()" style="width: 2em"> x</td>
+</tr>
+<tr>
+<td> </td>
+<td> </td>
+<td> </td>
+<td> </td>
+<td> <p id="d1"></p></td>
+<td> <p id="d0"></p></td>
+<td> <p id="bind"></p></td>
+<td style="text-align:left"> <input type ="number" id="di" value="0" oninput="Upd()" style="width: 2em"></td>
+</tr>
+<tr>
+<td> + </td>
+<td> </td>
+<td> </td>
+<td> </td>
+<td> </td>
+<td> <p id="e0"></p></td>
+<td style="text-align:left"> = </td>
+<td style="text-align:left"> <input type ="number" id="ei" value="0" onchange="Upd()" style="width: 2em"></td>
+</tr>
+<tr> <td bgcolor="black" colspan=8></td></tr>
+<tr>
+<td> Sum: </td>
+<td> <p id="s4"></p></td>
+<td> <p id="s3"></p></td>
+<td> <p id="s2"></p></td>
+<td> <p id="s1"></p></td>
+<td> <p id="s0"></p></td>
+<td> <p id="binss"></p></td>
+<td> <p id="binss2"></td>
+</tr>
+<tr> <td bgcolor="black" colspan=9></td></tr>
+<tr> <td bgcolor="black" colspan=9></td></tr>
+<tr>
+<td style="width:50px"> Target: </td>
+<td style="width:50px"> </td>
+<td style="width:50px"> <p id="t3"></p></td>
+<td style="width:50px"> <p id="t2"></p></td>
+<td style="width:50px"> <p id="t1"></p></td>
+<td style="width:50px"> <p id="t0"></p></td>
+<td> </td>
+<td> </td>
+<td> </td>
+</tr>
+<tr style="height:100px"> <td colspan = 8 style="text-align:left;vertical-align:bottom"> <p id = "k5"> </p> </tr>
+<tr>
+<td> </td>
+<td style = "text-align:right;vertical-align:bottom"> <p id="sss4"></p></td>
+<td style = "text-align:right;vertical-align:bottom"> <p id="sss3"></p></td>
+<td style = "text-align:right;vertical-align:bottom"> <p id="sss2"></p></td>
+<td style = "text-align:right;vertical-align:bottom"> <p id="sss1"></p></td>
+<td style = "text-align:right;vertical-align:bottom"> <p id="sss0"></p></td>
+<td style = "text-align:left;vertical-align:center" rowspan = 3> <p> = </p></td>
+<td style = "text-align:right;vertical-align:center" rowspan = 3> <p id ="k1"></p></td>
+<td style = "text-align:center;vertical-align:bottom"> <p id ="k2"></p></td>
+</tr>
+<tr>
+<td> </td>
+<td colspan=5 bgcolor="black"> </td>
+<td bgcolor="black"> </td>
+</tr>
+<tr>
+<td></td>
+<td colspan=5 style="text-align:center"><p id = "k3"></p></td>
+<td><p id="k4"></p></td>
+</table>
+Ask yourself:
+<ol>
+<li> What do you know about the coefficient of x<sup>3</sup>? </li>
+<li> Would you ever need an x<sup>4</sup> term? </li>
+<li> In what order did you work out the coefficients? </li>
+<li> How are the terms of this sum related to the terms when you do polynomial long division? </li>
+</ol>
+</body>
+</html>

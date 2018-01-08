@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+p {
+    display: block;
+    margin-top: 0em;
+    margin-bottom: 0em;
+    margin-left: 0;
+    margin-right: 0;
+}
+hr { 
+    display: block;
+    margin-top: 0em;
+    margin-bottom: 0em;
+    margin-left: auto;
+    margin-right: auto;
+    border-style: inset;
+    border-width: 1px;
+}
+sup {
+        font-size: 0.83em;
+        vertical-align: super;
+        line-height: 0;
+    }
+</style>
+<script>
+var Lx = [];
+var Ly = [];
+var Lxz = [];
+var Lyz = [];
+var Lr = [];
+var lcf = 0;
+var crits = [0.997,
+0.95,
+0.878,
+0.811,
+0.754,
+0.707,
+0.666,
+0.632,
+0.602,
+0.576,
+0.553,
+0.532,
+0.514,
+0.497,
+0.482,
+0.468,
+0.456,
+0.444,
+0.433,
+0.423,
+0.413,
+0.404,
+0.396,
+0.388,
+0.381,
+0.374,
+0.367,
+0.361,
+0.355,
+0.349,
+0.344,
+0.339,
+0.334,
+0.329,
+0.325,
+0.32,
+0.316,
+0.312,
+0.308,
+0.304];
+
+var lcc = 0;
+var xhistmouse = -1;
+var cc0 = 0;
+var cc1 = 0;
+function rounder(n) {
+	return(Math.round(n*1000)/1000);
+	}
+function rbet(mn,mx) {
+	return(Math.random()*(mx-mn)+mn);
+	}
+function randn_bm() { //stolen from stackexchange
+	var u = 0, v = 0;
+	while(u === 0) u = Math.random();
+	while(v === 0) v = Math.random();
+	return Math.sqrt( -2.0 * Math.log( u ) ) * Math.cos( 2.0 * Math.PI * v );
+	}
+function gendat() {
+	var n = document.getElementById("n").value;
+	if (n == 0) {return;}
+	var a = Number(document.getElementById("genx1").value);
+	var b = Number(document.getElementById("genx2").value);
+	var aa = Number(document.getElementById("quada").value);
+	var bb = Number(document.getElementById("quadb").value);
+	var cc = Number(document.getElementById("quadc").value);
+	var s = Number(document.getElementById("stdevy").value);
+	var x = 0;
+	var y = 0;
+	var i = 0;
+	for (i = 0; i < n; i++) {
+		if(document.getElementById("r1").checked) {
+			x = ((b-a)*i)/(n-1) + a
+			}
+		if(document.getElementById("r2").checked) {
+			x = rbet(a,b);
+			}
+		if(document.getElementById("r3").checked) {
+			x = b*randn_bm() + a;
+			}
+		y = aa * x * x + bb * x + cc + s * randn_bm();
+		document.getElementById("x"+i).value = x;
+		document.getElementById("y"+i).value = y;
+		}
+	Upd();
+	}
+
+function mean(L,n) {
+	if (n == 0) {return(0);}	
+	var sm = 0;
+	for(i = 0; i < n; i++) {
+		sm += L[i];
+		}
+	return(sm/n);
+	}
+function stdev(L,n) {
+	if (n == 0) {return(0);}
+	var sm = 0;
+	var muu = mean(L,n);
+	for (i = 0; i < n; i++) {
+		sm += (L[i]-muu)*(L[i]-muu);
+		}
+	return(Math.sqrt(sm/n));
+	}
+
+
+function Updn() {
+	var tstr = "<table border=1>";
+	var i = 0;
+	var n = document.getElementById("n").value;
+	tstr += "<tr><td> x </td>";
+	for (i = 0; i < n; i++) {
+		tstr += "<td> <input type='number' id='x" + i + "' oninput = 'Upd()' style='width:3em'> </td>";
+		}
+	tstr += "</tr><tr> <td> y</td>";
+	for (i = 0; i < n; i++) {
+		tstr += "<td> <input type='number' id='y" + i + "' oninput = 'Upd()' style='width:3em'> </td>";	
+		}
+	tstr += "</tr><tr> <td> z-score (x) </td>";
+	for (i = 0; i < n; i++) {
+		tstr += "<td> <p id = 'xz" + i + "'> </p> </td>";
+		}
+	tstr += "</tr><tr> <td> z-score (y) </td>";
+	for (i = 0; i < n; i++) {
+		tstr += "<td> <p id = 'yz" + i + "'> </p> </td>";
+		}
+	tstr += "</tr><tr> <td> <p id = 'pdy'> </p> </td>";
+	for (i = 0; i < n; i++) {
+		tstr += "<td> <p id = 'pdy" + i + "'> </p> </td>";
+		}
+	tstr += "</tr><tr> <td> residual </td>";
+	for (i = 0; i < n; i++) {
+		tstr += "<td> <p id = 'rs" + i + "'> </p> </td>";
+		}
+	tstr += "</tr></table>";
+	document.getElementById("tab").innerHTML = tstr;
+	setTimeout(function(){
+		var i = 0;
+		var n = document.getElementById("n").value;
+		for (i = 0; i < n; i++) {
+			if (!(i in Lx)) {
+				Lx[i] = 0;
+				}
+			document.getElementById("x"+i).value = Lx[i];
+			}
+		for (i = 0; i < n; i++) {
+			if (!(i in Ly)) {
+				Ly[i] = 0;
+				}
+			document.getElementById("y"+i).value = Ly[i];
+			}
+		Upd();
+		},1);
+	}
+
+function fancycritical(lcc,n) {
+	var temp = rounder(lcc);
+	if(n < 3) {return(temp);}
+	if(n > 42) {
+		document.getElementById("sig").innerHTML = "N too large to look up critical values.";
+		if (temp > .304 || temp < -.304){
+			return("<font color='blue'>" + temp + "</font>");
+			} 
+		return(rounder(temp));
+		}
+	var cri = crits[n-3];
+	if (temp >= 0 && cri > temp) {
+		document.getElementById("sig").innerHTML = "No linear relation detected";
+		return("<font color='red'>" + temp + "</font> < " + cri);
+		}
+	if (temp > 0 && cri <= temp) {
+		document.getElementById("sig").innerHTML = "Linear relation detected";
+		lcf++;
+		return("<font color='blue'>" + temp + "</font> &ge; " + cri);
+		}
+	if (temp < 0 && cri > -temp) {
+		document.getElementById("sig").innerHTML = "No linear relation detected";
+		return("<font color='red'>" + temp + "</font> < -" + cri);
+		}
+	if (temp < 0 && cri <= -temp) {
+		document.getElementById("sig").innerHTML = "Linear relation detected";
+		lcf++;
+		return("<font color='blue'>" + temp + "</font> &le; -" + cri);
+		}
+	return("Error");
+	}
+
+function Upd() {
+	var n = document.getElementById("n").value;
+	var i = 0;
+	for (i = 0; i < n; i++) {
+		Lx[i] = Number(document.getElementById("x"+i).value);
+		Ly[i] = Number(document.getElementById("y"+i).value);
+		}
+	var xm = mean(Lx,n);
+	var ym = mean(Ly,n);
+	var xs = stdev(Lx,n);
+	var ys = stdev(Ly,n);
+	document.getElementById("xmean").innerHTML = rounder(xm);
+	document.getElementById("ymean").innerHTML = rounder(ym);
+	document.getElementById("xstdev").innerHTML = rounder(xs);
+	document.getElementById("ystdev").innerHTML = rounder(ys);
+	var tsum = 0;
+	for (i = 0; i < n; i++) {
+		Lxz[i] = (Lx[i]-xm)/xs;
+		Lyz[i] = (Ly[i]-ym)/ys;
+		document.getElementById("xz"+i).innerHTML = rounder(Lxz[i]);
+		document.getElementById("yz"+i).innerHTML = rounder(Lyz[i]);
+		tsum += Lxz[i]*Lyz[i];
+		}
+	lcc = tsum/n;
+	document.getElementById("rho").innerHTML = fancycritical(lcc,n);
+	document.getElementById("rho2").innerHTML = rounder(lcc*lcc);
+	cc1 = lcc * ys/xs;
+	cc0 = ym-cc1*xm;
+	document.getElementById("lreg").innerHTML = rounder(cc1) + "x+" + rounder(cc0); 
+	var t = Math.sqrt((1-lcc*lcc)/(n-2));
+	for (i = 0; i < n; i++) {
+		Lr[i] = Ly[i]-cc1*Lx[i]-cc0;
+		document.getElementById("pdy"+i).innerHTML = rounder(cc1*Lx[i]-cc0);
+		document.getElementById("rs"+i).innerHTML = rounder(Lr[i]);
+		}
+	document.getElementById("pdy").innerHTML = "Predicted y (" + rounder(cc1) + "x+" + rounder(cc0) + ")";
+	replot();
+	}
+function tograph(x,mn,mx) {
+	var m = -500/(mn-mx);
+	var b = 500*mn/(mn-mx);
+	return(m*x+b);
+	}
+function drawres() {
+	var ctx = document.getElementById("rplot").getContext("2d");
+	var dmxx = Math.max.apply(null, Lx);
+	var dmnx = Math.min.apply(null, Lx);
+	var dmxr = Math.max.apply(null, Lr);
+	var dmnr = Math.min.apply(null, Lr);
+	ctx.beginPath();
+	ctx.fillStyle = "#FFFFFF";
+	ctx.fillRect(0,0,500,500);
+	var i = 0;
+	var n = document.getElementById("n").value;
+	for (i = 0; i < n; i++)	{
+		ctx.beginPath();
+		ctx.arc(tograph(Lx[i],dmnx,dmxx), 500-tograph(Lr[i],dmnr,dmxr),3,0,2*Math.PI);
+		ctx.fillStyle="Black";
+		ctx.fill();
+		}
+	ctx.beginPath();
+	ctx.moveTo(0,500-tograph(0,dmnr,dmxr));
+	ctx.lineTo(500,500-tograph(0,dmnr,dmxr));
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(tograph(0,dmnx,dmxx),0);
+	ctx.lineTo(tograph(0,dmnx,dmxx),500);
+	ctx.stroke();
+	if (document.getElementById("c4").checked) {
+		for (i = 0; i < n; i++) {
+			ctx.beginPath();
+			ctx.moveTo(tograph(Lx[i],dmnx,dmxx), 500-tograph(Lr[i],dmnr,dmxr));
+			ctx.lineTo(tograph(Lx[i],dmnx,dmxx), 500-tograph(0,dmnr,dmxr));
+			ctx.strokeStyle="blue";
+			ctx.stroke();
+			ctx.strokeStyle="black";
+			}
+		}
+	}
+function drawplot() {
+	var xmn = Number(document.getElementById("plotminx").value);
+	var xmx = Number(document.getElementById("plotmaxx").value);
+	var ymn = Number(document.getElementById("plotminy").value);
+	var ymx = Number(document.getElementById("plotmaxy").value);
+	var ctx = document.getElementById("plot").getContext("2d");
+	ctx.beginPath();
+	ctx.fillStyle = "#FFFFFF";
+	ctx.fillRect(0,0,500,500);
+	if (document.getElementById("c2").checked) {
+		ctx.beginPath();
+		ctx.moveTo(0,500-tograph(0,ymn,ymx));
+		ctx.lineTo(500,500-tograph(0,ymn,ymx));
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.moveTo(tograph(0,xmn,xmx),0);
+		ctx.lineTo(tograph(0,xmn,xmx),500);
+		ctx.stroke();
+		}
+	if (document.getElementById("c3").checked) {
+		ctx.beginPath();
+		ctx.moveTo(0,500-tograph(cc0+cc1*xmn,ymn,ymx));
+		ctx.lineTo(500,500-tograph(cc0+cc1*xmx,ymn,ymx));
+		ctx.strokeStyle="red";
+		ctx.stroke();
+		ctx.strokeStyle="black";
+		}
+	var i = 0;
+	var n = document.getElementById("n").value;
+	if (document.getElementById("c4").checked) {
+		for (i = 0; i < n; i++) {
+			ctx.beginPath();
+			ctx.moveTo(tograph(Lx[i],xmn,xmx), 500-tograph(Ly[i],ymn,ymx));
+			ctx.lineTo(tograph(Lx[i],xmn,xmx), 500-tograph(cc1*Lx[i]+cc0,ymn,ymx));
+			ctx.strokeStyle="blue";
+			ctx.stroke();
+			ctx.strokeStyle="black";
+			}
+		}
+	for (i = 0; i < n; i++) {
+		ctx.beginPath();
+		ctx.arc(tograph(Lx[i],xmn,xmx), 500-tograph(Ly[i],ymn,ymx), 3, 0, 2*Math.PI);
+		ctx.fillStyle="Black";
+		ctx.fill();
+		}
+	drawres();
+	}
+function Urad() {
+	if (document.getElementById("r3").checked) {
+		document.getElementById("genxi1").innerHTML = "Mean:";
+		document.getElementById("genxi2").innerHTML = "St.Dev.:";
+		} else {
+		document.getElementById("genxi1").innerHTML = "Min:";
+		document.getElementById("genxi2").innerHTML = "Max:";		
+		}
+	}
+function replot() {
+	if(!(document.getElementById("c1").checked)) {
+		drawplot();
+		return;
+		}
+	var dmxx = Math.max.apply(null, Lx);
+	var dmnx = Math.min.apply(null, Lx);
+	var dmxy = Math.max.apply(null, Ly);
+	var dmny = Math.min.apply(null, Ly);
+	var rmxx = 0;
+	var rmnx = 0;
+	var rmxy = 0;
+	var rmny = 0;
+	var tavg = 0;
+	if(!(document.getElementById("c5").checked)) {
+		rmxx = dmxx;
+		rmnx = dmnx;
+		rmxy = dmxy;
+		rmny = dmny;
+		} else {
+		if ((dmxx - dmnx) < (dmxy - dmny)) {
+			rmxy = dmxy;
+			rmny = dmny;
+			tavg = (dmnx + dmxx)/2;
+			rmxx = tavg + (dmxy - dmny)/2;
+			rmnx = tavg - (dmxy - dmny)/2;
+			} else {
+			rmxx = dmxx;
+			rmnx = dmnx;
+			tavg = (dmny + dmxy)/2;
+			rmxy = tavg + (dmxx - dmnx)/2;
+			rmny = tavg - (dmxx - dmnx)/2;
+			}
+		}
+	document.getElementById("plotminx").value = Math.ceil(rmnx)-1;
+	document.getElementById("plotmaxx").value = Math.floor(rmxx)+1;
+	document.getElementById("plotminy").value = Math.ceil(rmny)-1;
+	document.getElementById("plotmaxy").value = Math.floor(rmxy)+1;
+	drawplot();
+	}
+
+function lotsadat() {
+	lcf = 0;
+	var iters = Number(document.getElementById("itercount").value);
+	var i = 0;
+	for (i = 0; i < iters; i++) {
+		gendat();
+		}
+	document.getElementById("lrfound").innerHTML = lcf + "/" + iters + " = " + (lcf/iters);
+	}
+
+</script>
+</head>
+<body onload="Updn()">
+
+The following tool will allow you to generate bivariate data sets and compute linear regressions.<br>
+
+To generate your data set: (or skip and just press "Generate!")
+<ol>
+<li> Choose an N (number of data points). Designed with values less than or equal to 42 in mind. Values larger than N=100 may cause noticeable delay. </li>
+<li> Choose a method of generating the x coordinates: 
+<ul> <li> "evenly spaced" will divide the specified interval up equally.</li>
+<li> "uniform distribution" will generate random values in a range, with each value equally likely to be picked. </li>
+<li> The default, "normal distribution", will tend to generate values close to the mean. </li> </ul> </li>
+<li> Choose coefficients for generating the y coordinates.
+<ul> <li> By default, the coefficient of x<sup>2</sup> is 0: data is generated along a line and then displaced by a random factor. </li>
+<li> Set the St.Dev. of the random displacement to 0 to generate data pefectly along a line or parabola. </li>
+<li> Set the coefficients of x and x<sup>2</sup> to 0 in order to have y be generated purely randomly (not based on the x value). </li>
+</ul> </li>
+<li> Press "Generate!" </li>
+<li> Press "Generate!" again to rerandomize. </li>
+<li> Was this helpful? Confusing? Didn't work correctly in your browser? Feedback to <a href="mailto:thomas.kern@oswego.edu"> thomas.kern@oswego.edu </a> is highly appreciated. </li>
+</ol>
+
+
+<br> N: <input type ="number" id="n" value="10" oninput="Updn()" style="width: 3em">
+
+Choose how you would like to generate your data:
+
+<table border = 0> <tr> <td>
+<table border = 1>
+<tr> <td> Generate x: </td> 
+<td colspan=2> 
+<input id="r1" onchange="Urad()" type="radio" name="radio"> Evenly Spaced <br>
+<input id="r2" onchange="Urad()" type="radio" name="radio"> Random (Uniform Distribution) <br>
+<input id="r3" onchange="Urad()" type="radio" name="radio" checked> Random (Normal Distribution) <br>
+<table border = 0> <tr> <td> <p id="genxi1">Mean:</p> </td> <td> <input type="number" id="genx1" value=0 style="width:3em"> </td>
+<td> <p id="genxi2">St.Dev.:</p> </td> <td> <input type="number" id="genx2" value=1 style="width:3em"> </td> </tr> </table>
+</tr>
+<tr> <td rowspan=2> Generate y:</td><td> As a function of x: <br> 
+<input type="number" id="quada" value = 0 style="width:3em"> x<sup>2</sup> + <input type="number" id="quadb" value=3 style="width:3em"> x + <input type="number" id="quadc" value = 1 style="width:3em"> </td>
+<td> Plus a random displacement: <br>
+St.Dev.: <input type="number" id="stdevy" value=1 style="width:3em"> </td>
+</tr>
+<tr> <td colspan=2> Hint: Leave entries as 0 to not include them. </td>
+</table>
+</td>
+<td>
+<table border=1>
+<tr> <td> &mu;<sub>x</sub> </td> <td> <p id = "xmean"> </p> </td> </tr>
+<tr> <td> &mu;<sub>y</sub> </td> <td> <p id = "ymean"> </p> </td> </tr>
+<tr> <td> &sigma;<sub>x</sub> </td> <td> <p id = "xstdev"> </p> </td> </tr>
+<tr> <td> &sigma;<sub>y</sub> </td> <td> <p id = "ystdev"> </p> </td> </tr>
+<tr> <td> &rho; </td> <td> <p id = "rho"> </p> </td> </tr>
+<tr> <td colspan=2> <p id ="sig"> </p> </td> </tr>
+<tr> <td> &rho;<sup>2</sup> </td> <td>  <p id="rho2"> </p> </td> </tr>
+<tr> <td> Linear: </td> <td> <p id = "lreg"> </p> </td> </tr>
+</table>
+</td>
+</tr>
+</table>
+
+<button type="button" onclick="gendat()"> Generate! </button> <br>
+
+<canvas id = "plot" width = 500 height = 500 style="border:1px solid #c3c3c3;"> </canvas>
+<br>
+<input type="checkbox" id="c1" checked> Automatically fit data in window <br>
+<input type="checkbox" id="c5" onchange="replot()" checked> Maintain aspect ratio <br>
+<input type="checkbox" id="c2" onchange="drawplot()" checked> Draw axes <br>
+<input type="checkbox" id="c3" onchange="drawplot()" checked> Draw regression line <br>
+<input type="checkbox" id="c4" onchange="drawplot()"> Draw residual lines <br>
+<table>
+<tr> <td> Min x: <input type="number" id="plotminx" onchange="drawplot()" value = 0 style="width:3em"> </td>
+<td> Max x: <input type="number" id="plotmaxx" onchange="drawplot()" value = 10 style="width:3em"> </td>
+</tr><tr>
+<td> Min y: <input type="number" id="plotminy" onchange="drawplot()" value = 0 style="width:3em"> </td>
+<td> Max y: <input type="number" id="plotmaxy" onchange="drawplot()" value = 10 style="width:3em"> </td>
+</tr>
+</table>
+
+<br>
+
+<p id = "tab"> </p>
+<br>
+Residuals:
+<br>
+<canvas id = "rplot" width = 500 height = 500 style="border:1px solid #c3c3c3;"> </canvas>
+<br>
+Questions to think about:
+<ol>
+<li> Set the coefficient of x<sup>2</sup> under "generate y as a function of x" to 0, and the standard deviation under "plus a random displacement" to 1. 
+How is the linear regression found related to the "generate y as a function of x" line? Try generating new data several times and adjusting the coefficients under "generate y as a function of x". </li>
+<li> Set the coefficients of x<sup>2</sup> and x under "generate y as a function of x" to 0, and the standard deviation under "plus a random displacement" to a nonzero value.
+<ol>
+<li> Press "Generate!" a bunch of times. How frequently does the tool detect a linear relationship despite x and y being generated completely independently? </li>
+<li> Use the tool below to streamline the process:
+<table border = 1>
+<tr> <td> Number of iterations: <input type="number" id="itercount" value=100 style="width:3em"> <br>
+<button type="button" onclick="lotsadat()"> Go! </button> <br>
+Linear relations found:
+<p id="lrfound"> </p>
+</td> </tr>
+</table> </li>
+<li> These misclassifications are called "false positives" or "type I errors" and occur naturally and unavoidably in the course of studying statistics. We will talk about them later on in class. For now you can read more about them below. </li>
+<li> What happens to the graph as you change the standard deviation under "plus a random displacement"? </li>
+</ol> </li>
+<li> Set the method for generating x to be "evenly spaced" and the standard devation under "generate y: plus a random displacement" to 0. Set the coefficient of x<sup>2</sup> under "generate y as a function of x" to be 1. By playing around with the coefficient of x, the constant term, and upper and lower bounds for x can you get &rho; to be close to 0? close to 1? close to -1?  </li>
+<li> Set the coefficient of x<sup>2</sup> under "generate y as a function of x" to 0. Play around with the coefficient of x and the standard deviation of the random displacement to see if you can find patterns about when you are likely to get linear relationships. </li>
+<li> Set the "generate y as a function of x" to 1 x<sup>2</sup> + 20 x + 1, and the standard deviation of the "plus a random displacement" to 0. How good is the linear regression model? You may wish to uncheck "maintain aspect ratio" to get a better plot. Compare the linear regression model versus the quadratic model y = x<sup>2</sup> + 20 x + 1 which would be perfect. What do the residuals look like?
+</ol>
+Further reading/playing:
+<ul>
+<li> Linear regression toys: <a href="https://www.desmos.com/calculator/jwquvmikhr"> Desmos </a>, <a href="https://www.geogebra.org/m/xC6zq7Zv"> Geogebra </a>, <a href="http://www.shodor.org/interactivate/activities/Regression/"> Interactivate </a>, <a href="https://phet.colorado.edu/sims/html/least-squares-regression/latest/least-squares-regression_en.html"> Phet </a> </li>
+<li> On false positives:
+<ul> <li> The <a href="http://www.tylervigen.com/spurious-correlations">Spurious Correlations</a> webpage looks through a large database of time-series data to find datasets that are correlated by simple chance. (Content warning: includes data on various causes of death.)</li>
+<li> A fictional account of finding a false positive can be found on <a href="https://xkcd.com/882/">xkcd</a>.
+</ul> </li>
+</ul>
+</body>
+</html>

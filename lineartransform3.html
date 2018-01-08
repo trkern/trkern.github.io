@@ -157,6 +157,10 @@ function drawcanv() {
 	while(scene.children.length > 0){ 
     		scene.remove(scene.children[0]); 
 		}
+	var mul1 = document.getElementById("v1").value;
+	var mul2 = document.getElementById("v2").value;
+	var mul3 = document.getElementById("v3").value;
+	product = transformvec([mul1,mul2,mul3]);
 	thickvector([0,0,0],product,0x000000,.05);
 	//scene.remove(bunbun); //how the heck does this work?
 	bun = new THREE.Geometry();

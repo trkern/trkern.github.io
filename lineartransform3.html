@@ -1,0 +1,444 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<script src = "three.js"></script>
+<script src = "OrbitControls.js"></script>
+<script>
+//Stanford Bunny (Stanford University Computer Graphics Laboratory) from https://www.cc.gatech.edu/projects/large_models/bunny.html
+//Decimated with Blender
+//Extra faces added to fill holes
+//Vertex coordinates rounded and transformed to fit in unit cube
+var bunverts = [[0.96,0.225,0.545],[0.965,0.22,0.385],[1.,0.185,0.435],[0.24,0.775,0.24],[0.185,0.755,0.395],[0.185,0.87,0.15],[0.055,0.39,0.49],[0.115,0.485,0.365],[0.09,0.48,0.53],[0.105,0.59,0.705],[0.09,0.7,0.625],[0.175,0.63,0.695],[0.04,0.505,0.46],[0.52,0.93,0.22],[0.355,0.855,0.33],[0.315,0.745,0.345],[0.165,0.495,0.705],[0.625,0.595,0.355],[0.69,0.61,0.505],[0.445,0.58,0.455],[0.125,0.88,0.095],[0.27,0.74,0.585],[0.315,0.67,0.405],[0.315,0.59,0.36],[0.35,0.59,0.485],[0.92,0.085,0.365],[0.23,0.555,0.67],[0.61,0.12,0.72],[0.615,0.19,0.735],[0.695,0.155,0.705],[0.515,0.1,0.69],[0.715,0.09,0.655],[0.7,0.01,0.25],[0.51,0.07,0.21],[0.355,0.005,0.19],[0.97,0.095,0.51],[0.82,0.02,0.515],[0.85,0.14,0.33],[0.765,0.09,0.26],[0.74,0.01,0.375],[0.6,0.485,0.65],[0.56,0.58,0.575],[0.735,0.53,0.6],[0.555,0.425,0.655],[0.16,0.37,0.64],[0.17,0.46,0.615],[0.31,0.42,0.65],[0.3,0.515,0.59],[0.28,0.35,0.67],[0.485,0.805,0.28],[0.265,0.165,0.365],[0.235,0.265,0.265],[0.125,0.25,0.37],[0.66,0.405,0.69],[0.755,0.415,0.66],[0.345,0.26,0.65],[0.21,0.285,0.65],[0.675,0.325,0.73],[0.59,0.265,0.745],[0.08,0.325,0.385],[0.075,0.31,0.515],[0.265,0.02,0.685],[0.32,0.105,0.62],[0.375,0.025,0.655],[0.86,0.155,0.59],[0.88,0.08,0.58],[0.535,0.79,0.32],[0.57,0.865,0.2],[0.42,0.535,0.57],[0.375,0.385,0.65],[0.425,0.3,0.64],[0.445,0.14,0.605],[0.46,0.415,0.66],[0.225,0.01,0.505],[0.305,0.085,0.495],[0.215,0.07,0.585],[0.9,0.24,0.525],[0.515,0.38,0.725],[0.21,0.735,0.115],[0.24,0.835,0.005],[0.185,0.745,0.065],[0.475,0.305,0.73],[0.515,0.19,0.71],[0.89,0.36,0.53],[0.235,0.645,0.605],[0.73,0.025,0.645],[0.35,0.765,0.425],[0.295,0.755,0.46],[0.455,0.925,0.34],[0.3,0.635,0.565],[0.07,0.585,0.38],[0.06,0.645,0.49],[0.035,0.55,0.545],[0.77,0.3,0.685],[0.895,0.405,0.405],[0.835,0.35,0.63],[0.52,0.905,0.26],[0.465,0.015,0.715],[0.755,0.165,0.67],[0.275,0.145,0.445],[0.26,0.1,0.425],[0.45,0.07,0.72],[0.82,0.5,0.56],[0.3,0.185,0.59],[0.225,0.675,0.335],[0.905,0.245,0.405],[0.845,0.335,0.275],[0.805,0.255,0.255],[0.45,0.115,0.23],[0.4,0.07,0.2],[0.435,0.01,0.49],[0.415,0.015,0.595],[0.455,0.03,0.48],[0.82,0.46,0.315],[0.15,0.68,0.34],[0.045,0.72,0.495],[0.14,0.735,0.35],[0.645,0.375,0.18],[0.73,0.405,0.24],[0.745,0.135,0.215],[0.235,0.745,0.39],[0.8,0.54,0.385],[0.14,0.24,0.565],[0.32,0.22,0.29],[0.155,0.765,0.54],[0.205,0.92,0.015],[0.11,0.36,0.32],[0.265,0.16,0.51],[0.3,0.14,0.5],[0.48,0.4,0.23],[0.375,0.34,0.24],[0.405,0.29,0.21],[0.42,0.12,0.315],[0.045,0.505,0.645],[0.425,0.01,0.64],[0.205,0.015,0.625],[0.465,0.47,0.255],[0.36,0.45,0.255],[0.505,0.2,0.145],[0.455,0.355,0.16],[0.165,0.045,0.42],[0.65,0.04,0.31],[0.435,0.03,0.405],[0.175,0.005,0.35],[0.31,0.005,0.3],[0.285,0.095,0.345],[0.165,0.825,0.115],[0.455,0.545,0.34],[0.155,0.72,0.22],[0.655,0.52,0.27],[0.685,0.01,0.295],[0.41,0.015,0.26],[0.645,0.42,0.245],[0.35,0.005,0.55],[0.535,0.315,0.135],[0.225,0.535,0.325],[0.265,0.43,0.255],[0.35,0.565,0.315],[0.45,0.035,0.615],[0.4,0.015,0.51],[0.415,0.005,0.44],[0.415,0.03,0.38],[0.69,0.23,0.185],[0.625,0.11,0.19],[0.665,0.01,0.54],[0.66,0.005,0.615],[0.67,0.015,0.5],[0.73,0.01,0.52],[0.555,0.02,0.645],[0.515,0.01,0.66],[0.66,0.04,0.585],[0.59,0.025,0.45],[0.61,0.01,0.63],[0.755,0.01,0.455],[0.735,0.02,0.415],[0.585,0.04,0.61],[0.665,0.025,0.405],[0.185,0.17,0.475],[0.285,0.005,0.47],[0.365,0,0.37],[0.305,0.01,0.545],[0.535,0.04,0.625],[0.395,0.025,0.35],[0.385,0.005,0.405],[0.32,0.015,0.435],[0.375,0.01,0.455]];
+var bunfaces = [[0,1,2],[3,4,5],[6,7,8],[9,10,11],[12,8,7],[13,14,15],[9,11,16],[17,18,19],[5,4,20],[10,21,11],[22,23,24],[1,25,2],[11,26,16],[27,28,29],[30,27,31],[32,33,34],[35,25,36],[37,38,39],[40,41,42],[40,42,43],[44,45,46],[45,47,46],[44,46,48],[41,19,18],[49,13,15],[50,51,52],[53,42,54],[48,55,56],[53,57,58],[59,6,60],[26,47,45],[58,57,28],[46,55,48],[61,62,63],[64,65,36],[66,67,49],[46,47,68],[47,24,68],[46,69,55],[46,68,69],[62,55,70],[62,71,63],[62,70,71],[69,70,55],[28,57,29],[69,68,72],[69,72,70],[73,74,75],[53,54,57],[72,68,41],[19,41,68],[64,76,0],[65,64,0],[43,72,40],[40,72,41],[77,53,58],[78,79,80],[81,58,82],[77,58,81],[43,42,53],[82,27,30],[27,82,28],[58,28,82],[83,76,64],[45,16,26],[11,84,26],[11,21,84],[35,2,25],[31,64,85],[86,87,88],[26,84,89],[90,91,92],[93,29,57],[84,21,89],[85,64,36],[26,89,47],[83,94,76],[0,35,65],[54,95,93],[89,24,47],[13,49,67],[66,86,96],[86,88,96],[97,30,31],[29,98,31],[50,99,100],[87,86,22],[93,98,29],[101,30,97],[93,95,64],[102,83,95],[98,93,64],[64,95,83],[54,102,95],[86,66,22],[24,89,22],[98,64,31],[31,27,29],[74,103,62],[104,3,78],[105,106,107],[108,109,33],[110,111,112],[39,38,32],[94,113,106],[90,92,12],[114,115,91],[114,116,115],[3,79,78],[117,106,118],[37,119,38],[105,94,106],[120,3,104],[115,10,91],[90,114,91],[37,107,119],[105,107,37],[74,73,100],[121,18,17],[96,67,66],[83,102,94],[89,21,22],[76,94,105],[0,2,35],[87,22,21],[52,60,122],[121,113,94],[1,0,76],[1,76,105],[123,51,50],[21,10,124],[4,124,116],[87,124,120],[68,24,19],[120,4,3],[87,21,124],[10,115,124],[120,124,4],[102,121,94],[96,13,67],[124,115,116],[5,125,79],[102,18,121],[96,88,13],[53,77,43],[22,49,15],[102,42,18],[5,79,3],[19,24,23],[126,6,59],[42,41,18],[5,20,125],[61,75,62],[127,103,128],[70,72,81],[55,62,103],[48,56,44],[71,82,30],[103,74,128],[20,4,116],[30,101,71],[72,77,81],[43,77,72],[129,130,131],[130,123,132],[63,71,101],[9,16,133],[70,81,71],[99,128,74],[81,82,71],[61,63,134],[135,75,61],[8,45,44],[6,44,60],[6,8,44],[136,137,130],[10,9,133],[136,130,129],[138,139,131],[88,87,120],[100,73,140],[60,44,56],[99,74,100],[141,142,112],[143,144,145],[20,146,125],[125,146,80],[91,10,92],[17,19,147],[138,131,108],[146,116,80],[74,62,75],[131,139,129],[146,20,116],[148,80,116],[108,132,109],[130,132,108],[118,106,113],[34,109,132],[148,116,114],[13,88,14],[14,88,120],[66,49,22],[17,136,149],[10,133,92],[140,145,100],[141,150,151],[59,60,52],[145,50,100],[126,7,6],[90,12,7],[104,22,120],[121,149,113],[139,117,152],[153,134,111],[139,154,117],[149,152,113],[155,156,157],[155,157,23],[136,17,147],[117,118,152],[152,118,113],[104,23,22],[157,156,137],[139,152,129],[19,23,157],[102,54,42],[149,121,17],[112,111,158],[159,110,160],[157,136,147],[157,137,136],[157,147,19],[155,7,156],[155,114,90],[155,90,7],[105,37,1],[25,1,37],[104,155,23],[130,51,123],[80,79,125],[156,7,126],[51,156,126],[37,39,25],[132,123,145],[132,145,144],[153,111,110],[54,93,57],[141,161,142],[107,162,119],[162,107,106],[132,144,34],[38,119,32],[106,117,162],[31,85,97],[59,52,126],[162,163,119],[163,33,119],[32,119,33],[162,138,163],[162,117,154],[14,120,15],[154,138,162],[22,15,120],[149,129,152],[163,138,33],[137,156,130],[145,140,143],[32,151,150],[33,109,34],[104,114,155],[123,50,145],[33,138,108],[51,126,52],[138,154,139],[130,156,51],[131,130,108],[153,110,159],[164,165,85],[166,164,167],[78,80,104],[80,148,104],[164,85,167],[97,85,165],[168,169,97],[165,164,170],[164,171,170],[168,97,172],[92,8,12],[173,167,36],[63,97,134],[92,133,8],[39,173,36],[167,85,36],[150,171,39],[174,173,39],[171,175,170],[141,112,171],[176,174,39],[133,45,8],[134,97,169],[39,36,25],[122,177,52],[45,133,16],[122,60,56],[32,150,39],[177,50,52],[171,176,39],[104,148,114],[143,140,73],[50,177,99],[97,63,101],[129,149,136],[172,97,165],[143,73,144],[122,103,177],[177,127,99],[177,103,127],[122,56,103],[144,73,178],[135,73,75],[171,166,176],[34,144,151],[144,178,179],[151,144,179],[73,135,178],[135,180,178],[135,61,180],[171,181,175],[179,182,151],[179,178,183],[184,160,178],[56,55,103],[183,178,160],[184,185,160],[112,158,171],[158,181,171],[171,150,141],[32,34,151],[151,182,161],[153,180,134],[180,61,134],[141,151,161],[171,164,166],[36,65,35],[185,159,160],[128,99,127],[134,158,111],[169,158,134],[158,169,181],[169,168,181],[181,168,175],[168,172,175],[175,172,170],[165,170,172],[182,179,183],[161,182,183],[183,160,161],[161,160,142],[112,142,160],[160,110,112]];
+var scene,camera,renderer,controls, bun, bunbun, cubegeo, cube;
+var transformer, barrowcap, barrowline, carrowcap, carrowline, marrowcap, marrowline, yarrowcap, yarrowline;
+	
+function render() {
+	requestAnimationFrame( render );
+	renderer.render(scene, camera);
+	};
+
+var cubeverts = [[0,0,0],[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,0,1],[0,1,1],[1,1,1]];
+
+var cubefaces = [[0,1,3],[1,3,5],[3,5,6],[5,6,7],[1,4,5],[4,5,7],[0,1,2],[1,2,4],[2,4,6],[4,6,7],[0,2,3],[2,3,6]];
+
+var cubeedges = [[0,3],[3,6],[6,2],[2,0],[0,1],[3,5],[6,7],[2,4],[1,5],[5,7],[7,4],[4,1]];
+
+var cubeedge = [0,1,4,2,0,3,5,1,5,7,4,7,6,2,6,3];
+
+function boot() {
+	scene = new THREE.Scene();
+	scene.background = new THREE.Color("lightgray");
+	camera = new THREE.PerspectiveCamera(75,1,.1,1000);
+	renderer = new THREE.WebGLRenderer({canvas:document.getElementById("three")});
+	controls = new THREE.OrbitControls(camera, renderer.domElement);
+	renderer.setSize(500,500);
+	transformer = new THREE.Group();
+	scene.add(transformer);
+	getmat();
+	bootobjects();
+	Upd();
+	camera.position.x = 2;
+	camera.position.y = 2;
+	camera.position.z = 2;
+	camera.lookAt(0,0,0);
+
+	render();
+	}
+
+function vec2vec(v) {
+	return(new THREE.Vector3(v[0],v[1],v[2]));
+	}
+
+var a11,a12,a13,a21,a22,a23,a31,a32,a33;
+
+function transformvec(v) {
+	var v1 = v[0];
+	var v2 = v[1];
+	var v3 = v[2];
+	return([a11*v1 + a12*v2 + a13*v3,
+		a21*v1 + a22*v2 + a23*v3,
+		a31*v1 + a32*v2 + a33*v3]);
+	}
+
+function thickvector2(p1,p2,i) {
+	p3 = [(.05*p1[0]+.95*p2[0]),(.05*p1[1]+.95*p2[1]),(.05*p1[2]+.95*p2[2])];
+	thickline2(p1,p3,.02,i);
+	thickarrow2(p3,p2,.05,i);
+	}
+
+function thickarrow2(p1,p2,thk,i) {
+	console.log(i);
+	var dif = [p1[0]-p2[0],p1[1]-p2[1],p1[2]-p2[2]];
+	var mid = [(p1[0]+p2[0])/2,(p1[1]+p2[1])/2,(p1[2]+p2[2])/2];
+	var lg = vec2vec(dif).length();
+	if (lg == 0) {lg = .001;}
+	var cylgeo = new THREE.CylinderGeometry(thk,0,lg,8);
+	var cyl = new THREE.Mesh(cylgeo, new THREE.MeshBasicMaterial());
+	var axis = new THREE.Vector3(0,1,0);
+	if (i == 0) {
+		barrowcap.geometry = cyl.geometry;
+		barrowcap.geometry.verticesNeedUpdate = true;
+		barrowcap.geometry.elementsNeedUpdate = true;
+		barrowcap.position.copy(vec2vec(mid));
+		barrowcap.quaternion.setFromUnitVectors(axis, vec2vec(dif).normalize());
+		}
+	if (i == 1) {
+		carrowcap.geometry = cyl.geometry;
+		carrowcap.geometry.verticesNeedUpdate = true;
+		carrowcap.geometry.elementsNeedUpdate = true;
+		carrowcap.position.copy(vec2vec(mid));
+		carrowcap.quaternion.setFromUnitVectors(axis, vec2vec(dif).normalize());		
+		}
+	if (i == 2) {
+		marrowcap.geometry = cyl.geometry;
+		marrowcap.geometry.verticesNeedUpdate = true;
+		marrowcap.geometry.elementsNeedUpdate = true;
+		marrowcap.position.copy(vec2vec(mid));
+		marrowcap.quaternion.setFromUnitVectors(axis, vec2vec(dif).normalize());		
+		}
+	if (i == 3) {
+		yarrowcap.geometry = cyl.geometry;
+		yarrowcap.geometry.verticesNeedUpdate = true;
+		yarrowcap.geometry.elementsNeedUpdate = true;
+		yarrowcap.position.copy(vec2vec(mid));
+		yarrowcap.quaternion.setFromUnitVectors(axis, vec2vec(dif).normalize());		
+		}
+	}
+
+function thickline2(p1,p2,thk,i) {
+	var dif = [p1[0]-p2[0],p1[1]-p2[1],p1[2]-p2[2]];
+	var mid = [(p1[0]+p2[0])/2,(p1[1]+p2[1])/2,(p1[2]+p2[2])/2];
+	var lg = vec2vec(dif).length();
+	if (lg == 0) {lg = .001;}
+	var cylgeo = new THREE.CylinderGeometry(thk,thk,lg,4);
+	var cyl = new THREE.Mesh(cylgeo, new THREE.MeshBasicMaterial());
+	var axis = new THREE.Vector3(0,1,0);
+	if (i == 0) {
+		barrowline.geometry = cyl.geometry;
+		barrowline.geometry.verticesNeedUpdate = true;
+		barrowline.geometry.elementsNeedUpdate = true;
+		barrowline.position.copy(vec2vec(mid));
+		barrowline.quaternion.setFromUnitVectors(axis, vec2vec(dif).normalize());
+		}
+	if (i == 1) {
+		carrowline.geometry = cyl.geometry;
+		carrowline.geometry.verticesNeedUpdate = true;
+		carrowline.geometry.elementsNeedUpdate = true;
+		carrowline.position.copy(vec2vec(mid));
+		carrowline.quaternion.setFromUnitVectors(axis, vec2vec(dif).normalize());
+		}
+	if (i == 2) {
+		marrowline.geometry = cyl.geometry;
+		marrowline.geometry.verticesNeedUpdate = true;
+		marrowline.geometry.elementsNeedUpdate = true;
+		marrowline.position.copy(vec2vec(mid));
+		marrowline.quaternion.setFromUnitVectors(axis, vec2vec(dif).normalize());
+		}
+	if (i == 3) {
+		yarrowline.geometry = cyl.geometry;
+		yarrowline.geometry.verticesNeedUpdate = true;
+		yarrowline.geometry.elementsNeedUpdate = true;
+		yarrowline.position.copy(vec2vec(mid));
+		yarrowline.quaternion.setFromUnitVectors(axis, vec2vec(dif).normalize());
+		}
+	}
+
+function thickvector(p1,p2,col) {
+	p3 = [(.05*p1[0]+.95*p2[0]),(.05*p1[1]+.95*p2[1]),(.05*p1[2]+.95*p2[2])];
+	thickline(p1,p3,col,.02);
+	thickarrow(p3,p2,col,.05);
+	}
+
+function thickarrow(p1,p2,col,thk) {
+	var dif = [p1[0]-p2[0],p1[1]-p2[1],p1[2]-p2[2]];
+	var mid = [(p1[0]+p2[0])/2,(p1[1]+p2[1])/2,(p1[2]+p2[2])/2];
+	var lg = vec2vec(dif).length();
+	if (lg == 0) {return;}
+	var cylgeo = new THREE.CylinderGeometry(thk,0,lg,8);
+	var cyl = new THREE.Mesh(cylgeo, new THREE.MeshBasicMaterial({color:col}));
+	var axis = new THREE.Vector3(0,1,0);
+	cyl.position.copy(vec2vec(mid));
+	cyl.quaternion.setFromUnitVectors(axis, vec2vec(dif).normalize());
+	transformer.add(cyl);
+	}
+
+function thickline(p1,p2,col,thk) {
+	var dif = [p1[0]-p2[0],p1[1]-p2[1],p1[2]-p2[2]];
+	var mid = [(p1[0]+p2[0])/2,(p1[1]+p2[1])/2,(p1[2]+p2[2])/2];
+	var lg = vec2vec(dif).length();
+	if (lg == 0) {return;}
+	var cylgeo = new THREE.CylinderGeometry(thk,thk,lg,4);
+	var cyl = new THREE.Mesh(cylgeo, new THREE.MeshBasicMaterial({color:col}));
+	var axis = new THREE.Vector3(0,1,0);
+	cyl.position.copy(vec2vec(mid));
+	cyl.quaternion.setFromUnitVectors(axis, vec2vec(dif).normalize());
+	transformer.add(cyl);
+	}
+
+
+var tim = 0;
+function mm() {
+	var ta11 = document.getElementById("a11").value;
+	var ta12 = document.getElementById("a12").value;
+	var ta13 = document.getElementById("a13").value;
+	var ta21 = document.getElementById("a21").value;
+	var ta22 = document.getElementById("a22").value;
+	var ta23 = document.getElementById("a23").value;
+	var ta31 = document.getElementById("a31").value;
+	var ta32 = document.getElementById("a32").value;
+	var ta33 = document.getElementById("a33").value;
+	a11 = ta11*tim + 1-tim;
+	a12 = ta12*tim;
+	a13 = ta13*tim;
+	a21 = ta21*tim;
+	a22 = ta22*tim + 1-tim;
+	a23 = ta23*tim;
+	a31 = ta31*tim;
+	a32 = ta32*tim;
+	a33 = ta33*tim + 1-tim;
+	tim += .05;
+	updateobjects();
+	}
+
+function morph() {
+	var i = 0;
+	tim = 0;
+	a11 = 1;
+	a12 = 0;
+	a13 = 0;
+	a21 = 0;
+	a22 = 1;
+	a23 = 0;
+	a31 = 0;
+	a32 = 0;
+	a33 = 1;
+	updateobjects();
+	for (i = 0; i <= 20; i++) {
+		setTimeout(mm,50*i+100);
+		}
+	}
+
+var product;
+
+function getmat() {
+	a11 = Number(document.getElementById("a11").value);
+	a12 = Number(document.getElementById("a12").value);
+	a13 = Number(document.getElementById("a13").value);
+	a21 = Number(document.getElementById("a21").value);
+	a22 = Number(document.getElementById("a22").value);
+	a23 = Number(document.getElementById("a23").value);
+	a31 = Number(document.getElementById("a31").value);
+	a32 = Number(document.getElementById("a32").value);
+	a33 = Number(document.getElementById("a33").value);
+	var mul1 = document.getElementById("v1").value;
+	var mul2 = document.getElementById("v2").value;
+	var mul3 = document.getElementById("v3").value;
+	product = transformvec([mul1,mul2,mul3]);
+	document.getElementById("w1").innerHTML = product[0];
+	document.getElementById("w2").innerHTML = product[1];
+	document.getElementById("w3").innerHTML = product[2];	
+	}
+
+function Upd() {
+	getmat();
+	updateobjects();
+	}
+
+function updateobjects() {
+	transformer.matrixAutoUpdate = false;
+	transformer.matrix.set(a11,a12,a13,0,
+		a21,a22,a23,0,
+		a31,a32,a33,0,
+		0,0,0,1);
+
+	var mul1 = document.getElementById("v1").value;
+	var mul2 = document.getElementById("v2").value;
+	var mul3 = document.getElementById("v3").value;
+	product = transformvec([mul1,mul2,mul3]);
+	thickvector2([0,0,0],product,0);
+
+	var tvec;
+
+	tvec = transformvec([1,0,0]);
+	thickvector2([0,0,0],tvec,1);
+
+	tvec = transformvec([0,1,0]);
+	thickvector2([0,0,0],tvec,2);
+
+	tvec = transformvec([0,0,1]);
+	thickvector2([0,0,0],tvec,3);
+	}
+
+function bootobjects() {
+	var obj;
+
+	barrowcap = new THREE.Mesh(new THREE.Geometry(), new THREE.MeshBasicMaterial({color:0x000000}));
+	barrowline = new THREE.Mesh(new THREE.Geometry(), new THREE.MeshBasicMaterial({color:0x000000}));
+	scene.add(barrowcap);
+	scene.add(barrowline);
+
+	carrowcap = new THREE.Mesh(new THREE.Geometry(), new THREE.MeshBasicMaterial({color:0x00ffff}));
+	carrowline = new THREE.Mesh(new THREE.Geometry(), new THREE.MeshBasicMaterial({color:0x00ffff}));
+	scene.add(carrowcap);
+	scene.add(carrowline);
+
+	marrowcap = new THREE.Mesh(new THREE.Geometry(), new THREE.MeshBasicMaterial({color:0xff00ff}));
+	marrowline = new THREE.Mesh(new THREE.Geometry(), new THREE.MeshBasicMaterial({color:0xff00ff}));
+	scene.add(marrowcap);
+	scene.add(marrowline);
+	
+	yarrowcap = new THREE.Mesh(new THREE.Geometry(), new THREE.MeshBasicMaterial({color:0xffff00}));
+	yarrowline = new THREE.Mesh(new THREE.Geometry(), new THREE.MeshBasicMaterial({color:0xffff00}));
+	scene.add(yarrowcap);
+	scene.add(yarrowline);
+	
+	bun = new THREE.Geometry();
+	var k;
+	for (k = 0; k < bunverts.length; k++) {
+		bun.vertices.push(vec2vec(transformvec(bunverts[k])));
+		//bun.vertices.push(new THREE.Vector3(bunverts[k][0],bunverts[k][1]+bunverts[k][0],bunverts[k][2]));
+		}
+	for (k = 0; k < bunfaces.length; k++) {
+		bun.faces.push(new THREE.Face3(bunfaces[k][0],bunfaces[k][1],bunfaces[k][2]));
+		}
+	bun.computeFaceNormals();
+	bun.computeVertexNormals();
+	var bunmat = new THREE.MeshNormalMaterial({side:THREE.DoubleSide});
+	bunbun = new THREE.Mesh(bun,bunmat);
+	transformer.add(bunbun);
+
+	//scene.remove(cube);
+	cubegeo = new THREE.Geometry();
+	for (k = 0; k < cubeverts.length; k++) {
+		cubegeo.vertices.push(vec2vec(transformvec(cubeverts[k])));
+		}
+	for (k = 0; k < cubefaces.length; k++) {
+		cubegeo.faces.push(new THREE.Face3(cubefaces[k][0],cubefaces[k][1],cubefaces[k][2]));
+		}
+	cubegeo.computeFaceNormals();
+	cubegeo.computeVertexNormals();
+	var cubemat = new THREE.MeshLambertMaterial({side:THREE.DoubleSide,transparent:true,opacity:.5});
+	cube = new THREE.Mesh(cubegeo,cubemat);
+	transformer.add(cube);
+
+	scene.add(new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 3, 0xff0000));
+	scene.add(new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), 3, 0x00ff00));
+	scene.add(new THREE.ArrowHelper(new THREE.Vector3(0,0,1), new THREE.Vector3(0,0,0), 3, 0x0000ff));
+
+	//thickvector([0,0,0],transformvec([1,0,0]),0x00ffff,.05);
+	//thickvector([0,0,0],transformvec([0,1,0]),0xff00ff,.05);
+	//thickvector([0,0,0],transformvec([0,0,1]),0xffff00,.05);
+
+	var gridXZ = new THREE.GridHelper(6,6,"gray","gray");
+	gridXZ.position.set(0,0,0);
+	scene.add(gridXZ);
+
+	var gridXY = new THREE.GridHelper(6,6,"gray","gray");
+	gridXY.position.set(0,0,0);
+	gridXY.rotation.x = Math.PI/2;
+	scene.add(gridXY);
+
+	var gridYZ = new THREE.GridHelper(6,6,"gray","gray");
+	gridYZ.position.set(0,0,0);
+	gridYZ.rotation.z = Math.PI/2;
+	scene.add(gridYZ);
+
+	var dl;
+	var pts = [[0,1,0],[0,-1,0],[1,0,0],[-1,0,0],[0,0,1],[0,0,-1]];
+	for (i = 0; i < 6; i++) {
+		dl = new THREE.DirectionalLight(0xffffff,.5);
+		dl.position.set(pts[i][0],pts[i][1],pts[i][2]);
+		scene.add(dl);
+		}
+
+	for (k = 0; k < cubeedges.length; k++) {
+		thickline(transformvec(cubeverts[cubeedges[k][0]]),transformvec(cubeverts[cubeedges[k][1]]),0xffffff,.01);
+		}
+	}
+
+function mb(i,t) {
+	var rstr = "";
+	rstr += "<button onclick='butt("+i+")'>";
+	rstr += t;
+	rstr += "</button>";
+	return(rstr);
+	}
+
+function doDispose(obj) //from stackexchange
+{
+    if (obj !== null)
+    {
+        for (var i = 0; i < obj.children.length; i++)
+        {
+            doDispose(obj.children[i]);
+        }
+        if (obj.geometry)
+        {
+            obj.geometry.dispose();
+            obj.geometry = undefined;
+        }
+        if (obj.material)
+        {
+            if (obj.material.map)
+            {
+                obj.material.map.dispose();
+                obj.material.map = undefined;
+            }
+            obj.material.dispose();
+            obj.material = undefined;
+        }
+    }
+    obj = undefined;
+}
+
+</script>
+</head>
+<body onLoad="boot()">
+<table> <tr> <td>
+<table border = 0>
+<tr> <td rowspan=3 style="border-left:1px solid; border-top:1px solid; border-bottom:1px solid"> </td>
+<td> <input type ="number" id="a11" value="1" oninput="Upd()" style="width: 3em"> </td>
+<td> <input type ="number" id="a12" value="0" oninput="Upd()" style="width: 3em"> </td>
+<td> <input type ="number" id="a13" value="0" oninput="Upd()" style="width: 3em"> </td>
+<td rowspan=3 style="border-right:1px solid; border-top:1px solid; border-bottom:1px solid"> </td> </tr> 
+<tr> 
+<td> <input type ="number" id="a21" value="0" oninput="Upd()" style="width: 3em"> </td>
+<td> <input type ="number" id="a22" value="1" oninput="Upd()" style="width: 3em"> </td>
+<td> <input type ="number" id="a23" value="0" oninput="Upd()" style="width: 3em"> </td>
+</tr> <tr>
+<td> <input type ="number" id="a31" value="0" oninput="Upd()" style="width: 3em"> </td>
+<td> <input type ="number" id="a32" value="0" oninput="Upd()" style="width: 3em"> </td>
+<td> <input type ="number" id="a33" value="1" oninput="Upd()" style="width: 3em"> </td>
+</tr>
+</table> </td> <td>
+<table border = 0>
+<tr> <td rowspan=3 style="border-left:1px solid; border-top:1px solid; border-bottom:1px solid"> </td>
+<td> <input type ="number" id="v1" value="0" oninput="Upd()" style="width: 3em"> </td>
+<td rowspan=3 style="border-right:1px solid; border-top:1px solid; border-bottom:1px solid"> </td> </tr> 
+<tr> 
+<td> <input type ="number" id="v2" value="0" oninput="Upd()" style="width: 3em"> </td>
+</tr> <tr>
+<td> <input type ="number" id="v3" value="0" oninput="Upd()" style="width: 3em"> </td>
+</tr>
+</table>
+</td> <td>
+=
+</td> <td>
+<table>
+<tr> <td rowspan=3 style="border-left:1px solid; border-top:1px solid; border-bottom:1px solid"> </td>
+<td> <div id="w1"></div> </td>
+<td rowspan=3 style="border-right:1px solid; border-top:1px solid; border-bottom:1px solid"> </td> </tr> 
+<tr> 
+<td> <div id="w2"></div> </td>
+</tr> <tr>
+<td> <div id="w3"></div> </td>
+</tr>
+</table>
+</td>
+</tr>
+</table> <button onClick="morph()"> Morph </button> <br>
+
+<canvas id="three" width=500 height=500> </canvas> <br>
+</body>
+</html>

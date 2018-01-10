@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script>
+
+function tograph(x,mn,mx) {
+	var m = -500/(mn-mx);
+	var b = 500*mn/(mn-mx);
+	return(m*x+b);
+	}
+
+function tog(pt) {
+	var mnx = document.getElementById("plotminx").value;
+	var mxx = document.getElementById("plotmaxx").value;
+	var mny = document.getElementById("plotminy").value;
+	var mxy = document.getElementById("plotmaxy").value;
+	return([tograph(pt[0],mnx,mxx),500-tograph(pt[1],mny,mxy)]);
+	}
+
+function arrowto(ctx,pt1,pt2,col) {
+	ctx.lineWidth=4;
+	ctx.strokeStyle=col;
+	ctx.beginPath();
+	var lg = Math.sqrt((pt1[0]-pt2[0])*(pt1[0]-pt2[0]) + (pt1[1]-pt2[1])*(pt1[1]-pt2[1]));
+	var x = 5*(pt1[0]-pt2[0])/lg;
+	var y = 5*(pt1[1]-pt2[1])/lg;
+	ctx.moveTo(pt1[0],pt1[1]);
+	ctx.lineTo(pt2[0]+x,pt2[1]+y);
+	ctx.stroke();
+	ctx.fillStyle=col;
+	ctx.lineWidth=1;
+	ctx.moveTo(pt2[0],pt2[1]);
+	ctx.lineTo(pt2[0]+2*x+y,pt2[1]+2*y-x);
+	ctx.lineTo(pt2[0]+2*x-y,pt2[1]+2*y+x);
+	ctx.lineTo(pt2[0],pt2[1]);
+	ctx.fill();
+	}
+
+function drawcanv(a,b,c,d) {
+	var xmn = Number(document.getElementById("plotminx").value);
+	var xmx = Number(document.getElementById("plotmaxx").value);
+	var ymn = Number(document.getElementById("plotminy").value);
+	var ymx = Number(document.getElementById("plotmaxy").value);
+	var ctx = document.getElementById("canv").getContext("2d");
+	var u = 10; //size of universe for purposes of transforming stuff.
+	var k;
+	ctx.lineWidth=1;
+	ctx.beginPath();
+	ctx.fillStyle = "#FFFFFF";
+	ctx.fillRect(0,0,500,500);
+	ctx.beginPath();
+	if (document.getElementById("c2").checked) {
+		ctx.strokeStyle="gray";
+		for (k = Math.ceil(xmn); k < xmx; k++) {
+			ctx.beginPath();
+			ctx.moveTo(tograph(k,xmn,xmx),0);
+			ctx.lineTo(tograph(k,xmn,xmx),500);
+			ctx.stroke();
+			}
+		for (k = Math.ceil(ymn); k < ymx; k++) {
+			ctx.beginPath();
+			ctx.moveTo(0,500-tograph(k,ymn,ymx));
+			ctx.lineTo(500,500-tograph(k,ymn,ymx));
+			ctx.stroke();
+			}
+		ctx.strokeStyle = "black";
+		}
+	if (document.getElementById("c1").checked) {
+		ctx.strokeStyle = "black";
+		ctx.beginPath();
+		ctx.moveTo(0,500-tograph(0,ymn,ymx));
+		ctx.lineTo(500,500-tograph(0,ymn,ymx));
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.moveTo(tograph(0,xmn,xmx),0);
+		ctx.lineTo(tograph(0,xmn,xmx),500);
+		ctx.stroke();
+		}
+	if (document.getElementById("c3").checked) {
+		ctx.strokeStyle="blue";
+		ctx.beginPath();
+		ctx.moveTo(tog([-(u*a),-(u*c)])[0],tog([-(u*a),-(u*c)])[1]);
+		ctx.lineTo(tog([u*a,u*c])[0],tog([u*a,u*c])[1]);
+		ctx.stroke();
+		ctx.strokeStyle="red";
+		ctx.beginPath();
+		ctx.moveTo(tog([-(u*b),-(u*d)])[0],tog([-(u*b),-(u*d)])[1]);
+		ctx.lineTo(tog([u*b,u*d])[0],tog([u*b,u*d])[1]);
+		ctx.stroke();
+		}
+	if (document.getElementById("c4").checked) {
+		ctx.strokeStyle="blue";
+		for (k = -u; k <= u; k++) {
+			ctx.beginPath();
+			ctx.moveTo(tog([-(u*a)+k*b,-(u*c)+k*d])[0],tog([-(u*a)+k*b,-(u*c)+k*d])[1]);
+			ctx.lineTo(tog([u*a+k*b,u*c+k*d])[0],tog([u*a+k*b,u*c+k*d])[1]);
+			ctx.stroke();
+			}
+		ctx.strokeStyle="red";
+		for (k = -u; k <= u; k++) {
+			ctx.beginPath();
+			ctx.moveTo(tog([-(u*b)+k*a,-(u*d)+k*c])[0],tog([-(u*b)+k*a,-(u*d)+k*c])[1]);
+			ctx.lineTo(tog([u*b+k*a,u*d+k*c])[0],tog([u*b+k*a,u*d+k*c])[1]);
+			ctx.stroke();
+			}
+		}
+	if (document.getElementById("c6").checked) {
+		var img = document.getElementById("sheep");
+		var px = tog([b,d])[0];
+		var py = tog([b,d])[1];
+		var qx = tog([a+b,c+d])[0];
+		var qy = tog([a+b,c+d])[1];
+		var rx = tog([0,0])[0];
+		var ry = tog([0,0])[1];
+		ctx.transform(qx-px,qy-py,rx-px,ry-py,px,py);
+		ctx.drawImage(img,0,0,1,1);
+		ctx.setTransform(1,0,0,1,0,0);
+		}
+	if (document.getElementById("c5").checked) {
+		ctx.fillStyle = 'rgba(0,255,0,.5)';
+		ctx.beginPath();
+		ctx.moveTo(tog([0,0])[0],tog([0,0])[1]);
+		ctx.lineTo(tog([a,c])[0],tog([a,c])[1]);
+		ctx.lineTo(tog([a+b,c+d])[0],tog([a+b,c+d])[1]);
+		ctx.lineTo(tog([b,d])[0],tog([b,d])[1]);
+		ctx.fill();
+		}
+	arrowto(ctx,tog([0,0]),tog([a,c]),"blue");
+	arrowto(ctx,tog([0,0]),tog([b,d]),"red");
+	if (document.getElementById("c7").checked) {
+		arrowto(ctx,tog([0,0]),tog([veca*a+vecb*b,veca*c+vecb*d]),"black");
+		}
+	}
+
+function Upd() {
+	var a = Number(document.getElementById("a").value);
+	var b = Number(document.getElementById("b").value);
+	var c = Number(document.getElementById("c").value);
+	var d = Number(document.getElementById("d").value);
+	if (document.getElementById("c7").checked) {
+		document.getElementById("w3").innerHTML = makematrix(veca*a+vecb*b,"",veca*c+vecb*d,"");
+		}
+	drawcanv(a,b,c,d);
+	}
+
+var timesout = [];
+
+var tim=0;
+function mm() {
+	var a = Number(document.getElementById("a").value);
+	var b = Number(document.getElementById("b").value);
+	var c = Number(document.getElementById("c").value);
+	var d = Number(document.getElementById("d").value);
+	tim += .01;
+	//if (tim > 1) {tim=1;}//someone spammed the button!
+	drawcanv(a*tim+1-tim,b*tim,c*tim,d*tim+1-tim);
+	}
+
+function morph() {
+	var k = 0;
+	for (k = 0; k < timesout.length; k++) {
+		clearTimeout(timesout[k]);
+		}
+	if (workbenchtoggle == 1) {fancymorph(); return;}
+	var i = 0;
+	tim=0;
+	drawcanv(1,0,0,1);
+	for(i = 0; i < 100; i++) {
+		timesout.push(setTimeout(mm,10*i+100));;
+		}
+	}
+
+function fancymm(m1,m2,ti,i) {
+	drawcanv(m2[0]*ti + m1[0]*(1-ti),
+		 m2[1]*ti + m1[1]*(1-ti),
+		 m2[2]*ti + m1[2]*(1-ti),
+		 m2[3]*ti + m1[3]*(1-ti));
+	document.getElementById("wbcell"+(workbenchmatrices.length-i-1)).style = "background-color:#00ff00;";
+	}
+
+function fancymorph() {
+	var acc = wbacc();
+	var t = 0;
+	var i = 0;
+	document.getElementById("debug").innerHTML = "";
+	for (i = 0; i < acc.length-1; i++) {
+		for (t = 0; t <= 1; t += .01) {
+			timesout.push(setTimeout(fancymm,1000*t+1000*i+100,acc[i],acc[i+1],t,i));
+			}
+		}
+	timesout.push(setTimeout(drawworkbench,1000*t+1000*(i-1)+100));
+	}
+
+function wbacc() {
+	var rval = [];
+	for(i = 0; i <= workbenchmatrices.length; i++) {
+		rval.unshift(longmatrixproduct(workbenchmatrices.slice(i,workbenchmatrices.length)));
+		}
+	return(rval);
+	}
+
+function makematrix(a,b,c,d) {
+	var rstr = "";
+	rstr += "<table border = 0> <tr> <td rowspan=2 style='border-left:1px solid; border-top:1px solid; border-bottom:1px solid'> </td> <td>";
+	rstr += a;
+	rstr += "</td> <td>";
+	rstr += b;
+	rstr += "</td> <td rowspan=2 style='border-right:1px solid; border-top:1px solid; border-bottom:1px solid'> </td> </tr>";
+	rstr += "<tr> <td>";
+	rstr += c;
+	rstr += "</td> <td>";
+	rstr += d;
+	rstr += "</td> </tr> </table>";
+	return(rstr);
+	}
+
+function nb(id, def) {
+	var rstr = "";
+	rstr += "<input type ='number' id='";
+	rstr += id;
+	rstr += "' value='";
+	rstr += def;
+	rstr += "' oninput='updt(\"" + id + "\")' style='width:2em'>";
+	return(rstr);
+	}
+
+function nb3(id) {
+	var def = 90;
+	var rstr = "";
+	rstr += "<input type ='number' id='";
+	rstr += id;
+	rstr += "' value='";
+	rstr += def;
+	rstr += "' oninput='updt(\"" + id + "\")' style='width:3em' step=5>";
+	return(rstr);
+	}
+
+function updt(id) {
+	var a = Number(document.getElementById("a").value);
+	var b = Number(document.getElementById("b").value);
+	var c = Number(document.getElementById("c").value);
+	var d = Number(document.getElementById("d").value);
+	var ra = a;
+	var rb = b;
+	var rc = c;
+	var rd = d;
+	if (id == "k1") {
+		ra = 1;
+		rb = document.getElementById("k1").value;
+		rc = 0;
+		rd = 1;
+		}
+	else if (id == "k2") {
+		ra = 1;
+		rb = 0;
+		rc = document.getElementById("k2").value;
+		rd = 1;
+		}
+	else if (id == "k3") {
+		ra = document.getElementById("k3").value;
+		rb = 0;
+		rc = 0;
+		rd = 1;
+		}
+	else if (id == "k4") {
+		ra = 1;
+		rb = 0;
+		rc = 0;
+		rd = document.getElementById("k4").value;
+		}
+	else if (id == "k5") {
+		document.getElementById("l5").value = document.getElementById("k5").value;
+		ra = document.getElementById("k5").value;
+		rb = 0;
+		rc = 0;
+		rd = document.getElementById("k5").value;
+		}
+	else if (id == "l5") {
+		document.getElementById("k5").value = document.getElementById("l5").value;
+		ra = document.getElementById("k5").value;
+		rb = 0;
+		rc = 0;
+		rd = document.getElementById("k5").value;
+		}
+	else if (id =="r0") {
+		var ang = document.getElementById("r1").value;
+		document.getElementById("r1").value = ang;
+		document.getElementById("r2").value = ang;
+		document.getElementById("r3").value = ang;
+		document.getElementById("r4").value = ang;
+		document.getElementById("r5").value = ang;
+		var conv = 2 * Math.PI/360;
+		ra = Math.cos(ang*conv).toFixed(3);
+		rb = (-Math.sin(ang*conv)).toFixed(3);
+		rc = Math.sin(ang*conv).toFixed(3);
+		rd = Math.cos(ang*conv).toFixed(3);
+		if (workbenchtoggle == 1) {
+			workbenchtitles.unshift("Rot." + ang);
+			workbenchmatrices.unshift([ra,rb,rc,rd]);	
+			drawworkbench();
+			}
+		}
+	else if (id =="r1" || id == "r2" || id == "r3" || id == "r4" || id == "r5") {
+		var ang = document.getElementById(id).value;
+		document.getElementById("r1").value = ang;
+		document.getElementById("r2").value = ang;
+		document.getElementById("r3").value = ang;
+		document.getElementById("r4").value = ang;
+		document.getElementById("r5").value = ang;
+		var conv = 2 * Math.PI/360;
+		ra = Math.cos(ang*conv).toFixed(3);
+		rb = (-Math.sin(ang*conv)).toFixed(3);
+		rc = Math.sin(ang*conv).toFixed(3);
+		rd = Math.cos(ang*conv).toFixed(3);
+		}
+	else if (id == "v1" || id == "v2") {
+		veca = document.getElementById("v1").value;
+		vecb = document.getElementById("v2").value;
+		document.getElementById("w3").innerHTML = makematrix(veca*a+vecb*b,"",veca*c+vecb*d,"");
+		}
+	else if (id == "k6" || id == "k7" || id == "k8" || id == "k9") {
+		ra = document.getElementById("k6").value;
+		rb = document.getElementById("k7").value;
+		rc = document.getElementById("k8").value;
+		rd = document.getElementById("k9").value;
+		}
+	if (workbenchtoggle == 0) {
+		document.getElementById("a").value = ra;
+		document.getElementById("b").value = rb;
+		document.getElementById("c").value = rc;
+		document.getElementById("d").value = rd;
+		}
+	Upd();
+	}
+
+function updf(i) {
+	var t = document.getElementById("self").value;
+	var matvals = [[1,0,0,-1],[-1,0,0,1],[0,1,1,0],[0,-1,-1,0]];
+	var strvals = ["Rfl.x","Rfl.y","Rfl.x=y","Rfl.x=-y"];
+	document.getElementById("f1").innerHTML = matvals[t][0];
+	document.getElementById("f2").innerHTML = matvals[t][1];
+	document.getElementById("f3").innerHTML = matvals[t][2];
+	document.getElementById("f4").innerHTML = matvals[t][3];
+	if (workbenchtoggle == 0) {
+		document.getElementById("a").value = matvals[t][0];
+		document.getElementById("b").value = matvals[t][1];
+		document.getElementById("c").value = matvals[t][2];
+		document.getElementById("d").value = matvals[t][3];
+		}
+	if (workbenchtoggle == 1 && i == 1) {
+		workbenchtitles.unshift(strvals[t]);
+		workbenchmatrices.unshift(matvals[t]);
+		drawworkbench();
+		}
+	Upd();
+	}
+
+function mb(i,t) {
+	var rstr = "";
+	rstr += "<button onclick='butt("+i+")'>";
+	rstr += t;
+	rstr += "</button>";
+	return(rstr);
+	}
+
+function butt(i) {
+	var a = 0;
+	var b = 0;
+	var c = 0;
+	var d = 0;
+	var str = "noname";
+	if (i == 0) {
+		a = 1;
+		b = 0;
+		c = 0;
+		d = 1;
+		str = "Id.";
+		}
+	else if (i == 1) {
+		a = 1;
+		b = document.getElementById("k1").value;
+		c = 0;
+		d = 1;
+		str = "H.Shear";
+		}
+	else if (i == 2) {
+		a = 1;
+		b = 0;
+		c = document.getElementById("k2").value;
+		d = 1;
+		str = "V.Shear";
+		}
+	else if (i == 3) {
+		a = document.getElementById("k3").value;
+		b = 0;
+		c = 0;
+		d = 1;
+		str = "H.Stretch";
+		}
+	else if (i == 4) {
+		a = 1;
+		b = 0;
+		c = 0;
+		d = document.getElementById("k4").value;
+		str = "V.Stretch";
+		}
+	else if (i == 5) {
+		a = document.getElementById("k5").value;
+		b = 0;
+		c = 0;
+		d = document.getElementById("k5").value;
+		str = "Scale";
+		}
+	else if (i == 6) {
+		updf(1);
+		return;
+		}
+	else if (i == 7) {
+		updt("r0");
+		return;
+		}
+	else if (i == 8) {
+		str = "Custom";
+		a = document.getElementById("k6").value;
+		b = document.getElementById("k7").value;
+		c = document.getElementById("k8").value;
+		d = document.getElementById("k9").value;
+		}
+	if (workbenchtoggle == 0) {
+		document.getElementById("a").value = a;
+		document.getElementById("b").value = b;
+		document.getElementById("c").value = c;
+		document.getElementById("d").value = d;
+		}
+	if (workbenchtoggle == 1) {
+		workbenchtitles.unshift(str);
+		workbenchmatrices.unshift([a,b,c,d]);
+		drawworkbench();
+		}
+	Upd();
+	}
+
+function maketemplates() {
+	var str = "";
+	str += "<table border = 1>";
+	str += "<tr> <td>" + mb(0,"Identity");
+	str += "</td> <td>" + mb(1,"H. Shear"); 
+	str += "</td> <td>" + mb(2,"V. Shear");
+	str += "</td> <td>" + mb(3,"H. Stretch");
+	str += "</td> <td>" + mb(4,"V. Stretch");
+	str += "</td> <td>" + mb(5,"Scale");
+	str += "</td> <td>" + mb(6,"Reflect") + "over";
+	str += "<select oninput='updf(0)' id='self'>";
+	str += "<option value=0> x-axis </option>";
+	str += "<option value=1> y-axis </option>";
+	str += "<option value=2> y = x </option>";
+	str += "<option value=3> y = -x </option>";
+	str += "</select>";
+	str += "</td> <td>" + mb(7,"Rotate");
+	str += nb3("r1");
+	str += "degrees </td>";
+	str += "<td>" + mb(8, "Custom");
+	str += "</td></tr>";
+	str += "<tr> <td>";
+	str += makematrix(1,0,0,1);
+	str += "</td> <td>";
+	str += makematrix(1,nb("k1",1),0,1);
+	str += "</td> <td>";
+	str += makematrix(1,0,nb("k2",1),1);
+	str += "</td> <td>";
+	str += makematrix(nb("k3",2),0,0,1);
+	str += "</td> <td>";
+	str += makematrix(1,0,0,nb("k4",2));
+	str += "</td> <td>";
+	str += makematrix(nb("k5",2),0,0,nb("l5",2));
+	str += "</td> <td>";
+	str += makematrix("<div id='f1'>1</div>","<div id='f2'>0</div>","<div id='f3'>0</div>","<div id='f4'>-1</div>");
+	str += "</td> <td>";
+	str += makematrix("cos" + nb3("r2"),"-sin" + nb3("r3"),"sin"+nb3("r4"),"cos"+nb3("r5"));
+	str += "</td> <td>";
+	str += makematrix(nb("k6",1),nb("k7",0),nb("k8",0),nb("k9",1));
+	str += "</td> </tr>";
+	str += "</table>";
+	document.getElementById("templates").innerHTML = str;
+	}
+
+function start() {
+	Upd();
+	maketemplates();
+	}
+var veca = 2;
+var vecb = 3;
+
+function togglevector() {
+	var a = Number(document.getElementById("a").value);
+	var b = Number(document.getElementById("b").value);
+	var c = Number(document.getElementById("c").value);
+	var d = Number(document.getElementById("d").value);
+	var vtog = document.getElementById("c7").checked;
+	if (vtog == 0) {
+		document.getElementById("w1").innerHTML = "";
+		document.getElementById("w2").innerHTML = "";
+		document.getElementById("w3").innerHTML = "";
+		}
+	if (vtog == 1) {
+		document.getElementById("w1").innerHTML = makematrix(nb("v1",veca),"",nb("v2",vecb),"");
+		document.getElementById("w2").innerHTML = "=";
+		document.getElementById("w3").innerHTML = makematrix(veca*a+vecb*b,"",veca*c+vecb*d,"");
+		}
+	Upd();
+	}
+
+var workbenchtoggle = 0;
+var workbenchtitles = [];
+var workbenchmatrices = [];
+
+function copyworkbench() {
+	var mmm = workbenchproduct();
+	document.getElementById("a").value = mmm[0];
+	document.getElementById("b").value = mmm[1];
+	document.getElementById("c").value = mmm[2];
+	document.getElementById("d").value = mmm[3];
+	Upd();
+	}
+
+function makematrix2(l) {
+	return(makematrix(l[0],l[1],l[2],l[3]));
+	}
+
+function matrixproduct(m1,m2) {
+	var a11 = m1[0];
+	var a12 = m1[1];
+	var a21 = m1[2];
+	var a22 = m1[3];
+	var b11 = m2[0];
+	var b12 = m2[1];
+	var b21 = m2[2];
+	var b22 = m2[3];
+	var c11 = a11*b11+a12*b21;
+	var c12 = a11*b12+a12*b22;
+	var c21 = a21*b11+a22*b21;
+	var c22 = a21*b12+a22*b22;
+	return([c11,c12,c21,c22]);
+	}
+
+function longmatrixproduct(l) {
+	var i;
+	var mmm = [1,0,0,1];
+	for (i = 0; i < l.length; i++) {
+		mmm = matrixproduct(mmm,l[i]);
+		}
+	return(mmm);
+	}
+
+function workbenchproduct() {
+	return(longmatrixproduct(workbenchmatrices));
+	}
+
+function wbswap(i) {//swaps entries i and i+1
+	if (i < 0) {return;}
+	if (i >= workbenchmatrices.length-1) {return;}
+	var stri = workbenchtitles[i];
+	workbenchtitles[i] = workbenchtitles[i+1];
+	workbenchtitles[i+1] = stri;
+	var mi = workbenchmatrices[i];
+	workbenchmatrices[i] = workbenchmatrices[i+1];
+	workbenchmatrices[i+1] = mi;
+	drawworkbench();
+	}
+
+function wbdel(i) {
+	workbenchmatrices.splice(i,1);
+	workbenchtitles.splice(i,1);
+	drawworkbench();
+	}
+
+function wbbutthelper(i) {
+	str = "";
+	str += "<button style='padding:0' onclick='wbswap(";
+	str += (i-1);
+	str += ")'>";
+	str += "\<</button>";
+	str += "<button style='padding:0' onclick='wbdel(";
+	str += i;
+	str += ")'>";
+	str += "x</button>";
+	str += "<button style='padding:0' onclick='wbswap(";
+	str += i;
+	str += ")'>";
+	str += "\></button>";
+	return(str);
+	}
+
+function drawworkbench() {
+	var str;
+	if (workbenchmatrices.length <= 1) {
+		str = "Select matrices above to begin";
+		}
+	else {
+		str = "&larr; Order of operations goes right to left, like function composition";
+		}
+	var i;
+	if (workbenchmatrices.length == 0) {
+		str += "<table border = 1> <tr> <td> </td> <td rowspan=2>=</td> <td> Product </td> </tr>";
+		str += "<tr> <td> </td> <td>";
+		str += makematrix(1,0,0,1);
+		str += "</td> </tr>";
+		str += "</table>";
+		}
+	else {
+		str += "<table border = 1> <tr>";
+		for (i = 0; i < workbenchmatrices.length; i++) {
+			str += "<td>";
+			str += wbbutthelper(i);
+			str += "</td>";
+			}
+		str += "</tr><tr>";
+		for (i = 0; i < workbenchtitles.length; i++) {
+			str += "<td id='wbcell"
+			str += i;
+			str += "'>";
+			str += workbenchtitles[i];
+			str += "</td>";
+			}
+		str += "<td rowspan=3>=</td>";
+		str += "<td> Product </td></tr><tr>";
+		for (i = 0; i < workbenchmatrices.length; i++) {
+			str += "<td>";
+			str += makematrix2(workbenchmatrices[i]);
+			str += "</td>";
+			}
+		str += "<td>";
+		str += makematrix2(workbenchproduct());
+		str += "</td></tr>";
+		str += "</table>";
+		}
+	document.getElementById("workbench").innerHTML = str;
+	copyworkbench();
+	}
+
+function toggleworkbench() {
+	workbenchtoggle = 1-workbenchtoggle;
+	if (workbenchtoggle == 0) {
+		document.getElementById("workbench").innerHTML = "";
+		document.getElementById("workbenchbutt").innerHTML = "Show Matrix Multiplication Workbench &#9660;";
+		//workbenchtitles = []; //there's a better way of doing this, but it's more work.
+		//workbenchmatrices = [];
+		return;
+		}
+	document.getElementById("workbenchbutt").innerHTML = "Hide Matrix Multiplication Workbench &#9650;";
+	drawworkbench();
+	}
+
+</script>
+</head>
+<body onload="start()">
+<p id="debug"> </p>
+Matrix Templates:
+<p id="templates"> </p>
+<button id = "workbenchbutt" onclick="toggleworkbench()">Show Matrix Multiplication Workbench &#9660;</button> <button onclick="morph()"> Morph</button><br>
+<div id="workbench">  </div>
+<table border = 0> <tr> <td>
+<table border = 0>
+<tr> <td rowspan=2 style="border-left:1px solid; border-top:1px solid; border-bottom:1px solid"> </td> <td> <input type ="number" id="a" value="1" oninput="Upd()" style="width: 4em"> </td> <td> <input type ="number" id="b" value="0" oninput="Upd()" style="width: 4em"> </td> <td rowspan=2 style="border-right:1px solid; border-top:1px solid; border-bottom:1px solid"> </td> </tr> 
+<tr> <td> <input type ="number" id="c" value="0" oninput="Upd()" style="width: 4em"> </td> <td> <input type ="number" id="d" value="1" oninput="Upd()" style="width: 4em"> </td> </table> </td>
+<td> <div id="w1"> </div> </td>
+<td> <div id="w2"> </div> </td>
+<td> <div id="w3"> </div> </td>
+</tr> </table>
+<canvas id="canv" width=500 height=500 style="border:1px solid #c3c3c3;"> </canvas>
+<table>
+<tr> <td> Min x: <input type="number" id="plotminx" oninput="Upd()" value = -5 style="width:3em"> </td>
+<td> Max x: <input type="number" id="plotmaxx" oninput="Upd()" value = 5 style="width:3em"> </td>
+</tr><tr>
+<td> Min y: <input type="number" id="plotminy" oninput="Upd()" value = -5 style="width:3em"> </td>
+<td> Max y: <input type="number" id="plotmaxy" oninput="Upd()" value = 5 style="width:3em"> </td>
+</tr>
+</table>
+<input type="checkbox" id="c1" onchange="Upd()" checked> Show original axes <br>
+<input type="checkbox" id="c2" onchange="Upd()" checked> Show original grid <br>
+<input type="checkbox" id="c3" onchange="Upd()" checked> Show transformed axes <br>
+<input type="checkbox" id="c4" onchange="Upd()" checked> Show transformed grid <br>
+<input type="checkbox" id="c5" onchange="Upd()"> Show unit parallelogram <br>
+<input type="checkbox" id="c6" onchange="Upd()" checked> Show unit sheep <br>
+<input type="checkbox" id="c7" onchange="togglevector()"> Show arbitrary vector <br>
+<img id="sheep" src="sheep.jpg" title="Original image by Natural Resources Conservation Service [Public domain], via Wikimedia Commons [https://commons.wikimedia.org/wiki/File:Sheep_and_goats.jpg]">
+</body>
+</html>

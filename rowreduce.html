@@ -573,6 +573,7 @@ function drawtabl() {//redraw rowreduction area ("tabl")
 	str += systemstring(tabl,k,1);
 	str += "<button onClick='showclue()'> Get a hint </button>";
 	str += "<button onClick='solve()'> Solve </button>"
+	str += "<button onClick='undoop()'> Undo </button>";
 	document.getElementById("tabl").innerHTML = str;
 	drawoplist();
 	}
@@ -604,7 +605,7 @@ function applyop(op) {
 			tabl[op[1]-1][i] = addrat(tabl[op[1]-1][i],multiplyrat(tabl[op[2]-1][i],op[3]));
 			}
 		}
-	if (op[0] == "C") {//check the checkbox
+	if (op[0] == "C") {//check the checkbox (should no longer happen)
 		gcside = !gcside;
 		if (document.getElementById("task").value == 0) {
 			systemmode = 0;
@@ -625,6 +626,12 @@ function undo(op) {
 		return(["K",op[1],op[2],q]);
 		}
 	if (op[0] == "C") {return(op);}
+	}
+
+function undoop() {
+	applyop(undo(oplist.shift()));
+	oplist.shift(); //applyop unshifts the undoing op to oplist. get rid of it.
+	drawtabl();
 	}
 
 function drawop(op) {//returns a string for rendering an op

@@ -629,6 +629,7 @@ function undo(op) {
 	}
 
 function undoop() {
+	if (oplist.length == 0) {return;}
 	applyop(undo(oplist.shift()));
 	oplist.shift(); //applyop unshifts the undoing op to oplist. get rid of it.
 	drawtabl();

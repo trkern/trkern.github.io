@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script>
+
+var gcsmat = false;
+var gcside = true;
+
+function gcd(a,b) {
+	a = Math.abs(a);
+	b = Math.abs(b);
+	while(true) {
+		if (b == 0) {return(a);}
+		a = a % b;
+		if (a == 0) {return(b);}
+		b = b % a;
+		}
+	}
+
+function ribet(min, max) {
+	return Math.floor(Math.random() * (max - min + 1) ) + min;
+	}
+
+function varnam(i) {
+	return("<i>" + String.fromCharCode(97 + i) + "</i>");
+	}
+
+function randomrat() {
+	//return([gRI(0,1),1]);
+	return(reducerat([ribet(-5,5),ribet(1,3)]));
+	}
+
+function multiplyrat(p,q) {
+	return reducerat([p[0] * q[0],p[1]*q[1]]);
+	}
+
+function divrat(p,q) {
+	return reducerat([p[0] * q[1],p[1]*q[0]]);
+	}
+
+function subrat(p,q) {
+	return reducerat([p[0]*q[1] - p[1]*q[0],p[1]*q[1]]);
+	}
+
+function addrat(p,q) {// a/b + c/d = ad+bc/bd
+	return reducerat([p[0]*q[1] + p[1]*q[0],p[1]*q[1]]);
+	}
+
+function negrat(p) {
+	return reducerat([-p[0],p[1]]);
+	}
+
+function reducerat(q) {
+	if (q[1] < 0) {
+		q[1] = -q[1];
+		q[0] = -q[0];
+		}
+	return [q[0]/gcd(q[0],q[1]),q[1]/gcd(q[0],q[1])];
+	}
+
+function ratsgn(q,k) { //takes in a rational number and returns just the sign in front
+	//k = 0 if at beginning of line (no + needed)
+	//k > 0 if in middle of line (+ needed)
+	if(q[0] >=0 && k == 0) {
+		return("");
+		}
+	if(q[0] >=0 && k > 0) {
+		return("+");
+		}
+	if(q[0] < 0 && k == 0) {
+		return("-");
+		}
+	if(q[0] < 0 && k > 0) {
+		return("&ndash;");
+		}
+	if(k > 0) {
+		return("+");
+		}
+	return("");
+	}
+
+function fabs(x) {//abs but without type checking
+	if (x < 0) {
+		return(-x);
+		}
+	return(x);
+	}
+
+function ratrat(q) { //takes in a rational number and returns a string to display just the fraction part
+	var str = "";
+	if (q[1] == 1 || q[0] == 0) {
+		str += "<table border=0 style='border-collapse:collapse;margin-left: auto; margin-right: auto;'> <tr> <td>";
+		str += fabs(q[0]);
+		str += "</td></tr></table>";
+		return(str);
+		}
+	str += "<table border=0 style='border-collapse:collapse;margin-left: auto; margin-right: auto;'>";
+	str += "<tr> <td style='margin:0;padding:0;text-align:center;border-bottom:1px solid;font-size:75%'>";
+	str += fabs(q[0]);
+	str += "</td></tr>";
+	str += "<tr> <td style='margin:0;padding:0;text-align:center;font-size:75%'>";
+	str += q[1];
+	str += "</td></tr></table>";
+	return(str);
+	}
+
+function inlineratrat(q) {
+	var str = "";
+	if (q[1] == 1 || q[0] == 0) {
+		return(q[0]);
+		}
+	if (q[0] < 0) {
+		str += "-";
+		}
+	str += "<table border=0 style='border-collapse:collapse;display:inline-table'> <tr>";
+	str += "<td style='margin:0;padding:0;text-align:center;border-bottom:1px solid;font-size:75%'>";
+	str += fabs(q[0]);
+	str += "</td><tr><tr>";
+	str += "<td style='margin:0;padding:0;text-align:center;font-size:75%'>";
+	str += q[1];
+	str += "</td></tr></table>";
+	return(str);
+	}
+
+function sizeselect() {
+	var str = "";
+	var v = document.getElementById("task").value;
+	var k = 0;
+	var nr,nc,nl;
+	if (v == 0) {
+		nr = document.getElementById("nr").value;
+		nc = document.getElementById("nc").value;
+		if (!gcside) {k = 0; nl = 0;}
+		if (gcside) {k = 1; nl = 1;}
+		if (gcsmat) {k += 2;}
+		str = systemstring(entrymatrix(nr,nc,nl),k,0);
+		}
+	if (v == 1) {
+		k = 2;
+		nr = document.getElementById("nr").value;
+		nc = document.getElementById("nc").value;
+		str = systemstring(entrymatrix(nr,nc,0),2,0);
+		}
+	if (v == 2) {
+		k = 4;
+		nr = document.getElementById("nr").value;
+		str = systemstring(inventrymatrix(nr),4,0);
+		}
+	document.getElementById("entry").style = "";
+	document.getElementById("entry").innerHTML = str + "<button onClick='maketabl()'>Start Row Reducing!</button>";
+	}
+
+function randgmat() {
+	var v = document.getElementById("task").value;
+	var nr, nc,i,j;
+	nr = document.getElementById("nr").value;
+	if (v == 0 || v == 1) {
+		nc = document.getElementById("nc").value;
+		}
+	else {
+		nc = nr;
+		}
+	for (i = 0; i < nr; i++) {
+		for (j = 0; j < nc; j++) {
+			gmat[i][j] = randomrat();
+			}
+		}
+	sizeselect();
+	}
+
+
+function checkthensizeselect() {
+	gcside = document.getElementById("cside").checked;
+	gcsmat = document.getElementById("csmat").checked;
+	sizeselect();
+	}
+
+function taskselect() {
+	var nr = tabl.length;
+	var nc = tabl[0].length;
+	var str = "";
+	var v = document.getElementById("task").value;
+	if (v == 0) {
+		str += "Number of rows: <input type='number' id='nr' oninput='sizeselect()' value=" + nr + " style='width:3em'>";
+		str += " Number of columns: <input type='number' id='nc' oninput='sizeselect()' value=" + nc + " style='width:3em'>";
+		str += "<input type='checkbox' id='cside' onchange='checkthensizeselect()'";
+		if (gcside) {str += " checked";}
+		str += "> Constant to the right of the equals sign";
+		str += "<input type='checkbox' id='csmat' onchange='checkthensizeselect()'";
+		if (gcsmat) {str += " checked";}
+		str += "> Show as matrix";
+		}
+	if (v == 1) {
+		str += "Number of rows: <input type='number' id='nr' oninput='sizeselect()' value=" + nr + " style='width:3em'>";
+		str += " Number of columns: <input type='number' id='nc' oninput='sizeselect()' value=" + nc + " style='width:3em'>";	
+		}
+	if (v == 2) {
+		str += "Number of rows: <input type='number' id='nr' oninput='sizeselect()' value=" + nr + " style='width:3em'>";
+		}
+	str += "<br> <button onclick='randgmat()'> Randomize </button> <div style='height:2px'></div>";
+	document.getElementById("size").style = "";
+	document.getElementById("size").innerHTML = str;
+	document.getElementById("taskdiv").style = "";
+	document.getElementById("tabl").innerHTML = "";
+	document.getElementById("ops").innerHTML = "";
+	document.getElementById("cluediv").innerHTML = "";
+	document.getElementById("oplist").innerHTML = "";
+	sizeselect();
+	}
+
+function systemstring(mtx,mode,eqnums) {
+	var str = "";
+	var i,j;
+	//modes:
+	//0: system of linear equations as a system of linear equations constant on left
+	//1: system of linear equations as a system of linear equations constant on right
+	//2: plain matrix
+	//3: matrix with vertical line one in from the right
+	//4: matrix with vertical line down the middle
+	str += "<div style='height:10px'></div>";
+	if (mode == 0 || mode == 1) {//system of linear equations as a system of linear equations constant on left/right
+		str += "<table border=0 style='border-collapse:collapse'>";
+		for (i = 0; i < mtx.length; i++) {
+			str += "<tr>";
+			if (eqnums == 1) {
+				str += "<td width='50px'> (<i>" + (i+1) + "</i>) </td>";
+				}
+			for (j = 0; j < mtx[i].length-1; j++) {
+				str += "<td style='text-align:center'>";
+				str += ratsgn(mtx[i][j],j);
+				str += "</td><td>";
+				str += ratrat(mtx[i][j]);
+				str += "</td><td>";
+				str += varnam(j);
+				str += "</td>";
+				}
+			if (mode == 1) {
+				str += "<td> = </td>";
+				}
+			str += "<td style='text-align:right'>";
+			str += ratsgn(mtx[i][j],1-mode);
+			str += "</td><td>";
+			str += ratrat(mtx[i][j]);
+			str += "</td>";
+			if (mode == 0) {
+				str += "<td>=</td>";
+				str += "<td>0</td>";
+				}
+			str += "</tr>";
+			}
+		str += "</table>"; 
+		}
+	if (mode == 2 || mode == 3 || mode == 4) {//plain matrix
+		str += "<table border=0 style='border-collapse:collapse'>";
+		for (i = 0; i < mtx.length; i++) {
+			str += "<tr>";
+			if (eqnums == 1) {
+				str += "<td width='50px'> (<i>" + (i+1) + "</i>) </td>";
+				}
+			if (i == 0) {
+				str += "<td rowspan=";
+				str += mtx.length;
+				str += " style='border-left:1px solid; border-top:1px solid; border-bottom:1px solid'> </td>";
+				}
+			for (j = 0; j < mtx[i].length; j++) {
+				str += "<td style='width:5px'></td>";
+				if ((mode == 3 && j == mtx[i].length-1) || (mode == 4 && j == mtx[i].length/2)) {
+					str += "<td style='width:5px;border-left:1px solid;'></td>";
+					}
+				str += "<td style='text-align:cented'>";
+				str += ratsgn(mtx[i][j],0);
+				str += "</td><td>";
+				str += ratrat(mtx[i][j]);
+				str += "</td>";
+				str += "<td style='width:5px'></td>";
+				}
+			if (i == 0) {
+				str += "<td rowspan=";
+				str += mtx.length;
+				str += " style='border-right:1px solid; border-top:1px solid; border-bottom:1px solid'> </td>";
+				}
+			str += "</tr>";
+			}
+		str += "</table>";
+		}
+	str += "<div style='height:10px'></div>";
+	return(str);
+	}
+
+function initgmat(i,j) {
+	if(!(i in gmat)) {
+		gmat[i] = [];
+		}
+	if(!(j in gmat[i])) {
+		gmat[i][j] = [0,1];
+		}
+	}
+
+function updentry(i,j) {
+	gmat[i][j] = [document.getElementById("m"+i+"n"+j).value,document.getElementById("m"+i+"d"+j).value];
+	}
+
+function re(i,j,k) {//rational number entry helper
+	var n,d;
+	initgmat(i,j);
+	n = gmat[i][j][0];
+	d = gmat[i][j][1];
+	if (k == 1) {
+		n = -n;
+		}
+	var str = "";
+	str += "<input type='number' oninput='updentry(";
+	str += i + "," + j;
+	str += ")' id='m";
+	str += i;
+	str += "n";
+	str += j;
+	str += "' value=";
+	str += n;
+	str += " style='width:3em;text-align:center'>";
+	var str2 = "";
+	str2 += "<input type='number' oninput='updentry(";
+	str2 += i + "," + j;
+	str2 += ")' id='m";
+	str2 += i;
+	str2 += "d";
+	str2 += j;
+	str2 += "' value=";
+	str2 += d;
+	str2 += " style='width:3em;text-align:center'>";
+	var p = "<div style='height:2px'> </div>";
+	return([p + str,str2 + p]);
+	}
+
+function re2(st) { //rational number entry helper for row operations
+	var str = "";
+	str += "<table border=0 style='border-collapse:collapse;display:inline-table'><tr><td style='margin:0;padding:0;text-align:center;border-bottom:1px solid'>";
+	str += "<input type='number' id='";
+	str += st;
+	str += "n' value=1 style='width:3em;text-align:center'>";
+	str += "</td></tr>";
+	str += "<tr><td style='margin:0;padding:0;text-align:center'>";
+	str += "<input type='number' id='";
+	str += st;
+	str += "d' value=1 style='width:3em;text-align:center'>";
+	str += "</td></tr></table>";
+	return(str);
+	}
+
+function entrymatrix(nr, nc, nl) { //nl tells us to negate the last term
+	var m = [];
+	var row = [];
+	var i,j,k;
+	for (i = 0; i < nr; i++) {
+		row = [];
+		for (j = 0; j < nc; j++) {
+			k = 0;
+			if (nl == 1 && j == nc-1) {
+				k = 1;
+				}
+			row.push(re(i,j,k));
+			}
+		m.push(row);
+		}
+	return(m);
+	}
+
+function inventrymatrix(nr) {
+	var m = [];
+	var row = [];
+	var i,j;
+	var l = 0;
+	for (i = 0; i < nr; i++) {
+		row = [];
+		for (j = 0; j < nr; j++) {
+			row.push(re(i,j));
+			}
+		for (j = 0; j < nr; j++) {
+			if(i == j) {k = 1;}
+			else {k = 0;}
+			row.push([k,1]);
+			}
+		m.push(row);
+		}
+	return(m);
+	}
+
+var gmat = []; //for entry
+var tabl = [[0,0,0],[0,0,0]]; //for operating on
+var originaltabl = [];
+
+function grabgmat() {
+	tabl = [];
+	var row = [];
+	var v = document.getElementById("task").value;
+	var nr, nc,i,j,n,d;
+	nr = document.getElementById("nr").value;
+	displayerror("");
+	if (v == 0 || v == 1) {
+		nc = document.getElementById("nc").value;
+		for (i = 0; i < nr; i++) {
+			row = [];
+			for (j = 0; j < nc; j++) {
+				n = document.getElementById("m"+i+"n"+j).value;
+				d = document.getElementById("m"+i+"d"+j).value;
+				if (d == 0) {d = 1; document.getElementById("m"+i+"d"+j).value = 1; displayerror("Error! Division by zero!");}
+				row.push(reducerat([n,d]));
+				}
+			tabl.push(row);
+			}
+		}
+	if (v == 2) {
+		for (i = 0; i < nr; i++) {
+			row = [];
+			for (j = 0; j < nr; j++) {
+				n = document.getElementById("m"+i+"n"+j).value;
+				d = document.getElementById("m"+i+"d"+j).value;
+				if (d == 0) {d = 1; document.getElementById("m"+i+"d"+j).value = 1; displayerror("Error! Division by zero!");}
+				row.push(reducerat([n,d]));
+				}
+			for (j = 0; j < nr; j++) {
+				if (i == j) {row.push([1,1]);}
+				else {row.push([0,1]);}
+				}
+			tabl.push(row);
+			}
+		}
+	}
+
+	//0: system of linear equations as a system of linear equations constant on left
+	//1: system of linear equations as a system of linear equations constant on right
+	//2: plain matrix
+	//3: matrix with vertical line one in from the right
+	//4: matrix with vertical line down the middle
+
+function graboriginaltabl() {
+	var i,j;
+	for (i = 0; i < tabl.length; i++) {
+		originaltabl.push([]);
+		for (j = 0; j < tabl[i].length; j++) {
+			originaltabl[i][j] = tabl[i][j];
+			}
+		}
+	}
+
+var systemmode = 0;
+
+function maketabl() {//transition from entry to rowreduction
+	grabgmat();
+	document.getElementById("entry").style = "display:none";
+	document.getElementById("size").style = "display:none";
+	document.getElementById("taskdiv").style = "display:none";
+	if (document.getElementById("task").value == 0) {
+		systemmode = 0;
+		if (gcside) {systemmode += 1;}
+		if (gcsmat) {systemmode += 2;}
+		}
+	oplist = [];
+	graboriginaltabl();
+	drawtabl();
+	drawops();
+	}
+
+function drawops() {
+	str = "";
+	str += "<table border = 1> <tr> <td>";
+	str += "<button onclick='swapbutt()'> Swap </button> Row <input type='number' value=1 id='swaprow1' style='width:3em'> and Row <input type='number' value=1 id='swaprow2' style='width:3em'>";
+	str += "</td></tr><tr><td>";
+	str += "<button onclick='multbutt()'> Multiply </button> Row <input type='number' value=1 id='multrow' style='width:3em'> by ";
+	str += re2("mult");
+	str += "</td></tr><tr><td>";
+	str += "<button onclick='skewbutt()'> Add </button> Row <input type='number' value=1 id='skewrow2' style='width:3em'> times ";
+	str += re2("skew");
+	str += " to Row <input type='number' value=1 id='skewrow1' style='width:3em'>";
+	str += "</td></tr></table>";
+	document.getElementById("ops").innerHTML = str;
+	}
+
+function negatelast() {//negates the constants of tabl.
+	var k;
+	for (k = 0; k < tabl.length; k++) {
+		tabl[k][tabl[k].length-1] = negrat(tabl[k][tabl[k].length-1]);;
+		}
+	}
+
+function negatelastoriginaltabl() {//negates the constants of originaltabl.
+	var k;
+	for (k = 0; k < originaltabl.length; k++) {
+		originaltabl[k][tabl[k].length-1] = negrat(originaltabl[k][tabl[k].length-1]);;
+		}
+	}
+
+function changecheck(i) {
+	if (gcside != document.getElementById("cside2").checked) {
+		negatelast();
+		negatelastoriginaltabl();
+		}
+	gcside = document.getElementById("cside2").checked;
+	gcsmat = document.getElementById("csmat2").checked;
+	systemmode = 0;
+	if (gcside) {systemmode += 1;}
+	if (gcsmat) {systemmode += 2;}
+	drawtabl();
+	}
+
+function displayerror(str) { //empty string clears error box, if that's still a thing
+	document.getElementById("debug").innerHTML = str;
+	}
+
+function multbutt() {
+	var r1 = document.getElementById("multrow").value;
+	var n = document.getElementById("multn").value;
+	var d = document.getElementById("multd").value;
+	displayerror("");
+	if (n == 0) {displayerror("Error! Multiplying row by zero will change solution set!"); return;}
+	if (d == 0) {displayerror("Error! Division by zero!"); return;}
+	if (r1 < 1 || r1 > tabl.length) {displayerror("Error! Bad row select!"); return;}
+	applyop(["M",r1,[n,d]]);
+	drawtabl();
+	}
+
+function skewbutt() {
+	var r1 = document.getElementById("skewrow1").value;
+	var r2 = document.getElementById("skewrow2").value;
+	var n = document.getElementById("skewn").value;
+	var d = document.getElementById("skewd").value;
+	displayerror("");
+	if (d == 0) {displayerror("Error! Division by zero!"); return;}
+	if (r1 < 1 || r1 > tabl.length) {displayerror("Error! Bad row select!"); return;}
+	if (r2 < 1 || r2 > tabl.length) {displayerror("Error! Bad row select!"); return;}
+	if (r1 == r2 && n == -d) {displayerror("Error! Multiplying row by zero will change solution set!"); return;}
+	applyop(["K",r1,r2,[n,d]]);
+	drawtabl();
+	}
+
+function swapbutt() {
+	var r1 = document.getElementById("swaprow1").value;
+	var r2 = document.getElementById("swaprow2").value;
+	displayerror("");
+	if (r1 < 1 || r1 > tabl.length) {displayerror("Error! Bad row select!"); return;}
+	if (r2 < 1 || r2 > tabl.length) {displayerror("Error! Bad row select!"); return;}
+	applyop(["S",r1,r2]);
+	drawtabl();
+	}
+
+function drawtabl() {//redraw rowreduction area ("tabl")
+	document.getElementById("cluediv").innerHTML = "";
+	var v = document.getElementById("task").value;
+	var k;
+	var str = "";
+	str += "<button onclick='taskselect()'>New Matrix</button>";
+	if (v == 0) {
+		k = systemmode;
+		if (gcside) {
+			str += "<input type='checkbox' id='cside2' onchange='changecheck(0)' checked> Constant to the right of the equals sign";
+			}
+		else {
+			str += "<input type='checkbox' id='cside2' onchange='changecheck(0)'> Constant to the right of the equals sign";
+			}
+		if (gcsmat) {
+			str += "<input type='checkbox' id='csmat2' onchange='changecheck(1)' checked> Show as matrix";
+			}
+		else {
+			str += "<input type='checkbox' id='csmat2' onchange='changecheck(1)'> Show as matrix";
+			}
+		}
+	if (v == 1) {
+		k = 2;
+		}
+	if (v == 2) {
+		k = 4;
+		}
+	str += systemstring(tabl,k,1);
+	str += "<button onClick='showclue()'> Get a hint </button>";
+	str += "<button onClick='solve()'> Solve </button>"
+	document.getElementById("tabl").innerHTML = str;
+	drawoplist();
+	}
+
+//notation for row operations:
+//rows are indexed as shown in the page (i.e. starting with 1)
+//["S",i,j]: swap rows i and j
+//["K",i,j,q]: add q (rational number) times row j to i
+//["M",i,q]: multiply row i by q (rational number)
+
+var oplist = [];
+
+function applyop(op) {
+	oplist.unshift(op);
+	if (op[0] == "S") {//swap
+		var temprow = tabl[op[1]-1];
+		tabl[op[1]-1] = tabl[op[2]-1];
+		tabl[op[2]-1] = temprow;
+		}
+	if (op[0] == "M") {//multiply row
+		var i = 0;
+		for (i = 0; i < tabl[op[1]-1].length; i++) {
+			tabl[op[1]-1][i] = multiplyrat(tabl[op[1]-1][i],op[2]);
+			}
+		}
+	if (op[0] == "K") {//skew
+		var i = 0;
+		for (i = 0; i < tabl[op[1]-1].length; i++) {
+			tabl[op[1]-1][i] = addrat(tabl[op[1]-1][i],multiplyrat(tabl[op[2]-1][i],op[3]));
+			}
+		}
+	if (op[0] == "C") {//check the checkbox
+		gcside = !gcside;
+		if (document.getElementById("task").value == 0) {
+			systemmode = 0;
+			if (gcside) {systemmode += 1;}
+			if (gcsmat) {systemmode += 2;}
+			}
+		}
+	}
+
+function undo(op) {
+	if (op[0] == "S") {return(op);}
+	if (op[0] == "M") {
+		var q = divrat([1,1],op[2]);
+		return(["M",op[1],q]);
+		}
+	if (op[0] == "K") {
+		var q = negrat(op[3]);
+		return(["K",op[1],op[2],q]);
+		}
+	if (op[0] == "C") {return(op);}
+	}
+
+function drawop(op) {//returns a string for rendering an op
+	var str = "";
+	var tooltip = "";
+	if (op[0] == "S") {
+		str = "S<sub>"+op[1]+","+op[2]+"</sub>";
+		tooltip = "Swap rows "+op[1]+" and "+op[2];
+		}
+	if (op[0] == "K") {
+		str = "A<sub>"+op[2]+","+op[3][0]+"/"+op[3][1]+","+op[1]+"</sub>";
+		tooltip = "Add row "+op[2]+" times "+op[3][0]+"/"+op[3][1]+" to row "+op[1];
+		}
+	if (op[0] == "M") {
+		str = "M<sub>"+op[1]+","+op[2][0]+"/"+op[2][1]+"</sub>";
+		tooltip = "Multiply row "+op[1]+" by "+op[2][0]+"/"+op[2][1];
+		}
+	if (op[0] == "C") {
+		str = "Id";
+		tooltip = "Check the box (shouldn't appear)."
+		}
+	return("<div title='"+tooltip+"'>"+str+"</div>");
+	}
+
+function opmatrix(op) {//returns a matrix (list of lists) for rendering an op
+	var n = tabl.length;
+	var i, j, row, m, a, b;
+	m = [];
+	for (i = 0; i < n; i++) {
+		row = [];
+		for (j = 0; j < n; j++) {
+			if(i == j) {row.push([1,1]);}
+			else {row.push([0,1]);}
+			}
+		m.push(row);
+		}
+	if (op[0] == "S") {
+		a = op[1]-1;
+		b = op[2]-1;
+		m[a][a] = [0,1];
+		m[b][b] = [0,1];
+		m[a][b] = [1,1];
+		m[b][a] = [1,1];
+		}
+	if (op[0] == "K") {
+		a = op[1]-1;
+		b = op[2]-1;
+		m[a][b] = op[3];
+		}
+	if (op[0] == "M") {
+		a = op[1]-1;
+		m[a][a] = op[2];
+		}
+	return(m);
+	}
+
+function drawmatrix(m) {
+	str = "";
+	var i,j;
+	str += "<table border=0>";
+	for (i = 0; i < m.length; i++) {
+		str += "<tr>";
+		if (i == 0) {
+			str += "<td rowspan=";
+			str += m.length;
+			str += " style='border-left:1px solid; border-top:1px solid; border-bottom:1px solid'> </td>";
+			}
+		for (j = 0; j < m[i].length; j++) {
+			str += "<td>";
+			str += inlineratrat(m[i][j]);
+			str += "</td>";
+			}
+		if (i == 0) {
+			str += "<td rowspan=";
+			str += m.length;
+			str += " style='border-right:1px solid; border-top:1px solid; border-bottom:1px solid'> </td>";			
+			}
+		str += "</tr>";
+		}
+	str += "</table>";
+	return(str);
+	}
+
+function detop(op) {
+	if (op[0] == "S" && op[1] != op[2]) {
+		return([-1,1]);
+		}
+	if (op[0] == "K") {
+		return([1,1])
+		}
+	if (op[0] == "M") {
+		return(op[2]);
+		}
+	return([1,1]);
+	}
+
+function checkforeasydeterminant() {//returns determinant or false
+	if (tabl.length != tabl[0].length) {return(false);}
+	var i,j;
+	var q = [1,1];
+	for (i = 0; i < tabl.length; i++) {
+		for (j = 0; j < tabl[i].length; j++) {
+			if (i != j && tabl[i][j][0] != 0) {return(false);}
+			if (i == j) {q = multiplyrat(q,tabl[i][j]);}
+			}
+		}
+	return(q);
+	}
+
+function originaldeterminant() {//returns determinant of original matrix
+	var q = checkforeasydeterminant();
+	for (i = 0; i < oplist.length; i++) {
+		q = divrat(q,detop(oplist[i]));
+		}
+	return(q);
+	}
+
+function drawoplist() {
+	var i;
+	var str = "<table border=1>";
+	str += "<tr>";
+	str += "<td> Operations:<br> (mouseover) </td>";
+	for (i = 0; i < oplist.length; i++) {
+		str += "<td>";
+		str += drawop(oplist[i]);
+		str += "</td>";
+		}
+	str += "<td> Original Matrix </td>";
+	str += "<td rowspan=3> = </td>";
+	str += "<td> Transformed Matrix </td>";
+	str += "</tr><tr>";
+	str += "<td> Matrix product: </td>";
+	for (i = 0; i < oplist.length; i++) {
+		str += "<td>";
+		str += drawmatrix(opmatrix(oplist[i]));
+		str += "</td>";
+		}
+	str += "<td>" + drawmatrix(originaltabl) + "</td>";
+	str += "<td>" + drawmatrix(tabl) + "</td>";
+	str += "</tr><tr>";
+	str += "<td> Determinants </td>";
+	for (i = 0; i < oplist.length; i++) {
+		str += "<td>";
+		str += inlineratrat(detop(oplist[i]));
+		str += "</td>";
+		}
+	if (checkforeasydeterminant() != false) {
+		str += "<td>";
+		str += inlineratrat(originaldeterminant());
+		str += "</td> <td>";
+		str += inlineratrat(checkforeasydeterminant());
+		str += "</td>";
+		}
+	str += "</tr></table>";
+	document.getElementById("oplist").innerHTML = str;
+	}
+
+function firstinrow(r) {
+	var i;
+	for (i = 0; i < tabl[0].length; i++) {
+		if(tabl[r][i][0] != 0) {
+			return(i);
+			}
+		}
+	return(-1);
+	}
+
+function firstfirstinrow(c) {//finds the first entry which is the first in its row
+	var j;
+	for (j = 0; j < tabl.length; j++) {
+		if (firstinrow(j) == c) {return(j);}
+		}
+	return(-1);
+	}
+
+function firstfreerow(c) {//finds the first row for which first in row is c or larger
+	var j;
+	for (j = 0; j < tabl.length; j++) {
+		if (firstinrow(j) >= c) {return(j);}
+		}
+	return(-1);
+	}
+
+var reh = "row echelon form<span title = 'A matrix is in row echelon form if the first nonzero entry in each row is to the left of those below it.' style='color:blue'>[<u>?</u>]</span>";
+
+var rreh = "reduced row echelon form<span title = 'A matrix is in reduced row echelon form if it is in echelon form and every first entry in a row is a 1 and is the only nonzero entry in its row.' style='color:blue'>[<u>?</u>]</span>";
+
+var wp = "well-placed<span title='A pivot is well-placed if all the pivots above it are to the left.' style='color:blue'>[<u>?</u>]</span>";
+
+var piv = "pivot<span title='A pivot is the first nonzero entry in a row.' style='color:blue'>[<u>?</u>]</span>";
+
+function hintswap(r1,r2,c) {//swap r1 and r2 to put the pivot in r1,c into r2.
+	var str = "";
+	str += "You are in stage 1: Getting your matrix into " + reh + ". ";
+	str += "Column " + (c+1) + " has a "+ piv + " in row " + (r1+1) + ". ";
+	str += "Swap rows " + (r1+1) + " and " + (r2+1) + " to move it into a convenient location.";
+	return([str,["S",r1+1,r2+1]]);
+	}
+
+function hintcancel1(r1, r2, c) {//use r1 to cancel the term in r2 in column c
+	var canceler = tabl[r1][c];
+	var cancelee = tabl[r2][c];
+	var multiplier = negrat(divrat(cancelee,canceler));
+	var str = "";
+	str += "You are in stage 1: Getting your matrix into " + reh + ". ";
+	str += "Column " + (c+1) + " has a "+wp+" "+piv+" in row " + (r1+1) + ". ";
+	str += "Use it to cancel the " + inlineratrat(cancelee) + " in row " + (r2+1) + " ";
+	str += "by adding row " + (r1+1) + " times ";
+	str += inlineratrat(multiplier);
+	str += " to row " + (r2+1) + ".";
+	return([str,["K",r2+1,r1+1,multiplier]]);
+	}
+
+function hintcancel2(r1, r2, c) {//use r1 to cancel the term in r2 in column c
+	var canceler = tabl[r1][c];
+	var cancelee = tabl[r2][c];
+	var multiplier = negrat(divrat(cancelee,canceler));
+	var str = "";
+	str += "You are in stage 2: Getting your matrix into "+rreh+". ";
+	str += "Column " + (c+1) + " has a "+wp+" "+piv+" in row " + (r1+1) + ". ";
+	str += "Use it to cancel the " + inlineratrat(cancelee) + " in row " + (r2+1) + " ";
+	str += "by adding row " + (r1+1) + " times ";
+	str += inlineratrat(multiplier);
+	str += " to row " + (r2+1) + ".";
+	return([str,["K",r2+1,r1+1,multiplier]]);
+	}
+
+function hintsideswap3() {
+	var str = "Check the check box to move the constant terms to the right side of the equals sign.";
+	return([str,["C"]]);
+	}
+
+function hintmultiply4(r,c) {//multiply row r by a constant to make the term in column c equal to 1.
+	var cancelee = tabl[r][c];
+	var multiplier = divrat([1,1],cancelee);
+	str = "";
+	str += "You are in stage 2: Getting your matrix into "+rreh+". ";
+	str += "Multiply row " + (r+1) + " by ";
+	str += inlineratrat(multiplier);
+	str += " to give it a leading coeffiecient of 1.";
+	return([str,["M",r+1,multiplier]]);
+	}
+
+function getaclue(mode) { 
+	//returns false if nothing can be done
+	//otherwise returns a pair [string, operation]
+	//note that rows in operation are indexed starting at 1 (but this function uses index notation starting at 0)
+	//stage 1: for each column: find the first entry that is the first in its row and swap it into the first free row
+	//	then use that entry to cancel all other entries which are first in that row
+	//stage 2: working the columns backwards, if you find an entry which is the first in its row, use it to cancel every other nonzero entry in its column
+	//stage 3: move constant terms to right hand side
+	//stage 4: clear constant multiples.
+	//["S",i,j]: swap rows i and j
+	//["K",i,j,q]: add q (rational number) times row j to i
+	//["M",i,q]: multiply row i by q (rational number)
+	var i,j,q;
+	var a,b;
+	var startlist = [];
+	//stage 1:
+	for (i = 0; i < tabl[0].length; i++) { //for each column
+		a = firstfirstinrow(i);
+		b = firstfreerow(i);
+		if (a != -1 && b != -1 && b < a) {//swap into the first free row
+			return(hintswap(a,b,i));
+			}
+		if (a != -1) {//use the entry to cancel all other entries which are first in their row in that column
+			for (j = 0; j < tabl.length; j++) {
+				if (firstinrow(j) == i && j != a) {
+					return(hintcancel1(a,j,i));
+					}
+				}
+			}
+		}
+	//stage 2:
+	for (i = tabl[0].length-1; i >= 0; i--) { //for each column, working backwards
+		a = firstfirstinrow(i);
+		if (a != -1) {// use it to cancel every other nonzero entry in its column
+			for (j = 0; j < tabl.length; j++) {
+				if (j != a && tabl[j][i][0] != 0) {
+					return(hintcancel2(a,j,i));
+					}
+				}
+			}
+		}
+	//stage 3:
+	//if (gcside == false && gcsmat == false && document.getElementById("task").value == 0) {
+	//	return(hintsideswap3());
+	//	}
+	//stage 4:
+	for (j = 0; j < tabl.length; j++) {
+		a = firstinrow(j);
+		if (a != -1 && tabl[j][a][0] != tabl[j][a][1]) {
+			return(hintmultiply4(j,a));
+			}
+		}
+	return(["You're done!",false]);
+	}
+
+function doclue() {
+	applyop(getaclue()[1]);
+	drawtabl();
+	}
+
+function showclue() {
+	var cl = getaclue();
+	var str = "";
+	str += "<table border=1><tr><td>Hint:"
+	if (cl[1] != false) {
+		str += " <button onclick='doclue()'>Do this step for me</button>";
+		}
+	str += "</td></tr><tr><td>";
+	str += cl[0];
+	str += "</td></tr></table>";
+	document.getElementById("cluediv").innerHTML = str;
+	}
+
+
+function solve() {
+	var cl;
+	while (true) {
+		cl = getaclue()[1];
+		if (cl == false) {return;}
+		applyop(cl);
+		drawtabl();
+		}
+	}
+
+</script>
+</head>
+<body>
+<div id="debug"> </div>
+<div id="taskdiv">
+Select a task:
+<select onInput="taskselect()" id="task">
+<option value=-1 style="display:none"> </option>
+<option value=0> Solve Linear System </option>
+<option value=1> Reduce Matrix </option>
+<option value=2> Invert Matrix </option>
+</select></div>
+<div id="size"></div>
+<div id="entry"></div>
+<div id="tabl"></div>
+<div id="ops"></div>
+<div style='height:10px'></div>
+<div id="oplist"> </div>
+<div style='height:10px'></div>
+<div id="cluediv"> </div>
+</body>
+</html>

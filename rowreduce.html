@@ -722,12 +722,12 @@ function detop(op) {
 	}
 
 function checkforeasydeterminant() {//returns determinant or false
-	if (tabl.length != tabl[0].length) {return(false);}
+	if (tabl.length != tabl[0].length) {console.log("a"); return(false);}
+	if (getaclue()[1] != false) {console.log("b"); return(false);}
 	var i,j;
 	var q = [1,1];
 	for (i = 0; i < tabl.length; i++) {
 		for (j = 0; j < tabl[i].length; j++) {
-			if (i != j && tabl[i][j][0] != 0) {return(false);}
 			if (i == j) {q = multiplyrat(q,tabl[i][j]);}
 			}
 		}

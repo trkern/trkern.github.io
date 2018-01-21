@@ -464,6 +464,7 @@ function maketabl() {//transition from entry to rowreduction
 function drawops() {
 	str = "";
 	str += "<table border = 1> <tr> <td>";
+	str += "Row Reduction Operations: </td> </tr> <tr> <td>";
 	str += "<button onclick='swapbutt()'> Swap </button> Row <input type='number' value=1 id='swaprow1' style='width:3em'> and Row <input type='number' value=1 id='swaprow2' style='width:3em'>";
 	str += "</td></tr><tr><td>";
 	str += "<button onclick='multbutt()'> Multiply </button> Row <input type='number' value=1 id='multrow' style='width:3em'> by ";
@@ -960,9 +961,38 @@ function solve() {
 		}
 	}
 
+var instructionsvisible = 0;
+
+function hide() {
+	instructionsvisible = 1-instructionsvisible;
+	if (instructionsvisible == 0) {
+		document.getElementById("instructions").style = "display:none";
+		}
+	else {
+		document.getElementById("instructions").style = "";
+		}
+	}
+
 </script>
 </head>
 <body>
+<h1> Row Reduction Interactive <button onclick="hide()">Toggle Instructions</button></h1>
+<div id="instructions" style="display:none">
+<h2> Getting Started </h2>
+To get started with the row reduction interactive, you need to select a task from the drop down menu. By default, you probably want to solve a system of linear equations or reduce a matrix, but you can also use row reduction to invert square matrices.
+<h2> Entering a Matrix </h2>
+Once you've selected a task, you'll need to select the size of your matrix/system of linear equations. This will then give you a grid of rational number entry boxes to enter the coefficients into. In each one, you can enter a numerator and denominator. You should enter whole numbers only: decimal values may confuse the program. You can also hit the "Randomize" button to enter random rational numbers in each of the boxes. Once you're happy with your matrix/system of linear equations, hit the "Start Row Reducing!" button to begin. Once in row reduction mode, select the "New Matrix" button to go back to matrix entry.
+<h2> Row Reducing </h2>
+Under "Row Reduction Operations" you'll find the three operations you can apply in the row reduction process: 
+<ul> <li>Switching two rows, </li>
+<li>Multiplying an entire row by a constant,</li>
+<li>And adding a multiple of one row to another. </li> </ul>
+Similar to before, you'll need to enter rational numbers by entering their numerators and denominators. As you apply these operations, the program will keep track of which operations you applied in which order, and write them from right to left (the order matrix operations are applied) in the Operations table. This table will also show you the matrix multiplication identity that corresponds to your row reduction operations, and if your matrix is square, will keep track of determinants, allowing you to compute the determinant of your original matrix.
+<h2> Hints and Solving </h2>
+Row reduction can be tedious for large matrices. The "Get a hint" button will open a box at the bottom of the page explaining what to do next. Mouse over the question marks to see the definitions of various terms. The "Solve" button will fully row reduce your matrix for you.
+<hr>
+
+</div>
 <div id="debug"> </div>
 <div id="taskdiv">
 Select a task:
@@ -980,5 +1010,6 @@ Select a task:
 <div id="oplist"> </div>
 <div style='height:10px'></div>
 <div id="cluediv"> </div>
+<div style='height:100px'></div>
 </body>
 </html>

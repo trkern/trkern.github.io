@@ -3,6 +3,10 @@
 <head>
 <script>
 
+function ribet(mn,mx) {
+	return(Math.floor(Math.random()*(mx-mn+1))+mn);
+	}
+
 function tograph(x,mn,mx) {
 	var m = -500/(mn-mx);
 	var b = 500*mn/(mn-mx);
@@ -443,6 +447,7 @@ function butt(i) {
 function maketemplates() {
 	var str = "";
 	str += "<table border = 1>";
+	str += "<tr> <td colspan = 9> Matrix Templates: </td> </tr>";
 	str += "<tr> <td>" + mb(0,"Identity");
 	str += "</td> <td>" + mb(1,"H. Shear"); 
 	str += "</td> <td>" + mb(2,"V. Shear");
@@ -484,7 +489,12 @@ function maketemplates() {
 	document.getElementById("templates").innerHTML = str;
 	}
 
+function rggm() {
+	ggm = [ribet(-3,3),ribet(-3,3),ribet(-3,3),ribet(-3,3)];
+	}
+
 function start() {
+	rggm();
 	Upd();
 	maketemplates();
 	}
@@ -591,7 +601,17 @@ function wbbutthelper(i) {
 	return(str);
 	}
 
+function equalmats(m1,m2) {
+	for (i = 0; i < 4; i++) {
+		if(m1[i]!=m2[i]) {return(false);}
+		}
+	return(true);
+	}
+
+var ggm;
+
 function drawworkbench() {
+	if (toggleworkbench == 0) {return;}
 	var str;
 	if (workbenchmatrices.length <= 1) {
 		str = "Select matrices above to begin";
@@ -600,9 +620,12 @@ function drawworkbench() {
 		str = "&larr; Order of operations goes right to left, like function composition";
 		}
 	var i;
-	if (workbenchmatrices.length == 0) {
-		str += "<table border = 1> <tr> <td> </td> <td rowspan=2>=</td> <td> Product </td> </tr>";
-		str += "<tr> <td> </td> <td>";
+	if (false) {//workbenchmatrices.length == 0) {
+		str += "<table border = 1> <tr> <td> </td> <td rowspan=2>=</td> <td> Product </td>";
+		if (document.getElementById("c8").checked) {
+			str += "<td> Target </td>";
+			}
+		str += "</tr> <tr> <td> </td> <td>";
 		str += makematrix(1,0,0,1);
 		str += "</td> </tr>";
 		str += "</table>";
@@ -623,7 +646,17 @@ function drawworkbench() {
 			str += "</td>";
 			}
 		str += "<td rowspan=3>=</td>";
-		str += "<td> Product </td></tr><tr>";
+		str += "<td> Product </td>"
+		if (document.getElementById("c8").checked) {
+			if (equalmats(ggm,workbenchproduct())) {
+				str += "<td style='background-color:#00ff00;'>";
+				}
+			else {
+				str+= "<td>";
+				}
+			str += "Target <button onClick='rggm();drawworkbench();'>New</button>"
+			}
+		str += "</tr><tr>";
 		for (i = 0; i < workbenchmatrices.length; i++) {
 			str += "<td>";
 			str += makematrix2(workbenchmatrices[i]);
@@ -631,8 +664,13 @@ function drawworkbench() {
 			}
 		str += "<td>";
 		str += makematrix2(workbenchproduct());
-		str += "</td></tr>";
-		str += "</table>";
+		str += "</td>";
+		if (document.getElementById("c8").checked) {
+			str += "<td>";
+			str += makematrix2(ggm);
+			str += "</td>";
+			}
+		str += "</tr></table>";
 		}
 	document.getElementById("workbench").innerHTML = str;
 	copyworkbench();
@@ -651,11 +689,28 @@ function toggleworkbench() {
 	drawworkbench();
 	}
 
+function nosheep() {
+	document.getElementById("c5").checked = true;
+	document.getElementById("c6").checked = false;
+	document.getElementById("sheep").style = "display:none";
+	Upd();
+	}
+
 </script>
 </head>
 <body onload="start()">
+
+<h1> 2 Dimensional Matrix Transformations </h1>
+
+Click this <button onClick="nosheep()">button</button> if you don't like sheep.
+
+<h2> Visualizing 2x2 matrices </h2>
+
+In this interactive, you will be able to play around with and visualize how various 2x2 matrices transform points in space. The primary function of a matrix is as something that can be multiplied by a vector to get another vector. As such, we can think about matrices as functions that take vectors as inputs and output vectors. If we think about 2 dimensional vectors as points in space ( the vector <table border=0 style='border-collapse:collapse;display:inline-table'> <tr><td rowspan=2 style="border-left:1px solid; border-top:1px solid; border-bottom:1px solid"> </td><td><i> a </i></td><td rowspan=2 style="border-right:1px solid; border-top:1px solid; border-bottom:1px solid"> </td></tr><tr><td><i> b </i> </td></tr></table> as the point (<i>a</i>,<i>b</i>)) then matrices are functions that move points in 2D space somewhere else. We can visualize these transformations by taking an image and moving each point of the image to the point we get when we multiply the matrix by it. As you change the coefficients in the matrix directly above the picture, the end points of the blue and red vectors (representing <b>e</b><sub>1</sub> and <b>e</b><sub>2</sub> respectively), the points of the grid, and the points in the image of the sheep will all move to their image under the matrix transformation (i.e. if they start at (<i>x</i>,<i>y</i>), they'll wind up at (<i>a</i>,<i>b</i>), where <table border=0 style='border-collapse:collapse;display:inline-table'> <tr><td rowspan=2 style="border-left:1px solid; border-top:1px solid; border-bottom:1px solid"> </td><td><i> a </i></td><td rowspan=2 style="border-right:1px solid; border-top:1px solid; border-bottom:1px solid"> </td></tr><tr><td><i> b </i> </td></tr></table> = M <table border=0 style='border-collapse:collapse;display:inline-table'> <tr><td rowspan=2 style="border-left:1px solid; border-top:1px solid; border-bottom:1px solid"> </td><td><i> x </i></td><td rowspan=2 style="border-right:1px solid; border-top:1px solid; border-bottom:1px solid"> </td></tr><tr><td><i> y </i> </td></tr></table>). <br> <br>
+
+More detailed instructions can be found at the bottom of the page.
+
 <p id="debug"> </p>
-Matrix Templates:
 <p id="templates"> </p>
 <button id = "workbenchbutt" onclick="toggleworkbench()">Show Matrix Multiplication Workbench &#9660;</button> <button onclick="morph()"> Morph</button><br>
 <div id="workbench">  </div>
@@ -683,6 +738,37 @@ Matrix Templates:
 <input type="checkbox" id="c5" onchange="Upd()"> Show unit parallelogram <br>
 <input type="checkbox" id="c6" onchange="Upd()" checked> Show unit sheep <br>
 <input type="checkbox" id="c7" onchange="togglevector()"> Show arbitrary vector <br>
-<img id="sheep" src="sheep.jpg" title="Original image by Natural Resources Conservation Service [Public domain], via Wikimedia Commons [https://commons.wikimedia.org/wiki/File:Sheep_and_goats.jpg]">
+<input type="checkbox" id="c8" onchange="drawworkbench()"> Show guessing game target <br>
+
+<h2> Morphing </h2>
+Clicking the "Morph" button will show you an animation of points moving from their original positions to their new positions after the matrix transformation. In reality, when we apply a matrix transformation, there is no moving, no inbetween frames. The only things we have are the starting point, which gets multiplied by the matrix to produce the ending point. However, because all the points in the image are getting moved at once, it is easier to visualize what's happening via these animations.
+
+<h2> Show Arbitrary Vector </h2>
+Scrolling down to below the image and checking the "Show arbitrary vector" box will allow you to add a vector of your own to the original image (it may help to reset the matrix by pressing the "identity" button under the matrix templates when picking your vector). The program will then draw the transformed image of the vector. You can also watch this vector move from its original location to its location after being multiplied by the matrix by clicking the "Morph" button.
+
+<h2> Matrix Templates </h2>
+While it can be fun to play around with the coefficients of a matrix and see what kinds of transformations of space they correspond to, this page also has a collection of matrix templates you can use to create specific transformations of space. Click the button or enter numbers into the template to copy the template to the matrix below.
+
+<h2> Matrix Multiplication Workbench </h2>
+Matrix multiplication corresponds to applying one transformation after the other. Click the "Show Matrix Multiplication Workbench" button to open up a workbench. While the workbench is open, selecting matrix templates will copy them down into the workbench. Clicking the "Morph" button will allow you to visualize the operation of the matrices in the workbench in the order that they would get applied to a vector (from right to left, just like function application). The workbench will also show you the combined effect of all of the matrices as a single matrix. This is the matrix product of the matrices. You can also use the < and > buttons to change the order of matrices in the workbench, and the x button to remove the matrix from the workbench.
+
+<h2> Questions to ponder </h2>
+<ol>
+<li> Take a close look at the red and blue vectors and where they wind up after a matrix transformation. How is this related to the coefficients of the matrix? </li>
+<li> Copy some matrix templates into the matrix multiplication workbench. Does changing their order affect the overall transformation? Try this with other matrix templates. It may help to click the "Morph" button to watch the transformations being applied in order.
+<li> Pay attention to whether the sheep is facing to its left or to its right. See if you can find any patterns.
+</ol>
+
+<h2> Links to matrix transformations elsewhere </h2>
+<ul>
+<li> Nicky Case has an <a href="http://ncase.me/matrix/">interactive</a> that uses 3x3 matrices to allow your matrix transformations to also translate images. </li>
+<li> Geogebra has an <a href="https://www.geogebra.org/m/p5aMS9ZJ">interactive</a> that is similar to this one. </li>
+<li> Shadanan.github.io has a similar <a href = "https://shadanan.github.io/MatVis/">interactive</a> that allows you to control how far along the "Morph" animation you are by adjusting a slider (this defaults to 0, i.e. no transformation has been applied). </li>
+<li> KhanAcademy has a <a href="https://www.khanacademy.org/math/linear-algebra/matrix-transformations/linear-transformations/a/visualizing-linear-transformations">series</a> of youtube videos on matrix transformations. </li>
+<li> I am also working on putting together a similar <a href="lineartransform3.html">interactive</a> in three dimensions. It is not completed, and currently appears to leak memory, but this should be safe provided you do not mind restarting your browser.</li>
+</ul>
+
+<img id="sheep" src="sheep.jpg" title="baa!"><br>
+Original image by Natural Resources Conservation Service [Public domain], via Wikimedia Commons [https://commons.wikimedia.org/wiki/File:Sheep_and_goats.jpg]
 </body>
 </html>

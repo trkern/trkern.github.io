@@ -42,7 +42,6 @@ function boot() {
 	camera.position.y = 2;
 	camera.position.z = 2;
 	camera.lookAt(0,0,0);
-
 	render();
 	}
 
@@ -394,7 +393,6 @@ function doDispose(obj) //from stackexchange
 </script>
 </head>
 <body onLoad="boot()">
-Warning: Earlier versions of this interactive leaked memory, and it's not clear that the issue is fully resolved. Heavy use of the interactive might slow down your browser, and require a browser restart to fix.
 <table> <tr> <td>
 <table border = 0>
 <tr> <td rowspan=3 style="border-left:1px solid; border-top:1px solid; border-bottom:1px solid"> </td>
@@ -438,7 +436,6 @@ Warning: Earlier versions of this interactive leaked memory, and it's not clear 
 </td>
 </tr>
 </table> <button onClick="morph()"> Morph </button> <br>
-
 <canvas id="three" width=500 height=500> </canvas> <br>
 </body>
 </html>

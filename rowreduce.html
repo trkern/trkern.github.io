@@ -797,8 +797,7 @@ function drawoplist() {
 		str += "</td>";
 		}
 	str += "<td> Original Matrix </td>";
-	//str += "<td rowspan=3> = </td>";
-	//str += "<td> L </td> <td>Original Matrix</td>";
+
 	str += "<td rowspan=3> = </td>";
 	str += "<td> Transformed Matrix </td>";
 	str += "</tr><tr>";
@@ -809,8 +808,6 @@ function drawoplist() {
 		str += "</td>";
 		}
 	str += "<td>" + drawmatrix(originaltabl) + "</td>";
-	//str += "<td>" + drawmatrix(identabl) + "</td>";
-	//str += "<td>" + drawmatrix(originaltabl) + "</td>";
 	str += "<td>" + drawmatrix(tabl) + "</td>";
 	str += "</tr><tr>";
 	str += "<td> Determinants </td>";
@@ -864,15 +861,15 @@ var reh = "row echelon form<span title = 'A matrix is in row echelon form if the
 
 var rreh = "reduced row echelon form<span title = 'A matrix is in reduced row echelon form if it is in echelon form and every first entry in a row is a 1 and is the only nonzero entry in its row.' style='color:blue'>[<u>?</u>]</span>";
 
-var wp = "well-placed";
+var piv = "pivot<span title='A pivot is a nonzero entry in a pivot position.' style='color:blue'>[<u>?</u>]</span>";
 
-var piv = "pivot<span title='A pivot is the first nonzero entry in a row.' style='color:blue'>[<u>?</u>]</span>";
+var pp = "pivot position<span title='A pivot position is the location of the first nonzero entry in a row of the echelon form of a matrix.' style='color:blue'>[<u>?</u>]</span>";
 
 function hintswap(r1,r2,c) {//swap r1 and r2 to put the pivot in r1,c into r2.
 	var str = "";
-	str += "You are in stage 1: Getting your matrix into " + reh + ". ";
-	str += "Column " + (c+1) + " has a "+ piv + " in row " + (r1+1) + ". ";
-	str += "Swap rows " + (r1+1) + " and " + (r2+1) + " to move it into a convenient location.";
+	str += "You are in the forward phase: Getting your matrix into " + reh + ". ";
+	str += "Column " + (c+1) + " has a nonzero entry in row " + (r1+1) + ". ";
+	str += "Swap rows " + (r1+1) + " and " + (r2+1) + " to move it into a " + pp + ".";
 	return([str,["S",r1+1,r2+1]]);
 	}
 
@@ -881,8 +878,8 @@ function hintcancel1(r1, r2, c) {//use r1 to cancel the term in r2 in column c
 	var cancelee = tabl[r2][c];
 	var multiplier = negrat(divrat(cancelee,canceler));
 	var str = "";
-	str += "You are in stage 1: Getting your matrix into " + reh + ". ";
-	str += "Column " + (c+1) + " has a "+wp+" "+piv+" in row " + (r1+1) + ". ";
+	str += "You are in the forward phase: Getting your matrix into " + reh + ". ";
+	str += "Column " + (c+1) + " has a " + piv + " in "+ pp +" in row " + (r1+1) + ". ";
 	str += "Use it to cancel the " + inlineratrat(cancelee) + " in row " + (r2+1) + " ";
 	str += "by adding row " + (r1+1) + " times ";
 	str += inlineratrat(multiplier);
@@ -895,8 +892,8 @@ function hintcancel2(r1, r2, c) {//use r1 to cancel the term in r2 in column c
 	var cancelee = tabl[r2][c];
 	var multiplier = negrat(divrat(cancelee,canceler));
 	var str = "";
-	str += "You are in stage 2: Getting your matrix into "+rreh+". ";
-	str += "Column " + (c+1) + " has a "+wp+" "+piv+" in row " + (r1+1) + ". ";
+	str += "You are in the backward phase: Getting your matrix into "+rreh+". ";
+	str += "Column " + (c+1) + " has a "+piv+" in "+pp+" in row " + (r1+1) + ". ";
 	str += "Use it to cancel the " + inlineratrat(cancelee) + " in row " + (r2+1) + " ";
 	str += "by adding row " + (r1+1) + " times ";
 	str += inlineratrat(multiplier);
@@ -913,10 +910,10 @@ function hintmultiply4(r,c) {//multiply row r by a constant to make the term in 
 	var cancelee = tabl[r][c];
 	var multiplier = divrat([1,1],cancelee);
 	str = "";
-	str += "You are in stage 2: Getting your matrix into "+rreh+". ";
+	str += "You are in the backward phase: Getting your matrix into "+rreh+". ";
 	str += "Multiply row " + (r+1) + " by ";
 	str += inlineratrat(multiplier);
-	str += " to give it a leading coeffiecient of 1.";
+	str += " to give it a leading entry of 1.";
 	return([str,["M",r+1,multiplier]]);
 	}
 

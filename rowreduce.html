@@ -598,7 +598,7 @@ function drawtabl() {//redraw rowreduction area ("tabl")
 	str += "<button onClick='solve()'> Solve </button>"
 	str += "<input type='checkbox' id='chswap'";
 	if(allowswap) {str += " checked";}
-	str += " onchange='allowswapchange()'> Allow swapping ";
+	str += " onchange='allowswapchange()'> Allow swap hints ";
 	str += "<button onClick='undoop()'> Undo </button>";
 	document.getElementById("tabl").innerHTML = str;
 	drawoplist();
@@ -674,15 +674,18 @@ function drawop(op) {//returns a string for rendering an op
 	var str = "";
 	var tooltip = "";
 	if (op[0] == "S") {
-		str = "S<sub>"+op[1]+","+op[2]+"</sub>";
+		str = "R"+op[1]+"&harr;R"+op[2];
+		//str = "S<sub>"+op[1]+","+op[2]+"</sub>";
 		tooltip = "Swap rows "+op[1]+" and "+op[2];
 		}
 	if (op[0] == "K") {
-		str = "A<sub>"+op[2]+","+op[3][0]+"/"+op[3][1]+","+op[1]+"</sub>";
+		str = "R"+op[1]+"&larr;R"+op[1]+" + "+inlineratrat(op[3])+" R"+op[2];
+		//str = "A<sub>"+op[2]+","+op[3][0]+"/"+op[3][1]+","+op[1]+"</sub>";
 		tooltip = "Add row "+op[2]+" times "+op[3][0]+"/"+op[3][1]+" to row "+op[1];
 		}
 	if (op[0] == "M") {
-		str = "M<sub>"+op[1]+","+op[2][0]+"/"+op[2][1]+"</sub>";
+		str += "R"+op[1]+"&larr; " + inlineratrat(op[2]) + " R"+op[1];
+		//str = "M<sub>"+op[1]+","+op[2][0]+"/"+op[2][1]+"</sub>";
 		tooltip = "Multiply row "+op[1]+" by "+op[2][0]+"/"+op[2][1];
 		}
 	if (op[0] == "C") {
@@ -1048,6 +1051,8 @@ Select a task:
 <div id="ops"></div>
 <div style='height:10px'></div>
 <div id="oplist"> </div>
+<div style='height:10px'></div>
+<div id="matrixequation"></div>
 <div style='height:10px'></div>
 <div id="cluediv"> </div>
 <div style='height:100px'></div>

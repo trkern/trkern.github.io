@@ -179,6 +179,12 @@ var averts = [[-10,5.5,5.5],[5.5,-10,5.5],[5.5,5.5,-10]];
 
 var aedges = [[0,1],[1,2],[2,0]];
 
+var bverts = [[-10,-10],[-10,10],[10,10],[10,-10]];
+
+var bfaces = [[0,1,2],[0,2,3]];
+
+var bedges = [[0,1],[1,2],[2,3],[3,0]];
+
 var cubefaces = [[0,1,3],[1,3,5],[3,5,6],[5,6,7],[1,4,5],[4,5,7],[0,1,2],[1,2,4],[2,4,6],[4,6,7],[0,2,3],[2,3,6]];
 
 var cubeedges = [[0,3],[3,6],[6,2],[2,0],[0,1],[3,5],[6,7],[2,4],[1,5],[5,7],[7,4],[4,1]];
@@ -196,6 +202,14 @@ function aspanvert(i) {
 	var r1 = av[0]*u1 + av[1]*v1 + av[2]*w1;
 	var r2 = av[0]*u2 + av[1]*v2 + av[2]*w2;
 	var r3 = av[0]*u3 + av[1]*v3 + av[2]*w3;
+	return([r1,r2,r3]);
+	}
+
+function bspanvert(i) {
+	var bv = bverts[i];
+	var r1 = u1 + bv[0]*v1 + bv[1]*w1;
+	var r2 = u2 + bv[0]*v2 + bv[1]*w2;
+	var r3 = u3 + bv[0]*v3 + bv[1]*w3;
 	return([r1,r2,r3]);
 	}
 
@@ -218,6 +232,13 @@ function bootspan() {
 	for (i = 0; i < cubeedges.length; i++) {
 		thickline(spanvert(cubeedges[i][0]),spanvert(cubeedges[i][1]),0xff8c00,.01);
 		}
+	for (i = 0; i < cubeverts.length; i++) {
+		var vg = new THREE.SphereGeometry(.05);
+		var vv = new THREE.Mesh(vg,spanmat);
+		vv.position.copy(vec2vec(spanvert(i)));
+		scene.add(vv);
+		}
+
 	}
 
 function bootaspan() {
@@ -242,6 +263,34 @@ function bootaspan() {
 		var vg = new THREE.SphereGeometry(.05);
 		var vv = new THREE.Mesh(vg,aspanmat);
 		vv.position.copy(vec2vec(aspanvert(i)));
+		scene.add(vv);
+		}
+	}
+
+function bootbspan() {
+	if (!document.getElementById("bspan").checked) {return;}
+	var bspangeo = new THREE.Geometry();
+	var i;
+	for (i = 0; i < bverts.length; i++) {
+		bspangeo.vertices.push(vec2vec(bspanvert(i)));
+		}
+	for (i = 0; i < bfaces.length; i++) {
+		bspangeo.faces.push(new THREE.Face3(bfaces[i][0],bfaces[i][1],bfaces[i][2]));
+		}
+	bspangeo.computeFaceNormals();
+	bspangeo.computeVertexNormals();
+	var bspanmat = new THREE.MeshLambertMaterial({side:THREE.DoubleSide,transparent:true,opacity:.7,color:0x339966});
+	var bspan = new THREE.Mesh(bspangeo,bspanmat);
+	scene.add(bspan);
+
+	for (i = 0; i < bedges.length; i++) {
+		thickline(bspanvert(bedges[i][0]),bspanvert(bedges[i][1]),0x339966,.01);
+		}
+	
+	for (i = 0; i < bverts.length; i++) {
+		var vg = new THREE.SphereGeometry(.05);
+		var vv = new THREE.Mesh(vg,bspanmat);
+		vv.position.copy(vec2vec(bspanvert(i)));
 		scene.add(vv);
 		}
 	}
@@ -279,6 +328,7 @@ function bootobjects() {
 
 	bootspan();
 	bootaspan();
+	bootbspan();
 	}
 
 function doDispose(obj) //from stackexchange
@@ -361,7 +411,8 @@ function doDispose(obj) //from stackexchange
 </table>
 <input type="checkbox" id="ac" onchange="AC()"> Allow only affine combinations above
 <input type="checkbox" id="lspan" onchange="Upd()"> Show <font style="color:#ff8c00"> (linear) span </font>
-<input type="checkbox" id="aspan" onchange="Upd()"> Show <font style="color:#ee82ee"> affine span </font> <br>
+<input type="checkbox" id="aspan" onchange="Upd()"> Show <font style="color:#ee82ee"> affine span </font>
+<input type="checkbox" id="bspan" onchange="Upd()"> Show <font style="color:#339966"> the set </font> of all <b>u</b> + b<b>v</b> + c<b>w</b><br>
 Hint: To work with the affine span of only two vectors, you'll need to set the third vector to be equal to one of the other two.<br>
 <canvas id="three" width=500 height=500> </canvas> <br>
 </body>

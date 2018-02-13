@@ -16,11 +16,11 @@ function boot() {
 	b = 0;
 	c = 0;
 	scene = new THREE.Scene();
-	scene.background = new THREE.Color("lightgray");
+	scene.background = new THREE.Color("white");
 	camera = new THREE.PerspectiveCamera(75,1,.1,1000);
 	renderer = new THREE.WebGLRenderer({canvas:document.getElementById("three")});
 	controls = new THREE.OrbitControls(camera, renderer.domElement);
-	renderer.setSize(500,500);
+	renderer.setSize(1000,1000);
 	bootobjects();
 	Upd();
 	camera.position.x = 2;
@@ -145,12 +145,33 @@ function Updrc() {
 	}
 
 function Updna() {
+	var t = rounder(document.getElementById("an").value);
+	if (document.getElementById("ac").checked) {
+		b = rounder(b+(a-t)/2);
+		c = rounder(1-t-b);
+		}
+	a = t;
+	Upd();
 	}
 
 function Updnb() {
+	var t = rounder(document.getElementById("bn").value);
+	if (document.getElementById("ac").checked) {
+		a = rounder(a+(b-t)/2);
+		c = rounder(1-t-a);
+		}
+	b = t;
+	Upd();
 	}
 
 function Updnc() {
+	var t = rounder(document.getElementById("cn").value);
+	if (document.getElementById("ac").checked) {
+		b = rounder(b+(c-t)/2);
+		a = rounder(1-t-b);
+		}
+	c = t;
+	Upd();
 	}
 
 function Updr() { //updates number boxes based on range sliders
@@ -169,7 +190,7 @@ function Upd() {
 function updateobjects() {
 	doDispose(scene);
 	scene = new THREE.Scene();
-	scene.background = new THREE.Color("lightgray");
+	scene.background = new THREE.Color("white");
 	bootobjects();
 	}
 
@@ -313,10 +334,17 @@ function bootobjects() {
 	gridYZ.rotation.z = Math.PI/2;
 	scene.add(gridYZ);
 
+	if(document.getElementById("ssum").checked) {
+		thickvector([0,0,0],[a*u1,a*u2,a*u3],0x303030);
+		thickvector([a*u1,a*u2,a*u3],[a*u1+b*v1,a*u2+b*v2,a*u3+b*v3],0x303030);
+		thickvector([a*u1+b*v1,a*u2+b*v2,a*u3+b*v3],[a*u1+b*v1+c*w1,a*u2+b*v2+c*w2,a*u3+b*v3+c*w3],0x303030);
+		}
+
 	thickvector([0,0,0],[u1,u2,u3],0xff0000);
-	thickvector([0,0,0],[x1,x2,x3],"black");
 	thickvector([0,0,0],[v1,v2,v3],0x00ff00);
 	thickvector([0,0,0],[w1,w2,w3],0x0000ff);
+
+	thickvector([0,0,0],[x1,x2,x3],"black");
 
 	var dl;
 	var pts = [[0,1,0],[0,-1,0],[1,0,0],[-1,0,0],[0,0,1],[0,0,-1]];
@@ -361,6 +389,9 @@ function doDispose(obj) //from stackexchange
 </script>
 </head>
 <body onLoad="boot()">
+<table border = 1> <tr> <td>
+<canvas id="three" width=1000 height=1000> </canvas>
+</td><td>
 <table border = 0>
 <tr> <td> <b style="color:#ff0000">u</b> = </td><td>
 <table border = 0>
@@ -392,7 +423,7 @@ function doDispose(obj) //from stackexchange
 </tr> <tr>
 <td> <input type ="number" id="w3" value="0" oninput="Upd()" style="width: 3em"> </td>
 </tr>
-</table> </td> <td> <b> x </b> = a <b style="color:#ff0000">u</b> + b <b style="color:#00ff00">v</b> + c <b style="color:#0000ff">w</b> = </td> <td>
+</table> </td> </tr> </table> <table border = 0> <tr> <td> <b> x </b> = a <b style="color:#ff0000">u</b> + b <b style="color:#00ff00">v</b> + c <b style="color:#0000ff">w</b> = </td> <td>
 <table border = 0>
 <tr> <td rowspan=3 style="border-left:1px solid; border-top:1px solid; border-bottom:1px solid"> </td>
 <td> <div id = "x1"> 0 </div> </td>
@@ -405,15 +436,16 @@ function doDispose(obj) //from stackexchange
 </table>
 </tr> </table>
 <table>
-<tr> <td> a </td> <td> <input type="range" min="-10" max="10" value="0" step =.05 id="ar" oninput="Updra()" style="width:50em"> </td> <td> <input type="number" id="an" oninput="Updna()" value=0 step=.05 style="width:4em"> </td> </tr>
-<tr> <td> b </td> <td> <input type="range" min="-10" max="10" value="0" step =.05 id="br" oninput="Updrb()" style="width:50em"> </td> <td> <input type="number" id="bn" oninput="Updnb()" value=0 step=.05 style="width:4em"> </td> </tr>
-<tr> <td> c </td> <td> <input type="range" min="-10" max="10" value="0" step =.05 id="cr" oninput="Updrc()" style="width:50em"> </td> <td> <input type="number" id="cn" oninput="Updnc()" value=0 step=.05 style="width:4em"> </td> </tr>
+<tr> <td> a </td> <td> <input type="range" min="-3" max="3" value="0" step =.05 id="ar" oninput="Updra()" style="width:15em"> </td> <td> <input type="number" id="an" onchange="Updna()" value=0 step=.05 style="width:4em"> </td> </tr>
+<tr> <td> b </td> <td> <input type="range" min="-3" max="3" value="0" step =.05 id="br" oninput="Updrb()" style="width:15em"> </td> <td> <input type="number" id="bn" onchange="Updnb()" value=0 step=.05 style="width:4em"> </td> </tr>
+<tr> <td> c </td> <td> <input type="range" min="-3" max="3" value="0" step =.05 id="cr" oninput="Updrc()" style="width:15em"> </td> <td> <input type="number" id="cn" onchange="Updnc()" value=0 step=.05 style="width:4em"> </td> </tr>
 </table>
-<input type="checkbox" id="ac" onchange="AC()"> Allow only affine combinations above
-<input type="checkbox" id="lspan" onchange="Upd()"> Show <font style="color:#ff8c00"> (linear) span </font>
-<input type="checkbox" id="aspan" onchange="Upd()"> Show <font style="color:#ee82ee"> affine span </font>
-<input type="checkbox" id="bspan" onchange="Upd()"> Show <font style="color:#339966"> the set </font> of all <b>u</b> + b<b>v</b> + c<b>w</b><br>
+<input type="checkbox" id="ac" onchange="AC()"> Allow only affine combinations above <br>
+<input type="checkbox" id="lspan" onchange="Upd()"> Show <font style="color:#ff8c00"> (linear) span </font> <br>
+<input type="checkbox" id="aspan" onchange="Upd()"> Show <font style="color:#ee82ee"> affine span </font> <br>
+<input type="checkbox" id="bspan" onchange="Upd()"> Show <font style="color:#339966"> the set </font> of all <b>u</b> + b<b>v</b> + c<b>w</b> <br>
+<input type="checkbox" id="ssum" onchange="Upd()"> Show <font style="color:#303030"> vector sum </font> <br>
 Hint: To work with the affine span of only two vectors, you'll need to set the third vector to be equal to one of the other two.<br>
-<canvas id="three" width=500 height=500> </canvas> <br>
+</td> </tr> </table>
 </body>
 </html>

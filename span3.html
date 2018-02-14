@@ -143,6 +143,13 @@ function zax() {
 	Upd();
 	}
 
+function ozz() {
+	a = 1;
+	b = 0;
+	c = 0;
+	Upd();
+	}
+
 function AC() {
 	var n = a+b+c;
 	if (n != 0) {
@@ -484,13 +491,14 @@ function doDispose(obj) //from stackexchange
 <tr> <td> b </td> <td> <input type="range" min="-3" max="3" value="0" step =.05 id="br" oninput="Updrb()" style="width:15em"> </td> <td> <input type="number" id="bn" onchange="Updnb()" value=0 step=.05 style="width:4em"> </td> </tr>
 <tr> <td> c </td> <td> <input type="range" min="-3" max="3" value="0" step =.05 id="cr" oninput="Updrc()" style="width:15em"> </td> <td> <input type="number" id="cn" onchange="Updnc()" value=0 step=.05 style="width:4em"> </td> </tr>
 </table>
+<button onclick="ozz()"> Set </button> a,b,c to 1,0,0<br>
 <input type="checkbox" id="ac" onchange="AC()"> Allow only affine combinations above <br>
 <input type="checkbox" id="lspan" onchange="Upd()"> Show <font style="color:#ff8c00"> (linear) span </font> <br>
 <input type="checkbox" id="aspan" onchange="Upd()"> Show <font style="color:#ee82ee"> affine span </font> <br>
 <input type="checkbox" id="bspan" onchange="Upd()"> Show <font style="color:#339966"> the set </font> of all <b style="color:#ff0000">u</b> + b<b style="color:#00ff00">v</b> + c<b style="color:#0000ff">w</b> <br>
 <input type="checkbox" id="ssum" onchange="Upd()" checked> Show <font style="color:#303030"> vector sum </font> <br>
 <button onclick="minus()"> Replace </button> <b style="color:#00ff00">v</b> with <b style="color:#00ff00">v</b>-<b style="color:#ff0000">u</b> and <b style="color:#0000ff">w</b> with <b style="color:#0000ff">w</b>-<b style="color:#ff0000">u</b> <br>
-Hint: To work with the affine span of only two vectors, you'll need to <button onclick="set()">set</button> the third vector to be equal to one of the other two.<br>
+Hint: To work with the affine span of only two vectors, you'll need to <button onclick="set()">Set</button> the third vector to be equal to one of the other two.<br>
 Change view to:
 <button onclick="iso()"> Isometric </button>
 <button onclick="zax()"> z-axis </button <br>

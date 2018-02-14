@@ -487,9 +487,9 @@ function doDispose(obj) //from stackexchange
 <input type="checkbox" id="ac" onchange="AC()"> Allow only affine combinations above <br>
 <input type="checkbox" id="lspan" onchange="Upd()"> Show <font style="color:#ff8c00"> (linear) span </font> <br>
 <input type="checkbox" id="aspan" onchange="Upd()"> Show <font style="color:#ee82ee"> affine span </font> <br>
-<input type="checkbox" id="bspan" onchange="Upd()"> Show <font style="color:#339966"> the set </font> of all <b>u</b> + b<b>v</b> + c<b>w</b> <br>
+<input type="checkbox" id="bspan" onchange="Upd()"> Show <font style="color:#339966"> the set </font> of all <b style="color:#ff0000">u</b> + b<b style="color:#00ff00">v</b> + c<b style="color:#0000ff">w</b> <br>
 <input type="checkbox" id="ssum" onchange="Upd()" checked> Show <font style="color:#303030"> vector sum </font> <br>
-<button onclick="minus()"> Replace </button> <b>v</b> with <b>v</b>-<b>u</b> and <b>w</b> with <b>w</b>-<b>u</b> <br>
+<button onclick="minus()"> Replace </button> <b style="color:#00ff00">v</b> with <b style="color:#00ff00">v</b>-<b style="color:#ff0000">u</b> and <b style="color:#0000ff">w</b> with <b style="color:#0000ff">w</b>-<b style="color:#ff0000">u</b> <br>
 Hint: To work with the affine span of only two vectors, you'll need to <button onclick="set()">set</button> the third vector to be equal to one of the other two.<br>
 Change view to:
 <button onclick="iso()"> Isometric </button>

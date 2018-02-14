@@ -44,7 +44,7 @@ function thickarrow(p1,p2,col,thk) {
 	var dif = [p1[0]-p2[0],p1[1]-p2[1],p1[2]-p2[2]];
 	var mid = [(p1[0]+p2[0])/2,(p1[1]+p2[1])/2,(p1[2]+p2[2])/2];
 	var lg = vec2vec(dif).length();
-	if (lg == 0) {return;}
+	if (lg < .01) {return;}
 	var cylgeo = new THREE.CylinderGeometry(thk,0,lg,8);
 	var cyl = new THREE.Mesh(cylgeo, new THREE.MeshBasicMaterial({color:col}));
 	var axis = new THREE.Vector3(0,1,0);
@@ -57,7 +57,7 @@ function thickline(p1,p2,col,thk) {
 	var dif = [p1[0]-p2[0],p1[1]-p2[1],p1[2]-p2[2]];
 	var mid = [(p1[0]+p2[0])/2,(p1[1]+p2[1])/2,(p1[2]+p2[2])/2];
 	var lg = vec2vec(dif).length();
-	if (lg == 0) {return;}
+	if (lg < .01) {return;}
 	var cylgeo = new THREE.CylinderGeometry(thk,thk,lg,4);
 	var cyl = new THREE.Mesh(cylgeo, new THREE.MeshBasicMaterial({color:col}));
 	var axis = new THREE.Vector3(0,1,0);
@@ -97,6 +97,50 @@ function updui() { //updates ui
 	document.getElementById("an").value = a;
 	document.getElementById("bn").value = b;
 	document.getElementById("cn").value = c;
+	}
+
+function minus() {
+	document.getElementById("v1").value = - v1 + u1;
+	document.getElementById("v2").value = - v2 + u2;
+	document.getElementById("v3").value = - v3 + u3;
+	document.getElementById("w1").value = - w1 + u1;
+	document.getElementById("w2").value = - w2 + u2;
+	document.getElementById("w3").value = - w3 + u3;
+	var t1, t2;
+	t1 = document.getElementById("aspan").checked;
+	t2 = document.getElementById("bspan").checked;
+	if (t1 && !t2) {
+		document.getElementById("aspan").checked = false;
+		document.getElementById("bspan").checked = true;
+		}
+	else if (t2 && !t1) {
+		document.getElementById("aspan").checked = true;
+		document.getElementById("bspan").checked = false;		
+		}
+	Upd();
+	}
+
+function set() {
+	document.getElementById("w1").value = v1;
+	document.getElementById("w2").value = v2;
+	document.getElementById("w3").value = v3;
+	Upd();
+	}
+
+function iso() {
+	camera.position.x = 2;
+	camera.position.y = 2;
+	camera.position.z = 2;
+	camera.lookAt(0,0,0);
+	Upd();
+	}
+
+function zax() {
+	camera.position.x = 0;
+	camera.position.y = 0;
+	camera.position.z = 4;
+	camera.lookAt(0,0,0);
+	Upd();
 	}
 
 function AC() {
@@ -335,9 +379,9 @@ function bootobjects() {
 	scene.add(gridYZ);
 
 	if(document.getElementById("ssum").checked) {
-		thickvector([0,0,0],[a*u1,a*u2,a*u3],0x303030);
-		thickvector([a*u1,a*u2,a*u3],[a*u1+b*v1,a*u2+b*v2,a*u3+b*v3],0x303030);
-		thickvector([a*u1+b*v1,a*u2+b*v2,a*u3+b*v3],[a*u1+b*v1+c*w1,a*u2+b*v2+c*w2,a*u3+b*v3+c*w3],0x303030);
+		thickvector([0,0,0],[a*u1,a*u2,a*u3],0x505050);
+		thickvector([a*u1,a*u2,a*u3],[a*u1+b*v1,a*u2+b*v2,a*u3+b*v3],0x505050);
+		thickvector([a*u1+b*v1,a*u2+b*v2,a*u3+b*v3],[a*u1+b*v1+c*w1,a*u2+b*v2+c*w2,a*u3+b*v3+c*w3],0x505050);
 		}
 
 	thickvector([0,0,0],[u1,u2,u3],0xff0000);
@@ -444,8 +488,12 @@ function doDispose(obj) //from stackexchange
 <input type="checkbox" id="lspan" onchange="Upd()"> Show <font style="color:#ff8c00"> (linear) span </font> <br>
 <input type="checkbox" id="aspan" onchange="Upd()"> Show <font style="color:#ee82ee"> affine span </font> <br>
 <input type="checkbox" id="bspan" onchange="Upd()"> Show <font style="color:#339966"> the set </font> of all <b>u</b> + b<b>v</b> + c<b>w</b> <br>
-<input type="checkbox" id="ssum" onchange="Upd()"> Show <font style="color:#303030"> vector sum </font> <br>
-Hint: To work with the affine span of only two vectors, you'll need to set the third vector to be equal to one of the other two.<br>
+<input type="checkbox" id="ssum" onchange="Upd()" checked> Show <font style="color:#303030"> vector sum </font> <br>
+<button onclick="minus()"> Replace </button> <b>v</b> with <b>v</b>-<b>u</b> and <b>w</b> with <b>w</b>-<b>u</b> <br>
+Hint: To work with the affine span of only two vectors, you'll need to <button onclick="set()">set</button> the third vector to be equal to one of the other two.<br>
+Change view to:
+<button onclick="iso()"> Isometric </button>
+<button onclick="zax()"> z-axis </button <br>
 </td> </tr> </table>
 </body>
 </html>

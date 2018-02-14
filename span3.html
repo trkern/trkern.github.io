@@ -9,6 +9,7 @@ var scene,camera,renderer,controls;
 function render() {
 	requestAnimationFrame( render );
 	renderer.render(scene, camera);
+	controls.update();
 	};
 
 function boot() {
@@ -437,6 +438,15 @@ function doDispose(obj) //from stackexchange
     obj = undefined;
 }
 
+function AR() {
+	if (document.getElementById("archk").checked) {
+		controls.autoRotate = true;
+		}
+	else {
+		controls.autoRotate = false;
+		}
+	}
+
 </script>
 </head>
 <body onLoad="boot()">
@@ -501,8 +511,42 @@ function doDispose(obj) //from stackexchange
 Hint: To work with the affine span of only two vectors, you'll need to <button onclick="set()">Set</button> the third vector to be equal to one of the other two.<br>
 Change view to:
 <button onclick="iso()"> Isometric </button>
-<button onclick="zax()"> z-axis </button <br>
+<button onclick="zax()"> z-axis </button> <br>
+<input type="checkbox" id="archk" onchange="AR()"> Auto-rotate <br>
 </td> </tr> </table>
+<h1> Instructions </h1>
+This interactive will allow you to explore various linear combinations of vectors in three dimensions.
+<h2> Getting Started </h1>
+<ol> 
+<li> You'll need to set the vectors <b style="color:#ff0000">u</b>, <b style="color:#00ff00">v</b>, and <b style="color:#0000ff">w</b> to some nonzero vectors to get started. Random vectors or the basis vectors is fine.
+<li> By playing around with the sliders or number entry boxes next to them, you can adjust the values of a, b, and c, the constants in the linear combination defining the vector <b>x</b>.
+<li> The vectors <b style="color:#ff0000">u</b>, <b style="color:#00ff00">v</b>, <b style="color:#0000ff">w</b>, and <b>x</b> will be drawn in the three dimensional visualizer.
+<li> If "Show <font style="color:#303030"> vector sum </font>" is checked, the three vectors a <b style="color:#ff0000">u</b>, b <b style="color:#00ff00">v</b>, and c <b style="color:#0000ff">w</b> will be drawn in gray, with the tail of one stuck to the head of the other, allowing you to visualize how <b>x</b> is the sum of these vectors. </li>
+</ol>
+<h2> Navigating the 3D interactive </h2>
+<ul>
+<li> Click and drag in the 3D space with the left mouse button to rotate the view </li>
+<li> Scroll with the mouse wheel to zoom in and out </li>
+<li> Right click and drag to shift the view </li>
+<li> The Auto-rotate checkbox may help you with visualization, or may make you dizzy. </li>
+</ul>
+<h2> Linear Span </h2>
+<ul>
+<li> Recall that the linear span of a collection of vectors is the set of all vectors (which we can view as points) which can be written as a linear combination of the vectors in the collection. </li>
+<li> Check the "Show linear span" checkbox to draw in the linear span of the vectors <b style="color:#ff0000">u</b>, <b style="color:#00ff00">v</b>, and <b style="color:#0000ff">w</b>. This is all points you can reach by playing around with the constants a, b, and c.
+<li> The linear span of three vectors is either a point, a line, a plane, or all of 3D space. These lines, planes, and all of 3D space extend off infinitely, but the interactive will only draw them as extending off finitely due to technical limitations. You may also notice some strange artifacts due to the way the span is drawn. </li>
+</ul>
+<h2> Affine Span </h2>
+<ul>
+<li> Recall that the affine span of a collection of vectors is the set of all vectors which can be written as an affine combination of the vectors in the collection. An affine combination is a linear combination where the coefficients add up to 1. </li>
+<li> Check the "Allow only affine combinations above" checkbox, and the sliders will adjust as you change them to make sure the coefficients add up to 1. </li>
+<li> Check the "Show affine span" checkbox to draw in the affine span of the vectors <b style="color:#ff0000">u</b>, <b style="color:#00ff00">v</b>, and <b style="color:#0000ff">w</b>. This is all points you can reach by playing around with the constants a, b, and c while the "Allow only affine combinations above" checkbox is checked. </li>
+<li> Currently, the interactive does not support taking the spans of fewer than 3 vectors. This isn't an issue for linear spans, since you can just leave vectors as <b>0</b> and they won't contribute to the linear combination. However, for affine spans, adding in the <b>0</b> vector to a collection will change the affine span of that collection. If you want the affine span of just two vectors (a line between the two corresponding points), taking the affine span of those two vectors and the <b>0</b> vector will instead give you the plane through those two points and the origin (in fact, this is the linear span of the two original vectors). You can resolve this issue by setting <b style="color:#0000ff">w</b> equal to <b style="color:#00ff00">v</b>. </li>
+</ul>
+<h2> Another approach to affine sets </h2>
+<ul>
+<li> In addition to describing affine sets as the affine combination of some particular vectors, we can also describe these points, lines and planes as displaced versions of linear spaces, that is, as the collection of points of the form "[some vector] plus some linear combination of [some list of vectors]". Clicking the "Replace" button will attempt to switch between these perspectives. </li>
+</ul>
 <h1> Further Resources </h1>
 <ul> 
 <li> <a href="https://www.desmos.com/calculator/a0sjkpp9xf">Desmos</a> has an interactive where you can choose two vectors in the plane and play around with their linear combinations </li> 

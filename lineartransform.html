@@ -145,6 +145,7 @@ function Upd() {
 		document.getElementById("w3").innerHTML = makematrix(veca*a+vecb*b,"",veca*c+vecb*d,"");
 		}
 	drawcanv(a,b,c,d);
+	document.getElementById("det").innerHTML = (a*d)-(b*c);
 	}
 
 var timesout = [];
@@ -721,6 +722,7 @@ More detailed instructions can be found at the bottom of the page.
 <td> <div id="w1"> </div> </td>
 <td> <div id="w2"> </div> </td>
 <td> <div id="w3"> </div> </td>
+<td> Determinant: <span id="det"> </span> </td>
 </tr> </table>
 <canvas id="canv" width=500 height=500 style="border:1px solid #c3c3c3;"> </canvas>
 <table>

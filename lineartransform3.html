@@ -241,6 +241,7 @@ function getmat() {
 function Upd() {
 	getmat();
 	updateobjects();
+	document.getElementById("det").innerHTML = a11*a22*a33-a11*a23*a32 - a12*a21*a33 + a12*a23*a31 + a13*a21*a32 - a13*a22*a31;
 	}
 
 function updateobjects() {
@@ -435,7 +436,7 @@ function doDispose(obj) //from stackexchange
 </table>
 </td>
 </tr>
-</table> <button onClick="morph()"> Morph </button> <br>
+</table> <button onClick="morph()"> Morph </button> Determinant: <span id="det"> </span> <br>
 <canvas id="three" width=500 height=500> </canvas> <br>
 </body>
 </html>

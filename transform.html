@@ -55,17 +55,31 @@ function transformize(eq) {
 	var b = Number(document.getElementById("b").value);
 	var c = Number(document.getElementById("c").value);
 	var d = Number(document.getElementById("d").value);
-	var innerstring = "("+timesify(b,"x")+plusify(c)+")";
-	var replstring = eq.replace(/(\(x\)|\bx\b)/gi,innerstring);
-	var fullstring = ""+timesify(a,"("+replstring+")")+plusify(d);
-	//var simplestring = math.parse(fullstring).toString();
-	return(fullstring);
+	return(transformize2(eq,a,b,c,d));
 	}
 
 function transformize2(eq,ga,gb,gc,gd) {
-	var innerstring = "("+timesify(gb,"x")+plusify(gc)+")";
-	var replstring = eq.replace(/(\(x\)|\bx\b)/gi,innerstring);
-	var fullstring = ""+timesify(ga,"("+replstring+")")+plusify(gd);
+	var innerstring = "("+timesify(gb,"oooooo")+plusify(gc)+")"; //new cheap hack
+	var r1 = math.parse(innerstring);
+	var r2 = math.parse(eq);
+	var r3 = r2.transform(function (node, path, parent) {
+		if (node.isSymbolNode && node.name == "x") {
+			return(r1);
+			}
+		else {
+			return(node);
+			}
+		});
+	var r4 = r3.transform(function (node, path, parent) {
+		if (node.isSymbolNode && node.name == "oooooo") {
+			return(math.parse("x"));
+			}
+		else{
+			return(node);
+			}
+		});
+//	var replstring = eq.replace(/(\(x\)|\bx\b)/gi,innerstring); //old cheap hack
+	var fullstring = ""+timesify(ga,"("+r4.toString()+")")+plusify(gd);
 	return(fullstring);
 	}
 
@@ -263,7 +277,6 @@ function randomizegg() {
 	}
 
 function Updgg() {
-	console.log(ggfun);
 	var tguess = document.getElementById("ggguess").value;
 	if (tguess == "") {
 		tguess = "10000";

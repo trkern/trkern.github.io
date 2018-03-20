@@ -42,6 +42,7 @@ function plusify(n) {
 	if (n > 0) {return("+"+n);}
 	if (n == 0) {return("");}
 	if (n < 0) {return(n);}
+	return("+" + n);
 	}
 
 function timesify(n,s) {
@@ -59,10 +60,11 @@ function transformize(eq) {
 	}
 
 function transformize2(eq,ga,gb,gc,gd) {
-	var innerstring = "("+timesify(gb,"oooooo")+plusify(gc)+")"; //new cheap hack
+	var innerstring = "("+timesify(gb,"oooooo")+plusify(gc)+")"; 
+	console.log(innerstring,gb,gc);
 	var r1 = math.parse(innerstring);
 	var r2 = math.parse(eq);
-	var r3 = r2.transform(function (node, path, parent) {
+	var r3 = r2.transform(function (node, path, parent) {//new cheap hack
 		if (node.isSymbolNode && node.name == "x") {
 			return(r1);
 			}
@@ -250,6 +252,7 @@ var ggfunlist = ["x", "x^2", "x^3", "x^4", "abs(x)", "sqrt(x)", "cbrt(x)"];
 var ggfun = "";
 function randomizegg() {
 	document.getElementById("gganswer").innerHTML = "";
+	document.getElementById("gganswer2").innerHTML = "";
 	var x1 = ribet(-3,3);
 	var x2 = ribet(-3,3);
 	while(x2 == x1) {
@@ -265,8 +268,8 @@ function randomizegg() {
 		do {y2 = y1 + ribet(-3,3);} while (y2 == y1 || y2 > 3 || y2 < -3);
 		}
 	var gga = y2-y1;
-	var ggb = 1/(x2-x1);
-	var ggc = -ggb*x1;
+	var ggb = "(1/(" + (x2-x1) + ")) ";
+	var ggc = "(" + -x1 + "/(" + (x2-x1) + ")) "//-ggb*x1;
 	var ggd = y1;
 	ggfun = ggfunlist[ribet(0,6)];
 	if (!document.getElementById("chkgg").checked) {
@@ -292,8 +295,8 @@ function Updgg() {
 	}
 
 function showanswer() {
-	//katex.render(math.parse(ggfun).toTex({parenthesis:"auto"}),document.getElementById("gganswer"));
-	document.getElementById("gganswer").innerHTML = ggfun;
+	katex.render(math.simplify(ggfun).toTex({parenthesis:"auto"}),document.getElementById("gganswer2"));
+	document.getElementById("gganswer").innerHTML = math.simplify(ggfun).toString();
 	}
 
 </script>
@@ -323,9 +326,9 @@ How are stretching, squashing, and mirroring related?
 <tr> <td> Vertical: </td> <td> <input type="range" min="-10" max="10" value="1" step =.1 id="v" oninput="drawcat()" style="width:30em"> </td> <td> <span id="vs"> </span></td></tr></table>
 <div id="cat"> </div>
 <h1> Guessing Game </h1>
-<input type="text" id="ggguess" value="" onChange="Updgg()"> <button onclick="Updgg()"> Guess </button> <button onclick="randomizegg()"> Randomize </button> <button onclick="showanswer()"> Show Possible Answer </button>
+<input type="text" id="ggguess" value="" onChange="Updgg()"> <button onclick="Updgg()"> Guess </button> <button onclick="randomizegg()"> Randomize </button> <button onclick="showanswer()"> Show Possible Answer </button> <span id="gganswer"> </span>
 <div id="ggplot"> </div>
-<div id="gganswer"> </div>
+<span id="gganswer2"> </span>
 <input type="checkbox" id="chkgg"> Check this box for a harder guessing game <br>
 <h1> Play Elsewhere </h1>
 <ul>

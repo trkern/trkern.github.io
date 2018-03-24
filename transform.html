@@ -16,6 +16,7 @@ function rounder(n) {
 	}
 
 function labelpoints() {
+	if (!document.getElementById("chkkeylabel").checked) {return;}
 	var a = Number(document.getElementById("a").value);
 	var b = Number(document.getElementById("b").value);
 	var c = Number(document.getElementById("c").value);
@@ -91,6 +92,7 @@ function updateequation() {
 	}
 
 function Upd() {
+	document.getElementById("plot").innerHTML = "";
 	drawplot();
 	updateequation();
 	}
@@ -130,8 +132,10 @@ function drawplot() {
 		gvs = "hidden";
 		}
 	pointlist = [];
-	for (i = 0; i <= 3; i++) {
-		pointlist.push([(i-c)/b,math.eval(eqn,{x:(i-c)/b})]);
+	if (document.getElementById("chkkey").checked) {
+		for (i = 0; i <= 3; i++) {
+			pointlist.push([(i-c)/b,math.eval(eqn,{x:(i-c)/b})]);
+			}
 		}
 	var inf = 10000;
 	var dlist = [
@@ -156,11 +160,13 @@ function drawplot() {
 		{points: [[-inf,d],[inf,d]],
 		fnType: "points",
 		graphType: "polyline",
-		color:"yellow"},
+		color:"yellow",
+		attr: {visibility:gvs}},
 		{points: [[-c/b,-inf],[-c/b,inf]],
 		fnType: "points",
 		graphType: "polyline",
-		color:"yellow"}
+		color:"yellow",
+		attr: {visibility:gvs}}
 		];
 	inst = functionPlot({target: '#plot',
 		tip: {xLine:true, yLine:true},
@@ -212,7 +218,7 @@ function drawcat() {
 		});
 	}
 
-var funlist = ["x","x^2","x^3","x^4","sqrt(x)","cbrt(x)","abs(x)","1/x","sin(x)","sqrt(1-x^2)","floor(x)","log(x)","exp(x)","2^x"];
+var funlist = ["x^2","x","x^3","x^4","sqrt(x)","cbrt(x)","abs(x)","1/x","sin(x)","sqrt(1-x^2)","floor(x)","log(x)","exp(x)","2^x"];
 
 function bootselector() {
 	var str = "<select oninput='doselect()' id='sel'>";
@@ -307,18 +313,20 @@ function showanswer() {
 <h1> Function Transformations </h1>
 Base Function: <input type="text" id="eq" value="x^2" onChange="Upd()">
 <span id="selector"> </span>
-<button onClick="Upd()"> Plot </button> <button onClick="resetsliders()"> Reset Sliders </button> <span id="kx"> </span> <br>
+<button onClick="Upd()"> Plot </button> <button onClick="resetsliders()"> Reset Constants </button> <br>
 <table border = 0>
-<tr> <td> a: </td> <td> <input type="range" min="-10" max="10" value="1" step =.05 id="an" oninput="Updn()" style="width:50em"> </td> <td> <input type="number" id="a" oninput="Upds()" value=1 step=.05 style="width:4em"> </td> </tr>
-<tr> <td> b: </td> <td> <input type="range" min="-10" max="10" value="1" step =.05 id="bn" oninput="Updn()" style="width:50em"> </td> <td> <input type="number" id="b" oninput="Upds()" value=1 step=.05 style="width:4em"> </td> </tr>
-<tr> <td> c: </td> <td> <input type="range" min="-10" max="10" value="0" step =.05 id="cn" oninput="Updn()" style="width:50em"> </td> <td> <input type="number" id="c" oninput="Upds()" value=0 step=.05 style="width:4em"> </td> </tr>
-<tr> <td> d: </td> <td> <input type="range" min="-10" max="10" value="0" step =.05 id="dn" oninput="Updn()" style="width:50em"> </td> <td> <input type="number" id="d" oninput="Upds()" value=0 step=.05 style="width:4em"> </td> </tr>
+<tr> <td> a: </td> <td> <input type="range" min="-10" max="10" value="1" step =.1 id="an" oninput="Updn()" style="width:50em"> </td> <td> <input type="number" id="a" oninput="Upds()" value=1 step=.1 style="width:4em"> </td> </tr>
+<tr> <td> b: </td> <td> <input type="range" min="-10" max="10" value="1" step =.1 id="bn" oninput="Updn()" style="width:50em"> </td> <td> <input type="number" id="b" oninput="Upds()" value=1 step=.1 style="width:4em"> </td> </tr>
+<tr> <td> c: </td> <td> <input type="range" min="-10" max="10" value="0" step =.1 id="cn" oninput="Updn()" style="width:50em"> </td> <td> <input type="number" id="c" oninput="Upds()" value=0 step=.1 style="width:4em"> </td> </tr>
+<tr> <td> d: </td> <td> <input type="range" min="-10" max="10" value="0" step =.1 id="dn" oninput="Updn()" style="width:50em"> </td> <td> <input type="number" id="d" oninput="Upds()" value=0 step=.1 style="width:4em"> </td> </tr>
 </table>
-Graph of y=a*f(b*x+c) + d:
+<div style="display:inline-table"> Graph of y=a*f(b*x+c) + d: <table border = 1 style="display:inline-table"> <tr> <td> <span id="kx"> </span> </td> </tr> </table> </div>
 <div id="plot"> </div>
 <input type="checkbox" id="chkcrosshair" onchange="Upd()" checked> Show Mouse Crosshair <br>
 <input type="checkbox" id="chkorig" onchange="Upd()" checked> Show Original Graph <br>
 <input type="checkbox" id="chkguide" onchange="Upd()" checked> Show Guidelines <br>
+<input type="checkbox" id="chkkey" onchange = "Upd()" checked> Show Key points <br>
+<input type="checkbox" id="chkkeylabel" onchange="Upd()" checked> Label Key points <br>
 <h1> Stretch a Cat </h1>
 The cat below consists of a series of points connected by lines. The x and y coordinates of these points are multiplied by the constants you specify. <br>
 How are stretching, squashing, and mirroring related?

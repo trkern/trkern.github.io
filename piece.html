@@ -163,57 +163,6 @@ function tograph(x,mn,mx) {
 	return(m*x+b);
 	}
 
-function drawg(i, ctx, numpts) {
-	var f = 0;
-	var x = 0;
-	var y = 0;
-	var xmn = Number(document.getElementById("plotminx").value);
-	var xmx = Number(document.getElementById("plotmaxx").value);
-	var ymn = Number(document.getElementById("plotminy").value);
-	var ymx = Number(document.getElementById("plotmaxy").value);
-	var stx = Number(document.getElementById("plotminx").value);
-	if (funs[i] == "") {return;};
-	if (styles[i] >= 4 && styles[i] <= 7 && lbounds[i] > ubounds[i]) {return;};
-	//eval("f = function(x) {return("+funs[i].replace(/(\(x\)|\bx\b)/gi,'(Number(x))')+");};");
-	if (styles[i] >= 4) {
-		if (lbounds[i] > stx) {
-			stx = lbounds[i];
-			if (styles[i]%2 == 1) {
-				fillpts[fillpts.length] = [tograph(stx,xmn,xmx),500-tograph(f(stx),ymn,ymx)];
-				} else {
-				holepts[holepts.length] = [tograph(stx,xmn,xmx),500-tograph(f(stx),ymn,ymx)];
-				}
-			}
-		}
-	var edx = Number(document.getElementById("plotmaxx").value);
-	if (styles[i] <= 7) {
-		if (ubounds[i] < edx) {
-			edx = ubounds[i];
-			if (styles[i] == 0 || styles[i] == 3 || styles[i] == 6 || styles[i] == 7) {
-				fillpts[fillpts.length] = [tograph(edx,xmn,xmx),500-tograph(f(edx),ymn,ymx)];
-				} else {
-				holepts[holepts.length] = [tograph(edx,xmn,xmx),500-tograph(f(edx),ymn,ymx)];
-				}
-			}
-		}
-	if (styles[i] == 0) {
-		stx = edx;
-		}
-	if (styles[i] == 1) {
-		stx = Number(document.getElementById("plotminx").value)
-		edx = Number(document.getElementById("plotmaxx").value)
-		}
-	var k = 0;
-	ctx.beginPath();
-	if (funs[i] == "") {return;};
-	ctx.strokeStyle = "black";
-	for (k = 0; k <= numpts; k++) {
-		x = Number(stx) + Number((k *(edx-stx))/numpts);
-		y = f(x);
-		ctx.lineTo(tograph(x,xmn,xmx),500-tograph(y,ymn,ymx));
-		}
-	ctx.stroke();
-	}
 
 function ineq(i) {
 	if (styles[i] == 0) {
@@ -268,6 +217,7 @@ function plugin(v,eq) {
 
 //var cmps = ["0x = a","1x ≠ a","2x < a","3x ≤ a","4a < x < b","5a ≤ x < b","6a < x ≤ b","7a ≤ x ≤ b","8a < x","9a ≤ x"];
 function Updg() {
+	var eps = .001;
 	document.getElementById("grp").innerHTML = "";
 	var dlist = [];
 	var i;
@@ -299,7 +249,7 @@ function Updg() {
 				holepts.push([ubounds[i],plugin(ubounds[i],funs[i])]);
 				}
 			}
-		if (styles[i] == 0) {l = +ubounds[i]-.0001; u = +ubounds[i]+.0001;}
+		if (styles[i] == 0) {l = +ubounds[i]-.0000001; u = +ubounds[i]+.0000001;}
 		if (styles[i] == 1) {l = -Infinity; u = Infinity;}
 		dlist.push({
 			fn: funs[i],
@@ -335,14 +285,14 @@ function Updg() {
 		graphType: "scatter",
 		points: newholepts,
 		color:"black",
-		attr: {r:5, fill:"white", stroke:"black", "stroke-width":2}
+		attr: {r:5, fill:'rgba(255,255,255,1)', stroke:"black", "stroke-width":2, "opacity":1}
 		});
 	dlist.push({
 		fnType: "points",
 		graphType: "scatter",
 		points: newfillpts,
 		color:"black",
-		attr: {r:5, fill:"black"}
+		attr: {r:5, fill:"black", "opacity":1}
 		});
 	var b = functionPlot({target: '#grp', data: dlist, tip: {xLine:true, yLine:true},
 		grid: true,
@@ -351,103 +301,6 @@ function Updg() {
 	makekatex();
 	}
 
-function oldUpdg() {
-	var i = 0;
-	var numpts = Number(document.getElementById("numpts").value);
-	var ctx = document.getElementById("gr").getContext("2d");
-	var xmn = Number(document.getElementById("plotminx").value);
-	var xmx = Number(document.getElementById("plotmaxx").value);
-	var ymn = Number(document.getElementById("plotminy").value);
-	var ymx = Number(document.getElementById("plotmaxy").value);
-	fillpts = [];
-	holepts = [];
-	ctx.beginPath();
-	ctx.fillStyle = "#FFFFFF";
-	ctx.fillRect(0,0,500,500);
-	if (document.getElementById("c1").checked) {
-		ctx.strokeStyle="gray";
-		for (k = Math.ceil(xmn); k < xmx; k++) {
-			ctx.beginPath();
-			ctx.moveTo(tograph(k,xmn,xmx),0);
-			ctx.lineTo(tograph(k,xmn,xmx),500);
-			ctx.stroke();
-			}
-		for (k = Math.ceil(ymn); k < ymx; k++) {
-			ctx.beginPath();
-			ctx.moveTo(0,500-tograph(k,ymn,ymx));
-			ctx.lineTo(500,500-tograph(k,ymn,ymx));
-			ctx.stroke();
-			}
-		ctx.strokeStyle = "black";
-		}
-	if (document.getElementById("c0").checked) {
-		ctx.strokeStyle = "black";
-		ctx.beginPath();
-		ctx.moveTo(0,500-tograph(0,ymn,ymx));
-		ctx.lineTo(500,500-tograph(0,ymn,ymx));
-		ctx.stroke();
-		ctx.beginPath();
-		ctx.moveTo(tograph(0,xmn,xmx),0);
-		ctx.lineTo(tograph(0,xmn,xmx),500);
-		ctx.stroke();
-		}
-	if (globn != 0) {
-		for (i = 0; i < globn; i++) {
-			drawg(i,ctx, numpts);
-			}
-		}
-	if (holepts.length != 0) {
-		for (i = 0; i < holepts.length; i++) {
-			ctx.beginPath();
-			ctx.arc(holepts[i][0],holepts[i][1], 5, 0 , 2*Math.PI);
-			ctx.fillStyle="black";
-			ctx.fill();
-			ctx.beginPath();
-			ctx.arc(holepts[i][0],holepts[i][1], 3, 0, 2*Math.PI);
-			ctx.fillStyle="white";
-			ctx.fill();			
-			}
-		}
-	if (fillpts.length != 0) {
-		for (i = 0; i < fillpts.length; i++) {
-			ctx.beginPath();
-			ctx.arc(fillpts[i][0],fillpts[i][1], 5, 0 , 2*Math.PI);
-			ctx.fillStyle="black";
-			ctx.fill();
-			}
-		}
-	}
-function sqrt(x) {
-	if (x >= 0) {
-		return(Math.sqrt(x));
-		}
-	if (x >= -.02) {
-		return(0);
-		}
-	}
-function abs(x) {
-	return(Math.abs(x));
-	}
-function sin(x) {
-	return(Math.sin(x));
-	}
-function cuberoot(x) {
-	return(Math.cbrt(x));
-	}
-function floor(x) {
-	return Math.floor(x);
-	}
-function log(x) {
-	if (x >= 0) {
-		return Math.log(x);
-		}
-	if (x >= -.01) {
-		return(-1000);
-		}
-	}
-function exp(x) {
-	return Math.exp(x);
-	}
 </script>
 </head>
 <body onload="Updn()">

@@ -320,13 +320,14 @@ Base Function: <input type="text" id="eq" value="x^2" onChange="Upd()">
 <tr> <td> c: </td> <td> <input type="range" min="-10" max="10" value="0" step =.1 id="cn" oninput="Updn()" style="width:50em"> </td> <td> <input type="number" id="c" oninput="Upds()" value=0 step=.1 style="width:4em"> </td> </tr>
 <tr> <td> d: </td> <td> <input type="range" min="-10" max="10" value="0" step =.1 id="dn" oninput="Updn()" style="width:50em"> </td> <td> <input type="number" id="d" oninput="Upds()" value=0 step=.1 style="width:4em"> </td> </tr>
 </table>
-<div style="display:inline-table"> Graph of y=a*f(b*x+c) + d: <table border = 1 style="display:inline-table"> <tr> <td> <span id="kx"> </span> </td> </tr> </table> </div>
+<div style="display:inline-table"> Graph of y=a*f(b*x+c) + d: <table border = 1 style="display:inline-table"> <tr> <td style="height:3em"> <span id="kx"> </span> </td> </tr> </table> </div>
 <div id="plot"> </div>
+Click and drag to pan, scrollwheel to zoom. <br>
 <input type="checkbox" id="chkcrosshair" onchange="Upd()" checked> Show Mouse Crosshair <br>
-<input type="checkbox" id="chkorig" onchange="Upd()" checked> Show Original Graph <br>
-<input type="checkbox" id="chkguide" onchange="Upd()" checked> Show Guidelines <br>
-<input type="checkbox" id="chkkey" onchange = "Upd()" checked> Show Key points <br>
-<input type="checkbox" id="chkkeylabel" onchange="Upd()" checked> Label Key points <br>
+<input type="checkbox" id="chkorig" onchange="Upd()"> Show Original Graph <br>
+<input type="checkbox" id="chkguide" onchange="Upd()"> Show Guidelines <br>
+<input type="checkbox" id="chkkey" onchange = "Upd()"> Show Key points <br>
+<input type="checkbox" id="chkkeylabel" onchange="Upd()"> Label Key points <br>
 <h1> Stretch a Cat </h1>
 The cat below consists of a series of points connected by lines. The x and y coordinates of these points are multiplied by the constants you specify. <br>
 How are stretching, squashing, and mirroring related?

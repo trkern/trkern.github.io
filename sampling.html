@@ -61,10 +61,49 @@ function boot() {
 	
 	}
 
+function stretch(a,b,c) {
+	var x = randn_bm();
+	if (Math.random() < b/(b+c)) {
+		x = -Math.abs(x)*b;
+		}
+	else {
+		x = Math.abs(x)*c;
+		}
+	x = +x+a;
+	return(Math.round(x));
+	}
+
+function rbool(a) {
+	if (Math.random() > a) {
+		return(0);
+		}
+	return(1);
+	}
+
+function rapprox(b) {
+	//Abramowitz and Stegun
+	var a = Math.sqrt(-2*Math.log(b));
+	return(a - ((.010328 * a * a + 0.802853 * a + 2.515517)/(.001308 * a * a * a + .189269 * a * a + 1.432788 * a + 1.0)));
+	}
+
+function NCI(a) {
+	if (a < .5) {
+		return (-rapprox(a));
+		}
+	else {
+		return (rapprox(1-a));
+		}
+	}
+
+function dnorm(i) {
+	return(NCI(i));
+	}
+
 function generatedata() {
 	var n = Number(document.getElementById("np").value);
 	var a = Number(document.getElementById("low").value);
 	var b = Number(document.getElementById("upp").value);
+	var c = Number(document.getElementById("par3").value);
 	var i;
 	population = [];
 	if (document.getElementById("r1").checked) {
@@ -82,17 +121,57 @@ function generatedata() {
 			population.push([Math.round(b*randn_bm() + a),0]);
 			}
 		}
+	if (document.getElementById("r5").checked) {
+		for (i = 0; i < n; i++) {
+			population.push([stretch(a,b,c),0]);
+			}
+		}
+	if (document.getElementById("r4").checked) {
+		for (i = 0; i < n; i++) {
+			population.push([rbool(a),0]);
+			}
+		}
+	if (document.getElementById("r6").checked) {
+		for (i = 0; i < n; i++) {
+			population.push([Math.round(b*dnorm((i+1)/(n+1)) + a),0]);
+			}
+		}
+	var fakepopulation = [];
+	for (i = 0; i < population.length; i++) {
+		fakepopulation.push(population[i][0]);
+		}
 	document.getElementById("pop").innerHTML = stemandleafstring(population);
+	histo("pophist",fakepopulation);
 	}
 
 function Urad() {
-	if (document.getElementById("r3").checked) {
+	if (document.getElementById("r3").checked || document.getElementById("r6").checked) {
 		document.getElementById("lab1").innerHTML = "Mean:";
 		document.getElementById("lab2").innerHTML = "Standard Deviation:";
+		document.getElementById("lab3").innerHTML = "";
+		document.getElementById("par3").style = "display:none";
+		document.getElementById("upp").style = "width:3em";
 		}
-	else {
+	if (document.getElementById("r1").checked || document.getElementById("r2").checked) {
 		document.getElementById("lab1").innerHTML = "Lower Bound:";
 		document.getElementById("lab2").innerHTML = "Upper Bound:";
+		document.getElementById("upp").style = "width:3em";
+		document.getElementById("par3").style = "display:none";
+		document.getElementById("lab3").innerHTML = "";
+		}
+	if (document.getElementById("r4").checked) {
+		document.getElementById("lab1").innerHTML = "Rough Proportion:";
+		document.getElementById("lab2").innerHTML = "";
+		document.getElementById("upp").style = "display:none";
+		document.getElementById("lab3").innerHTML = "";
+		document.getElementById("par3").style = "display:none";
+		}
+	if (document.getElementById("r5").checked) {
+		document.getElementById("upp").style = "width:3em";
+		document.getElementById("par3").style = "width:3em";
+		document.getElementById("lab1").innerHTML = "Mean";
+		document.getElementById("lab2").innerHTML = "Left Stretch:";
+		document.getElementById("lab3").innerHTML = "Right Stretch:";
 		}
 	}
 
@@ -135,11 +214,11 @@ function stemandleafstring(l) {
 	for (i = 0; i < stemlist.length; i++) {
 		str += "<tr> <td>";
 		str += stemlist[i];
-		str += "</td> <td>";
+		str += "</td> <td style='width:1000px'> <div style='word-wrap:break-word; word-break:break-all'>";
 		for (j = 0; j < tabl[stemlist[i]].length; j++) {
 			str += makeleaf(tabl[stemlist[i]][j]);
 			}
-		str += "</td> </tr>";
+		str += "</div></td> </tr>";
 		}
 	str += "</table>";
 	return(str);
@@ -212,6 +291,7 @@ function grounder(n) {
 
 var samples = [];
 var samplemeans = [];
+var flatsamplemeans = [];
 
 function sampletable() {
 	var str = "<table border = 1>";
@@ -254,12 +334,28 @@ function getsample() {
 		samplemeans[samplemeans.length-1][1] = 0;
 		}
 	samplemeans.push([grounder(mean(samplelist)),1]);
-	document.getElementById("samples").innerHTML = sampletable();
+	if (document.getElementById("chkanim").checked) {
+		document.getElementById("pop").innerHTML = stemandleafstring(population);
+		document.getElementById("pop").style.display = 'none';
+		document.getElementById("pop").style.display = 'block';
+		document.getElementById("ssl").innerHTML = "Sample Means:" + stemandleafstring(samplemeans);
+		//document.getElementById("samples").innerHTML = sampletable();
+		updatestatstable();
+		}
+	}
+
+function plotsamplemeans() {
 	document.getElementById("pop").innerHTML = stemandleafstring(population);
 	document.getElementById("pop").style.display = 'none';
 	document.getElementById("pop").style.display = 'block';
 	document.getElementById("ssl").innerHTML = "Sample Means:" + stemandleafstring(samplemeans);
+	document.getElementById("samples").innerHTML = sampletable();
 	updatestatstable();
+	var fakersamplemeans = [];
+	for (i = 0; i < samplemeans.length; i++) {
+		fakersamplemeans.push(samplemeans[i][0]);
+		}
+	histo("samphist",fakersamplemeans);
 	}
 
 function getmanysample() {
@@ -268,6 +364,7 @@ function getmanysample() {
 	for (i = 0; i < n; i++) {
 		setTimeout(getsample,i*100);
 		}
+	setTimeout(plotsamplemeans,i*100);
 	}
 
 function updatestatstable() {
@@ -281,19 +378,62 @@ function updatestatstable() {
 	document.getElementById("qds").innerHTML = rounder(stdevie(population)/Math.sqrt(document.getElementById("ns").value));
 	}
 
+function xtobin(x,mn,mx,nbins) {
+	return(Math.round((x-mn)/(mx-mn)*nbins));
+	}
+
+function histo(targ,dat) {
+	var w = 300;
+	var h = 200;
+	var n = dat.length;
+	if (n == 0) {return;}
+	var mxx = Math.max.apply(null,dat)+1;
+	var mnx = Math.min.apply(null,dat)-1;
+	var bins = [];
+	var i = 0;
+	var nbins = Math.floor(Math.sqrt(n))+1;
+	var k = 0;
+	for (k = 0; k <= nbins; k++) {
+		bins.push(0);
+		}
+	for (i = 0; i < n; i++) {
+		bins[xtobin(dat[i],mnx,mxx,nbins)]++;
+		}
+	mxbinheight = Math.max.apply(null,bins);
+	var ctx = document.getElementById(targ).getContext("2d");
+	ctx.fillStyle= "#FFFFFF";
+	ctx.fillRect(0,0,w,h);
+	for (k = 0; k <= nbins; k++) {
+		ctx.fillStyle = "#000000";
+		ctx.fillRect(k*(w/(nbins+1)),h-((h/mxbinheight)*bins[k]),w/(nbins+1),(h/mxbinheight)*bins[k]);
+		ctx.fillStyle = "#CCCCCC";
+		ctx.fillRect(k*(w/(nbins+1))+1,h-((h/mxbinheight)*bins[k])+1,w/(nbins+1)-2,(h/mxbinheight)*bins[k]-2);
+		}
+	document.getElementById(targ).addEventListener("mousemove",function(e) {
+		var r = document.getElementById(targ).getBoundingClientRect();
+		var jj = Math.floor((e.clientX-r.left)*(nbins+1)/300);
+		var bw = (mxx-mnx)/nbins;
+		document.getElementById(targ).title = "("+grounder(jj*bw)+" to "+grounder((jj+1)*bw)+": count = " + bins[jj] + ")"
+		});
+	}
+
 </script>
 </head>
-<body onload="boot()">
+<body onload="boot(); Urad();">
 <table border=0> <tr> <td>
 <table border=1> <tr> <td>
 Population size: <input type='number' id='np' value=1000 style='width:4em'> 
 </td> </tr> <tr> <td>
 <input id="r1" onchange="Urad()" type="radio" name="radio"> Evenly Spaced <br>
 <input id="r2" onchange="Urad()" type="radio" name="radio" checked> Random (Uniform Distribution) <br>
-<input id="r3" onchange="Urad()" type="radio" name="radio"> Random (Normal Distribution)
+<input id="r3" onchange="Urad()" type="radio" name="radio"> Random (Normal Distribution) <br>
+<input id="r4" onchange="Urad()" type="radio" name="radio"> Boolean (0 or 1) <br> 
+<input id="r5" onchange="Urad()" type="radio" name="radio"> Skewed <br>
+<input id="r6" onchange="Urad()" type="radio" name="radio"> Normal (Exact)
 </td> </tr> <tr> <td>
-<span id="lab1">Lower bound:</span> <input type='number' id='low' value=0 style='width:3em'> <br>
-<span id="lab2">Upper bound:</span> <input type='number' id='upp' value=100 style='width:3em'>
+<span id="lab1">Lower bound:</span> <input type='number' id='low' value=0 style='width:3em'> <br> 
+<span id="lab2">Upper bound:</span> <input type='number' id='upp' value=100 style='width:3em'> <br>
+<span id="lab3">Nothing: </span> <input type='number' id='par3' value=40 style='width:3em'>
 </td> </tr> <tr> <td>
 <button onclick="generatedata()">Generate Population</button>
 </td> </tr> </table> 
@@ -301,10 +441,11 @@ Population size: <input type='number' id='np' value=1000 style='width:4em'>
 <table border = 1> <tr> <td>
 Sample size: <input type='number' id = 'ns' value=40 style='width:3em'>
 </td></tr><tr><td>
-<button onclick="getsample()">Generate Sample</button>
+<button onclick="getsample(); plotsamplemeans();">Generate Sample</button>
 </td></tr><tr><td>
 Number of Samples: <input type='number' id='nms' value = 100 style='width:3em'> <br>
-<button onclick="getmanysample()">Generate Many Samples</button>
+<button onclick="getmanysample()">Generate Many Samples</button> <br>
+<input type="checkbox" id="chkanim" checked> Animate
 </td> </tr> </table> </td> 
 <td> <td>
 <table border = 1>
@@ -314,7 +455,9 @@ Number of Samples: <input type='number' id='nms' value = 100 style='width:3em'> 
 </table> </td>
 </tr> </table>
 <div id="pop"></div><br>
+<canvas id = "pophist" width = 300 height = 200 style="border:1px solid #c3c3c3;"> </canvas>
 <div id="ssl"></div><br>
+<canvas id = "samphist" width = 300 height = 200 style="border:1px solid #c3c3c3;"> </canvas>
 <div id="samples"></div>
 </body>
 </html>

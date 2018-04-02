@@ -29,6 +29,16 @@ function meanconfidenceinterval(a,s,xbar,n) {
 	return([xbar-E,xbar+E]);
 	}
 
+function confidenceinterval(i) {
+	if (document.getElementById("sel").value == 4) {
+		ci = propconfidenceinterval(.05,mean(samples[i])/100,samples[i].length);
+		}
+	else {
+		ci = meanconfidenceinterval(.05,sstdev(samples[i]),mean(samples[i]),samples[i].length);
+		}
+	return(ci);
+	}
+
 function cistring(i) {
 	var ci = [0,0];
 	if (document.getElementById("sel").value == 4) {
@@ -411,6 +421,7 @@ function getsample() {
 			fakersamplemeans.push(samplemeans[i][0]);
 			}
 		histo("samphist",fakersamplemeans);
+		drawcis();
 		}
 	}
 
@@ -420,6 +431,7 @@ function plotsamplemeans() {
 	document.getElementById("pop").style.display = 'block';
 	document.getElementById("ssl").innerHTML = "Sample Means:" + stemandleafstring(samplemeans);
 	document.getElementById("samples").innerHTML = sampletable();
+	drawcis();
 	updatestatstable();
 	var fakersamplemeans = [];
 	for (i = 0; i < samplemeans.length; i++) {
@@ -517,11 +529,103 @@ function hidepop() {
 		document.getElementById("phlab").style="";
 		}
 	document.getElementById("samples").innerHTML = sampletable();
+	drawcis();
+	}
+
+function sschange() {
+	var ss = document.getElementById("ns").value;
+	var k = document.getElementById("sel").value;
+	if (k == 4) {
+		var p = meanie(population)/100;
+		if (ss*p*(1-p) < 10) {
+			document.getElementById("warn").innerHTML = "Sample Size Too Small! (np(1-p) < 10) Confidence intervals, Predicted Statistics of the Sample Means may be inaccurate!";
+			return;
+			}
+		}
+	if (ss < 30) {
+		document.getElementById("warn").innerHTML = "Sample Size Too Small! (n < 30) Confidence intervals, Predicted Statistics of the Sample Means may be inaccurate!";
+		return;
+		}
+	document.getElementById("warn").innerHTML = "";
+	}
+
+function drawcis() {
+	var xmid = meanie(population);
+	var xmax = confidenceinterval(0)[1];
+	var xmin = confidenceinterval(0)[0];
+	var ci;
+	var nsamp = samples.length;
+	for (i = 0; i < nsamp; i++) {
+		ci = confidenceinterval(i);
+		if (ci[0] < xmin) {
+			xmin = ci[0];
+			}
+		if (ci[1] > xmax) {
+			xmax = ci[1];
+			}
+		}
+	var cwid = document.getElementById("cis").width;
+	document.getElementById("cis").height = 2*nsamp + 2;
+	var ctx = document.getElementById("cis").getContext("2d");
+	ctx.fillStyle= "#FFFFFF";
+	ctx.fillRect(0,0, document.getElementById("cis").width, document.getElementById("cis").height);
+	var i = 0;
+	var m;
+	var b;
+	var lil;
+	var liu;
+	var col = "black";
+	for (i = 0; i < nsamp; i++) {
+		ctx.beginPath();
+		ci = confidenceinterval(i);
+		m = cwid/(xmax-xmin);
+		b = -cwid * xmin/(xmax-xmin);
+		if (!document.getElementById("chkhidepop").checked) {
+			if (ci[0] <= xmid && xmid <= ci[1]) {
+				col = "blue";
+				console.log(ci);
+				console.log(xmid);
+				}
+			else {
+				col = "red";
+				}
+			}
+		else {
+			col = "black";
+			}
+		lil = m*ci[0] + b;
+		liu = m*ci[1] + b;
+		ctx.strokeStyle = col;
+		ctx.moveTo(lil,2*i+1);
+		ctx.lineTo(liu,2*i+1);
+		ctx.stroke();
+		}
+	if (!document.getElementById("chkhidepop").checked) {
+		ctx.beginPath();
+		ctx.strokeStyle = "green";
+		ctx.moveTo(document.getElementById("cis").width/2, 0);
+		ctx.lineTo(document.getElementById("cis").width/2, document.getElementById("cis").height);
+		ctx.stroke();
+		}
+	document.getElementById("cis").addEventListener("mousemove",function(e) {
+		var r = document.getElementById("cis").getBoundingClientRect();
+		var jj = Math.floor((e.clientY-r.top)/2)-1;
+		document.getElementById("cis").title = confidenceinterval(jj);
+		});
+	}
+
+function chkcis() {
+	if (!document.getElementById("chkcis").checked) {
+		document.getElementById("cis").style = "display:none";
+		}
+	else {
+		document.getElementById("cis").style = "border:1px solid #c3c3c3";
+		}
 	}
 
 </script>
 </head>
-<body onload="boot(); Urad(); console.log(NCI(.025));">
+<body onload="boot(); Urad(); chkcis()">
 <table border=0> <tr> <td>
 <table border=1> <tr> <td>
 Population size: <input type='number' id='np' value=1000 style='width:4em'> 
@@ -545,13 +649,14 @@ Population size: <input type='number' id='np' value=1000 style='width:4em'>
 </td> </tr> </table> 
 </td> <td>
 <table border = 1> <tr> <td>
-Sample size: <input type='number' id = 'ns' value=40 style='width:3em'>
+Sample size: <input type='number' id = 'ns' value=40 style='width:3em' onchange='sschange()'>
 </td></tr><tr><td>
 <button onclick="getsample(); plotsamplemeans();">Generate Sample</button>
 </td></tr><tr><td>
 Number of Samples: <input type='number' id='nms' value = 100 style='width:3em'> <br>
 <button onclick="getmanysample()">Generate Many Samples</button> <br>
-<input type="checkbox" id="chkanim" checked> Animate
+<input type="checkbox" id="chkanim" checked> Animate <br>
+<input type="checkbox" id="chkcis" onclick="chkcis()"> Show Confidence Intervals
 </td> </tr> </table> </td> 
 <td> <td>
 <table border = 1>
@@ -563,6 +668,8 @@ Number of Samples: <input type='number' id='nms' value = 100 style='width:3em'> 
 </table></td>
 <td> Sample Means: <br><canvas id = "samphist" width = 300 height = 150 style="border:1px solid #c3c3c3;"> </canvas> </td>
 </tr> </table>
+<canvas id = "cis" width = 300 height = 200 style="border:1px solid #c3c3c3;"> </canvas>
+<div id="warn"></div>
 <div id="pop"></div>
 <div id="phlab"><br> Population histogram: <br></div>
 <canvas id = "pophist" width = 300 height = 200 style="border:1px solid #c3c3c3;"> </canvas>

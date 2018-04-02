@@ -2,6 +2,57 @@
 <html>
 <head>
 <script>
+// if sample size is less than 5% of population, general normal approx work well. if more, need to use another formula:
+// Finite population correction formula: sigma_x-bar = sqrt(N-n)/sqrt(N-1) sigma/sqrt(n)
+// sample size must be at least 30 OR population must be normal for normal approx to work.
+
+// For sample proportion:
+// np(1-p) >= 10 in order for normal approx to work.
+// mean of means is p
+// stdev of sampling distribution is sqrt(p(1-p)/n), which agrees with the formula for sample means
+// Finite population correction formula: sigma_p-hat = sqrt(N-n)/sqrt(N) sqrt(p(1-p))/sqrt(n-1)
+
+//To add:
+//-Finite population correction formulas and identification
+//-Too small sample size identification
+//-Confidence interval picture
+
+
+function propconfidenceinterval(a,phat,n) {
+	var E = -NCI(a/2) * Math.sqrt(phat*(1-phat)/n);
+	return([100*(phat-E),100*(phat+E)]);
+	};
+
+function meanconfidenceinterval(a,s,xbar,n) {
+	var ta = -NCI(a/2); //actually za. need to fix
+	var E = ta * s/Math.sqrt(n);
+	return([xbar-E,xbar+E]);
+	}
+
+function cistring(i) {
+	var ci = [0,0];
+	if (document.getElementById("sel").value == 4) {
+		ci = propconfidenceinterval(.05,mean(samples[i])/100,samples[i].length);
+		}
+	else {
+		ci = meanconfidenceinterval(.05,sstdev(samples[i]),mean(samples[i]),samples[i].length);
+		}
+	var col = "black";
+	if (!document.getElementById("chkhidepop").checked) {
+		var pm = meanie(population);
+		if(ci[0] <= pm && pm <= ci[1]) {
+			col = "blue";
+			}
+		else {
+			col = "red";
+			}
+		}
+	var str = "<div style='color:"+col+"'>";
+	str += "[" + rounder(ci[0]) + "," + rounder(ci[1]) + "]";
+	str += "</div>";
+	return(str);
+	}
+
 var total = 0;
 var trials = 0;
 function ribet(mn,mx) {
@@ -77,7 +128,7 @@ function rbool(a) {
 	if (Math.random() > a) {
 		return(0);
 		}
-	return(1);
+	return(100);
 	}
 
 function rapprox(b) {
@@ -106,32 +157,38 @@ function generatedata() {
 	var c = Number(document.getElementById("par3").value);
 	var i;
 	population = [];
-	if (document.getElementById("r1").checked) {
+	var k = document.getElementById("sel").value;
+	if (k == 1) {
 		for (i = 0; i < n; i++) {
-			population.push([Math.round(((b-a)*i)/(n-1) + a),0]);
+			population.push([Math.floor(((b+1-a)*(i+.0001))/(n) + a),0]);
 			}
 		}
-	if (document.getElementById("r2").checked) {
+	if (k == 2) {
 		for (i = 0; i < n; i++) {
 			population.push([ribet(a,b),0]);
 			}
 		}
-	if (document.getElementById("r3").checked) {
+	if (k == 3) {
 		for (i = 0; i < n; i++) {
 			population.push([Math.round(b*randn_bm() + a),0]);
 			}
 		}
-	if (document.getElementById("r5").checked) {
+	if (k == 4) {
+		for (i = 0; i < n; i++) {
+			if (i < a * n) {
+				population.push([100,0]);
+				}
+			else {
+				population.push([0,0]);
+				}
+			}
+		}
+	if (k == 5) {
 		for (i = 0; i < n; i++) {
 			population.push([stretch(a,b,c),0]);
 			}
 		}
-	if (document.getElementById("r4").checked) {
-		for (i = 0; i < n; i++) {
-			population.push([rbool(a),0]);
-			}
-		}
-	if (document.getElementById("r6").checked) {
+	if (k == 6) {
 		for (i = 0; i < n; i++) {
 			population.push([Math.round(b*dnorm((i+1)/(n+1)) + a),0]);
 			}
@@ -142,31 +199,41 @@ function generatedata() {
 		}
 	document.getElementById("pop").innerHTML = stemandleafstring(population);
 	histo("pophist",fakepopulation);
+	resetsamples();
+	document.getElementById("qam").innerHTML = meanie(population);
+	document.getElementById("qbm").innerHTML = "";
+	document.getElementById("qcm").innerHTML = "";
+	document.getElementById("qdm").innerHTML = meanie(population);
+	document.getElementById("qas").innerHTML = rounder(stdevie(population));
+	document.getElementById("qbs").innerHTML = "";
+	document.getElementById("qcs").innerHTML = "";
+	document.getElementById("qds").innerHTML = rounder(stdevie(population)/Math.sqrt(document.getElementById("ns").value));
 	}
 
 function Urad() {
-	if (document.getElementById("r3").checked || document.getElementById("r6").checked) {
+	var k = document.getElementById("sel").value;
+	if (k == 3 || k == 6) {
 		document.getElementById("lab1").innerHTML = "Mean:";
 		document.getElementById("lab2").innerHTML = "Standard Deviation:";
 		document.getElementById("lab3").innerHTML = "";
 		document.getElementById("par3").style = "display:none";
 		document.getElementById("upp").style = "width:3em";
 		}
-	if (document.getElementById("r1").checked || document.getElementById("r2").checked) {
+	if (k == 1 || k == 2) {
 		document.getElementById("lab1").innerHTML = "Lower Bound:";
 		document.getElementById("lab2").innerHTML = "Upper Bound:";
 		document.getElementById("upp").style = "width:3em";
 		document.getElementById("par3").style = "display:none";
 		document.getElementById("lab3").innerHTML = "";
 		}
-	if (document.getElementById("r4").checked) {
-		document.getElementById("lab1").innerHTML = "Rough Proportion:";
+	if (k == 4) {
+		document.getElementById("lab1").innerHTML = "Proportion:";
 		document.getElementById("lab2").innerHTML = "";
 		document.getElementById("upp").style = "display:none";
 		document.getElementById("lab3").innerHTML = "";
 		document.getElementById("par3").style = "display:none";
 		}
-	if (document.getElementById("r5").checked) {
+	if (k == 5) {
 		document.getElementById("upp").style = "width:3em";
 		document.getElementById("par3").style = "width:3em";
 		document.getElementById("lab1").innerHTML = "Mean";
@@ -286,16 +353,12 @@ function grounder(n) {
 	return(r);
 	}
 
-// if sample size is less than 5% of population, general normal approx work well. if more, need to use another formula
-// sample size must be at least 30 for normal approx to work.
-
 var samples = [];
 var samplemeans = [];
-var flatsamplemeans = [];
 
 function sampletable() {
 	var str = "<table border = 1>";
-	str += "<tr> <td> x&#772; </td> <td> s </td> <td> Sample </td> </tr>";
+	str += "<tr> <td> x&#772; </td> <td> s </td> <td> Confidence Interval </td> <td> Sample </td> </tr>";
 	var i,j;
 	for (i = 0; i < samples.length; i++) {
 		str += "<tr><td>";
@@ -303,6 +366,8 @@ function sampletable() {
 		str += "</td><td>";
 		str += rounder(sstdev(samples[i]));
 		str += "</td><td>";
+		str += cistring(i);
+		str += "</td><td style='font-size:small'>";
 		str += samples[i][0];
 		for (j = 1; j < samples[i].length; j++) {
 			str += ", ";
@@ -341,6 +406,11 @@ function getsample() {
 		document.getElementById("ssl").innerHTML = "Sample Means:" + stemandleafstring(samplemeans);
 		//document.getElementById("samples").innerHTML = sampletable();
 		updatestatstable();
+		var fakersamplemeans = [];
+		for (i = 0; i < samplemeans.length; i++) {
+			fakersamplemeans.push(samplemeans[i][0]);
+			}
+		histo("samphist",fakersamplemeans);
 		}
 	}
 
@@ -379,7 +449,7 @@ function updatestatstable() {
 	}
 
 function xtobin(x,mn,mx,nbins) {
-	return(Math.round((x-mn)/(mx-mn)*nbins));
+	return(Math.floor((x-mn)/(mx-mn)*nbins));
 	}
 
 function histo(targ,dat) {
@@ -393,7 +463,7 @@ function histo(targ,dat) {
 	var i = 0;
 	var nbins = Math.floor(Math.sqrt(n))+1;
 	var k = 0;
-	for (k = 0; k <= nbins; k++) {
+	for (k = 0; k < nbins; k++) {
 		bins.push(0);
 		}
 	for (i = 0; i < n; i++) {
@@ -403,39 +473,73 @@ function histo(targ,dat) {
 	var ctx = document.getElementById(targ).getContext("2d");
 	ctx.fillStyle= "#FFFFFF";
 	ctx.fillRect(0,0,w,h);
-	for (k = 0; k <= nbins; k++) {
+	for (k = 0; k < nbins; k++) {
 		ctx.fillStyle = "#000000";
-		ctx.fillRect(k*(w/(nbins+1)),h-((h/mxbinheight)*bins[k]),w/(nbins+1),(h/mxbinheight)*bins[k]);
+		ctx.fillRect(k*(w/(nbins)),h-((h/mxbinheight)*bins[k]),w/(nbins),(h/mxbinheight)*bins[k]);
 		ctx.fillStyle = "#CCCCCC";
-		ctx.fillRect(k*(w/(nbins+1))+1,h-((h/mxbinheight)*bins[k])+1,w/(nbins+1)-2,(h/mxbinheight)*bins[k]-2);
+		ctx.fillRect(k*(w/(nbins))+1,h-((h/mxbinheight)*bins[k])+1,w/(nbins)-2,(h/mxbinheight)*bins[k]-2);
 		}
 	document.getElementById(targ).addEventListener("mousemove",function(e) {
 		var r = document.getElementById(targ).getBoundingClientRect();
-		var jj = Math.floor((e.clientX-r.left)*(nbins+1)/300);
+		var jj = Math.floor((e.clientX-r.left)*(nbins)/300);
 		var bw = (mxx-mnx)/nbins;
-		document.getElementById(targ).title = "("+grounder(jj*bw)+" to "+grounder((jj+1)*bw)+": count = " + bins[jj] + ")"
+		document.getElementById(targ).title = "("+grounder((jj)*bw+mnx)+" to "+grounder((jj+1)*bw+mnx)+": count = " + bins[jj] + ")"
 		});
+	}
+
+function resetsamples() {
+	samples = [];
+	samplemeans = [];
+	document.getElementById("ssl").innerHTML = "";
+	document.getElementById("samples").innerHTML = "";
+	var ctx = document.getElementById("samphist").getContext("2d");
+	ctx.fillStyle= "#FFFFFF";
+	ctx.fillRect(0,0,300,200);
+	}
+
+function hidepop() {
+	if (document.getElementById("chkhidepop").checked) {
+		document.getElementById("pop").style ="display:none";
+		document.getElementById("pophist").style="display:none";
+		document.getElementById("qam").style="display:none";
+		document.getElementById("qas").style="display:none";
+		document.getElementById("qdm").style="display:none";
+		document.getElementById("qds").style="display:none";
+		}
+	else {
+		document.getElementById("pop").style ="";
+		document.getElementById("pophist").style="";
+		document.getElementById("qam").style="";
+		document.getElementById("qas").style="";
+		document.getElementById("qdm").style="";
+		document.getElementById("qds").style="";
+		}
+	document.getElementById("samples").innerHTML = sampletable();
 	}
 
 </script>
 </head>
-<body onload="boot(); Urad();">
+<body onload="boot(); Urad(); console.log(NCI(.025));">
 <table border=0> <tr> <td>
 <table border=1> <tr> <td>
 Population size: <input type='number' id='np' value=1000 style='width:4em'> 
 </td> </tr> <tr> <td>
-<input id="r1" onchange="Urad()" type="radio" name="radio"> Evenly Spaced <br>
-<input id="r2" onchange="Urad()" type="radio" name="radio" checked> Random (Uniform Distribution) <br>
-<input id="r3" onchange="Urad()" type="radio" name="radio"> Random (Normal Distribution) <br>
-<input id="r4" onchange="Urad()" type="radio" name="radio"> Boolean (0 or 1) <br> 
-<input id="r5" onchange="Urad()" type="radio" name="radio"> Skewed <br>
-<input id="r6" onchange="Urad()" type="radio" name="radio"> Normal (Exact)
-</td> </tr> <tr> <td>
+<select oninput = "Urad()" id="sel">
+<option value=1> Evenly Spaced </option>
+<option value=2> Random (Uniform) </option>
+<option value=3 selected> Random (Normal) </option>
+<option value=4> Boolean (0 or 100) </option>
+<option value=5> Skewed </option>
+<option value=6> Normal </option>
+</select>
+</td> </tr> 
+<tr> <td> 
 <span id="lab1">Lower bound:</span> <input type='number' id='low' value=0 style='width:3em'> <br> 
 <span id="lab2">Upper bound:</span> <input type='number' id='upp' value=100 style='width:3em'> <br>
 <span id="lab3">Nothing: </span> <input type='number' id='par3' value=40 style='width:3em'>
 </td> </tr> <tr> <td>
-<button onclick="generatedata()">Generate Population</button>
+<button onclick="generatedata()">Generate Population</button> <br>
+<input type="checkbox" id="chkhidepop" onchange="hidepop()"> Hide Population (Realism)
 </td> </tr> </table> 
 </td> <td>
 <table border = 1> <tr> <td>
@@ -449,15 +553,18 @@ Number of Samples: <input type='number' id='nms' value = 100 style='width:3em'> 
 </td> </tr> </table> </td> 
 <td> <td>
 <table border = 1>
-<tr> <td> </td> <td> Population </td> <td> Most Recent Sample </td> <td> Sample Means </td> <td> Sample Means (predicted) </td> </tr>
-<tr> <td> Mean </td> <td> <div id ="qam"> </div> </td> <td> <div id="qbm"> </div> </td> <td> <div id="qcm"> </td> <td> <div id="qdm"> </td> </tr>
-<tr> <td> Standard Deviation </td> <td> <div id ="qas"> </div> </td> <td> <div id="qbs"> </div> </td> <td> <div id="qcs"> </td> <td> <div id="qds"> </td> </tr>
-</table> </td>
+<tr> <td> </td> <td style="width:70px"> Mean </td> <td style="width:70px"> SD </td> </tr>
+<tr> <td> Population </td> <td> <div id="qam"> </div> </td> <td> <div id="qas"> </div> </td> </tr>
+<tr> <td> Most Recent Sample </td> <td> <div id="qbm"> </div> </td> <td> <div id="qbs"> </div> </td> </tr>
+<tr> <td> Sample Means </td> <td> <div id="qcm"> </div> </td> <td> <div id="qcs"> </div> </td> </tr>
+<tr> <td> Sample Means (predicted) </td> <td> <div id="qdm"> </div> </td> <td> <div id="qds"> </div> </td> </tr>
+</table></td>
+<td> Sample Means: <br><canvas id = "samphist" width = 300 height = 200 style="border:1px solid #c3c3c3;"> </canvas> </td>
 </tr> </table>
 <div id="pop"></div><br>
+Population histogram: <br>
 <canvas id = "pophist" width = 300 height = 200 style="border:1px solid #c3c3c3;"> </canvas>
 <div id="ssl"></div><br>
-<canvas id = "samphist" width = 300 height = 200 style="border:1px solid #c3c3c3;"> </canvas>
 <div id="samples"></div>
 </body>
 </html>

@@ -453,8 +453,8 @@ function xtobin(x,mn,mx,nbins) {
 	}
 
 function histo(targ,dat) {
-	var w = 300;
-	var h = 200;
+	var w = document.getElementById(targ).width;
+	var h = document.getElementById(targ).height;
 	var n = dat.length;
 	if (n == 0) {return;}
 	var mxx = Math.max.apply(null,dat)+1;
@@ -559,7 +559,7 @@ Number of Samples: <input type='number' id='nms' value = 100 style='width:3em'> 
 <tr> <td> Sample Means </td> <td> <div id="qcm"> </div> </td> <td> <div id="qcs"> </div> </td> </tr>
 <tr> <td> Sample Means (predicted) </td> <td> <div id="qdm"> </div> </td> <td> <div id="qds"> </div> </td> </tr>
 </table></td>
-<td> Sample Means: <br><canvas id = "samphist" width = 300 height = 200 style="border:1px solid #c3c3c3;"> </canvas> </td>
+<td> Sample Means: <br><canvas id = "samphist" width = 300 height = 150 style="border:1px solid #c3c3c3;"> </canvas> </td>
 </tr> </table>
 <div id="pop"></div><br>
 Population histogram: <br>

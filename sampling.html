@@ -505,6 +505,7 @@ function hidepop() {
 		document.getElementById("qas").style="display:none";
 		document.getElementById("qdm").style="display:none";
 		document.getElementById("qds").style="display:none";
+		document.getElementById("phlab").style="display:none";
 		}
 	else {
 		document.getElementById("pop").style ="";
@@ -513,6 +514,7 @@ function hidepop() {
 		document.getElementById("qas").style="";
 		document.getElementById("qdm").style="";
 		document.getElementById("qds").style="";
+		document.getElementById("phlab").style="";
 		}
 	document.getElementById("samples").innerHTML = sampletable();
 	}
@@ -526,8 +528,8 @@ Population size: <input type='number' id='np' value=1000 style='width:4em'>
 </td> </tr> <tr> <td>
 <select oninput = "Urad()" id="sel">
 <option value=1> Evenly Spaced </option>
-<option value=2> Random (Uniform) </option>
-<option value=3 selected> Random (Normal) </option>
+<option value=2 selected> Random (Uniform) </option>
+<option value=3> Random (Normal) </option>
 <option value=4> Boolean (0 or 100) </option>
 <option value=5> Skewed </option>
 <option value=6> Normal </option>
@@ -561,8 +563,8 @@ Number of Samples: <input type='number' id='nms' value = 100 style='width:3em'> 
 </table></td>
 <td> Sample Means: <br><canvas id = "samphist" width = 300 height = 150 style="border:1px solid #c3c3c3;"> </canvas> </td>
 </tr> </table>
-<div id="pop"></div><br>
-Population histogram: <br>
+<div id="pop"></div>
+<div id="phlab"><br> Population histogram: <br></div>
 <canvas id = "pophist" width = 300 height = 200 style="border:1px solid #c3c3c3;"> </canvas>
 <div id="ssl"></div><br>
 <div id="samples"></div>

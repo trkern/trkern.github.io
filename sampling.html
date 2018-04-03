@@ -610,7 +610,7 @@ function drawcis() {
 	document.getElementById("cis").addEventListener("mousemove",function(e) {
 		var r = document.getElementById("cis").getBoundingClientRect();
 		var jj = Math.floor((e.clientY-r.top)/2)-1;
-		document.getElementById("cis").title = confidenceinterval(jj);
+		document.getElementById("cis").title = "["+rounder(confidenceinterval(jj)[0])+","+rounder(confidenceinterval(jj)[1])+"]";
 		});
 	}
 

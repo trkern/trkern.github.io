@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
+<style>
+body {text-rendering: optimizeSpeed;}
+</style>
 <script>
 // if sample size is less than 5% of population, general normal approx work well. if more, need to use another formula:
 // Finite population correction formula: sigma_x-bar = sqrt(N-n)/sqrt(N-1) sigma/sqrt(n)
@@ -265,7 +268,7 @@ function stem(n) {
 function makeleaf(p) {
 	var str = leaf(p[0]);
 	if (p[1] == 1) {
-		str = "<font style='color:white;background-color:black'>" + str + "</font>";
+		str = "<span style='color:white;background-color:black'>" + str + "</span>";
 		}
 	return(str);
 	}
@@ -396,6 +399,7 @@ function sampletable() {
 	}
 
 function getsample() {
+	if (population.length == 0) {return;}
 	var i, t;
 	var n = document.getElementById("ns").value;
 	var k = population.length-1;
@@ -447,6 +451,7 @@ function plotsamplemeans() {
 	}
 
 function getmanysample() {
+	if (population.length == 0) {return;}
 	var n = document.getElementById("nms").value;
 	var i;
 	if (document.getElementById("chkanim").checked) {
@@ -597,8 +602,6 @@ function drawcis() {
 		if (!document.getElementById("chkhidepop").checked) {
 			if (ci[0] <= xmid && xmid <= ci[1]) {
 				col = "blue";
-				console.log(ci);
-				console.log(xmid);
 				}
 			else {
 				col = "red";

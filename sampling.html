@@ -368,15 +368,21 @@ var samplemeans = [];
 
 function sampletable() {
 	var str = "<table border = 1>";
-	str += "<tr> <td> x&#772; </td> <td> s </td> <td> Confidence Interval </td> <td> Sample </td> </tr>";
+	str += "<tr> <td> x&#772; </td> <td> s </td> <td>";
+	if (document.getElementById("chkcis").checked) {
+		str += "Confidence Interval </td> <td>";
+		}
+	str += "Sample </td> </tr>";
 	var i,j;
 	for (i = 0; i < samples.length; i++) {
 		str += "<tr><td>";
 		str += rounder(mean(samples[i]));
 		str += "</td><td>";
 		str += rounder(sstdev(samples[i]));
-		str += "</td><td>";
-		str += cistring(i);
+		if (document.getElementById("chkcis").checked) {
+			str += "</td><td>";
+			str += cistring(i);
+			}
 		str += "</td><td style='font-size:small'>";
 		str += samples[i][0];
 		for (j = 1; j < samples[i].length; j++) {
@@ -411,8 +417,8 @@ function getsample() {
 	samplemeans.push([grounder(mean(samplelist)),1]);
 	if (document.getElementById("chkanim").checked) {
 		document.getElementById("pop").innerHTML = stemandleafstring(population);
-		document.getElementById("pop").style.display = 'none';
-		document.getElementById("pop").style.display = 'block';
+		//document.getElementById("pop").style.display = 'none';
+		//document.getElementById("pop").style.display = 'block';
 		document.getElementById("ssl").innerHTML = "Sample Means:" + stemandleafstring(samplemeans);
 		//document.getElementById("samples").innerHTML = sampletable();
 		updatestatstable();
@@ -427,8 +433,8 @@ function getsample() {
 
 function plotsamplemeans() {
 	document.getElementById("pop").innerHTML = stemandleafstring(population);
-	document.getElementById("pop").style.display = 'none';
-	document.getElementById("pop").style.display = 'block';
+	//document.getElementById("pop").style.display = 'none';
+	//document.getElementById("pop").style.display = 'block';
 	document.getElementById("ssl").innerHTML = "Sample Means:" + stemandleafstring(samplemeans);
 	document.getElementById("samples").innerHTML = sampletable();
 	drawcis();
@@ -443,10 +449,18 @@ function plotsamplemeans() {
 function getmanysample() {
 	var n = document.getElementById("nms").value;
 	var i;
-	for (i = 0; i < n; i++) {
-		setTimeout(getsample,i*100);
+	if (document.getElementById("chkanim").checked) {
+		for (i = 0; i < n; i++) {
+			setTimeout(getsample,i*100);
+			}
+		setTimeout(plotsamplemeans,i*100);
 		}
-	setTimeout(plotsamplemeans,i*100);
+	else {
+		for (i = 0; i < n; i++) {
+			getsample();
+			}
+		plotsamplemeans();
+		}
 	}
 
 function updatestatstable() {
@@ -621,6 +635,7 @@ function chkcis() {
 	else {
 		document.getElementById("cis").style = "border:1px solid #c3c3c3";
 		}
+	document.getElementById("samples").innerHTML = sampletable();
 	}
 
 </script>

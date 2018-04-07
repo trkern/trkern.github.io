@@ -100,7 +100,7 @@ function Upd() {
 	katex.render(compose(f2,inn).toTex(),document.getElementById("fin"));
 	katex.render(simp(compose(f2,inn)).toTex(),document.getElementById("fins"));
 
-	katex.render(math.parse("(f(x+h) + f(x))/h").toTex({parenthesis: 'auto'}),document.getElementById("dq"));
+	katex.render(math.parse("(f(x+h) - f(x))/h").toTex({parenthesis: 'auto'}),document.getElementById("dq"));
 	var f3 = math.parse(document.getElementById("f3").value);
 	if (t1) {
 		katex.render(math.parse("f(x+h)").toTex(),document.getElementById("dqb1"));

@@ -118,12 +118,13 @@ function Upd() {
 	katex.render(simp(makedq(f3)).toTex(),document.getElementById("dqe2"));
 	}
 
-var funlist = ["x","x^2","x^2 + 2x", "2x^2+3x+5", "1/x", "1/(x+1)", "(x-1)/(x+1)", "(x+1)/3", "x^x", "sqrt(x)", "sqrt(x)+1"];
+var funlist = ["x^2","x","x^2 + 2x", "2x^2+3x+5", "1/x", "1/(x+1)", "(x-1)/(x+1)", "(x+1)/3", "x^x", "sqrt(x)", "sqrt(x)+1"];
 
 function doselect() {
 	document.getElementById("f").value = document.getElementById("ffsel").value;
 	document.getElementById("g").value = document.getElementById("ggsel").value;
 	document.getElementById("f2").value = document.getElementById("ffsel2").value;
+	document.getElementById("f3").value = document.getElementById("ffsel3").value;
 	Upd();
 	}
 
@@ -152,6 +153,7 @@ function bootsels() {
 		}
 	str += "</select>";
 	document.getElementById("fsel3").innerHTML = str;
+	doselect();
 	}
 
 function dqb1c() {

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script>
+
+var cat;
+var sheep;
+var bird;
+var npixels = 4*275*275;
+
+function boot() {
+	var cato = document.getElementById("cat");
+	var sheepo = document.getElementById("sheep");
+	var birdo = document.getElementById("bird");
+	var ctx = document.getElementById("canv").getContext("2d");
+	ctx.drawImage(cato,0,0);
+	cat = ctx.getImageData(0,0,275,275).data;
+	ctx.drawImage(sheepo,0,0)
+	sheep = ctx.getImageData(0,0,275,275).data;
+	ctx.drawImage(birdo,0,0)
+	bird = ctx.getImageData(0,0,275,275).data;
+	}
+
+function rounder(x) {
+	return(Math.round(x * 100)/100);
+	}
+
+function draw() {
+	var a = document.getElementById("a").value;
+	var b = document.getElementById("b").value;
+	var c = document.getElementById("c").value;
+	document.getElementById("sa").innerHTML = rounder(a);
+	document.getElementById("sb").innerHTML = rounder(b);
+	document.getElementById("sc").innerHTML = rounder(c);
+	var i;
+	var ctx = document.getElementById("canv").getContext("2d");
+	var can = ctx.getImageData(0,0,275,275);
+	dat = can.data;
+	for (i = 0; i < npixels; i++) {
+		dat[i] = +sheep[i]*a + cat[i]*b + bird[i]*c;
+		if (i % 4 == 3) {
+			dat[i] = 255;
+			}
+		}
+	can.data = dat;
+	ctx.putImageData(can,0,0);
+	}
+</script>
+</head>
+<body onload = "boot(); draw();">
+<input type="range" min="-1" max="1" value="0" step =.01 id="a" oninput="draw()" style="width:30em"> <br>
+<input type="range" min="-1" max="1" value="1" step =.01 id="b" oninput="draw()" style="width:30em"> <br>
+<input type="range" min="-1" max="1" value="0" step =.01 id="c" oninput="draw()" style="width:30em"> <br>
+<table border=0>
+<tr> <td style="width:50px;text-align:right">
+<span id="sa"> </span> </td> <td> <img src="sheep275x275.png" id="sheep"> </td> <td style="width:50px;text-align:right">
++ <span id="sb"> </span> </td> <td> <img src="cat275x275.png" id="cat"> </td> <td style="width:50px;text-align:right">
++ <span id="sc"> </span> </td> <td> <img src="Treeswallow275x275.png" id="bird"> </td> <td>
+= </td> <td> <canvas width=275 height=275 id="canv"> </td> </tr> </table>
+Original cat image by Harald Wehner [Public domain], via Wikimedia Commons [https://commons.wikimedia.org/wiki/File:Cat-MaineCoon-Lara1.png] <br>
+Original sheep image by Natural Resources Conservation Service [Public domain], via Wikimedia Commons[https://commons.wikimedia.org/wiki/File:Sheep_and_goats.jpg] <br>
+Original treeswallow image by Leupold, James C. - U.S. Fish and Wildlife Service [Public domain], via Wikimedia Commons [https://commons.wikimedia.org/wiki/File:Treeswallow3.JPG]
+<h1> Linear Combinations of Images </h1>
+We can treat each image as a very large array of data: for each pixel, we have its red, green, and blue values. 
+This interactive turns each image into a vector, takes a linear combination of those vectors, and turns the result back into an image.
+These techniques are used in fading between images and image recognition.
+</body>
+</html>

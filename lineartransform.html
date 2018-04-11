@@ -134,6 +134,28 @@ function drawcanv(a,b,c,d) {
 	if (document.getElementById("c7").checked) {
 		arrowto(ctx,tog([0,0]),tog([veca*a+vecb*b,veca*c+vecb*d]),"black");
 		}
+	var ev = 1;
+	if (document.getElementById("c9").checked) {
+		ev = eigen();
+		arrowto(ctx,tog([0,0]),tog(ev[2]),"yellow");
+		arrowto(ctx,tog([0,0]),tog(ev[3]),"yellow");
+		}
+	if (document.getElementById("c10").checked) {
+		if (ev == 1) {ev = eigen();}
+		var mev = [ev[2][0]*100,ev[2][1]*100];
+		var nev = [ev[2][0]*(-100),ev[2][1]*(-100)];
+		ctx.beginPath();
+		ctx.strokeStyle="yellow";
+		ctx.moveTo(tog(mev)[0],tog(mev)[1]);
+		ctx.lineTo(tog(nev)[0],tog(nev)[1]);
+		ctx.stroke();
+		mev = [ev[3][0]*100,ev[3][1]*100];
+		nev = [ev[3][0]*(-100),ev[3][1]*(-100)];
+		ctx.beginPath();
+		ctx.moveTo(tog(mev)[0],tog(mev)[1]);
+		ctx.lineTo(tog(nev)[0],tog(nev)[1]);
+		ctx.stroke();
+		}
 	}
 
 function Upd() {
@@ -697,6 +719,37 @@ function nosheep() {
 	Upd();
 	}
 
+function normalize(l) {
+	var length = Math.sqrt(l[0]*l[0] + l[1]*l[1]);
+	return([l[0]/length,l[1]/length]);
+	}
+
+function eigen() {
+	var a = Number(document.getElementById("a").value);
+	var b = Number(document.getElementById("b").value);
+	var c = Number(document.getElementById("c").value);
+	var d = Number(document.getElementById("d").value);
+	var hT = (a+d)/2;
+	var det = a*d-b*c;
+	var l1 = hT + Math.sqrt(hT*hT - det);
+	var l2 = hT - Math.sqrt(hT*hT - det);
+	var v1;
+	var v2;
+	if (c != 0) {
+		v1 = [l1-d,c];
+		v2 = [l2-d,c];
+		}
+	else if (b != 0) {
+		v1 = [b,l1-a];
+		v2 = [b,l2-a];
+		}
+	else {
+		v1 = [1,0];
+		v2 = [0,1];
+		}
+	return([l1, l2, normalize(v1),normalize(v2)]);
+	}
+
 </script>
 </head>
 <body onload="start()">
@@ -741,6 +794,8 @@ More detailed instructions can be found at the bottom of the page.
 <input type="checkbox" id="c6" onchange="Upd()" checked> Show unit sheep <br>
 <input type="checkbox" id="c7" onchange="togglevector()"> Show arbitrary vector <br>
 <input type="checkbox" id="c8" onchange="drawworkbench()"> Show guessing game target <br>
+<input type="checkbox" id="c9" onchange="Upd()" checked> Show unit eigenvectors <br>
+<input type="checkbox" id="c10" onchange="Upd()" checked> Show eigenvector axes <br>
 
 <h2> Morphing </h2>
 Clicking the "Morph" button will show you an animation of points moving from their original positions to their new positions after the matrix transformation. In reality, when we apply a matrix transformation, there is no moving, no inbetween frames. The only things we have are the starting point, which gets multiplied by the matrix to produce the ending point. However, because all the points in the image are getting moved at once, it is easier to visualize what's happening via these animations.

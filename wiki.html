@@ -1,0 +1,62 @@
+<html>
+<head>
+<script src="jquery-3.3.1.min.js"></script>
+<script>
+var firstlist = [];
+var lengthlist = [];
+var flist = [];
+
+function parse(json) {
+	var i;
+	var t;
+	wiklist = [];
+	firstlist = [];
+	flist = [];
+	var str = "<table border = 1>";
+	for (i = 0; i < json.query.random.length; i++) {
+		t = json.query.random[i].title;
+		str += "<tr> <td>";
+		str += t;
+		str += "</td> </tr>";
+		firstlist.push(t[0]);
+		}
+	str += "</table>";
+	firstlist.sort();
+	for (i = 0; i < firstlist.length; i++) {
+		if (! (firstlist[i] in flist)) {flist[firstlist[i]] = 0};
+		flist[firstlist[i]]++;
+		}
+	str += "<table border = 1>";
+	str += "Number of samples =";
+	str += json.query.random.length;
+	str += "<tr> <td> First Letter </td> <td> Count </td> <td> Sample Proportion </td> </tr>";
+	for (j in flist) {
+		str += "<tr> <td>";
+		str += j;
+		str += "</td> <td>";
+		str += flist[j];
+		str += "</td> <td>";
+		str += flist[j]/json.query.random.length;
+		str += "</td> </tr>";
+		}
+	str += "</table>";
+	document.getElementById("out").innerHTML = str;
+	console.log(firstlist);
+	}
+
+function hunt() {
+        $.ajax({
+            url: 'https://en.wikipedia.org/w/api.php',
+            data: { action: 'query', list: 'random', rnlimit:10, rnnamespace:0, format: 'json' },
+            dataType: 'jsonp',
+            success: parse
+        });
+	document.getElementById("butt").style.visibility = "hidden";
+	}
+
+</script>
+<body>
+<button onclick="hunt()" id="butt"> Go! </button>
+<div id="out"> </div>
+</body>
+</html>

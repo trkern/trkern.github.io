@@ -137,8 +137,10 @@ function drawcanv(a,b,c,d) {
 	var ev = 1;
 	if (document.getElementById("c9").checked) {
 		ev = eigen();
-		arrowto(ctx,tog([0,0]),tog(ev[2]),"yellow");
-		arrowto(ctx,tog([0,0]),tog(ev[3]),"yellow");
+		var ev1 = [ev[2][0]*a+ev[2][1]*b,ev[2][0]*c+ev[2][1]*d];
+		var ev2 = [ev[3][0]*a+ev[3][1]*b,ev[3][0]*c+ev[3][1]*d];
+		arrowto(ctx,tog([0,0]),tog(ev1),"yellow");
+		arrowto(ctx,tog([0,0]),tog(ev2),"yellow");
 		}
 	if (document.getElementById("c10").checked) {
 		if (ev == 1) {ev = eigen();}

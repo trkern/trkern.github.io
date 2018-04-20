@@ -47,7 +47,7 @@ function parse(json) {
 function hunt() {
         $.ajax({
             url: 'https://en.wikipedia.org/w/api.php',
-            data: { action: 'query', list: 'random', rnlimit:10, rnnamespace:0, format: 'json' },
+            data: { action: 'query', list: 'random', rnlimit:'max', rnnamespace:0, format: 'json' },
             dataType: 'jsonp',
             success: parse
         });

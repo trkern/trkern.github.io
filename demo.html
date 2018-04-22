@@ -1,0 +1,621 @@
+<html>
+<head>
+<script>
+
+var selpar = "none";
+var currentform = "";
+var maindisplay = [];
+
+var rules = [
+	["Commutativity (+)", ["x","y"], ["(x+y)","(y+x)"]],
+	["Commutativity (*)", ["x","y"], ["(x*y)","(y*x)"]],
+	["Left Distributivity", ["x","y","z"], ["(x*(y+z))","((x*y)+(x*z))"]],
+	["Right Distributivity", ["x","y","z"], ["((x+y)*z)","((x*z)+(y*z))"]],
+	["Identity (+)", ["x"], ["(0+x)","x"]],
+	["Identity (*)", ["x"], ["(1*x)","x"]],
+	["Associativity (+)", ["x","y","z"], ["((x+y)+z)","(x+(y+z))"]],
+	["Associativity (*)", ["x","y","z"], ["((x*y)*z)","(x*(y*z))"]],
+	["1+1 = 2", [], ["(1+1)","2"]],
+	["2+1 = 3", [], ["(2+1)","3"]],
+	["Long Sum", ["x","y","z"], ["((x+y)+z)","(x+y+z)"]]
+	];
+
+function rulestring() {
+//<div id="r1" style="border-style: solid solid solid solid;
+//			overflow-y: hidden">
+//Commutativity: <br>
+//For all x: <button onclick="grabto('i1x');ru1();"> &rarr; </button> <input id="i1x" oninput=ru1(); type="text" value="" style="width:10em"> <br>
+//For all y: <button onclick="grabto('i1y');ru1();"> &rarr; </button> <input id="i1y" oninput=ru1(); type="text" value="" style="width:10em"> <br>
+//<button onclick="ru1back()">&larr;</button> <span id="r1lhs">(x + y)</span> = <span id="r1rhs">(y+x)</span>
+//</div>
+	var i = 0;
+	var j = 0;
+	var rstr = "";
+	for (i = 0; i < rules.length; i++) {
+		rstr += "<div id='r" + i + "' style='border-style: solid solid solid solid; overflow-y:hidden'>";
+		rstr += rules[i][0] + "<br>";
+		for (j = 0; j < rules[i][1].length; j++) {
+			rstr += "For all " + rules[i][1][j] + ": <button onclick='grabto(" + i + "," + j + ")'> &rarr; </button>";
+			rstr += "<input id='i" + i + "o" + j + "' oninput='rupd(" + i + ")' type='text' value=''> <br>";
+			}
+		rstr += "<button onclick='ruback(" + i + ")'>&larr;</button>";
+		rstr += "<span id='r" + i + "lhs'>" + rules[i][2][0] + "</span>=<span id='r"+i+"rhs'>"+ rules[i][2][1] + "</span>";
+		rstr += "</div>";
+		}
+	rstr += "<div style='height:10px'></div>";
+	return(rstr);
+	}
+
+function degrandparseotron(ll) {
+	var rval = "";
+	var i = 0;
+	if(Array.isArray(ll)) {
+		for (i=0; i < ll.length; i++) {
+			rval += degrandparseotron(ll[i]);
+			}
+		}
+	else {
+		rval += ll;
+		}
+	return(rval);
+	}
+
+function grandparseotron(st) {
+	var a = "a"; //should be able to avoid this by modifying replacement protocols to add appropriate quotes. "1" = 1 and "a" = "a", as desired.
+	var b = "b"; //or you could just make a proper parser
+	var c = "c";
+	var d = "d";
+	var x = "x";
+	var y = "y";
+	var z = "z";
+	rval = "";
+	for (ii = 0; ii < st.length; ii++) {
+		if (st[ii] == "(") {
+			rval = rval + "['(',";
+			}
+		else if (st[ii] == ")") {
+			rval = rval + ",')']";
+			}
+		else if (st[ii] == "}") {
+			rval = rval + ",'}']";
+			}
+		else if (st[ii] == "{") {
+			rval = rval + "['{',";
+			}
+		else if (st[ii] == "+") {
+			rval = rval + ",'+',";
+			}
+		else if (st[ii] == '*') {
+			rval = rval + ",'*',";
+			}
+		else if (st[ii] == '^') {
+			rval = rval + ",'^',";
+			}
+		else if (st[ii] == '-') {
+			rval = rval + ",'-',";
+			}
+		else if (st[ii] == 'f') {
+			rval = rval + "'f',";
+			}
+		else {
+			rval = rval + st[ii];
+			}
+		}
+	console.log(rval);
+	console.log(eval(rval));
+	return(eval(rval));	
+	}
+
+function greaterparseotron(st) {
+	rval = "";
+	for (i = 0; i < st.length; i++) {
+		if (st[i] == "(") {
+			rval = rval+"[";
+			//rval = rval + "['(',";
+			}
+		else if (st[i] == ")") {
+			rval = rval + "]";
+			//rval = rval + ",')']";
+			}
+		else if (st[i] == "+") {
+			rval = rval + ",'+',";
+			}
+		else if (st[i] == '*') {
+			rval = rval + ",'*',";
+			}
+		else {
+			rval = rval + st[i];
+			}
+		}
+	return(eval("[" + rval + "]"));
+	}
+
+function parseotron(st) {//parses st to a list of lists
+	rval = "";
+	for (i = 0; i < st.length; i++) {
+		if (st[i] == "(") {
+			rval = rval + "[";
+			}
+		else if (st[i] == ")") {
+			rval = rval + "]";
+			}
+		else if (st[i] == "+") {
+			rval = rval + ",";
+			}
+		else {
+			rval = rval + st[i];
+			}
+		}
+	return(eval("[" + rval + "]"));
+	}
+
+function pathtoid(p) {
+	rval = "";
+	var i = 0; 
+	for (i = 0; i < p.length; i++) {
+		rval += "o" + p[i];
+		}
+	return(rval);
+	}
+
+function navigate(ll,idd) {
+	var i;
+	var k = ll;
+	var j = 0;
+	console.log(ll);
+	console.log(idd);
+	for (i = 0; i < idd.length; i = i + 2) {
+		j = idd[i+1];
+		console.log(j);
+		console.log(k);
+		k = k[j]; //doesn't support depths larger than 10
+		console.log(k);
+		}
+	return(k);
+	}
+
+function deepreplace(ll,idd,val) {
+	console.log(ll);
+	console.log(idd);
+	console.log(val);
+	if(idd == "") {
+		return(val);
+		}
+	else {
+		var rval = [];
+		var i = 0;
+		for (i = 0; i < ll.length; i++) {
+			if(idd[1] == i) {
+				rval.push(deepreplace(ll[i],idd.slice(2),val));
+				}
+			else {
+				rval.push(ll[i]);
+				}
+			}
+		return(rval);
+		}
+	}
+
+function s(x,n) {
+	console.log(x + ":" + n);
+	return(x);
+	}
+
+function odisplayotron(ll,p) {//string to display list of list as a formula involving addition
+	//p is the path from root to the current location.
+	var k = ll.length;
+	var i = 0;
+	var rval = "<span id='oo" + pathtoid(p) + "' style='border-style:solid;'>";
+	if (Array.isArray(ll)) {
+		rval = rval + "(";
+		for (i = 0; i < k; i++) {
+			if (i > 0) {rval = rval + "+";}
+			rval = rval + displayotron(ll[i],p.concat([i]));
+			}
+		rval = rval + ")";
+		}
+	else {
+		rval += ll;
+		}
+	rval += "</span>";
+	return(rval);
+	}
+
+function lp(p) {
+	document.getElementById("oo" + p).style.background="red";
+	}
+function lp2(p) {
+	document.getElementById("oo" + p).style.background="";
+	}
+function rp(p) {
+	document.getElementById("oo" + p).style.background="green";
+	}
+function rp2(p) {
+	document.getElementById("oo" + p).style.background="";
+	}
+function cp(p) {
+	document.getElementById("oo" + p).style.background="blue";
+	}
+function cp2(p) {
+	document.getElementById("oo" + p).style.background="";
+	}
+
+function isabove(p1,p2) {
+	return(p2.startsWith(p1));
+	}
+
+function frm(st) {
+	return(st);
+	return("<table style = 'display:inline-table;' border = 1> <tr> <td>" + st + "</td></tr></table>");
+	}
+
+function ml(p) {
+	if (selpar != p) {
+		document.getElementById("oo" + p).style.background="";
+		}
+	}
+
+function mo(p) {
+	if (selpar != p) {
+		document.getElementById("oo" + p).style.background="gray";
+		}
+	}
+
+function mc(p) {
+	if (selpar == p) {
+		document.getElementById("oo" + p).style.background="";
+		selpar = "none";
+		}
+	else {
+		if (selpar != "none") {
+			document.getElementById("oo" + selpar).style.background="";
+			}
+		document.getElementById("oo" + p).style.background="blue";
+		selpar = p;
+		}
+	}
+
+function granddisplayotron(ll,p) {
+	var i = 0;
+	var rval = "<span id='oo" + pathtoid(p) + "'>";
+	if (Array.isArray(ll)) {
+		for (i = 0; i < ll.length; i++) {
+			if (Array.isArray(ll[i])) {
+				rval += granddisplayotron(ll[i],p.concat(i));
+				}
+			else if(ll[i] == "{") {
+				rval += "<span class='ghost'";
+				rval += "onmouseleave='ml(" + '"' + pathtoid(p) + '"' + ")' ";
+				rval += "onmouseover='mo(" + '"' + pathtoid(p) + '"' + ")' ";
+				rval += "onclick='mc(" + '"' + pathtoid(p) + '"' + ")' ";
+				rval += ">";
+				rval += "(";
+				rval += "</span>";
+				}
+			else if(ll[i] == "}") {
+				rval += "<span class='ghost'";
+				rval += "onmouseleave='ml(" + '"' + pathtoid(p) + '"' + ")' ";
+				rval += "onmouseover='mo(" + '"' + pathtoid(p) + '"' + ")' ";
+				rval += "onclick='mc(" + '"' + pathtoid(p) + '"' + ")' ";
+				rval += ">";
+				rval += ")";
+				rval += "</span>";
+				}
+			else if(ll[i] == "+" || ll[i] == "*" || ll[i] == "(" || ll[i] == ")") {
+				rval += "<span ";
+				rval += "onmouseleave='ml(" + '"' + pathtoid(p) + '"' + ")' ";
+				rval += "onmouseover='mo(" + '"' + pathtoid(p) + '"' + ")' ";
+				rval += "onclick='mc(" + '"' + pathtoid(p) + '"' + ")' ";
+				rval += ">";
+				rval += ll[i];
+				rval += "</span>";				
+				}
+			else {
+				rval += "<span ";
+				rval += "id='oo" + pathtoid(p.concat(i)) + "' ";
+				rval += "onmouseleave='ml(" + '"' + pathtoid(p.concat(i)) + '"' + ")' ";
+				rval += "onmouseover='mo(" + '"' + pathtoid(p.concat(i)) + '"' + ")' ";
+				rval += "onclick='mc(" + '"' + pathtoid(p.concat(i)) + '"' + ")' ";
+				rval += ">";
+				rval += ll[i];
+				rval += "</span>";
+				}
+			}
+		}
+	rval += "</span>";
+	return(rval);
+	}
+
+function greaterdisplayotron(ll,p) {
+	//p is the path from root to the current location.
+	var i = 0;
+	var rval = "<span id='oo" + pathtoid(p) + "'>";
+	if (Array.isArray(ll)) {
+		rval = rval + "<span onmouseleave='lp2(" + '"'+ pathtoid(p) + '"' + ")' onmouseover='lp(" + '"' + pathtoid(p) + '"' + ")'>(</span>";
+		rval = rval + greaterdisplayotron(ll[0],p.concat([0]));
+		rval = rval +  "<span onmouseleave='cp2(" + '"'+ pathtoid(p) + '"' + ")' onmouseover='cp(" + '"' + pathtoid(p) + '"' + ")'>"+ll[1]+"</span>";
+		rval = rval + greaterdisplayotron(ll[2],p.concat([2]));
+		rval = rval + "<span onmouseleave='rp2(" + '"'+ pathtoid(p) + '"' + ")' onmouseover='rp(" + '"' + pathtoid(p) + '"' + ")'>)</span>";
+		}
+	else {
+		rval += ll;
+		}
+	rval += "</span>";
+	return(frm(rval));
+	}
+
+function displayotron(ll,p) {//string to display list of list as a formula involving addition
+	//p is the path from root to the current location.
+	var k = ll.length;
+	var i = 0;
+	var rval = "<span id='oo" + pathtoid(p) + "'>";
+	if (Array.isArray(ll)) {
+		rval = rval + "<span onmouseleave='lp2(" + '"'+ pathtoid(p) + '"' + ")' onmouseover='lp(" + '"' + pathtoid(p) + '"' + ")'>(</span>";
+		for (i = 0; i < k; i++) {
+			if (i > 0) {rval = rval +  "<span onmouseleave='cp2(" + '"'+ pathtoid(p) + '"' + ")' onmouseover='cp(" + '"' + pathtoid(p) + '"' + ")'>+</span>";}
+			rval = rval + displayotron(ll[i],p.concat([i]));
+			}
+		rval = rval + "<span onmouseleave='rp2(" + '"'+ pathtoid(p) + '"' + ")' onmouseover='rp(" + '"' + pathtoid(p) + '"' + ")'>)</span>";
+		}
+	else {
+		rval += ll;
+		}
+	rval += "</span>";
+	return(frm(rval));
+	}
+
+function updatemain() {
+	//console.log(maindisplay);
+	var str = "<span style='bottom:20px;position:absolute'>";
+	var i;
+	var col = "gray";
+	for (i = 0; i < maindisplay.length; i++) {
+		if(i == maindisplay.length-1) {
+			str += granddisplayotron(maindisplay[i],[]);
+			}
+		else {
+			str += "<span style='font-size:20px'>"; //thanks mom
+			str += degrandparseotron(maindisplay[i]);
+			str += "</span><br>";
+			}
+		}
+	str += "</span>";
+	document.getElementById("main").innerHTML = str;
+	}
+
+function boot() {
+	currentform = grandparseotron("((1+b)*(a+b))");
+	maindisplay = [currentform];
+	updatemain();
+	//document.getElementById("main").innerHTML = granddisplayotron(currentform,[]);
+	document.getElementById("rules").innerHTML = rulestring();
+	}
+
+function grabto(ru,bx) {
+	document.getElementById("i" + ru + "o" + bx).value = degrandparseotron(navigate(currentform,selpar));
+	rupd(ru);
+	}
+
+function replaceall(str,fin,rep) {
+	return(str.split(fin).join(rep));
+	}
+
+function rupd(ru) { //update rule ru result box
+	var ins = [];
+	var i;
+	for (i = 0; i < rules[ru][1].length; i++) {
+		ins.push(document.getElementById("i"+ru+"o"+i).value);
+		if (ins[i] == "") {ins[i] = rules[ru][1][i];}
+		}
+	var lhs = rules[ru][2][0];
+	var rhs = rules[ru][2][1];
+	for (i = 0; i < rules[ru][1].length; i++) {
+		lhs = replaceall(lhs,rules[ru][1][i],ins[i]);
+		rhs = replaceall(rhs,rules[ru][1][i],ins[i]);
+		}
+	document.getElementById("r"+ru+"lhs").innerHTML = lhs;
+	document.getElementById("r"+ru+"rhs").innerHTML = rhs;
+	}
+
+function ru1() {
+	var ix = document.getElementById("i1x").value;
+	var iy = document.getElementById("i1y").value;
+	if (ix == "") {ix = "x"};
+	if (iy == "") {iy = "y"};
+	document.getElementById("r1lhs").innerHTML = "(" + ix + "+" + iy + ")";
+	document.getElementById("r1rhs").innerHTML = "(" + iy + "+" + ix + ")";
+	}
+
+function ruback(i) {
+	var lhs = document.getElementById("r"+i+"lhs").innerHTML;
+	var rhs = document.getElementById("r"+i+"rhs").innerHTML;
+	if (lhs == degrandparseotron(navigate(currentform, selpar))) {
+		currentform = deepreplace(currentform, selpar, grandparseotron(rhs));
+		maindisplay.push(currentform);
+		selpar = "none";
+		//document.getElementById("main").innerHTML = granddisplayotron(currentform,[]);
+		updatemain();
+		}
+	if (rhs == degrandparseotron(navigate(currentform, selpar))) {
+		currentform = deepreplace(currentform, selpar, grandparseotron(lhs));
+		maindisplay.push(currentform);
+		selpar = "none";
+		updatemain();
+		}
+	}
+
+function ru1back() {
+	var r1lhs = document.getElementById("r1lhs").innerHTML;
+	var r1rhs = document.getElementById("r1rhs").innerHTML;
+	console.log(r1lhs);
+	console.log(degrandparseotron(navigate(currentform,selpar)));
+	if (r1lhs == degrandparseotron(navigate(currentform,selpar))) {
+		//navigate(currentform,selpar) = grandparseotron(r1rhs);
+		currentform = deepreplace(currentform,selpar,grandparseotron(r1rhs));
+		}
+	selpar = "";
+	document.getElementById("main").innerHTML = granddisplayotron(currentform,[]);
+	}
+
+function ghostbutt() {
+	currentform = grandparseotron("({2*a}+1)");
+	maindisplay = [currentform];
+	updatemain();
+	}
+
+function enterformula() {
+	currentform = grandparseotron(document.getElementById("enterformula").value);
+	maindisplay = [currentform];
+	updatemain();
+	}
+
+</script>
+<style>
+.ghost {
+	color:white;
+	}
+.fadehover {
+	color:white;
+	}
+.fadehover:hover {
+	color:gray;
+	transition: all 0.5s ease-in-out;
+	}
+</style>
+</head>
+<body onload="boot()">
+<div id="sidebar" style="height:100%;
+			width: 350px;
+			position:fixed;
+			z-index: 1;
+			right: 0;
+			border-style: none none none solid;
+			overflow-x: hidden;
+			overflow-y: hidden;
+			display: flex;
+			flex-direction: column;"> 
+<span style="font-size:40px"> <img src="icon.png"> EPEE <br> </span> Electronic Polynomial Educational Experience
+<hr width="320px">
+<div id="tabs">
+<button> + </button><button> &times; </button><button> - </button><button> / </button>
+</div>
+<div id="rules" style="border-style: solid solid solid solid;
+			border-width: 1px;
+			overflow-y: scroll;
+			flex-grow: 1">
+</div>
+</div>
+<div style = "margin-right:350px;
+		height:35%;
+		overflow-y: scroll">
+<h2> Introduction </h2>
+Welcome to the EPEE (Electronic Polynomial Educational Experience) proof of concept! This demo is designed to provide a sense of what the finished product will feel like to use and experiment with the interface.
+
+<h2> Getting Started </h2>
+<ol>
+<li> Click on the first + sign in the formula at the bottom left of the screen to select the subexpression (1+b).
+<li> To the right of the screen, under "Left Distributivity", click the first rightwards arrow, next to "For all x".
+<li> Type the letter a into the box next to "For all y".
+<li> Type the letter b into the box next to "For all z".
+<li> The result below should read ((1+b)*(a+b))=(((1+b)*a)+((1+b)*b)).
+<li> Click on the * in the formula at the bottom left of the screen to select the entire formula.
+<li> Click the leftwards arrow next to ((1+b)*(a+b))=(((1+b)*a)+((1+b)*b)), under "Left Distributivity".
+<li> To the right of the screen, under "Right Distributivity", enter 1, b, and a into the three text boxes.
+<li> Click on the first * in the formula at the bottom left of the screen to select the subexpression ((1+b)*a).
+<li> Click the leftwards arrow next to ((1+b)*a)=((1*a)+(b*a)), under "Right Distributivity".
+<li> Scroll down in the rules sidebar to find "Identity (*)".
+<li> Type the letter a into the textbox next to "For all x".
+<li> Click on the first * in the formula at the bottom left of the screen to select the subexpression (1*a).
+<li> Click the leftwards arrow next to (1*a) = a, under "Identity (*)".
+</ol>
+
+<h2> The Workspace </h2>
+Below these instructions is the workspace. You should see a mathematical formula there.
+Move your mouse over parts of the formula to highlight them, and click to select/deselect subexpressions.
+Users will be able to enter their own formulas, or (eventually) load in entire problems to solve.
+For now, you can enter your own formula here: <input id="enterformula" type="text" value="((a+b)*(a+b))"> </input> <button onclick="enterformula()"> Go! </button>
+Note: Currently only the variables a, b, c, and d are fully supported.
+
+<h2> List of Rules </h2>
+To the right, below a rough draft of the logo, is a list of currently implemented rules. They will eventually be complete, organized by tabs, and collapsible (thus rewarding users with a small boost of efficiency if they memorize the names of the rules and where they come from).
+
+<h3> Using Rules </h3>
+<ol>
+<li> To use a rule, type a number, variable, or formula into the text boxes for the rule. You can also use the left arrow button to copy the currently selected subexpression into the box.
+<li> As you enter values in the text boxes, they will be plugged into the general version of the rule below.
+<li> If the currently selected subexpression is the left hand side or right hand side of the specific fact discovered, the right arrow button will use the identity to rewrite the current expression in the workspace.
+</ol>
+
+<h2> Future Features </h2>
+<ul>
+<li> Parentheses which aren't typically drawn due to order of operations will only be drawn when the user moves their mouse over them.
+<button onclick="ghostbutt()"> Try it below </button> <button onclick="boot()"> Reset </button> Possibly also including a fade-in effect as here: <span class="fadehover">(<span style="color:black">2*x</span>)</span>+1.
+<li> Support for multiplication by writing things next to each other.
+<li> Support for exponents.
+<li> Long sums/products will be supported to avoid the need to use associativity.
+<li> Users will be able to create their own rules (if they can derive the rules in the system) to streamline common sequences of tasks, such as FOILing.
+<li> A special rule for handling all instances of numerical computation will be implemented.
+<li> An auto-fill feature will optionally be available for the rules.
+<li> Optionally, a menu will appear on selecting a subexpression which will offer a list of applicable rules.
+</ul>
+
+<h2> Eventual Goals </h2>
+
+<h3> Provide a means of introducing the mechanics of algebra to students at the level of College Algebra (Algebra II)</h3>
+<ul>
+<li> A robust tutorial will guide users through the use of the software.
+<li> Notational conveniences will be introduced to simplify formulas.
+<li> Subexpression highlighting (particularly in the case where parentheses aren't drawn due to order of operations):
+<ol>
+<li> Makes it clear when replacement cannot happen (1+2x does not become 3x)
+<li> Rewards students for thinking about how expressions are made of subexpressions/order of operations with efficiency improvements.
+</ol>
+<li> Allowing students to make their own rules once they derive them allows them to see variables in their own derivations as places to plug things in.
+<li> Students will be able to experiment with rules that aren't true in a "contradiction sandbox", allowing them to get a feel for verifying rules they believe are true
+</ul>
+
+<h3> Facilitate returning to algebra for people who have learned algebra and forgotten it </h3>
+
+<h3> Support a wide variety of mathematical environments </h3>
+<ul>
+<li> Including rules for division also would require including rules for piecewise functions, and boolean logic, to handle situations like (x)(x+1)/(x)(x+1) which is 1 unless x = 0 OR x = -1.
+<li> Supporting division also requires a typesetting system for fractions.
+<li> Include trigonometric/exponential/logarithmic identities.
+<li> Allow function notation: "let f(x) = x+1" creates a new temporary rule allowing one to replace the x in f(x) = x+1 by any formula, and use the result to replace subexpressions.
+<li> Include differentiation rules.
+<li> Include formal logic rules.
+<li> Include linear algebraic rules.
+<li> Support custom environments.
+</ul>
+
+<h3> Allow students at the undergraduate level to perform long, verified, computations </h3>
+<ul>
+<li> Common tasks will be able to be optionally streamlined:
+<ol>
+<li> A menu on subexpressions will offer various common ways of rewriting them.
+<li> Rules will offer an "auto-fill" feature.
+</ol>
+<li> LaTeX output will be supported.
+</ul>
+
+<h3> Support integration with an online mathematics text </h3>
+<ul>
+<li> Provide built-in problems.
+<li> Integrate a tutorial for using the system with an introduction to algebra.
+</ul>
+
+<h3> Provide a safe, stress-free environment for students to practice algebra </h3>
+<ul>
+<li> Reject integration with graded online evaluations.
+<li> Focus on intrinsic rewards (reaching a nice solution at the end of a problem, efficiency rewards for memorizing rules).
+<li> No points or "congratulations!"
+</ul>
+
+</div>
+<div id="main" style="margin-right:350px;
+			height:65%;
+			font-size:30px;
+			overflow-y: scroll">
+</div>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<html>
+<head>
+<link rel="icon" href="icon.png">
+<style>
+@font-face {
+	font-family:"l";
+	src:url("Lora-Regular.ttf");
+	}
+@font-face {
+	font-family:"c";
+	src:url("Champignon.otf");
+	}
+.uc {
+border: 10px solid yellow;
+  border-image: repeating-linear-gradient(-45deg,
+      yellow,
+      yellow 20px,
+      black 20px,
+      black 40px) 20;
+	}
+.example1 {
+ height: 50px;	
+ overflow: hidden;
+ position: relative;
+}
+.example1 h3 {
+ font-size: 2em;
+ position: absolute;
+ width: 100%;
+ height: 100%;
+ margin: 0;
+ line-height: 50px;
+ text-align: center;
+ /* Starting position */
+ -moz-transform:translateX(100%);
+ -webkit-transform:translateX(100%);	
+ transform:translateX(100%);
+ /* Apply animation to this element */	
+ -moz-animation: example1 15s linear infinite;
+ -webkit-animation: example1 15s linear infinite;
+ animation: example1 15s linear infinite;
+}
+/* Move it (define the animation) */
+@-moz-keyframes example1 {
+ 0%   { -moz-transform: translateX(100%); }
+ 100% { -moz-transform: translateX(-100%); }
+}
+@-webkit-keyframes example1 {
+ 0%   { -webkit-transform: translateX(100%); }
+ 100% { -webkit-transform: translateX(-100%); }
+}
+@keyframes example1 {
+ 0%   { 
+ -moz-transform: translateX(100%); /* Firefox bug fix */
+ -webkit-transform: translateX(100%); /* Firefox bug fix */
+ transform: translateX(100%); 		
+ }
+ 100% { 
+ -moz-transform: translateX(-100%); /* Firefox bug fix */
+ -webkit-transform: translateX(-100%); /* Firefox bug fix */
+ transform: translateX(-100%); 
+  }
+}
+</style>
+</head>
+<body>
+<svg width=700 height=200>
+<g fill="green" opacity=1>
+<circle cx=75 cy=75 r=30> </circle>
+<circle cx=100 cy=50 r=30> </circle>
+<circle cx=150 cy=50 r=30> </circle>
+</g>
+<text x=100 y=100 alignment-baseline="middle" text-anchor="middle" style="font-family:l">&times;</text>
+<line x1=95 y1=95 x2=80 y2=80 style="stroke:black;stroke-width:2"></line>
+<line x1=105 y1=95 x2=120 y2=80 style="stroke:black;stroke-width:2"></line>
+<text x=125 y=75 alignment-baseline="middle" text-anchor="middle" style="font-family:l">+</text>
+<line x1=120 y1=70 x2=105 y2=55 style="stroke:black;stroke-width:2"></line>
+<line x1=130 y1=70 x2=145 y2=55 style="stroke:black;stroke-width:2"></line>
+<line x1=100 y1=105 x2=100 y2=165 style="stroke:black;stroke-width:2"></line>
+<text x=130 y=110 style="font-family:l;font-size:40"> trkern.github.io/fart </text>
+<text x=130 y=150 style="font-family:c;font-size:50"> Formal Algebra Reasoning Toolkit</text>
+</svg> <br>
+<div class="uc"> <div class="example1"> <h3> &#9888; Under Construction! Check Back in a Year! &#9888;</h3></div></div>
+</body>
+</html>

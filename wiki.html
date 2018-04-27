@@ -29,14 +29,12 @@ function parse(json) {
 	str += "<table border = 1>";
 	str += "Number of samples =";
 	str += json.query.random.length;
-	str += "<tr> <td> First Letter </td> <td> Count </td> <td> Sample Proportion </td> </tr>";
+	str += "<tr> <td> First Letter </td> <td> Count </td> </tr>";
 	for (j in flist) {
 		str += "<tr> <td>";
 		str += j;
 		str += "</td> <td>";
 		str += flist[j];
-		str += "</td> <td>";
-		str += flist[j]/json.query.random.length;
 		str += "</td> </tr>";
 		}
 	str += "</table>";
@@ -54,8 +52,50 @@ function hunt() {
 	document.getElementById("butt").style.visibility = "hidden";
 	}
 
+function erf(y) {
+	if (y < 0) {return(1-erf(-y));}
+	if (y == 0) {return(0)};
+	var x = y/Math.sqrt(2);
+	var a1 = 0.0705230784;
+	var a2 = 0.0422820123;
+	var a3 = 0.0092705272;
+	var a4 = 0.0001520143;
+	var a5 = 0.0002765672;
+	var a6 = 0.0000430638;
+	var p = 1 + a1 * x + a2*x*x + a3*x*x*x + a4*x*x*x*x + a5*x*x*x*x*x + a6*x*x*x*x*x*x;
+	p = 1 - 1/Math.pow(p,16);
+	return(.5 + .5*p);
+	}
+
+function rapprox(b) {
+	//Abramowitz and Stegun
+	var a = Math.sqrt(-2*Math.log(b));
+	return(a - ((.010328 * a * a + 0.802853 * a + 2.515517)/(.001308 * a * a * a + .189269 * a * a + 1.432788 * a + 1.0)));
+	}
+
+function NCI(a) {
+	if (a < .5) {
+		return (-rapprox(a));
+		}
+	else {
+		return (rapprox(1-a));
+		}
+	}
+
+function lookup() {
+	document.getElementById("area").innerHTML = "<br>" + rounder(erf(document.getElementById("z").value));
+	}
+
+function rounder(n) {
+	return(Math.round(n*10000)/10000);
+	}
+
 </script>
 <body>
+<table border=1>
+<tr> <td> Calculator </td> </tr> <tr> <td>
+z-score: <input type="text" id='z'> <button onclick="lookup()"> Look up on table V </button> <span id="area"> </span>
+ </td></tr></table>
 <button onclick="hunt()" id="butt"> Go! </button>
 <div id="out"> </div>
 </body>

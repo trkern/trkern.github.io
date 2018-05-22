@@ -1,7 +1,9 @@
-<html>
+ï»¿<html>
 <head>
+<meta charset="utf-8">
 <link rel="icon" href="EFGicon.bmp">
 <link rel="image_src" href="efg1.png">
+<title> Ehrenfeuchtâ€“FraÃ¯ssÃ© Game </title>
 <script>
 //To add:
 //-Allow selecting vertices using the keyboard
@@ -663,7 +665,7 @@ function kup(e) {
 </script>
 </head>
 <body onload="" onkeypress="kpress(event)" onkeyup="kup(event)">
-<h1> Ehrenfeucht–Fraïssé Game </h1>
+<h1>Ehrenfeuchtâ€“FraÃ¯ssÃ© Game</h1>
 <button onclick="newgame()"> New Game </button> Clicking: <select id="lc_select">
 <option value="drag"> Drags Vertices </option>
 <option value="move" selected> Makes a Move </option>
@@ -677,12 +679,11 @@ function kup(e) {
 <option value=0> Colors </option>
 <option value=1> Numbers </option>
 <option value=2> Both </option>
-</select> Size: <input type="number" id="size" value=500 style="width:3em" oninput="resize()">
+</select> Size: <input type="number" id="size" value=500 style="width:4em" oninput="resize()">
 <br>
 <canvas id="canv0" width=500 height=500 style="border:1px solid" onmousedown="mdown(0,event)" onmousemove="mmove(0,event)" onmouseup="mup(0,event)"> </canvas>
 <canvas id="canv1" width=500 height=500 style="border:1px solid" onmousedown="mdown(1,event)" onmousemove="mmove(1,event)" onmouseup="mup(1,event)"> </canvas>
-<br><span id="turn"> </span>
-<br><span id="out"> </span> <br>
+<br><span id="turn"> </span> <br><span id="out"> </span> <br>
 Minimum Number of Vertices: <input type="number" value=4 id="minn" min=0 style="width:3em">
 Maximum Number of Vertices: <input type="number" value=6 id="maxn" min=0 style="width:3em">
 Number of Shapes: <input type="number" value=1 id="numshp" min=1 max=3 style="width:3em"> <br>
@@ -693,7 +694,7 @@ h: hint <br>
 m: switch between dragging vertices and making moves <br>
 n: new game
 <h2> Rules </h2>
-The Ehrenfeucht-Fraïssé Game is a game about first order logic and the inevitable end of all things. Players take turns matching up the vertices (shown as circles, etc.) of two graphs (networks):
+The Ehrenfeucht-FraÃ¯ssÃ© Game is a game about first order logic and the inevitable end of all things. Players take turns matching up the vertices (shown as circles, etc.) of two graphs (networks):
 <ol>
 <li> First, Player I (Spoiler) selects a vertex from either graph that has yet to be selected, and colors it a new color. </li>
 <li> Next, Player II (Duplicator) selects a vertex from the other graph that has yet to be selected, and colors it the same color, forming a match between the two vertices of that color. </li>
@@ -710,7 +711,7 @@ The game will inevitably end. Spoiler's (Player I's) goal is to end the game as 
 <li> Most versions of the game allow Spoiler to pick previously selected vertices, so long as they are matched with the vertex the original vertex was matched to. Since Spoiler, in seeking to end the game as quickly as possible, has no reason to do this, it is disallowed. </li>
 </ul>
 <h2> Read More </h2>
-You can learn more about Ehrenfeucht–Fraïssé Games at:
+You can learn more about Ehrenfeuchtâ€“FraÃ¯ssÃ© Games at:
 <ul>
 <li> <a href="https://plato.stanford.edu/entries/logic-games/#BacForGam"> Stanford Encyclopedia of Philosophy </a> </li>
 <li> <a href="http://www.math.cornell.edu/~mec/Summer2009/Raluca/index.html"> Cornell Math Explorers' Club </a> </li>

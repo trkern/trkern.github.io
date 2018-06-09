@@ -1,0 +1,529 @@
+﻿<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="tiles.png">
+<link rel="image_src" href="tiles.png">
+<title> Bathroom Tiles and Rational Approximations </title>
+<script src="math.min.js"></script>
+<script src="katex.min.js" type="text/javascript"></script>
+<link rel="stylesheet" href="katex.min.css">
+<script>
+var xmin = 0;
+var xmax = 10;
+var alpha = Math.sqrt(2);
+var cwidth = 1000;
+var cheight = 150;
+var dragging = false;
+var qualityfactor = 2;
+var mv = 0;
+var curri;
+var oldmultiplier = 1;
+
+function gcd(a,b) {
+	a = Math.abs(a);
+	b = Math.abs(b);
+	while(true) {
+		if (b == 0) {return(a);}
+		a = a % b;
+		if (a == 0) {return(b);}
+		b = b % a;
+		}
+	}
+
+function tograph2(x,mn,mx) {
+	var m = -1000/(mn-mx);
+	var b = 1000*mn/(mn-mx);
+	return(m*x+b);
+	}
+
+function tograph(x,mn,mx) {
+	var m = -cwidth/(mn-mx);
+	var b = cwidth*mn/(mn-mx);
+	return(m*x+b);
+	}
+
+function fromgraph(x,mn,mx) {
+	var m = -cwidth/(mn-mx);
+	var b = cwidth*mn/(mn-mx);
+	return((x-b)/m);
+	}
+
+function apprx(i) {
+	return(Math.round(i)/Math.round(i/alpha));
+	}
+
+function worthy(i) {
+	if (Math.abs(Math.round(i)-i) < qualityfactor/(xmax-xmin)) {return(true);}
+	return(false);
+	}
+
+function drawcanv() {
+	var i, j;
+	var ctx = document.getElementById("rat").getContext("2d");
+	ctx.beginPath();
+	ctx.fillStyle = "#FFFFFF";
+	ctx.fillRect(0,0,cwidth,cheight);
+	ctx.beginPath();
+	ctx.strokeStyle = "black";
+	ctx.lineWidth = 2;
+	ctx.moveTo(0,cheight/2);
+	ctx.lineTo(cwidth,cheight/2);
+	ctx.stroke();
+	for (i = Math.ceil(xmin/alpha)*alpha; i < xmax; i += alpha) {
+		j = tograph(i,xmin,xmax);
+		//if (worthy(i)) {
+			ctx.beginPath();
+			ctx.fillStyle = "black";
+			ctx.textAlign = "center";
+			ctx.font = "20px serif";
+			ctx.fillText(Math.round(i/alpha) + "α", j, .22*cheight);
+			//ctx.fillText("α≈" + Math.round(i) + "/" + Math.round(i/alpha), j, .10*cheight);
+			//ctx.font = "16px serif";
+			//ctx.fillText("≈" + apprx(i), j, .22*cheight);
+			//}
+		ctx.beginPath();
+		ctx.moveTo(j,.25*cheight);
+		ctx.lineTo(j,.50*cheight);
+		ctx.stroke();
+		}
+	for (i = Math.ceil(xmin); i < xmax; i++) {
+		j = tograph(i,xmin,xmax);
+		ctx.beginPath();
+		ctx.moveTo(j,.50*cheight);
+		ctx.lineTo(j,.75*cheight);
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.fillStyle = "black";
+		ctx.textAlign = "center";
+		ctx.font = "20px serif";
+		ctx.fillText(i, j, .85*cheight);
+		}
+	ctx.beginPath();
+	ctx.moveTo(cwidth/2,0);
+	ctx.strokeStyle = "blue";
+	ctx.lineTo(cwidth/2,cheight);
+	ctx.stroke();
+	fillinfo();
+	}
+
+function mdown(e) {
+	dragging = true;
+	}
+
+function mmove(e) {
+	if (dragging) {
+		var m = (xmax-xmin)/cwidth;
+		var delt = e.movementX*m;
+		xmin -= delt;
+		xmax -= delt;
+		updbb();
+		drawcanv();
+		rm();
+		}
+	}
+
+function mup(e) {
+	dragging = false;
+	}
+
+function mwheel(e) {
+	var m=1;
+	e.preventDefault();
+	if (e.deltaY > 0) {m = 1.01;}
+	if (e.deltaY < 0) {m = 1/1.01;}
+	var rect = e.target.getBoundingClientRect();
+	var inx = fromgraph(e.clientX-rect.x,xmin,xmax);
+	xmax = inx + m*(xmax-inx);
+	xmin = inx + m*(xmin-inx);
+	updbb();
+	drawcanv();
+	rm();
+	}
+
+function updbb() {
+	document.getElementById("xmin").value = xmin.toFixed(3);
+	document.getElementById("xmax").value = xmax.toFixed(3);
+	}
+
+function updb() {
+	xmin = Number(document.getElementById("xmin").value);
+	xmax = Number(document.getElementById("xmax").value);
+	qualityfactor = Number(document.getElementById("qf").value);
+	drawcanv();
+	}
+
+function resetbounds() {
+	document.getElementById("xmin").value = 0;
+	document.getElementById("xmax").value = 10;
+	document.getElementById("qf").value = 2;
+	updb();
+	}
+
+function go(i) {
+	xmax += i*(xmax-xmin)/100;
+	xmin += i*(xmax-xmin)/100;
+	updbb();
+	drawcanv();
+	}
+
+function lra() {
+	go(mv);
+	if (mv != 0) {
+		window.requestAnimationFrame(lra);
+		}
+	}
+
+function calcalpha() {
+	var k = document.getElementById("sel").value;
+	if (k == "sqrt") {
+		alpha = Math.sqrt(document.getElementById("i0").value);
+		}
+	if (k == "nrt") {
+		alpha = Math.pow(document.getElementById("i2").value,1/document.getElementById("i1").value);
+		}
+	if (k == "log") {
+		alpha = Math.log(document.getElementById("i3").value)/Math.log(document.getElementById("i4").value);
+		}
+	if (k == "other") {
+		alpha = Number(math.eval(document.getElementById("i5").value));
+		}
+	}
+
+function updsel() {
+	document.getElementById("sqrtdiv").style.display = "none";
+	document.getElementById("nrtdiv").style.display = "none";
+	document.getElementById("logdiv").style.display = "none";
+	document.getElementById("otherdiv").style.display = "none";
+	var k = document.getElementById("sel").value;
+	document.getElementById(k+"div").style.display = "initial";
+	calcalpha();
+	document.getElementById("alph").innerHTML = alpha;
+	drawcanv();
+	}
+
+function fillinfo() {
+	var i, j;
+	j = fromgraph(cwidth/2,xmin,xmax);
+	i = Math.round(j/alpha)*alpha;
+	if (i == curri) {return;}
+	curri = i;
+	var str = "";
+	var str2 = "";
+	if (worthy(i)) {
+		if (i==0) {
+			tx = "0 (" + alphatex() + ") = 0";
+			document.getElementById("info").innerHTML = katex.renderToString(tx);
+			return;
+			}
+		var b = Math.round(i/alpha);
+		var a = Math.round(i);
+		var k = document.getElementById("sel").value;
+		var tx2 = "\\begin{aligned}";
+		tx2 += alphatex() + "&\\approx" + alpha + "\\\\";
+		tx2 += "\\frac{" + a + "}{" + b + "}&\\approx" + a/b + "\\\\";
+		tx2 += "\\end{aligned}";
+		var tx = "\\begin{aligned}";
+		var g = gcd(a,b);
+		tx += b + "(" + alphatex() + ")" + "&\\approx" + a + "\\\\";
+		tx += alphatex() + "&\\approx \\frac{" + a + "}{" + b + "}\\\\";
+		a = a/g;
+		b = b/g;
+		if (g != 1) {tx += alphatex() + "&\\approx \\frac{" + a + "}{" + b + "}\\\\";}
+		if (k == "sqrt") {
+			var c = document.getElementById("i0").value;
+			var d = 2;
+			tx += c + "&\\approx \\left(\\frac{" + a + "}{" + b + "}\\right)^{"+d+"}\\\\";
+			tx += "\\frac{"+ c * Math.pow(b,d) + "}{" + Math.pow(b,d) + "}" + "&\\approx \\frac{" + Math.pow(a,d) + "}{" + Math.pow(b,d) + "} \\approx" + Math.pow(a,d)/Math.pow(b,d) + "\\\\";			
+			}
+		if (k == "nrt") {
+			var d = document.getElementById("i1").value;
+			var c = document.getElementById("i2").value;
+			tx += c + "&\\approx \\left(\\frac{" + a + "}{" + b + "}\\right)^{"+d+"}\\\\";
+			tx += "\\frac{"+ c * Math.pow(b,d) + "}{" + Math.pow(b,d) + "}" + "&\\approx \\frac{" + Math.pow(a,d) + "}{" + Math.pow(b,d) + "} \\approx" + Math.pow(a,d)/Math.pow(b,d) + "\\\\";			
+			}
+		if (k == "log") {
+			var n = document.getElementById("i3").value;
+			var m = document.getElementById("i4").value;
+			if (m == 2.718281828459045) {
+				tx += n + "&\\approx e^{\\frac{" + a + "}{" + b + "}}\\\\";
+				tx += n + "^{" + b + "}&\\approx e^{" + a + "}\\\\";
+				tx += Math.pow(n,b) + "&\\approx" + Math.pow(m,a) + "\\\\";
+				}
+			else {
+				tx += n + "&\\approx" + m + "^{\\frac{" + a + "}{" + b + "}}\\\\";
+				tx += n + "^{" + b + "}&\\approx" + m + "^{" + a + "}\\\\";
+				tx += Math.pow(n,b) + "&\\approx" + Math.pow(m,a) + "\\\\";
+				}
+			}
+		tx += "\\end{aligned}";
+		str = katex.renderToString(tx);
+		str2 = katex.renderToString(tx2);
+		}
+	document.getElementById("info").innerHTML = str;
+	document.getElementById("appx").innerHTML = str2;
+	}
+
+function alphatex() {
+	var k = document.getElementById("sel").value;
+	var tx = "";
+	if (k == "sqrt") {
+		tx = "\\sqrt{" + document.getElementById("i0").value+"}";
+		}
+	if (k == "nrt") {
+		tx = "\\sqrt["+document.getElementById("i1").value+"]{"+document.getElementById("i2").value+"}";
+		}
+	if (k == "log") {
+		if (document.getElementById("i4").value == 2.718281828459045) {
+			tx = "\\ln("+document.getElementById("i3").value+")";
+			}
+		else {
+			tx = "\\log_{"+document.getElementById("i4").value + "}("+document.getElementById("i3").value+")";
+			}
+		}
+	if (k == "other") {
+		tx = math.parse(document.getElementById("i5").value).toTex();
+		}
+	return(tx);
+	}
+
+function updm() {
+	var k = document.getElementById("mul").value;
+	if (k != oldmultiplier) {
+		var j = oldmultiplier;
+		oldmultiplier = k;
+		var c = (xmax + xmin)/2;
+		var nc = c*k/j;
+		xmax += nc-c;
+		xmin += nc-c;
+		updbb();
+		drawcanv();	
+		}
+	}
+
+function rm() {
+	oldmultiplier = 1;
+	document.getElementById("mul").value = 1;
+	}
+
+//function ds(x1,y1,x2,y2) {
+//	return(Math.sqrt((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2)));
+//	}
+
+function foursquaresolve() {
+	n = document.getElementById('fsn').value
+	if (n < 0) {n = -n;}
+	var a,b,c,d;
+	for (a = 0; a < Math.sqrt(n); a++) {
+		for (b = 0; b < Math.sqrt(n-a*a); b++) {
+			for (c = 0; c < Math.sqrt(n-a*a-b*b); c++) {
+				if (Math.sqrt(n-a*a-b*b-c*c) % 1 == 0) {
+					foursquarespic(a,b,c,Math.sqrt(n-a*a-b*b-c*c));
+					return;
+					}
+				}
+			}
+		}
+	}
+
+function foursquarespic(a,c,b,d) {
+	console.log(a,b,c,d);
+	var e = Math.sqrt(a*a + b*b);
+	var f = Math.sqrt(c*c + d*d);
+	var g = Math.sqrt(a*a + b*b + c*c + d*d);
+	var pt0x = 0;
+	var pt0y = 0;
+	var x = e*e/g;
+	var y = e*f/g;
+	var pt1x = pt0x-x;
+	var pt1y = pt0y+y;
+	var w = b*b/e;
+	var v = a*b/e;
+	var pt2x = pt0x-(w*x+v*y)/e;
+	var pt2y = pt0y+(w*y-v*x)/e;
+	var pt3x = pt0x-x+g;
+	var pt3y = pt0y+y;
+	var t = c*c/f;
+	var u = c*d/f;
+	var pt4x = pt0x-(-t*(g-x)-u*y)/f;
+	var pt4y = pt0y+(t*y-u*(g-x))/f;
+	var ctx = document.getElementById("sqrs").getContext("2d");
+	var fmaxx = Math.max(pt0x,pt1x,pt2x,pt3x,pt4x);
+	var fminx = Math.min(pt0x,pt1x,pt2x,pt3x,pt4x);
+	var fmaxy = Math.max(pt0y,pt1y,pt2y,pt3y,pt4y);
+	var fminy = Math.min(pt0y,pt1y,pt2y,pt3y,pt4y);
+	fmaxy = fminy + fmaxx-fminx;
+	//console.log(ds(pt0x,pt0y,pt2x,pt2y));
+	//console.log(ds(pt2x,pt2y,pt1x,pt1y));
+	//console.log(ds(pt0x,pt0y,pt4x,pt4y));
+	//console.log(ds(pt4x,pt4y,pt3x,pt3y));
+	//console.log(ds(pt0x,pt0y,pt1x,pt1y));
+	//console.log(ds(pt0x,pt0y,pt3x,pt3y));
+	//console.log(Math.sqrt(a*a + b*b));
+	//console.log(Math.sqrt(c*c + d*d));
+	pt0x = tograph2(pt0x,fminx,fmaxx);
+	pt0y = tograph2(pt0y,fminy,fmaxy);
+	pt1x = tograph2(pt1x,fminx,fmaxx);
+	pt1y = tograph2(pt1y,fminy,fmaxy);
+	pt2x = tograph2(pt2x,fminx,fmaxx);
+	pt2y = tograph2(pt2y,fminy,fmaxy);
+	pt3x = tograph2(pt3x,fminx,fmaxx);
+	pt3y = tograph2(pt3y,fminy,fmaxy);
+	pt4x = tograph2(pt4x,fminx,fmaxx);
+	pt4y = tograph2(pt4y,fminy,fmaxy);
+	ctx.beginPath();
+	ctx.fillStyle = "white";
+	ctx.fillRect(0,0,1000,1000);
+	ctx.strokeStyle = "black";
+	ctx.lineWidth = 1;
+	ctx.beginPath();
+	ctx.moveTo(pt0x,pt0y);
+	ctx.lineTo(pt1x,pt1y);
+	ctx.lineTo(pt3x,pt3y);
+	ctx.lineTo(pt0x,pt0y);
+	ctx.lineTo(pt2x,pt2y);
+	ctx.lineTo(pt1x,pt1y);
+	ctx.lineTo(pt3x,pt3y);
+	ctx.lineTo(pt4x,pt4y);
+	ctx.lineTo(pt0x,pt0y);
+	ctx.stroke();
+	radat(ctx, a*a, (pt1x+pt2x)/2, (pt1y+pt2y)/2);
+	radat(ctx, b*b, (pt0x+pt2x)/2, (pt0y+pt2y)/2);
+	radat(ctx, c*c, (pt0x+pt4x)/2, (pt0y+pt4y)/2);
+	radat(ctx, d*d, (pt3x+pt4x)/2, (pt3y+pt4y)/2);
+	radat(ctx, a*a+b*b, (pt0x+pt1x)/2, (pt0y+pt1y)/2);
+	radat(ctx, c*c+d*d, (pt0x+pt3x)/2, (pt0y+pt3y)/2);
+	radat(ctx, a*a+b*b+c*c+d*d, (pt1x+pt3x)/2, (pt1y+pt3y)/2);
+	}
+
+function overlineify(str) {
+	var ostr = "";
+	str = str.toString().split("");
+	for (i = 0; i < str.length; i++) {
+		ostr += str[i] + "\u0305";
+		}
+	return(ostr);
+	}
+
+function radat(ctx, n, x, y) {
+	if (n == 0) {return;}
+	ctx.fillStyle = "black";
+	ctx.textAlign="center";
+	ctx.textBaseline="middle";
+	ctx.strokeStyle = "white";
+	ctx.lineWidth = 10;
+	ctx.font = "16px sans-serif";
+	if (Math.sqrt(n) % 1 == 0) {
+		ctx.strokeText(Math.sqrt(n),x,y);
+		ctx.fillText(Math.sqrt(n),x,y);
+		}
+	else {
+		ctx.strokeText("√ \u0305"+overlineify(n),x,y);
+		ctx.fillText("√ \u0305"+overlineify(n),x,y);
+		}
+	}
+
+function drawtiles() {
+	var ctx = document.getElementById("tiles").getContext("2d");
+	var i;
+	ctx.lineWidth=2;
+	for (i = 0; i <= 10; i++) {
+		ctx.beginPath();
+		ctx.moveTo(20*i*Math.sqrt(2)-100,0);
+		ctx.lineTo(20*i*Math.sqrt(2),100);
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.moveTo(20*(i-3)*Math.sqrt(2)+100,0);
+		ctx.lineTo(20*(i-3)*Math.sqrt(2),100);
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.moveTo(0,20*i+100);
+		ctx.lineTo(200,20*i+100);
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.moveTo(20*i,100);
+		ctx.lineTo(20*i,200);
+		ctx.stroke();
+		}
+	var tx = "\\begin{aligned} 2 \\sqrt{2} &\\approx 3\\\\ \\sqrt{2}&\\approx \\frac{3}{2}\\end{aligned}";
+	var tx2 = "\\begin{aligned} 5 \\sqrt{2} &\\approx 7\\\\ \\sqrt{2}&\\approx \\frac{7}{5}\\end{aligned}";
+	document.getElementById("demo1").innerHTML = katex.renderToString(tx);
+	document.getElementById("demo2").innerHTML = katex.renderToString(tx2);
+	}
+
+</script>
+</head>
+<body onload="drawcanv(); updsel(); foursquaresolve(); drawtiles();">
+<h1> Bathroom Tiles and Rational Approximations </h1>
+The tiles in some particular bathroom form the following pattern:<br>
+<div style="text-align:center"><canvas id="tiles" width=200 height=200 style="border:1px solid"> </canvas> </div><br>
+Up to a certain height, the tiles form a typical up/down/left/right grid, and above that height, the tiles form a grid at a 45 degree angle to the original grid.
+At the line where the two intersect are the long diagonals of the 45 degree rotated tiles. The tiles above and below the line are the same tiles, so the
+diagonals are &radic;<span style="text-decoration:overline">2</span> times as long as the sides of the lower tiles. <br>
+
+Notice that they don't line up perfectly: 2 of the longer diagonals is just short of the length of 3 of the sides, and 5 of the longer diagonals is just 
+slightly longer than the length of 7 of the sides. This gives us the following approximations: <br>
+<div style="text-align:center"><span id="demo1"> </span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span id="demo2"> </span> </div><br>
+The interactive below allows you to explore how we can use this sort of tiling to come up with rational approximations to all sorts of numbers:
+<h1> Rational Approximations </h1>
+<table> <tr> <td>
+<table border=1> <tr> <td>
+<select id="sel" onchange="updsel()">
+<option value="sqrt"> Square Root </option>
+<option value="nrt"> Nth Root </option>
+<option value="log"> Logarithms </option>
+<option value="other"> Other </option>
+</select> </td></tr>
+<tr><td>
+<div id="sqrtdiv">
+α = &radic;<span style="text-decoration:overline">n</span>
+<br>n:<input type="number" id="i0" value=2 style="width:3em" oninput="updsel()">
+</div>
+<div id="nrtdiv">
+α = <sup><sup>n</sup></sup><span style="margin-left:-4px">&radic;</span><span style="text-decoration:overline">m</span>
+<br> n:<input type="number" id="i1" value=3 style="width:3em" oninput="updsel()">
+<br> m:<input type="number" id="i2" value=2 style="width:3em" oninput="updsel()">
+</div>
+<div id="logdiv">
+α = log<sub>m</sub>(n)
+<br> n:<input type="number" id="i3" value=10 style="width:3em" oninput="updsel()">
+<br> m:<input type="number" id="i4" value=2 style="width:3em" oninput="updsel()">
+<button onclick="document.getElementById('i4').value=2.718281828459045;updsel();">e</button>
+</div>
+<div id="otherdiv">
+α = <input type="text" id="i5" value = "pi" onchange="updsel()">
+</div>
+</td></tr>
+<tr> <td>
+α = <span id="alph"></span>
+</td> </tr> </table> </td> <td> <div id="appx"> </div> </td> </tr> </table>
+<br>
+<canvas id="rat" width=1000 height=150 style="border:1px solid" onwheel="mwheel(event)" onmousedown="mdown(event)" onmousemove="mmove(event)" onmouseup="mup(event)" onmouseleave="mup(event)"> </canvas> <br>
+Click and drag or use the buttons below to scroll left/right, use the scroll wheel to zoom. <br>
+xmin: <input type="number" id="xmin" value=0 oninput="updb();rm();" style="width:5em"> 
+xmax: <input type="number" id="xmax" value=10 oninput="updb()rm();" style="width:5em"> <br>
+info tolerance: <input type="number" id="qf" value=2 oninput="updb()" style="width:5em"> (increase this number to get information about more (worse) rational approximations)<br>
+multiplier: <input type="number" id="mul" value=1 oninput="updm()" style="width:3em"> <br>
+<button onmousedown="mv=-1; lra();" onmouseup="mv=0" onmouseleave="mv=0">
+	<svg width=21 height=21>
+	<polygon points='8,2.5 1,10.5 8,17.5' fill='black' stroke='black'> </polygon>
+	<line x1=19 y1=10.5 x2=8 y2=10.5 stroke='black' stroke-width=3> </line>
+	</svg>
+</button>
+<button onclick="resetbounds()" title='Reset Plot Region'>
+	<svg width=21 height=21>
+	<path d='M 16.5 13.5 A 7 7 0 1 1 16.5 7.5' fill='none' stroke='black' stroke-width=2></path>
+	<polygon points='17.5,3.5 17.5,8.5 12.5,8.5' fill='black' stroke='black' stroke-width=1></polyline>
+	</svg>
+</button>
+<button onmousedown="mv=1; lra();" onmouseup="mv=0" onmouseleave="mv=0">
+	<svg width=21 height=21>
+	<polygon points='13,2.5 20,10.5 13,17.5' fill='black' stroke='black'> </polygon>
+	<line x1=2 y1=10.5 x2=13 y2=10.5 stroke='black' stroke-width=3> </line>
+	</svg>
+</button>
+<div id="info"> </div>
+<h2> Constructing Square Roots </h2>
+<input type="number" id="fsn" oninput="foursquaresolve()" value=2><br>
+<canvas id="sqrs" width=1000 height=1000> </canvas> <br>
+</body>
+</html>

@@ -326,7 +326,6 @@ function foursquaresolve() {
 	}
 
 function foursquarespic(a,c,b,d) {
-	console.log(a,b,c,d);
 	var e = Math.sqrt(a*a + b*b);
 	var f = Math.sqrt(c*c + d*d);
 	var g = Math.sqrt(a*a + b*b + c*c + d*d);
@@ -444,6 +443,66 @@ function drawtiles() {
 		ctx.lineTo(20*i,200);
 		ctx.stroke();
 		}
+	var ctx = document.getElementById("tiles2").getContext("2d");
+	var i;
+	ctx.lineWidth=2;
+	for (i = 0; i < 2; i++) {
+		ctx.fillStyle = "red";
+		ctx.beginPath();
+		ctx.moveTo(20*i*Math.sqrt(2),100);
+		ctx.lineTo(20*(i+.5)*Math.sqrt(2),100-10*Math.sqrt(2));
+		ctx.lineTo(20*(i+1)*Math.sqrt(2),100);
+		ctx.closePath();
+		ctx.fill();
+		}
+	for (i = 2; i < 10; i++) {
+		ctx.fillStyle = "blue";
+		ctx.beginPath();
+		ctx.moveTo(20*i*Math.sqrt(2),100);
+		ctx.lineTo(20*(i+.5)*Math.sqrt(2),100-10*Math.sqrt(2));
+		ctx.lineTo(20*(i+1)*Math.sqrt(2),100);
+		ctx.closePath();
+		ctx.fill();
+		}
+	for (i = 0; i < 3; i++) {
+		ctx.fillStyle = "green";
+		ctx.beginPath();
+		ctx.moveTo(20*i,100);
+		ctx.lineTo(20*(i+1),100);
+		ctx.lineTo(20*(i+1),120);
+		ctx.lineTo(20*i,120);
+		ctx.closePath();
+		ctx.fill();
+		}
+	for (i = 3; i < 10; i++) {
+		ctx.fillStyle = "yellow";
+		ctx.beginPath();
+		ctx.moveTo(20*i,100);
+		ctx.lineTo(20*(i+1),100);
+		ctx.lineTo(20*(i+1),120);
+		ctx.lineTo(20*i,120);
+		ctx.closePath();
+		ctx.fill();
+		}
+	for (i = 0; i <= 10; i++) {
+		ctx.beginPath();
+		ctx.moveTo(20*i*Math.sqrt(2)-100,0);
+		ctx.lineTo(20*i*Math.sqrt(2),100);
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.moveTo(20*(i-3)*Math.sqrt(2)+100,0);
+		ctx.lineTo(20*(i-3)*Math.sqrt(2),100);
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.moveTo(0,20*i+100);
+		ctx.lineTo(200,20*i+100);
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.moveTo(20*i,100);
+		ctx.lineTo(20*i,200);
+		ctx.stroke();
+		}
+
 	var tx = "\\begin{aligned} 2 \\sqrt{2} &\\approx 3\\\\ \\sqrt{2}&\\approx \\frac{3}{2}\\end{aligned}";
 	var tx2 = "\\begin{aligned} 5 \\sqrt{2} &\\approx 7\\\\ \\sqrt{2}&\\approx \\frac{7}{5}\\end{aligned}";
 	document.getElementById("demo1").innerHTML = katex.renderToString(tx);
@@ -459,7 +518,7 @@ The tiles in some particular bathroom form the following pattern:<br>
 Up to a certain height, the tiles form a typical up/down/left/right grid, and above that height, the tiles form a grid at a 45 degree angle to the original grid.
 At the line where the two intersect are the long diagonals of the 45 degree rotated tiles. The tiles above and below the line are the same tiles, so the
 diagonals are &radic;<span style="text-decoration:overline">2</span> times as long as the sides of the lower tiles. <br>
-
+<div style="text-align:center"><canvas id="tiles2" width=200 height=200 style="border:1px solid"> </canvas> </div><br>
 Notice that they don't line up perfectly: 2 of the longer diagonals is just short of the length of 3 of the sides, and 5 of the longer diagonals is just 
 slightly longer than the length of 7 of the sides. This gives us the following approximations: <br>
 <div style="text-align:center"><span id="demo1"> </span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span id="demo2"> </span> </div><br>
@@ -522,7 +581,7 @@ multiplier: <input type="number" id="mul" value=1 oninput="updm()" style="width:
 	</svg>
 </button>
 <div id="info"> </div>
-<h2> Constructing Square Roots </h2>
+<h1> Constructing Square Roots </h1>
 <input type="number" id="fsn" oninput="foursquaresolve()" value=2><br>
 <canvas id="sqrs" width=1000 height=1000> </canvas> <br>
 </body>

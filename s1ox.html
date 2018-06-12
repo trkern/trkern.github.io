@@ -1,0 +1,66 @@
+<html>
+<head>
+<script src="tgr.js"></script>
+<script>
+
+function rxmin(pd) {
+	var dx = (pd.xmax-pd.xmin)/pd.numpts;
+	return(-Math.sqrt(dx/6.28));
+	}
+
+function rxmax(pd) {
+	var dx = (pd.xmax-pd.xmin)/pd.numpts;
+	return(Math.sqrt(dx/6.28));
+	}
+
+function srx(x) {
+	return(Math.sin(1/x));
+	}
+
+function srxh(pd) {
+	var rval = [];
+	var xmin = pd.xmin;
+	var xmax = pd.xmax;
+	var rxmx = rxmax(pd);
+	var rxmn = rxmin(pd);
+	if (xmax < 0) {return([]);}
+	var i;
+	var imin = 1/(Math.PI*xmax);
+	var imax = Math.ceil(1/(Math.PI*Math.max(rxmx,xmin)));
+	for (i = imax; i > imin; i--) {
+		rval.push([1/(i*Math.PI+Math.PI/2),Math.pow(-1,i)]);
+		}
+	return(rval);
+	}
+
+function nsrxh(pd) {
+	var rval = [];
+	var xmin = pd.xmin;
+	var xmax = pd.xmax;
+	var rxmx = rxmax(pd);
+	var rxmn = rxmin(pd);
+	if (xmin > 0) {return([]);}
+	var i;
+	var imin = -Math.ceil(1/(Math.PI*xmin));
+	var imax = -Math.ceil(1/(Math.PI*Math.min(rxmn,xmax)));
+	console.log(imin,imax);
+	for (i = imin; i < imax; i++) {
+		console.log(i,1/(i*Math.PI+Math.PI/2));
+		rval.push([-1/(i*Math.PI+Math.PI/2),-Math.pow(-1,i)]);
+		}
+	console.log(rval);
+	return(rval);
+	}
+
+function test() {
+	tgr_grapher("gr",[	{type:"rect", xmin:rxmin, ymin:-1, xmax:rxmax, ymax:1},
+				{type:"plot", fct:srx, xmin:rxmax, hints:srxh},
+				{type:"plot", fct:srx, xmax:rxmin, hints:nsrxh}
+			]); 
+	}
+</script>
+</head>
+<body onload="test()">
+<div id="gr"> </div>
+</body>
+</html>

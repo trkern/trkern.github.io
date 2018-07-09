@@ -710,6 +710,53 @@ The game will inevitably end. Spoiler's (Player I's) goal is to end the game as 
 <li> The Duplicator AI is currently a poor sport and will simply forfeit if it cannot find a suitable match. </li>
 <li> Most versions of the game allow Spoiler to pick previously selected vertices, so long as they are matched with the vertex the original vertex was matched to. Since Spoiler, in seeking to end the game as quickly as possible, has no reason to do this, it is disallowed. </li>
 </ul>
+<h2> What's Happening? </h2>
+It is suggested that you try playing the game a bit before <button onclick='document.getElementById("readon").display="auto";'>reading on</button>:
+<div id='readon' style='display:auto;'>
+<h3> Basic Strategy </h3>
+<ul>
+<li> Player I (Spoiler)'s goal is to exploit differences between the graphs to end the game as soon as possible. For instance, suppose the left graph has a vertex which is connected to every other vertex, while the right graph does not.
+<br><img src='efg2.png'> <img src='efg3.png'><br>
+Spoiler can play at the vertex in the left graph which is connected to every other vertex. No matter which vertex Player II (Duplicator) matches it with, that vertex will not be connected to every other vertex.
+<br><img src='efg4.png'> <img src='efg5.png'><br>
+Spoiler can then take advantage of the vertex in the second graph which is not connected to the original vertex to win the game. No matter where Duplicator moves, they have lost.
+<br><img src='efg4.png'> <img src='efg6.png'><br>
+</li>
+<li> Player II (Duplicator)'s goal is to exploit similarities between the graphs to prolong the game. In fact, if the two graphs are the same (or scrambled versions of one another), Duplicator can keep the game going as long as possible!
+<br><img src='efgthumb.png'><br>
+<h3> Connection with Logic </h3>
+So the main goal of the game is to recognize the similarities and differences between the two graphs. Features to pay attention to, include:
+<ul>
+<li> If there are no vertices </li>
+<li> If there is a vertex which is connected to every other vertex </li>
+<li> If there is a vertex which is not connected to any other vertex </li>
+<li> If there is a vertex which is connected to every other vertex except one </li>
+<li> If there is a vertex which is not connected to any other vertex except one </li>
+</ul>
+We can write all of these in terms of a very small set of pieces:
+<ul>
+<li> Variables to talk about vertices (a,b,c,etc.)</li>
+<li> There is (another) vertex (&exist;)</li>
+<li> Every (other) vertex (&forall;)</li>
+<li> And, Or, Not (&and;, &or;, &not;)</li>
+<li> Is connected to (&tilde;)</li>
+<li> Equality and inequality (=/&ne;) </li>
+<li> Grammatical pieces (such that/it is the case that) </li>
+<li> Is a circle, triangle, square (if shapes are active) </li>
+</ul>
+The language is awkward, but we can rewrite our features in this language:
+<table border=1>
+<tr> <td colspan=9> There is a vertex which is connected to every other vertex </td> </tr>
+<tr> <td> There is a vertex </td> <td> a </td> <td> such that </td> <td> for every other vertex </td> <td> b </td> <td> it is the case that </td> <td> a </td> <td> is connected to </td> <td> b </td> </tr>
+<tr> <td> &exist; </td> <td> a </td> <td> : </td> <td> &forall; </td> <td> b (&ne; a) </td> <td> : </td> <td> a </td> <td> &sim; </td> <td> b </td> </tr>
+<tr> <td colspan=9> &exist; a: &forall; b &ne; a: a &sim; b </td>
+</table>
+What's remarkable is that: <div style='border:1px solid blue; font-size:larger; padding:20px'> <b> Theorem (Ehrenfeucht, Fraïssé): </b> The number of turns it takes for spoiler to exploit a particular difference between two graphs is the <i> minimum number of variables </i> needed to express that difference in the <i> language above. </i> </div>
+Furthermore:
+<ul>
+<li> The instructions Spoiler must follow to exploit that difference can be fairly straightforwardly read off of the logical formula expressing that difference. </li>
+<li> The minimum number of turns Spoiler needs to win the game is the number of variables in the formula that distinguishes the two graphs with the fewest variables. </li>
+</ul>
 <h2> Read More </h2>
 You can learn more about Ehrenfeucht–Fraïssé Games at:
 <ul>

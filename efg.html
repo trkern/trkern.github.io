@@ -711,8 +711,8 @@ The game will inevitably end. Spoiler's (Player I's) goal is to end the game as 
 <li> Most versions of the game allow Spoiler to pick previously selected vertices, so long as they are matched with the vertex the original vertex was matched to. Since Spoiler, in seeking to end the game as quickly as possible, has no reason to do this, it is disallowed. </li>
 </ul>
 <h2> What's Happening? </h2>
-It is suggested that you try playing the game a bit before <button onclick='document.getElementById("readon").display="auto";'>reading on</button>:
-<div id='readon' style='display:auto;'>
+It is suggested that you try playing the game a bit before <button onclick='document.getElementById("readon").style.display="block";'>reading on</button>:
+<div id='readon' style='display:none;'>
 <h3> Basic Strategy </h3>
 <ul>
 <li> Player I (Spoiler)'s goal is to exploit differences between the graphs to end the game as soon as possible. For instance, suppose the left graph has a vertex which is connected to every other vertex, while the right graph does not.
@@ -723,9 +723,10 @@ Spoiler can then take advantage of the vertex in the second graph which is not c
 <br><img src='efg4.png'> <img src='efg6.png'><br>
 </li>
 <li> Player II (Duplicator)'s goal is to exploit similarities between the graphs to prolong the game. In fact, if the two graphs are the same (or scrambled versions of one another), Duplicator can keep the game going as long as possible!
-<br><img src='efgthumb.png'><br>
+<br><img src='efgthumb.png'><br></li>
+</ul>
 <h3> Connection with Logic </h3>
-So the main goal of the game is to recognize the similarities and differences between the two graphs. Features to pay attention to, include:
+So the main goal of the game is to recognize the similarities and differences between the two graphs. Features to pay attention to include:
 <ul>
 <li> If there are no vertices </li>
 <li> If there is a vertex which is connected to every other vertex </li>
@@ -757,6 +758,50 @@ Furthermore:
 <li> The instructions Spoiler must follow to exploit that difference can be fairly straightforwardly read off of the logical formula expressing that difference. </li>
 <li> The minimum number of turns Spoiler needs to win the game is the number of variables in the formula that distinguishes the two graphs with the fewest variables. </li>
 </ul>
+<h3> Why do Ehrenfeucht–Fraïssé Games matter? </h3>
+A major question of logic is what can and what cannot be said in particular formal languages. 
+Think designing a programming language and wanting to make sure that programmers can write programs to do particular things in that language.
+Ehrenfeucht–Fraïssé Games allow us to take our intuitions about playing games and use them to determine what can and cannot be said in this one particular kind of language.
+<br>For example consider the following two graphs:
+<ul>
+<li> Left Graph:
+<br> <img src="efg7.png"> <br>
+A single line of vertices, each connected to the one before it and the one after it, infinite in both directions.
+<li> Right Graph:
+<br> <img src="efg7.png"> <br>
+<br> <img src="efg7.png"> <br>
+Two copies of the left graph.
+</ul>
+We can show that these two graphs are <i>indistinguishable</i> in terms of the formal language we've been using to talk about graphs.
+Specifically, any logical formula written in terms of:
+<ul>
+<li> Variables to talk about vertices (a,b,c,etc.)</li>
+<li> There is (another) vertex (&exist;)</li>
+<li> Every (other) vertex (&forall;)</li>
+<li> And, Or, Not (&and;, &or;, &not;)</li>
+<li> Is connected to (&tilde;)</li>
+<li> Equality and inequality (=/&ne;) </li>
+<li> Grammatical pieces (such that/it is the case that) </li>
+</ul>
+Which is true of one of the graphs is true of the other graph.
+<ol>
+<li> Suppose the graphs aren't indistinguishable. Specifically, that there is some logical formula in the above language which is true of one that is false of the other. </li>
+<li> Then that formula has some number of variables (n) in it, and by the Ehrenfeucht–Fraïssé Theorem, Spoiler has a strategy for winning the game in n turns. </li>
+<li> This strategy is going to look something like: On their first two turns, Spoiler plays in both pieces of the right graph: </li>
+<br> <img src="efg8.png"> <br>
+<li> Forcing Duplicator to play at two points somewhere (ideally very far apart) on the left graph: </li>
+<br> <img src="efg9.png"> <br>
+<li> Spoiler's goal now is to exploit the fact that the selected vertices on the left graph are connected by a (very long) string of vertices whereas they are not connected in such a way on the right graph. </li>
+<li> But, remember that Spoiler claimed not only that they had a winning strategy, but a winning strategy in n turns! </li>
+<li> <i> But</i>, if Duplicator played at two points a certain distance apart (roughly 2<sup>n</sup>), Spoiler does not have enough time to take advantage of this difference. </li>
+<li> So Spoiler didn't actually have a strategy for winning the game in n turns. (The liar!)</li>
+<li> So the graphs really aren't distinguishable. </li>
+</ol>
+Spelling out what this means exactly, any formula in the very specific language we've been working with cannot be true of the left graph and false of the right graph.
+Or, looking at it <i>another way</i>, any difference between the left graph and the right graph cannot be expressed in our particular language.
+As such:
+<div style='border:1px solid blue; font-size:larger; padding:20px'> <b> Fun Fact: </b> There is no formula in our particular language that expresses the idea of "being connected" i.e. any two vertices are connected by a string of vertices, each connected to the next.</div>
+</div>
 <h2> Read More </h2>
 You can learn more about Ehrenfeucht–Fraïssé Games at:
 <ul>

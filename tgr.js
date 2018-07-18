@@ -1,20 +1,9 @@
 /*Graphing library:
 
-//BUGS:
-If a graph contains too large y-values, entire graph isn't shown
-Zooming in sticks the browser?
-
-function trk_grapher_string(id, grapher_objs, plotdata) //returns a string which can be innerHTML'ed to produce a function grapher with id, graphing grapher_obj
-
-function trk_grapher_set_objs(id, grapher_objs)
-
-function trk_grapher_set_plotdata(id, plotdata)
 
 The curve contains:
 fct //A string, representing javascript code that can be executed as the function to be graphed
 hints //An array of hints
-
-decoration //
 
 plotdata //Structure containing data for how the graph should look
 	xmin
@@ -27,23 +16,28 @@ plotdata //Structure containing data for how the graph should look
 	oymax
 	width
 	height
-	on_bound_change
+	on_redraw
 	numpts
 	showaxes
 	showgrid
 	dragging
 	labelaxes
+	ctarg //target div for controls
 
 grapher_obj.type //string one of the following:
-	//"none" - does nothing, used for the decorations and blank plots
+	//"none" - does nothing, not sure why you'd need this
 	//"plot" - y = f(x)
 	//"par" - [x,y] = f(t)
 	//"rect"
+	//"hole" 
+	//"dot"
+	//"line"
+	//"vf" (vector field, still working on)
 grapher_obj.fct //function being plotted (as a javascript function)
 grapher_obj.hints //some hints for the plot.
 	//A hint is: [ptx,pty,lc,rc]
-		//lc=connect to the left?
-		//rc=connect to the right?
+		//lc=connect to the left? (NOT IMPLEMENTED)
+		//rc=connect to the right? (NOT IMPLEMENTED)
 	//hints must be ordered from left to right
 grapher_obj.tmin //for parametric plots, may be a function of plotdata
 grapher_obj.tmax //for parametric plots, may be a function of plotdata
@@ -52,6 +46,11 @@ grapher_obj.xmin //for "plot", "rect", may be a function of plotdata
 grapher_obj.xmax //for "plot", "rect", may be a function of plotdata
 grapher_obj.ymin //for "rect"
 grapher_obj.ymax //for "rect"
+grapher_obj.x //for "hole", "dot", "line"
+grapher_obj.y //for "hole", "dot", "line"
+grapher_obj.x2 //for "line"
+grapher_obj.y2 //for "line"
+grapher_obj.color //for "plot", "par", "rect", "hole", "dot", "line"
 
 function trk_grapher_mwheel(id, event)
 function trk_grapher_mdown(id, event)
@@ -204,13 +203,16 @@ function tgr_draw_graph(id) {
 	for (i = 0; i < tgr_graph_array[id].grapher_objs.length; i++) {
 		tgr_plot(tgr_graph_array[id].grapher_objs[i], ctx, pd);
 		}
+	if ("on_redraw" in pd) {
+		pd.on_redraw();
+		}
 	}
 
 function tgr_fun(jstr) {
-	var f;
+	var ooo;
 	//eval("f = function(x) {return("+jstr.replace(/(\(x\)|\bx\b)/gi,'(Number(x))')+");};");
-	eval("f = function(x) {return("+jstr.replace(/(\(x\)|\bx\b)/gi,'(x)')+");};");
-	return(f);
+	eval("ooo = function(x) {return("+jstr.replace(/(\(x\)|\bx\b)/gi,'(x)')+");};");
+	return(ooo);
 	}
 
 function tgr_plug(f,pd) {
@@ -241,8 +243,8 @@ function tgr_plot(grapher_obj, ctx, pd) {
 		ctx.lineWidth = 1;
 		var x = 0;
 		for (i = 0; i < pd.numpts; i++) {
-			x1 = xmin + i*(xmax-xmin)/pd.numpts;
-			x2 = xmin + (i+1)*(xmax-xmin)/pd.numpts;
+			var x1 = xmin + i*(xmax-xmin)/pd.numpts;
+			var x2 = xmin + (i+1)*(xmax-xmin)/pd.numpts;
 			ctx.beginPath();
 			ctx.moveTo(...tgr_tocanv([x1,f(x1)],pd));
 			while (minhintindex < hints.length && hints[minhintindex][0] < x2) {
@@ -295,9 +297,43 @@ function tgr_plot(grapher_obj, ctx, pd) {
 			ymin = Math.max(pd.ymin,tgr_plug(grapher_obj.ymin,pd));
 			}
 		else {ymin = pd.ymin;}
-		console.log
 		ctx.fillStyle = grapher_obj.color;
 		tgr_rect(ctx, ...tgr_tocanv([xmin,ymin],pd), ...tgr_tocanv([xmax,ymax],pd));
+		}
+	if (grapher_obj.type == "hole") {
+		var pointx,pointy;
+		pointx = tgr_plug(grapher_obj.x,pd);
+		pointy = tgr_plug(grapher_obj.y,pd);
+		ctx.beginPath();
+		ctx.arc(...tgr_tocanv([pointx,pointy],pd), 6, 0, 2*Math.PI);
+		ctx.fillStyle=grapher_obj.color;
+		ctx.fill();
+		ctx.beginPath();
+		ctx.arc(...tgr_tocanv([pointx,pointy],pd), 4, 0, 2*Math.PI);
+		ctx.fillStyle="white";
+		ctx.fill();
+		}
+	if (grapher_obj.type == "dot") {
+		var pointx,pointy;
+		pointx = tgr_plug(grapher_obj.x,pd);
+		pointy = tgr_plug(grapher_obj.y,pd);
+		ctx.beginPath();
+		ctx.arc(...tgr_tocanv([pointx,pointy],pd), 5, 0, 2*Math.PI);
+		ctx.fillStyle=grapher_obj.color;
+		ctx.fill();
+		}
+	if (grapher_obj.type == "line") {
+		var lx1, lx2, ly1, ly2;
+		lx1 = tgr_plug(grapher_obj.x,pd);
+		ly1 = tgr_plug(grapher_obj.y,pd);
+		lx2 = tgr_plug(grapher_obj.x2,pd);
+		ly2 = tgr_plug(grapher_obj.y2,pd);
+		ctx.beginPath();
+		ctx.strokeStyle = grapher_obj.color;
+		ctx.lineWidth = 2;
+		ctx.moveTo(...tgr_tocanv([lx1,ly1],pd));
+		ctx.lineTo(...tgr_tocanv([lx2,ly2],pd));
+		ctx.stroke();
 		}
 	}
 
@@ -328,7 +364,13 @@ function tgr_arrow(ctx, pt, dir) { //will take more options (formatting)
 function tgr_grapher(id, grapher_objs, plotdata) {
 	plotdata = plotdata || {};
 	plotdata = Object.assign({},tgr_default_plotdata,plotdata);
-	document.getElementById(id).innerHTML = tgr_string(id, grapher_objs, plotdata);
+	var targ = id;
+	if ("ctarg" in plotdata) {
+		targ = plotdata.ctarg;
+		}
+	var ts = tgr_string(id, grapher_objs, plotdata);
+	document.getElementById(id).innerHTML = ts[0];
+	document.getElementById(targ).innerHTML += ts[1];
 	tgr_graph_array[id] = {grapher_objs:{}, plotdata:{}};
 	var i;
 	tgr_graph_array[id].grapher_objs = [];
@@ -336,7 +378,14 @@ function tgr_grapher(id, grapher_objs, plotdata) {
 		tgr_graph_array[id].grapher_objs[i] = Object.assign({},tgr_default_grapher_obj,grapher_objs[i]);
 		}
 	tgr_graph_array[id].plotdata = Object.assign({},plotdata);
-	console.log(tgr_graph_array[id].plotdata);
+	tgr_draw_graph(id);
+	}
+
+function tgr_update_grapher_objs(id,grapher_objs) {
+	tgr_graph_array[id].grapher_objs = [];
+	for (i = 0; i < grapher_objs.length; i++) {
+		tgr_graph_array[id].grapher_objs[i] = Object.assign({},tgr_default_grapher_obj,grapher_objs[i]);
+		}
 	tgr_draw_graph(id);
 	}
 
@@ -480,25 +529,26 @@ function tgr_reset_button(id) {
 	}
 
 function tgr_string(id, grapher_objs, plotdata) {
-	var rstr = "";
-	rstr = "<canvas id='tgr_canv_"+id+"' width="+plotdata.width+" height="+plotdata.height+" style='border:1px solid'";
-	rstr += " onwheel='tgr_wheel("+'"'+id+'"'+",event)' onmousedown='tgr_mdown("+'"'+id+'"'+",event)' onmousemove='tgr_mmove("+'"'+id+'"'+",event)' onmouseup='tgr_mup("+'"'+id+'"'+",event)' onmouseleave='tgr_mup("+'"'+id+'"'+",event)'></canvas></br>";
-	rstr += "<table> <tr> <td>";
-	rstr += "Min x: <input type='number' id='tgr_plotminx_"+id+"' oninput='tgr_evt("+'"'+id+'"'+",event)' value=-5 style='width:4em'>";
-	rstr += "</td><td>"
-	rstr += "Max x: <input type='number' id='tgr_plotmaxx_"+id+"' oninput='tgr_evt("+'"'+id+'"'+",event)' value=5 style='width:4em'>";
-	rstr += "</td></tr><tr><td>";
-	rstr += "Min y: <input type='number' id='tgr_plotminy_"+id+"' oninput='tgr_evt("+'"'+id+'"'+",event)' value=-5 style='width:4em'>";
-	rstr += "</td><td>"
-	rstr += "Max x: <input type='number' id='tgr_plotmaxy_"+id+"' oninput='tgr_evt("+'"'+id+'"'+",event)' value=5 style='width:4em'>";
-	rstr += "</td></tr></table>";
-	rstr += tgr_zoom_button(id,1,0,0);
-	rstr += tgr_zoom_button(id,1,1,0);
-	rstr += tgr_zoom_button(id,1,0,1);
-	rstr += "<br>";
-	rstr += tgr_zoom_button(id,0,0,0);
-	rstr += tgr_zoom_button(id,0,1,0);
-	rstr += tgr_zoom_button(id,0,0,1);
-	rstr += tgr_reset_button(id);
-	return(rstr);
+	var cstr = "";
+	var gstr = "";
+	cstr = "<canvas id='tgr_canv_"+id+"' width="+plotdata.width+" height="+plotdata.height+" style='border:1px solid'";
+	cstr += " onwheel='tgr_wheel("+'"'+id+'"'+",event)' onmousedown='tgr_mdown("+'"'+id+'"'+",event)' onmousemove='tgr_mmove("+'"'+id+'"'+",event)' onmouseup='tgr_mup("+'"'+id+'"'+",event)' onmouseleave='tgr_mup("+'"'+id+'"'+",event)'></canvas>";
+	gstr += "<table> <tr> <td>";
+	gstr += "Min x: <input type='number' id='tgr_plotminx_"+id+"' oninput='tgr_evt("+'"'+id+'"'+",event)' value=-5 style='width:4em'>";
+	gstr += "</td><td>"
+	gstr += "Max x: <input type='number' id='tgr_plotmaxx_"+id+"' oninput='tgr_evt("+'"'+id+'"'+",event)' value=5 style='width:4em'>";
+	gstr += "</td></tr><tr><td>";
+	gstr += "Min y: <input type='number' id='tgr_plotminy_"+id+"' oninput='tgr_evt("+'"'+id+'"'+",event)' value=-5 style='width:4em'>";
+	gstr += "</td><td>"
+	gstr += "Max x: <input type='number' id='tgr_plotmaxy_"+id+"' oninput='tgr_evt("+'"'+id+'"'+",event)' value=5 style='width:4em'>";
+	gstr += "</td></tr></table>";
+	gstr += tgr_zoom_button(id,1,0,0);
+	gstr += tgr_zoom_button(id,1,1,0);
+	gstr += tgr_zoom_button(id,1,0,1);
+	gstr += "<br>";
+	gstr += tgr_zoom_button(id,0,0,0);
+	gstr += tgr_zoom_button(id,0,1,0);
+	gstr += tgr_zoom_button(id,0,0,1);
+	gstr += tgr_reset_button(id);
+	return([cstr,gstr]);
 	}

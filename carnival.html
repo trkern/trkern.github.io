@@ -1,0 +1,663 @@
+﻿<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="carnivalicon.png">
+<title> The Calculus Carnival Game </title>
+<script src="math.min.js" type="text/javascript"></script>
+<script src="katex.min.js" type="text/javascript"></script>
+<link rel="stylesheet" href="katex.min.css">
+<script src="tgr.js"></script>
+<script>
+
+var padxmin = -2;
+var padxmax = 2;
+var padymin = -2;
+var padymax = 2;
+
+var padx = 0;
+var padv = .005;
+var paddlemover;
+
+var ballx;
+var bally;
+var ballmode;
+var ballv = .01;
+var ballmover;
+
+var showguide = true;
+
+var xresizemode = 0;
+
+var shrinkmode = 0; //0 = no shrink mode, 1 = waiting for user to launch the ball, 2 = shrinking around a point
+var shrinky = 0;
+var shrinkx = 0;
+
+var cannonballx = -20;
+var cannonbally = -20;
+var cannonballmover;
+var cannontime = 0;
+var cannonlaunchangle = 0;
+
+function rbet(mn,mx) {
+	return(Math.random()*(mx-mn)+mn);
+	}
+
+function ff(x) {
+	return(2**x-2);
+	}
+
+function startball() {
+	ballmode = 0;
+	ballx = padx;
+	bally = tgr_graph_array["gr"].plotdata.ymin;
+	clearInterval(ballmover);
+	ballmover = setInterval(moveball,5);
+	}
+
+function startstopshrink() {
+	var str;
+	if (shrinkmode == 0) {
+		shrinkmode = 1;
+		str = "Fire to set up centers of the shrinking target <br>";
+		str += "Or enter an x-coordinate <input type='number' onchange='activateshrinker(Number(this.value),ff(Number(this.value)))'>";
+		document.getElementById("shrinkout").innerHTML =  str;
+		document.getElementById("shrinkbutt").innerHTML = "Deactivate";
+		}
+	else if (shrinkmode == 1 || shrinkmode == 2) {
+		document.getElementById("shrinkout").innerHTML = "";
+		document.getElementById("shrinkbutt").innerHTML = "Activate";
+		if (shrinkmode == 2) {
+			g_o.pop();
+			g_o.pop();
+			}
+		shrinkmode = 0;
+		tgr_update_grapher_objs("gr", g_o);
+		}
+	}
+
+function activateshrinker(x,y) {
+	if (x > padxmax) {
+		padxmax = x+1;
+		}
+	if (x < padxmin) {
+		padxmin = x-1;
+		}
+	shrinkx = x;
+	shrinky = y;
+	shrinkmode = 2;
+	var pd = tgr_graph_array["gr"].plotdata;
+	var w = (pd.ymax-pd.ymin)/5;
+	padymax = shrinky + w;
+	padymin = shrinky - w;
+	g_o.push({type:"line",color:"red",x:shrinkx,y:shrinky,x2:Infinity,y2:shrinky});
+	g_o.push({type:"line",color:"red",x:shrinkx,y:shrinky,x2:shrinkx,y2:-Infinity});
+	tgr_update_grapher_objs("gr", g_o);
+	document.getElementById("shrinkout").innerHTML = "Hit the target to shrink the target";
+	redraw();
+	}
+
+function ysplat(y,cy) {
+	var pd = tgr_graph_array["gr"].plotdata;
+	var ctx = document.getElementById("ybar").getContext("2d");
+	var hit = true;
+	if (y > padymax) {hit = false;}
+	if (y < padymin) {hit = false;}
+	var ysmin = Math.max(cy-5,tgr_tocanv([0,padymax],pd)[1]);
+	var ysmax = Math.min(cy+5,tgr_tocanv([0,padymin],pd)[1]);
+	if (hit) {
+		ctx.strokeStyle = "blue";
+		ctx.beginPath();
+		ctx.moveTo(10,ysmin);
+		ctx.lineTo(10,ysmax);
+		ctx.stroke();
+		document.getElementById("hitmiss").innerHTML = "<span style='color:blue'>HIT!</span>";
+		}
+	else {
+		document.getElementById("hitmiss").innerHTML = "<span style='color:red'>MISS!</span>";
+		}
+	if (shrinkmode == 1) {
+		activateshrinker(shrinkx,y);
+		}
+	else if (shrinkmode == 2 && hit) {
+		var w = (padymax-padymin);
+		var c = (padymax+padymin)/2;
+		padymax = c + w/4;
+		padymin = c - w/4;
+		redraw();
+		}
+	}
+
+function moveball() {
+	var pd = tgr_graph_array["gr"].plotdata;
+	var ctx = document.getElementById("ball").getContext("2d");
+	ctx.clearRect(0,0,500,500);
+	var cball = tgr_tocanv([ballx,bally],pd);
+	if (ballmode == 0) {
+		bally += ballv * (pd.ymax-pd.ymin);
+		if (bally >= ff(ballx)) {
+			bally = ff(ballx);
+			ballmode = 1;
+			}
+		}
+	if (ballmode == 1) {
+		ballx += ballv * (pd.xmax-pd.xmin);
+		if (ballx >= tgr_graph_array["gr"].plotdata.xmax) {
+			clearInterval(ballmover);
+			ysplat(bally,cball[1]);
+			return;
+			}
+		}
+	ctx.beginPath();
+	ctx.fillStyle = "blue";
+	ctx.arc(...cball,5,0,2*Math.PI);
+	ctx.stroke();
+	ctx.fill();
+	}
+
+function fire() {
+	startball();
+	if (shrinkmode == 1) {shrinkx = padx;}
+	}
+
+function startpaddle() {
+	clearInterval(paddlemover);
+	paddlemover = setInterval(movepaddle,5);
+	}
+
+function stoppaddle() {
+	clearInterval(paddlemover);
+	}
+
+function movepaddle() { //moves ball on paddle
+	padx += padv * (padxmax-padxmin);
+	if (padx > padxmax) {padx = padxmax; padv = -padv;}
+	if (padx < padxmin) {padx = padxmin; padv = -padv;}
+	//if (padx > padxmax || padx < padxmin) {padv = -padv;}
+	drawpaddle();
+	if (showguide) {drawguide();}
+	}
+
+function drawguide() {
+	var pd = tgr_graph_array["gr"].plotdata;
+	var ctxg = document.getElementById("guide").getContext("2d");
+	ctxg.clearRect(0,0,500,500);
+	var cpt = tgr_tocanv([padx,ff(padx)],pd);
+	ctxg.beginPath();
+	ctxg.strokeStyle = "green";
+	ctxg.moveTo(ctxg.canvas.height,cpt[1]);
+	ctxg.lineTo(...cpt);
+	ctxg.lineTo(cpt[0],ctxg.canvas.width);
+	ctxg.stroke();
+	}
+
+function drawpaddle() {
+	var pd = tgr_graph_array["gr"].plotdata;
+	var ctxx = document.getElementById("xbar").getContext("2d");
+	var cmin = tgr_tocanv([padxmin,padymin],pd);
+	var cmax = tgr_tocanv([padxmax,padymax],pd);
+	var cpx = tgr_tocanv([padx,0],pd)[0];
+	ctxx.clearRect(0, 0, ctxx.canvas.width, ctxx.canvas.height);
+	ctxx.strokeStyle = "black";
+	ctxx.lineWidth = 2;
+	ctxx.beginPath();
+	ctxx.moveTo(cmin[0],4);
+	ctxx.lineTo(cmin[0],16);
+	ctxx.lineTo(cmax[0],16);
+	ctxx.lineTo(cmax[0],4);
+	ctxx.stroke();
+	ctxx.beginPath();
+	ctxx.fillStyle = "blue";
+	ctxx.arc(cpx,10,5,0,2*Math.PI);
+	ctxx.fill();
+	ctxx.stroke();
+	//cannon stuff:
+	drawcannon();
+	}
+
+function redraw() {
+	var pd = tgr_graph_array["gr"].plotdata;
+	var cmin = tgr_tocanv([padxmin,padymin],pd);
+	var cmax = tgr_tocanv([padxmax,padymax],pd);
+	var ctxy = document.getElementById("ybar").getContext("2d");
+	ctxy.clearRect(0, 0, ctxy.canvas.width, ctxy.canvas.height);
+	ctxy.strokeStyle = "black";
+	ctxy.lineWidth = 2;
+	ctxy.beginPath();
+	ctxy.moveTo(10,cmin[1]);
+	ctxy.lineTo(10,cmax[1]);
+	ctxy.stroke();
+	drawpaddle();
+	//cannon stuff:
+	drawcannonsplat();
+	}
+
+function boot() {
+	startpaddle();
+	bootchoosef();
+	tgr_grapher("gr",[], {width:500, height:500, ctarg:"ct", on_redraw:redraw});
+	updf();
+	}
+
+function randpady() {
+	if (shrinkmode == 1 || shrinkmode == 2) {startstopshrink();}
+	var pd = tgr_graph_array["gr"].plotdata;
+	padymin = rbet(pd.ymin,pd.ymax);
+	padymax = rbet(pd.ymin,pd.ymax);
+	if (padymin > padymax) {
+		var a = padymin;
+		padymin = padymax;
+		padymax = a;
+		}
+	redraw();
+	}
+
+function xbarmleave(e) {
+	if (xresizemode == 0) {document.body.style.cursor = "auto";}
+	}
+
+function xbarmmove(e) {
+	e.preventDefault();
+	var pd = tgr_graph_array["gr"].plotdata;
+	var cmin = tgr_tocanv([padxmin,padymin],pd)[0];
+	var cmax = tgr_tocanv([padxmax,padymax],pd)[0];
+	var rect=document.getElementById("xbar").getBoundingClientRect();
+	var eX = e.clientX-rect.x;
+	var eY = e.clientY-rect.y;
+	var w = 3;
+	if (xresizemode != 0) {
+		document.body.style.cursor = "col-resize";
+		}
+	else if (eX < cmin + w && eX > cmin - w) {
+		document.body.style.cursor = "col-resize";
+		}
+	else if (eX < cmax + w && eX > cmax - w) {
+		document.body.style.cursor = "col-resize";
+		}
+	else {
+		document.body.style.cursor = "auto";
+		}
+	var wall;
+	if (xresizemode == 1) {
+		if (shrinkmode == 2) {wall = shrinkx - (pd.xmax-pd.xmin)/pd.width;}
+		else {wall = padxmax;}
+		padxmin = Math.min(Math.max(pd.xmin,tgr_fromcanv([eX,0],pd)[0]),wall);
+		drawpaddle();
+		}
+	if (xresizemode == 2) {
+		if (shrinkmode == 2) {wall = +shrinkx + (pd.xmax-pd.xmin)/pd.width;}
+		else {wall = padxmin;}
+		padxmax = Math.max(Math.min(pd.xmax,tgr_fromcanv([eX,0],pd)[0]),wall);
+		drawpaddle();
+		}
+	}
+
+function xbarmdown(e) {
+	e.preventDefault();
+	var pd = tgr_graph_array["gr"].plotdata;
+	var cmin = tgr_tocanv([padxmin,padymin],pd)[0];
+	var cmax = tgr_tocanv([padxmax,padymax],pd)[0];
+	var rect=e.target.getBoundingClientRect();
+	var eX = e.clientX-rect.x;
+	var eY = e.clientY-rect.y;
+	var w = 3;
+	if (eX < cmin + w && eX > cmin - w) {
+		xresizemode = 1;
+		window.addEventListener("mousemove",xbarmmove);
+		window.addEventListener("mouseup",xbarmup);
+		}
+	else if (eX < cmax + w && eX > cmax - w) {
+		xresizemode = 2;
+		window.addEventListener("mousemove",xbarmmove);
+		window.addEventListener("mouseup",xbarmup);
+		}
+	else {
+		xresizemode = 0;
+		}
+	}
+
+function xbarmup(e) {
+	e.preventDefault();
+	xresizemode = 0;
+	document.body.style.cursor = "auto";
+	window.removeEventListener("mousemove",xbarmmove);
+	window.removeEventListener("mouseup",xbarmup);
+	}
+
+function qrxmin(pd) {
+	var dx = (pd.xmax-pd.xmin)/pd.numpts;
+	return(-Math.sqrt(dx/6.28));
+	}
+
+function qrxmax(pd) {
+	var dx = (pd.xmax-pd.xmin)/pd.numpts;
+	return(Math.sqrt(dx/6.28));
+	}
+
+function qsrx(x) {
+	return(Math.sin(1/x));
+	}
+
+function qsrxh(pd) {
+	var rval = [];
+	var xmin = pd.xmin;
+	var xmax = pd.xmax;
+	var rxmx = qrxmax(pd);
+	var rxmn = qrxmin(pd);
+	if (xmax < 0) {return([]);}
+	var i;
+	var imin = 1/(Math.PI*xmax);
+	var imax = Math.ceil(1/(Math.PI*Math.max(rxmx,xmin)));
+	for (i = imax; i > imin; i--) {
+		rval.push([1/(i*Math.PI+Math.PI/2),Math.pow(-1,i)]);
+		}
+	return(rval);
+	}
+
+function qnsrxh(pd) {
+	var rval = [];
+	var xmin = pd.xmin;
+	var xmax = pd.xmax;
+	var rxmx = qrxmax(pd);
+	var rxmn = qrxmin(pd);
+	if (xmin > 0) {return([]);}
+	var i;
+	var imin = -Math.ceil(1/(Math.PI*xmin));
+	var imax = -Math.ceil(1/(Math.PI*Math.min(rxmn,xmax)));
+	for (i = imin; i < imax; i++) {
+		rval.push([-1/(i*Math.PI+Math.PI/2),-Math.pow(-1,i)]);
+		}
+	return(rval);
+	}
+
+function mathjsfct(str) {
+	var f = math.compile(str);
+	return(function(ooo){return(f.eval({x:ooo}));});
+	}
+
+var funopts = [//[name,latex,function used for ball firing,grapherobjs (if not just type:"plot", fct:ballfun]
+	["x^2", "x^2", function(x){return(x*x)}],
+	["2^x-2", "2^x-2", function(x){return(Math.pow(2,x)-2);}],
+	["x^3-2x", "x^3-2x", function(x){return(Math.pow(x,3)-2*x);}],
+	["10x", "10x", function(x) {return(10*x);}],
+	["x", "x", function(x){return(x);}],
+	["x/10", "\\frac{x}{10}", function(x){return(.1*x);}],
+	["1 if x > 0","\\begin{cases} 1 & x > 0 \\\\ 0 & x \\leq 0 \\end{cases}",function(x){if(x>0){return(1);} return(0);},[
+		{type:"plot",fct: function(x){return(0);}, hints:[[0,0]],xmax:0},
+		{type:"plot",fct: function(x){return(1);}, hints:[[0,1]],xmin:0},
+		{type:"hole",x:0,y:1},
+		{type:"dot",x:0,y:0}]
+		],
+	["1 if x = 0","\\begin{cases} 1 & x = 0 \\\\ 0 & x \\neq 0 \\end{cases}",function(x){if(x==0){return(1);} return(0);},[
+		{type:"plot",fct: function(x){return(0);}},
+		{type:"hole",x:0,y:0},
+		{type:"dot",x:0,y:1}]
+		],
+	["1/x","\\begin{cases}\\frac{1}{x}& x \\neq 0\\\\ 0 & x = 0\\end{cases}",function(x){if(x!=0){return(1/x);} return(0);},[
+		{type:"plot",fct: function(x){return(1/x);},xmax:function(pd){return((-pd.xmax+pd.xmin)/pd.width);}},
+		{type:"plot",fct: function(x){return(1/x);},xmin:0},
+		{type:"dot",x:0,y:0}]
+		],
+	["sin(1000x)", "\\sin(1000x)", function(x){return(Math.sin(1000*x));}],
+	["sin(1/x)", "\\begin{cases} \\sin\\left(\\frac{1}{x}\\right) & x \\neq 0 \\\\ 0 & x = 0 \\end{cases}",function(x){if(x==0){return(0);} return(Math.sin(1/x));},[
+		{type:"rect", xmin:qrxmin, ymin:-1, xmax:qrxmax, ymax:1},
+		{type:"plot", fct:qsrx, xmin:qrxmax, hints:qsrxh},
+		{type:"plot", fct:qsrx, xmax:qrxmin, hints:qnsrxh}]
+		],
+	["Cannon", "\\tan(\\theta) - \\frac{5}{16 \\cos^2(\\theta)}", function(x){return(Math.tan(x)-5/(16 * (Math.cos(x)*Math.cos(x))));}],
+	["Random", "\\text{Each y value is chosen as a random value between 0 and 1}", function(x){return(rbet(0,1));},[
+		{type:"rect", color:"gray", xmin:-Infinity, xmax:Infinity, ymin:0, ymax:1}]
+		],
+	["Custom", "\\text{Enter function to begin}", function(x){}]
+	];
+
+var g_o;
+
+function updf() {
+	if (shrinkmode == 1 || shrinkmode == 2) {startstopshrink();}
+	var j = document.getElementById("funsel").value;
+	if (funopts[j][0] == "Custom") {
+		if (document.getElementById("enterfunction").innerHTML == "") {document.getElementById("enterfunction").innerHTML = "<input type='text' id='mjfuninp' onchange='updf()'>";}
+		ff = mathjsfct(document.getElementById("mjfuninp").value);
+		g_o = [{type:"plot", fct:ff}];
+		tgr_update_grapher_objs("gr", g_o);
+		document.getElementById("latex").innerHTML = katex.renderToString("y="+math.parse(document.getElementById("mjfuninp").value).toTex());
+		return;
+		}
+	document.getElementById("enterfunction").innerHTML = "";
+	if (funopts[j][3]) {
+		g_o = funopts[j][3];
+		}
+	else {
+		g_o = [{type:"plot", fct:funopts[j][2]}];
+		}
+	tgr_update_grapher_objs("gr", g_o);
+	ff = funopts[j][2];
+	document.getElementById("latex").innerHTML = katex.renderToString("y="+funopts[j][1]);
+	if (funopts[j][0] == "Cannon") {
+		document.getElementById("cannonotron").style.display = '';
+		}
+	else {
+		document.getElementById("cannonotron").style.display = 'none';
+		}
+	}
+
+function bootchoosef() {
+	var str = "";
+	str = "<select onchange='updf()' id='funsel'>";
+	for (i = 0; i < funopts.length; i++) {
+		str += "<option value="+i+">"+funopts[i][0]+"</option>";
+		}
+	str += "</select>";
+	document.getElementById("choosef").innerHTML = str;
+	}
+
+function drawcannon() {
+	if (funopts[document.getElementById("funsel").value][0] != "Cannon") {return;}
+	var ctx = document.getElementById("cannon").getContext("2d");
+	ctx.clearRect(0,0,500,500);
+	var th = padx;
+	var c = Math.cos(th);
+	var s = -Math.sin(th);
+	ctx.beginPath();
+	ctx.moveTo(20+17*c-6*s,250+6*c+17*s);
+	ctx.lineTo(20-6*c-6*s,250+6*c-6*s);
+	ctx.lineTo(20-6*c+6*s,250-6*c-6*s);
+	ctx.lineTo(20+17*c+6*s,250-6*c+17*s);
+	ctx.fillStyle="black";
+	ctx.fill();
+	ctx.beginPath();
+	ctx.arc(20,250,3,0,2*Math.PI);
+	ctx.fillStyle="red";
+	ctx.fill();
+	ctx.strokeStyle = "black";
+	ctx.lineWidth = 2;
+	ctx.beginPath();
+	ctx.fillStyle = "blue";
+	ctx.arc(cannonballx,cannonbally,5,0,2*Math.PI);
+	ctx.fill();
+	ctx.stroke();
+	}
+
+function startcannonball() {
+	if (funopts[document.getElementById("funsel").value][0] != "Cannon") {return;}
+	cannonlaunchangle = padx;
+	cannontime = 0;
+	clearInterval(cannonballmover);
+	cannonballmover = setInterval(movecannonball,10);
+	}
+
+function movecannonball() {
+	if (funopts[document.getElementById("funsel").value][0] != "Cannon") {return;}
+	cannontime += .005; //so cannontime is in seconds
+	cannonballx = 4*460*Math.cos(cannonlaunchangle)*cannontime+20;
+	cannonbally = 250-(-5*460*cannontime*cannontime+4*460*Math.sin(cannonlaunchangle)*cannontime);
+	if (cannonballx <= -20) {
+		clearInterval(cannonballmover);
+		}
+	if (cannonballx >= 480) {
+		cannonysplat();
+		clearInterval(cannonballmover);
+		cannonballx = -20;
+		cannonbally = -20;
+		}
+	drawcannon();
+	}
+
+function drawcannonsplat() {
+	if (funopts[document.getElementById("funsel").value][0] != "Cannon") {return;}
+	var ctx = document.getElementById("cannonsplat").getContext("2d");
+	ctx.clearRect(0,0,500,500);
+	ctx.beginPath();
+	ctx.strokeStyle = "black";
+	ctx.lineWidth = 2;
+	ctx.moveTo(480,250-460*padymin);
+	ctx.lineTo(480,250-460*padymax);
+	ctx.stroke();
+	}
+
+function cannonysplat() {
+	if (funopts[document.getElementById("funsel").value][0] != "Cannon") {return;}
+	var ctx = document.getElementById("cannonsplat").getContext("2d");
+	var cpadymin = 250-460*padymin;
+	var cpadymax = 250-460*padymax;
+	var smax = Math.min(cpadymin,cannonbally+5);
+	var smin = Math.max(cpadymax,cannonbally-5);
+	ctx.beginPath();
+	ctx.strokeStyle = "blue";
+	ctx.lineWidth = 2;
+	ctx.moveTo(480,smax);
+	ctx.lineTo(480,smin);
+	ctx.stroke();
+	}
+
+</script>
+<style>
+body {
+	font-family: sans-serif;
+	}
+h1, h2, h3 { font-family: serif;
+	}
+blockquote {
+	background-color: #CCDDAA;
+	padding: 20px;
+	border-left: 3px solid #225522;
+	}
+</style>
+</head>
+<body onload="boot()">
+<table> <tr> <td style="position:relative">
+<div id="gr" style="position:absolute; top:0; left:0"> </div>
+<canvas id="ball" style="pointer-events:none; position:absolute; top:0; left:0; border:1px solid" width=500 height=500> </canvas>
+<canvas id="guide" style="pointer-events:none; position:absolute; top:0; left:0; border:1px solid" width=500 height=500> </canvas>
+</td> <td style="position:relative" height=505 width=25>
+<canvas width=20 height=500 style="border:1px solid; position:absolute; top:0; left:0" id="ybar"> </canvas>
+</td> <td style='vertical-align:top;'>
+<div id='cannonotron' style='position:relative; width:500px; height:500px;'>
+<canvas width=500 height=500 style="border:1px solid;position:absolute; top:0; left:0;" id="cannon"></canvas>
+<canvas width=500 height=500 style="border:1px solid;position:absolute; top:0; left:0;" id="cannonsplat"></canvas> 
+</div>
+</td><td style='vertical-align:top;'>
+<table border=1>
+<tr><td>
+Choose a Function:
+<div id='choosef'></div>
+<div id='enterfunction'></div>
+<div id='latex'></div>
+</td></tr>
+<tr><td>
+<div id='hitmiss'></div>
+</td></tr>
+<tr><td>
+<button onclick="randpady()"> Randomize Target </button>
+</td></tr>
+<tr><td>
+Incredible Shrinking Target Mode <button id='shrinkbutt' onclick='startstopshrink()'>Activate</button>
+<div id='shrinkout'></div>
+</td></tr>
+</table>
+
+</td></tr> <tr> <td style="position:relative" width=505>
+<canvas width=500 height=20 style="border:1px solid; position:absolute; top:0; left:0" id="xbar" onmousedown="xbarmdown(event)" onmousemove="xbarmmove(event)" onmouseup="xbarmup(event)" onmouseleave="xbarmleave(event)"> </canvas> <br>
+<button onclick="fire();startcannonball();" style='width:500px'> Fire </button> <br>
+</td> <td colspan=3> <div id="ct"> </div> </td> </tr> </table>
+
+<h1> Instructions </h1>
+Shown above is the graph of a function. Along the x-axis, a ball moves back and forth over a paddle (whose left and right ends you can move with the mouse).
+Hit the "Fire" button to launch the ball upwards towards the graph of the function. When the ball hits the graph, it will bounce off towards a target on the y-axis.
+Your goal is to hit that target! Bored of the current target? Hit the "Randomize Target" button to pick a new one, or try the Incredible Shrinking Target Mode!
+
+<h2> Incredible Shrinking Target Mode </h2>
+<ul> 
+<li> Hit the "Activate" button to activate Incredible Shrinking Target Mode!
+<li> To make sure you aren't given an unfair target, you'll need to first fire the ball once or enter an x-coordinate to determine the initial location of the Incredible Shrinking Target!
+<li> A red line will show up indicating the center of the target and the x-coordinate you used to initialize the target.
+<li> Each time you hit the target, it will shrink by a factor of two!
+<li> You'll need to adjust the left and right ends of the paddle once the target gets small enough! To keep you on track, we'll make sure the paddle always contains your original x-value.
+<li> You might also need to zoom in to the graph using the scroll wheel or the zoom buttons below and to the right of the graph.
+</ul>
+
+<h1> What's Going On? </h1>
+<blockquote style='position:relative'> <p><span style="font: 3em serif;vertical-align:-0.3em;line-height:.1em;color:#225522">&ldquo;</span>We finally selected the final landing site and the commands were prepared for Rosetta to launch Philae.</p>
+
+<p>The way this works is that Rosetta has to be at the right point in space
+and aiming towards the comet, because the lander is passive.
+The lander is then pushed out and moves towards the comet.</p>
+...
+<p> Now, the landing duration of the whole trajectory was seven hours. Now do a simple calculation: if the velocity of Rosetta is off by one centimeter per second, seven hours is 25,000 seconds. That means 252 meters wrong on the comet. So we had to know the velocity of Rosetta much better than one centimeter per second, and its location in space better than 100 meters at 500 million kilometers from Earth. 
+That's no mean feat.<span style="font: 3em serif; position:absolute; right:20px; bottom:10px; color:#225522">&rdquo;</span></p> </blockquote>
+<cite>-Fred Jansen, <a href="https://youtu.be/h27g5iT0tck?t=594">How to Land on a Comet</a></cite> <br> <br>
+<p>Engineers very frequently find themselves in situations where there is one variable they want to measure or control,
+but they can't do so directly. Instead they must use other related variables that they can measure or control,
+and use a model of how these variables are related to each other. In the example of landing on a comet above, engineers wanted to control the landing position of the Philae lander.
+But what they had control over was the initial velocity of the Philae lander, and only to a certain level of precision.
+</p>
+<p> With variables engineers want to control, they don't say that they would like the variable to be some specific value, they say that they need
+the variable to be within a specific range. This range may be really really tiny or relatively large, but the goal is that nothing should go wrong if
+the variable is within this safe range. In the example of the comet, engineers had used pictures taken by Rosetta to find a circular area on the comet
+with a 250 meter radius that seemed relatively safe to land in.
+</p>
+<p> Engineers also don't have perfect control over the variables they do have control over. They can (roughly speaking) ensure that the variable falls into
+a certain range, and by using more precise instruments, they can make that range smaller until it is as small as necessary. </p>
+
+<p> With variables engineers want to measure, it's not a matter of getting every single decimal digit. The true value will certainly have
+infinitely many decimal digits, and where would we write them all? The goal is to find a small range that the engineers know that the true value falls into.
+Typically this is reported as some number of decimal digits. Saying that pi begins with 3.14... is the same as saying that pi is somewhere between 3.14 and 3.15. </p>
+
+<p> We can summarize the effectiveness of engineering as follows: </p>
+<blockquote>
+In order to achieve an approximate task, we only need approximate knowledge of the system and approximate control over the input parameters.
+</blockquote>
+
+<h1> In this interactive, </h1> You have some range of y-values that you would like to get the output of the function into,
+and hopefully it occurred to you to "cheat", that is, narrow down the range of x-values so that the y-value always winds up in the desired range.</p>
+For each function, we have two questions:
+
+<blockquote>
+If we have a particular target interval of y-values in mind, how small are we going to have to make the interval of x-values to always land on the target?
+</blockquote>
+
+Thinking about these particular subquestions may provide some insight:
+<ol>
+<li> When are particular target intervals of y-values harder to hit (either require a smaller range of x-values or quicker reflexes)?
+<li> Are there particular target intervals of y-values which cannot be hit at all?
+<li> When the target interval of y-values shrinks by a factor of 2, what do you have to do to the range of x-values to compensate?
+<li> For the linear functions (10x, x, and x/10), what's the ratio of the size of the target interval of y-values to the size of the interval of x-values?
+<li> For the cannon function, there are generally two ways of hitting a particular target: launching at a shallow angle or launching at a very steep angle.
+Which is harder (either requiring a smaller range of x-values or quicker reflexes) to use to hit a target?
+</ol>
+And, secondly:
+
+<blockquote>
+Is it always possible to "cheat" (narrow down the range of x-values so that the y-value always winds up in the desired range)?
+</blockquote>
+
+Try out the following for various functions:
+<ol>
+<li> Activate the Incredible Shrinking Target Mode
+<li> Enter the x-coordinate 0
+</ol>
+
+</body>
+</html>

@@ -545,7 +545,6 @@ function tgr_string(id, grapher_objs, plotdata) {
 	gstr += tgr_zoom_button(id,1,0,0);
 	gstr += tgr_zoom_button(id,1,1,0);
 	gstr += tgr_zoom_button(id,1,0,1);
-	gstr += "<br>";
 	gstr += tgr_zoom_button(id,0,0,0);
 	gstr += tgr_zoom_button(id,0,1,0);
 	gstr += tgr_zoom_button(id,0,0,1);

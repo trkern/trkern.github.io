@@ -1,0 +1,2151 @@
+﻿<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name=description content="It's a pun on FOIL">
+<meta name=copyright content="Thomas R. Kern 2018">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<title> Electronic Polynomial Educational Experience </title>
+<script>
+/* a parsetree is an array:
+	p[0] indicates the type of expression:
+		"+","*": the rest of the array is the arguments
+		"-": unary minus ONLY //TODO: the various ptttostrings don't know about unary minus yet.
+		"c": constant: p[1] is the value
+		"v": variable: p[1] is a string representing the variable
+		"u": universe
+		"i": input box, p[1] is a string representing the variable
+		"y": parse symbol (not used in a tree)
+*/
+
+var nodeselectors = []; //list of ids that do not deactivate other subformula selections
+
+var colorlist = ["#228833", "#4477AA", "#EE6677", "#CCBB44", "#66CCEE", "#AA3377", "#BBBBBB"]; //from https://personal.sron.nl/~pault/
+
+var selpar = {}; //keeps track of what part of a formula is selected. usually an id. pair of ids [left, right] for longselects in longboys
+
+var ruleregistry = {}; //ruleregistry[ruletag][torb][vn].push(tag);
+var rulevarorders = {};
+
+var longboys = {}; //ids for longsums and longproducts -> list of ids of children
+
+var hoveredse = {}; //parenttags -> which subexpression is hovered
+
+var selectedse = {}; //parenttags -> which subexpression is selected (or pair if longboy)
+
+var selectedlbs = {}; //parenttags -> which subexpressions are highlighted because they are siblings in a longboy of the selected subexpression
+
+var expressionids = {}; //parenttags -> all node ids within the expression (not including parentheses)
+
+var ptcontent = {}; //ids -> pts
+var ptnav = {}; //ids -> list of numbers (how to navigate the parent pt to get to this subnode)
+
+var selectedrulegroup = 0; //which rule tab is selected
+
+var mainhistory = [];
+
+var savedderivs = [];
+
+var rulegroupslist = [	["all","All","All Rules"],
+			["+", "Add.", "Addition Rules"],
+			["*", "Mult.", "Multiplication Rules"],
+			["e", "Exp.", "Exponential Rules"],
+			["c", "Calc.", "Numerical Calculations"],
+			["d", "Long", "Long Sum/Product Rules"],
+			["u", "Custom", "Custom Rules"]
+			];
+
+var longdata = {longleftdistributivity:3,
+		longrightdistributivity:3,
+		longassociativity:[1,2,0],
+		longmassociativity:[1,2,0],
+		longflatten:[["+",["i","a"],["i","b"]],["+",["i","a"],["i","b"]]],
+		longmflatten:[["*",["i","a"],["i","b"]],["*",["i","a"],["i","b"]]],
+		longcomm:[1,2,3],
+		longmcomm:[1,2,3]
+		};
+
+var mainexpression = "mainexpression";
+
+var calculators = {}; //ruletag -> string operation
+var longotrons = {
+	longmcomm:27,
+	longcomm:26,
+	longmflatten:25,
+	longflatten:24,
+	longmassociativity:23,
+	longrightdistributivity:22,
+	longleftdistributivity:21,
+	longassociativity:20
+	}; //type -> index
+
+var rulelist = [//rulegroup,full title, top, bottom, helper text, options
+	[1,"Additive Associativity","(a+b)+c","a+(b+c)","Adjusting Parentheses"],
+	[1,"Additive Commutativity","a+b","b+a","Reordering Sum"],
+	[1,"Additive Identity","a+0","a","Property of Zero"],
+	[1,"Additive Inverse", "a-a", "0","Property of Subtraction"],
+	[2,"Multiplicative Associativity", "(ab)c", "a(bc)", "Adjusting Parentheses"],
+	[2,"Multiplicative Commutativity", "ab", "ba", "Reordering Product"],
+	[2,"Multiplicative Identity", "1a", "a", "Property of One"],
+	[2,"Multiplicative Annihilator", "0a", "0", "Property of Zero"],
+	[2,"Left Distributivity", "a(b+c)", "ab+ac", "Factoring/Distributing"],
+	[2,"Right Distributivity", "(b+c)a", "ba+ca", "Factoring/Distributing"],
+	[2,"Minus One", "-a", "(-1)*a", ""],
+	[3,"Product Rule", "a^b*a^c", "a^(b+c)", "Property of Exponents"],
+	[3,"Power Rule", "(a^b)^c", "a^(b*c)", ""],
+	[3,"Exponential Distributivity", "(a*b)^c", "a^c*b^c", ""],
+	[3,"Zero Exponent", "a^0", "1", ""],
+	[3,"One Exponent", "a^1", "a", ""],
+	[4,"Calculate Sum", "a+b", "c", "", {calc:"+"}],
+	[4,"Calculate Difference", "a-b", "c", "", {calc:"-"}],
+	[4,"Calculate Product", "a*b", "c", "", {calc:"*"}],
+	[4,"Calculate Exponent", "a^b", "c", "", {calc:"^"}],
+	[5,"Long Additive Associativity", "a+(b+c)", "a+b+c", ""],
+	[5,"Long Left Distributivity", "a*(b+c)", "a*b+a*c", ""],
+	[5,"Long Right Distributivity", "(b+c)*a", "b*a+c*a", ""],
+	[5,"Long Mult. Associativity", "a*(b*c)", "a*b*c", ""],
+	[5,"Long Additive Associativity", "a+(b+c)", "a+b+c", ""],
+	[5,"Long Mult. Associativity", "a*(b*c)", "a*b*c", ""],
+	[5,"Long Additive Commutativity", "a+b", "b+a", ""],
+	[5,"Long Mult. Commutativity", "a*b", "b*a", ""]
+	];
+
+function err() {
+	var i;
+	var str = "";
+	for (i = 0; i < arguments.length; i++) {
+		str += JSON.stringify(arguments[i]);
+		str += " ";
+		}
+	alert(str);
+	console.log(str);
+	}
+
+function dropparens(typein, typeout) { //tells you if you can drop parentheses around the inside expression of type typein where outside expression is of type typeout.
+	if (typein == "*" && typeout == "+") {return(true);}
+	if (typein == "c") {return(true);}
+	if (typein == "v") {return(true);}
+	if (typeout == "u") {return(true);}
+	if (typein == "^" && typeout != "^l") {return(true);}
+	if (typeout == "^r") {return(true);}
+	if (typeout == "-" && (typein == "*" || typein == "^")) {return(true);}
+	if (typein == "-" && typeout == "+") {return(true);}
+	return(false)
+	}
+
+function dropop(op, i, lm,rm) { //tells you if you can drop a * between lm and rm (parsetrees)
+
+	if (i == 1) {return(true);} //must drop the first operator (nobody wants to see *a*b or +a+b)
+
+	if (op == "*") {
+		//if rm is a constant, never drop
+		if (rm[0] == "c") {return(false);} 
+
+		//can drop times if lm or rm is a parenthesized expression (hence needing access to parenttype)
+		if (!dropparens(lm[0],op)) {return(true);}
+		if (!dropparens(rm[0],op)) {return(true);}
+
+		//can drop times if lm is a constant and rm is a variable
+		if (lm[0] == "c" && rm[0] == "v") {return(true);}
+
+		//can drop times if lm is a variable and rm is a different variable
+		if (lm[0] == "v" && rm[0] == "v" && lm[1] != rm[1]) {return(true);}
+
+		//can drop times if lm is an exponent
+		if (lm[0] == "^") {return(true);}
+
+		//can drop times if rm is an exponent
+		if (rm[0] == "^") {return(true);}
+		}
+
+	if (op == "+") {
+		//can drop + if the next expression is a nonparenthesized unary negation
+		if (rm[0] == "-" && dropparens(rm[0],op)) {return(true);}
+		}
+
+	return(false);
+	}
+
+function ptcopy(pt) {
+	if (!Array.isArray(pt)) {return(pt);}
+	var i;
+	var r = [];
+	for (i = 0; i < pt.length; i++) {
+		r.push(ptcopy(pt[i]));
+		}
+	return(r);
+	}
+
+function ptcompare(pt1,pt2) {
+	if (!Array.isArray(pt1)) {return((!Array.isArray(pt2))&&(pt1 == pt2));}
+	if (!Array.isArray(pt2)) {return(false);}
+	if (pt1.length != pt2.length) {return(false);}
+	var i;
+	for (i = 0; i < pt1.length; i++) {
+		if (!ptcompare(pt1[i],pt2[i])) {return(false);}
+		}
+	return(true);
+	}
+
+function toenglishhelper(pt,k) {
+	var i;
+	var rstr;
+	switch(pt[0]) {
+		case "-":
+		return("minus " + toenglishhelper(pt[1]));
+		case "+":
+		rstr = "";
+		for (i = 1; i < pt.length; i++) {
+			if (i == 1 && pt[i][0] == "-") {rstr += "negative " + toenglishhelper(pt[i][1]);}
+			else if (i == 1 && pt[i][0] != "-") {rstr += toenglishhelper(pt[i]);}
+			else if (i != 1 && pt[i][0] == "-") {rstr += "minus " + toenglishhelper(pt[i][1]);}
+			else if (i != 1 && pt[i][0] != "-") {rstr += "plus " + toenglishhelper(pt[i]);}
+			}
+		rstr = "(" + rstr + ")";
+		return(rstr);
+		case "*":
+		rstr = "";
+		for (i = 1; i < pt.length; i++) {
+			if (i != 1) {
+				rstr += "times ";
+				}
+			rstr += toenglishhelper(pt[i]);
+			}
+		rstr = "(" + rstr + ")";
+		return(rstr);
+		case "^":
+		rstr = "";
+		rstr += toenglishhelper(pt[1]);
+		rstr += "to the power of ";
+		rstr += toenglishhelper(pt[2]);
+		rstr = "(" + rstr + ")";
+		return(rstr);
+		case "c":
+		case "v":
+		case "i":
+		return(pt[1] + " ");
+		}
+	}
+
+function utter(str) {
+	var msg = new SpeechSynthesisUtterance();
+	var voices = window.speechSynthesis.getVoices();
+	console.log(voices);
+	var i;
+	for (i = 0; i < voices.length; i++) {
+		if (voices[i].lang.slice(0,2) == "en") {msg.voice = voices[i];}
+		}
+	for (i = 0; i < voices.length; i++) {
+		if (voices[i].voiceURI == "Google UK English Female") {msg.voice = voices[i];}
+		}
+	msg.text = str;
+	speechSynthesis.speak(msg);
+	}
+
+function tospeech(pt) {
+	var msg = new SpeechSynthesisUtterance();
+	var voices = window.speechSynthesis.getVoices();
+	console.log(voices);
+	var i;
+	for (i = 0; i < voices.length; i++) {
+		if (voices[i].lang.slice(0,2) == "en") {msg.voice = voices[i];}
+		}
+	for (i = 0; i < voices.length; i++) {
+		if (voices[i].voiceURI == "Google UK English Female") {msg.voice = voices[i];}
+		}
+	msg.text = toenglishhelper(pt);
+	speechSynthesis.speak(msg);
+	}
+
+function navigo(nav,i) {
+	if (nav && nav[0] == i) {return(nav.slice(1));}
+	else {return(false);}
+	}
+
+function pasttostringhelper(pt,parenttype,nav) {
+	var i;
+	var rstr;
+	switch(pt[0]) {
+		case "+":
+		case "*":
+		rstr = "";
+		for (i = 1; i < pt.length; i++) {
+			if (!dropop(pt[0],i,pt[i-1],pt[i])) {rstr += pt[0];}
+			rstr += pasttostringhelper(pt[i], pt[0], navigo(nav,i));
+			}
+		if (!dropparens(pt[0],parenttype)) {
+			rstr = "(" + rstr + ")";
+			}
+		break;
+		case "^":
+		rstr = "";
+		rstr += pasttostringhelper(pt[1],"^l",navigo(nav,1));
+		rstr += "<sup>";
+		rstr += pasttostringhelper(pt[2],"^r",navigo(nav,2));
+		rstr += "</sup>";
+		if (!dropparens(pt[0],parenttype)) {
+			rstr = "(" + rstr + ")";
+			}
+		break;
+		case "-":
+		rstr = "";
+		rstr += "-";
+		rstr += pasttostringhelper(pt[1],"-",navigo(nav,1));
+		if (!dropparens(pt[0],parenttype)) {
+			rstr = "(" + rstr + ")";
+			}
+		break;
+		case "c":
+		return(pt[1]);
+		case "v":
+		return(pt[1]);
+		case "i":
+		rstr = "["+pt[1]+"]";
+		break;
+		}
+	if (nav && nav.length == 0) {
+		rstr = "<span style='color:red'>" + rstr + "</span>";
+		}
+	return(rstr);
+	}
+
+function tostringhelper(pt,parenttype) {
+	var i;
+	var rstr;
+	switch(pt[0]) {
+		case "+":
+		case "*":
+		rstr = "";
+		for (i = 1; i < pt.length; i++) {
+			if (!dropop(pt[0],i,pt[i-1],pt[i])) {rstr += pt[0];}
+			rstr += tostringhelper(pt[i], pt[0]);
+			}
+		if (!dropparens(pt[0],parenttype)) {
+			rstr = "(" + rstr + ")";
+			}
+		return(rstr);
+		case "^":
+		rstr = "";
+		rstr += tostringhelper(pt[1],"^l");
+		rstr += "^";
+		rstr += tostringhelper(pt[2],"^t");
+		if (!dropparens(pt[0],parenttype)) {
+			rstr = "(" + rstr + ")";
+			}
+		return(rstr);
+		case "-":
+		rstr = "";
+		rstr += "-";
+		rstr += tostringhelper(pt[1],"-");
+		if (!dropparens(pt[0],parenttype)) {
+			rstr = "(" + rstr + ")";
+			}
+		return(rstr);
+		case "c":
+		return(pt[1]);
+		case "v":
+		return(pt[1]);
+		case "i":
+		rstr = pt[1];
+		return(rstr);
+		}
+	}
+
+function ruletostringhelper(pt,parenttype,tag,ruletag,torb) {
+	var i;
+	var rstr;
+	switch(pt[0]) {
+		case "+":
+		case "*":
+		rstr = "";
+		for (i = 1; i < pt.length; i++) {
+			//if (!dropop(pt[0],i,pt[i-1],pt[i])) {rstr += pt[0];}
+			rstr += ruleopify(pt[0],dropop(pt[0],i,pt[i-1],pt[i]),i,tag);
+			rstr += ruletostringhelper(pt[i], pt[0],tag+"o"+i,ruletag,torb);
+			}
+		if (!dropparens(pt[0],parenttype)) {
+			rstr = "(" + rstr + ")";
+			}
+		return(rstr);
+		case "^":
+		rstr = "";
+		rstr += ruletostringhelper(pt[1],"^l", tag+"o1",ruletag,torb);
+		rstr += "<sup>";
+		rstr += ruletostringhelper(pt[2],"^r", tag+"o2",ruletag,torb);
+		rstr += "</sup>";
+		if (!dropparens(pt[0],parenttype)) {
+			rstr = "(" + rstr + ")";
+			}
+		return(rstr);
+		case "-":
+		rstr = "";
+		rstr += ruleopify(pt[0],false,i,tag);
+		rstr += ruletostringhelper(pt[1],"-",tag+"o1",ruletag,torb);
+		if (!dropparens(pt[0],parenttype)) {
+			rstr = "(" + rstr + ")";
+			}
+		return(rstr);
+		case "c":
+		return(pt[1]);
+		case "v":
+		return(pt[1]);
+		case "i":
+		registertag(tag,ruletag,pt[1],torb);
+		rstr = "<input type='text' spellcheck='false' class='ruleinput' id='" + tag + "' oninput='ruleotron(\"" + ruletag + "\",\"" + pt[1] + "\",this,\""+torb+"\")' placeholder='" + pt[1] + "'></input>";
+		return(rstr);
+		}
+	}
+
+function rulecanvas(ruletag) {
+	var topvars = {};
+	var botvars = {};
+	var canvrect = document.getElementById("rulecanv"+ruletag).getBoundingClientRect();
+	var ctx = document.getElementById("rulecanv"+ruletag).getContext("2d");
+	ctx.clearRect(0,0,canvrect.width,canvrect.height);
+	var varcolors = {};
+	var vvv;
+	var colorcount = 0;
+	for (vvv in ruleregistry[ruletag]["a"]) {
+		varcolors[vvv] = colorcount;
+		colorcount++;
+		}
+	var v, i;
+	var trect;
+	var j = 40;
+	var cent = 0;
+	var inpy = 0;
+	var tj;
+	var k;
+	for (v in ruleregistry[ruletag]["a"]) {
+		for (k = 0; k < ruleregistry[ruletag]["a"][v].length; k++) {
+			document.getElementById(ruleregistry[ruletag]["a"][v][k]).style.border = "2px solid " + makecolor(varcolors[v]);
+			}
+		}
+	for (v in ruleregistry[ruletag]["t"]) {
+		//if (!(v in varcolors)) {varcolors[v] = colorcount; colorcount++;}
+		//for (k = 0; k < ruleregistry[ruletag]["t"][v].length; k++) {
+		//	document.getElementById(ruleregistry[ruletag]["t"][v][k]).style.border = "2px solid " + makecolor(varcolors[v]);
+		//	}
+		//if (ruleregistry[ruletag]["t"][v].length + (ruleregistry[ruletag]["b"][v]?ruleregistry[ruletag]["b"][v].length:0) <= 1) {break;}
+		if (ruleregistry[ruletag]["t"][v].length == 1) {
+			trect = document.getElementById(ruleregistry[ruletag]["t"][v][0]).getBoundingClientRect();
+			cent = trect.left+(trect.width/2)-canvrect.left;
+			inpy = trect.bottom-canvrect.top;
+			topvars[v] = [cent,inpy];
+			}
+		else {
+			topvars[v] = 0;
+			j += 4;
+			ctx.beginPath();
+			ctx.lineWidth = 2;
+			ctx.strokeStyle = makecolor(varcolors[v]);
+			for (i = 0; i < ruleregistry[ruletag]["t"][v].length; i++) {
+				trect = document.getElementById(ruleregistry[ruletag]["t"][v][i]).getBoundingClientRect();
+				cent = trect.left+(trect.width/2)-canvrect.left;
+				inpy = trect.bottom-canvrect.top;
+				ctx.lineTo(cent,j);
+				ctx.lineTo(cent,inpy);
+				ctx.lineTo(cent,j);
+				topvars[v] += (+cent);
+				}
+			ctx.stroke();
+			topvars[v] = [topvars[v]/ruleregistry[ruletag]["t"][v].length,j];
+			}
+		}
+	j = canvrect.height-36;
+	for (v in ruleregistry[ruletag]["b"]) {
+		//if (!(v in varcolors)) {varcolors[v] = colorcount; colorcount++;}
+		//for (k = 0; k < ruleregistry[ruletag]["b"][v].length; k++) {
+		//	document.getElementById(ruleregistry[ruletag]["b"][v][k]).style.border = "2px solid " + makecolor(varcolors[v]);
+		//	}
+		//if (ruleregistry[ruletag]["b"][v].length + (ruleregistry[ruletag]["t"][v]?ruleregistry[ruletag]["t"][v].length:0) <= 1) {break;}
+		if (ruleregistry[ruletag]["b"][v].length == 1) {
+			trect = document.getElementById(ruleregistry[ruletag]["b"][v][0]).getBoundingClientRect();
+			cent = trect.left+(trect.width/2)-canvrect.left;
+			inpy = trect.top-canvrect.top;
+			botvars[v] = [cent,inpy];
+			}
+		else {
+			botvars[v] = 0;
+			j -= 4;
+			ctx.beginPath();
+			ctx.lineWidth = 2;
+			ctx.strokeStyle = makecolor(varcolors[v]);
+			for (i = 0; i < ruleregistry[ruletag]["b"][v].length; i++) {
+				trect = document.getElementById(ruleregistry[ruletag]["b"][v][i]).getBoundingClientRect();
+				cent = trect.left+(trect.width/2)-canvrect.left;
+				inpy = trect.top-canvrect.top;
+				ctx.lineTo(cent,j);
+				ctx.lineTo(cent,inpy);
+				ctx.lineTo(cent,j);
+				botvars[v] += (+cent);
+				}
+			ctx.stroke();
+			botvars[v] = [botvars[v]/ruleregistry[ruletag]["b"][v].length,j];
+			}
+		}
+	if (ruletag in calculators) { //cheap hack to get calculators look good
+		botvars["a"] = botvars["c"];
+		botvars["b"] = botvars["c"];
+		}
+	for (v in topvars) {
+		if (v in botvars) {
+			ctx.beginPath();
+			ctx.lineWidth = 2;
+			ctx.strokeStyle = makecolor(varcolors[v]);
+			ctx.moveTo(...topvars[v]);
+			ctx.lineTo(...botvars[v]);
+			ctx.stroke();
+			}
+		}
+	}
+
+function drawbrac() {
+	var ctx = document.getElementById("brac").getContext("2d");
+	ctx.clearRect(0,0,1000,20);
+	ctx.beginPath();
+	var rect = document.getElementById("bractest").getBoundingClientRect();
+	var rect2 = document.getElementById("brac").getBoundingClientRect();
+	ctx.moveTo(rect.left-rect2.left,0);
+	ctx.lineTo(rect.left+rect.width-rect2.left,0);
+	ctx.stroke();
+	}
+
+function vart(th) {
+	th.style.width=0;
+	th.style.width='calc(' + th.scrollWidth + 'px + 1ch)';
+	}
+
+function constantops(pt1,pt2,op) {
+	if (op == "+") {
+		return(Number(pt1)+Number(pt2));
+		}
+	if (op == "*") {
+		return(Number(pt1)*Number(pt2));
+		}
+	if (op == "-") {
+		return(Number(pt1)-Number(pt2));
+		}
+	if (op == "^") {
+		return(Math.pow(Number(pt1),Number(pt2)));
+		}
+	}
+
+function ruleupdate(ruletag,va,torb) {//update all entries in a rulebox given STRING variable assignment va
+	var a;
+	var b;
+	if (ruletag in calculators) {
+		if (torb != "b") {
+			a = document.getElementById(ruleregistry[ruletag]["a"]["a"][0]).value;
+			b = document.getElementById(ruleregistry[ruletag]["a"]["b"][0]).value;
+			if (va["a"]) {a = va["a"];}
+			if (va["b"]) {b = va["b"];}
+			va["c"] = constantops(a, b, calculators[ruletag]);
+			}
+		if (torb == "b") {
+			va["a"] = "";
+			va["b"] = "";
+			}
+		}
+	var i;
+	var v;
+	for (v in ruleregistry[ruletag]["a"]) {
+		if (v in va) {
+			for (i = 0; i < ruleregistry[ruletag]["a"][v].length; i++) {
+				document.getElementById(ruleregistry[ruletag]["a"][v][i]).value = va[v];
+				vart(document.getElementById(ruleregistry[ruletag]["a"][v][i]));
+				}
+			}
+		}
+	rulecanvas(ruletag);
+	}
+
+function variableassignmenttostring(va) {
+	var v;
+	var r = {};
+	for (v in va) {
+		r[v] = tostringhelper(va[v],"u")
+		}
+	return(r);
+	}
+
+function ruleotron(ruletag,vn,th,torb) { //activated oninput in rule inputs. copies the input into all boxes
+	var va = {};
+	va[vn] = th.value;
+	ruleupdate(ruletag,va,torb);
+	/*var registryentry = ruleregistry[ruletag];
+	var i;
+	val = th.value;
+	if (vn in registryentry["a"]) { //outdated if, probably don't need anymore
+		for (i = 0; i < registryentry["a"][vn].length; i++) {
+			document.getElementById(registryentry["a"][vn][i]).value = val;
+			vart(document.getElementById(registryentry["a"][vn][i]));
+			}
+		}
+	rulecanvas(ruletag);*/
+	}
+
+function registertag(tag,ruletag,vn,torb) {
+	if (!(ruleregistry[ruletag])) {ruleregistry[ruletag] = {t:{}, b:{}, a:{}};}
+	if (!(vn in ruleregistry[ruletag][torb])) {ruleregistry[ruletag][torb][vn] = [];}
+	if (!(vn in ruleregistry[ruletag]["a"])) {ruleregistry[ruletag]["a"][vn] = [];}
+	ruleregistry[ruletag][torb][vn].push(tag);
+	ruleregistry[ruletag]["a"][vn].push(tag);
+	}
+
+function extractfromrule(ruletag,torb,pt) {
+	if (pt[0] == "i") {
+		var str = document.getElementById(ruleregistry[ruletag][torb][pt[1]][0]).value;
+		if (str == "") {str = pt[1];}
+		return(parse(str));
+		}
+	else if (pt[0] == "c" || pt[0] == "v") {
+		return (pt);
+		}
+	else {
+		var rval = [pt[0]];
+		var i;
+		for (i = 1; i < pt.length; i++) {
+			rval.push(extractfromrule(ruletag,torb,pt[i]));
+			}
+		return(rval);
+		}
+	}
+
+function mergeassignments(o1,o2) {//returns a merged copy of o1 and o2. if there are conflicts, returns false. uses ptcompare (deep compare) for comparison, since we assume assignments are pts.
+	var v;
+	if (o1 == false || o2 == false) {return(false);}
+	var rval = {};
+	for (v in o1) {
+		rval[v] = o1[v];
+		}
+	for (v in o2) {
+		if ((v in o1) && !(ptcompare(o1[v],o2[v]))) {return(false);}
+		rval[v] = o2[v];
+		}
+	return(rval);
+	}
+
+function getvariableassignments(pt,pti) {//pt should look like pti with various variables replaced by things. finds out what those things are.
+	//currently, this cannot handle writing x+y+z as a+b for some a,b. That's advanced stuff for later.
+	var rval;
+	if (pti[0] == "i") {
+		rval = {};
+		rval[pti[1]] = pt;
+		return(rval);
+		}
+	else if (pti[0] == "c" || pti[0] == "v") {
+		if (!ptcompare(pt,pti)) {err("GETVARIABLEASSIGNMENTS ERROR",pt,pti); return(false);}
+		}
+	else {
+		if (pt[0] != pti[0]) {err("GETVARIABLEASSIGNMENTS ERROR",pt,pti); return(false);}
+		if (pt.length != pti.length) {err("GETVARIABLEASSIGNMENTS ERROR",pt,pti); return(false);}
+		var i;
+		rval = {};
+		for (i = 1; i < pt.length; i++) {
+			rval = mergeassignments(rval,getvariableassignments(pt[i],pti[i]));
+			}
+		return(rval);
+		}
+	}
+
+function trytoinsert(rulenum,torb) { //tries to insert selected expression into rulenum
+	var pt = ptcontent[selectedse[mainexpression]];
+	var k;
+	var i;
+	var oldlld = longdata["longleftdistributivity"];
+	var oldlrd = longdata["longrightdistributivity"];
+	if (rulenum == longotrons["longleftdistributivity"]) {
+		if (torb == "t") {
+			longdata["longleftdistributivity"] = pt[2].length-1;
+			updatelongleftdistributivity();
+			}
+		if (torb == "b") {
+			longdata["longleftdistributivity"] = pt.length-1;
+			updatelongleftdistributivity();
+			}
+		}
+	if (rulenum == longotrons["longrightdistributivity"]) {
+		if (torb == "t") {
+			longdata["longrightdistributivity"] = pt[1].length-1;
+			updatelongrightdistributivity();
+			}
+		if (torb == "b") {
+			longdata["longrightdistributivity"] = pt.length-1;
+			updatelongrightdistributivity();
+			}
+		}
+	if (rulenum == longotrons["longassociativity"]) {
+		if (torb == "t") {
+			for (i = 1; i < pt.length; i++) {
+				if (pt[i][0] == "+") {
+					longdata["longassociativity"][0] = i-1;
+					longdata["longassociativity"][1] = pt[i].length-1;
+					longdata["longassociativity"][2] = pt.length-i-1;
+					updatelongassociativity();
+					break;
+					}
+				}
+			}
+		}
+	if (rulenum == longotrons["longmassociativity"]) {
+		if (torb == "t") {
+			for (i = 1; i < pt.length; i++) {
+				if (pt[i][0] == "*") {
+					longdata["longmassociativity"][0] = i-1;
+					longdata["longmassociativity"][1] = pt[i].length-1;
+					longdata["longmassociativity"][2] = pt.length-i-1;
+					updatelongmassociativity();
+					break;
+					}
+				}
+			}
+		}
+	if (rulenum == longotrons["longflatten"]) {
+		if (torb == "t") {
+			longdata["longflatten"] = [flattop("+",pt),flatbot(flattop("+",pt))];
+			updatelongflatten();
+			}
+		}
+	if (rulenum == longotrons["longmflatten"]) {
+		if (torb == "t") {
+			longdata["longmflatten"] = [flattop("*",pt),flatbot(flattop("*",pt))];
+			updatelongmflatten();
+			}
+		}
+	if (torb == "t") {k = 2;}
+	if (torb == "b") {k = 3;}
+	var va = getvariableassignments(pt,mkru(rulelist[rulenum][k]));
+	if (va) {ruleupdate("rule"+rulenum,variableassignmenttostring(va),torb);}
+	else {
+		longdata["longleftdistributivity"] = oldlld;
+		longdata["longrightdistributivity"] = oldlrd;
+		}
+	}
+
+function applyrule(rulenum) {
+	var top = extractfromrule("rule"+rulenum,"t",mkru(rulelist[rulenum][2]));
+	var bot = extractfromrule("rule"+rulenum,"b",mkru(rulelist[rulenum][3]));
+	var sel = ptcontent[selectedse[mainexpression]];
+	var appliedrule = false;
+	if (ptcompare(top,sel)) {
+		var newpt = ptsplice(ptcontent[mainexpression+"c"],bot,ptnav[selectedse[mainexpression]]);
+		appliedrule = true;
+		}
+	if (ptcompare(bot,sel)) {
+		var newpt = ptsplice(ptcontent[mainexpression+"c"],top,ptnav[selectedse[mainexpression]]);
+		appliedrule = true;
+		}
+	if (appliedrule) {
+		mainhistory[mainhistory.length-1][1] = ptnav[selectedse[mainexpression]];
+		mainhistory.push([newpt,false,rulelist[rulenum][1]]);
+		drawhistory();
+		document.getElementById("main").innerHTML = supertostring(newpt,mainexpression);
+		document.getElementById("treeshower").innerHTML = tpstosvgstr(fittps(pttotps(ptcontent[mainexpression+"c"]),700),mainexpression);
+		}
+	}
+
+function ptsplice(pt,subpt,nav) {
+	if (nav.length == 0) {return(ptcopy(subpt));}
+	if (!Array.isArray(pt)) {return(pt);}
+	var i;
+	var r = [];
+	for (i = 0; i < pt.length; i++) {
+		if (i == nav[0]) {
+			r.push(ptsplice(pt[i],subpt,nav.slice(1)));
+			}
+		else {
+			r.push(ptcopy(pt[i]));
+			}
+		}
+	return(r);
+	}
+
+function opify(op,dop,i,tag,parenttag) {
+	if (op == "-") {
+		return(spn("<span style='margin-left:-4px'></span>&minus;",tag,parenttag));
+		}
+	else if (dop) {
+		return(spn("&hairsp;",tag,parenttag));
+		}
+	else if (op == "*") {
+		return(spn("&middot;",tag,parenttag));
+		}
+	else {
+		return(spn(op,tag,parenttag));
+		}
+	}
+
+function ruleopify(op,dop,i,tag) {
+	if (op == "-") {
+		return("&minus;");
+		}
+	else if (dop) {
+		return("&hairsp;");
+		}
+	else if (op == "*") {
+		return("&middot;");
+		}
+	else {
+		return(op);
+		}
+	}
+
+function mover(e,tag,parenttag) {
+	hoveredse[parenttag] = tag;
+	recolor(parenttag);
+	}
+
+function mleave(e,tag,parenttag) {
+	hoveredse[parenttag] = "";
+	recolor(parenttag)
+	}
+
+function mclick(e,tag,parenttag) {
+	//there are two options here
+	//1- the user has clicked on an unselected subexpression, selecting it and deselecting (if any) previous selected subexpressions
+	//2- the user has clicked on a selected subexpression, deselecting it
+	//(we also have the user has clicked in the window to deselect selected subexpressions, but this will be handled with a separate function)
+	if (selectedse[parenttag] == tag) { //case 2
+		selectedse[parenttag] = "";
+		selectedlbs[parenttag] = [];
+		}
+	else { //case 1
+		selectedlbs[parenttag] = [];
+		selectedse[parenttag] = tag;
+		window.addEventListener("click",function(ev){mwind(ev,parenttag)},true);
+		}
+	recolor(parenttag);
+	}
+
+function mwind(e,parenttag) { //the user has clicked in the window to deselect selected subexpression.
+	var canceldeselect = false;
+	for (i = 0; i < nodeselectors.length; i++) {
+		if (e.target.id == nodeselectors[i] || document.getElementById(nodeselectors[i]).contains(e.target)) {canceldeselect = true;}
+		}
+	if (canceldeselect) {return;}
+	selectedse[parenttag] = "";
+	selectedlbs[parenttag] = [];
+	recolor(parenttag);
+	}
+
+function recolor(parenttag) {
+	//step 1: clear any current background colors
+	var i;
+	for (i = 0; i < expressionids[parenttag].length; i++) {
+		document.getElementById(expressionids[parenttag][i]).style.background = "";
+		document.getElementById(expressionids[parenttag][i]).className = "se";
+		}
+	//highlight the hovered node:
+	if (hoveredse[parenttag] != "") {
+		document.getElementById(hoveredse[parenttag]).className = "sehover";
+		}
+	//highlight the selected node:
+	if (selectedse[parenttag] != "") {
+		document.getElementById(selectedse[parenttag]).className = "sesel";
+		}
+	recolortree(parenttag);
+	}
+
+function spn(str,tag,parenttag) {
+	var rstr = "";
+	rstr += "<span ";
+	rstr += "onmouseover='mover(event, \"" + tag + "\",\"" + parenttag + "\")' ";
+	rstr += "onmouseleave='mleave(event, \"" + tag + "\",\"" + parenttag + "\")' ";
+	rstr += "onclick='mclick(event, \"" + tag + "\",\"" + parenttag + "\")' ";
+	rstr += ">";
+	rstr += str;
+	rstr += "</span>";
+	return(rstr);
+	}
+
+function spn2(str,tag,parenttag) {
+	var rstr = "";
+	rstr += "<span style='position:absolute;left:0px; right:0px; top:1em; bottom:-0.5em;' ";
+	rstr += "onmouseover='mover(event, \"" + tag + "\",\"" + parenttag + "\")' ";
+	rstr += "onmouseleave='mleave(event, \"" + tag + "\",\"" + parenttag + "\")' ";
+	rstr += "onclick='mclick(event, \"" + tag + "\",\"" + parenttag + "\")' ";
+	rstr += ">";
+	rstr += str;
+	rstr += "</span>";
+	return(rstr);
+	}
+
+function paren(lr,dop,tag,parenttag) { //lr: 0=(, 1=)
+	var sy = "()"[lr];
+	if (dop) {
+		return(spn("<span id = '" + tag + "par" + lr + "' style='visibility:hidden'>" + "&hairsp;" + "</span>",tag,parenttag));
+		}
+	else {
+		return(spn("<span id = '" + tag + "par" + lr + "'>" + sy + "</span>",tag,parenttag));
+		}
+	}
+
+function supertostringhelper(pt,parenttype,tag,parenttag,nav) {
+	ptcontent[tag] = pt;
+	ptnav[tag] = nav;
+	var i;
+	var rstr;
+	switch(pt[0]) {
+		case "+":
+		case "*":
+		rstr = "";
+		if (pt.length > 3) {
+			longboys[tag] = [];
+			for (i = 1; i < pt.length; i++) {longboys[tag].push(tag+"o"+i);}
+			for (i = 1; i < pt.length; i++) {
+				expressionids[parenttag].push(tag + "u" + i);
+				rstr += "<span id='" + tag + "u" + i + "'>";
+				rstr += opify(pt[0],dropop(pt[0],i,pt[i-1],pt[i]),i,tag,parenttag);
+				rstr += "</span>";
+				rstr += supertostringhelper(pt[i], pt[0], tag+"o"+i,parenttag,nav.concat([i]));
+				}
+			}
+		else {
+			for (i = 1; i < pt.length; i++) {
+				rstr += opify(pt[0],dropop(pt[0],i,pt[i-1],pt[i]),i,tag,parenttag);
+				rstr += supertostringhelper(pt[i], pt[0], tag+"o"+i,parenttag,nav.concat([i]));
+				}
+			}
+		rstr = paren(0,dropparens(pt[0],parenttype),tag,parenttag) + rstr + paren(1,dropparens(pt[0],parenttype),tag,parenttag);
+		break;
+		case "^":
+		rstr = "";
+		rstr += supertostringhelper(pt[1],"^l",tag+"o1",parenttag,nav.concat([1]));
+		rstr += "<sup style='position:relative;'>" + supertostringhelper(pt[2],"^r",tag+"o2",parenttag,nav.concat([2]));
+		rstr += spn2("",tag,parenttag);
+		rstr += "</sup>";
+		rstr = paren(0,dropparens(pt[0],parenttype),tag,parenttag) + rstr + paren(1,dropparens(pt[0],parenttype),tag,parenttag);
+		break;
+		case "-":
+		rstr = "";
+		rstr += opify(pt[0],false,2,tag,parenttag);
+		rstr += supertostringhelper(pt[1], pt[0], tag+"o1",parenttag,nav.concat([1]));
+		rstr = paren(0,dropparens(pt[0],parenttype),tag,parenttag) + rstr + paren(1,dropparens(pt[0],parenttype),tag,parenttag);
+		break;
+		case "c":
+		case "v":
+		rstr = spn(pt[1],tag,parenttag);
+		break;
+		case "i":
+		rstr = spn(pt[1],tag,parenttag);
+		break;
+		}
+	expressionids[parenttag].push(tag);
+	var starttag = "<span id='" + tag + "'>";
+	var endtag = "</span>";
+	rstr = starttag + rstr + endtag;
+	return(rstr);
+	}
+
+function pttostring(pt) {
+	return(tostringhelper(pt,"u"));
+	}
+
+function supertostring(pt,tag) {
+	selpar[tag] = "";
+	nodeselectors.push(tag+"encompasser");
+	hoveredse[tag] = "";
+	selectedse[tag] = "";
+	selectedlbs[tag] = [];
+	expressionids[tag] = [];
+	return("<span id='" + tag + "encompasser' class='exencompasser'>" + supertostringhelper(pt,"u",tag+"c",tag,[]) + "</span>");
+	}
+
+function lex(str) {
+	var i;
+	if (str == "") {return([]);}
+	if (str[0] == " ") {
+		return(lex(str.slice(1)));
+		}
+	if (str[0] >= "0" && str[0] <= "9") {
+		for (i = 1; i <= str.length; i++) {
+			if (isNaN(str.slice(0,i))) {
+				return[["c", Number(str.slice(0,i-1))],...lex(str.slice(i-1))];
+				}
+			}
+		return([["c",Number(str)]]);
+		}
+	if (str[0] == "-" || str[0] == "+" || str[0] == "*" || str[0] == "^" || str[0] == "(" || str[0] == ")") {
+		return([["y",str[0]],...lex(str.slice(1))]);
+		}
+	if ((str[0] >= "a" && str[0] <= "z") || (str[0] >= "A" && str[0] <= "Z")) {
+		return([["v",str[0]],...lex(str.slice(1))]);
+		}
+	return(["lexing error"]);
+	}
+
+function phbase(lx) {
+	//parsehelper focusing on base expressions and parentheses
+	//returns pair: [parsetree, remaining lexed]
+	if (lx[0][0] == "c" || lx[0][0] == "v") {
+		return([lx[0],lx.slice(1)]);
+		}
+	if (lx[0][0] == "y" && lx[0][1] == "(") {
+		var r = ptcopy(phsum(lx.slice(1)));
+		if (r[1][0][1] == ")") {
+			return([r[0],r[1].slice(1)]);
+			}
+		err("PHBASE parenthesis ERROR", r, flattenlx(lx));
+		}
+	err("Parse Error: Not sure what to do with: " + flattenlx(lx));
+	}
+
+function phexp(lx) {
+	//parsehelper focusing on exponents
+	//if lx begins with an exponent, parses that
+	//if lx does not begin with an exponent, parses that instead
+	//returns pair: [parsetree, remaining lexed]
+	var r = ptcopy(phbase(lx));
+	var pt = r[0];
+	var llx = r[1];
+	if (llx.length != 0 && llx[0][0] == "y" && llx[0][1] == "^") {
+		var s = ptcopy(phbase(llx.slice(1)));
+		var pt2 = s[0];
+		var llx2 = s[1];
+		return ([["^", pt, pt2], llx2]);
+		}
+	else {
+		return ([pt, llx]);
+		}
+	}
+
+function phprod(lx) {
+	//parsehelper focusing on products
+	var r = ptcopy(phexp(lx));
+	var pt = r[0];
+	var llx = r[1];
+	var s, pt2, llx2;
+	var rval = ["*", pt];
+	while (llx.length != 0 && ((llx[0][0] == "y" && (llx[0][1] == "*" || llx[0][1] == "(")) || llx[0][0] == "c" || llx[0][0] == "v")) {
+		if (llx[0][0] == "y" && llx[0][1] == "*") {
+			s = ptcopy(phexp(llx.slice(1)));
+			}
+		else {
+			s = ptcopy(phexp(llx));
+			}
+		llx = s[1];
+		rval.push(s[0]);		
+		}
+	if (rval.length == 2) {rval = pt;}
+	return([rval,llx]);
+	}
+
+function phsum(lx) {
+	//parsehelper focusing on sums/differences
+	var r;
+	var pt;
+	var llx;
+	var s,pt2,llx2;
+	var rval;
+	var chg = 0;
+	if (lx[0][0] == "y" && (lx[0][1] == "+" || lx[0][1] == "-")) {
+		rval = ["+"];
+		llx = ptcopy(lx);
+		}
+	else {
+		r = ptcopy(phprod(lx));
+		pt = r[0];
+		llx = r[1];
+		rval = ["+", pt];
+		}
+	while (llx.length != 0 && llx[0][0] == "y" && (llx[0][1] =="+" || llx[0][1] == "-")) {
+		s = ptcopy(phprod(llx.slice(1)));
+		if (llx[0][1] == "+") {
+			rval.push(s[0]);
+			}
+		if (llx[0][1] == "-") {
+			rval.push(["-", s[0]]);
+			}
+		llx = s[1];
+		}
+	if (rval.length == 2) {rval = rval[1];}
+	return([rval,llx]);
+	}
+
+function parse(str) {
+	var r = ptcopy(phsum(lex(str)));
+	if (r[1].length != 0) {err("PARSE ERROR: not sure what to do with", str, flattenlx(r[1]));}
+	return(r[0]);
+	}
+
+function blankify(pt) {
+	var i;
+	if (pt[0] == "v" || pt[0] == "i") {
+		return(["i",pt[1]]);
+		}
+	else if (pt[0] == "c") {
+		return(["c",pt[1]]);
+		}
+	else {
+		var rval = [pt[0]];
+		for (i = 1; i < pt.length; i++) {
+			rval.push(blankify(pt[i]));
+			}
+		return(rval);
+		}
+	}
+
+function mkru(str) {
+	return(blankify(parse(str)));
+	}
+
+function test(str) {
+	return(pttostring(parse(str)));
+	}
+
+function flattenlx(lx) {
+	var i;
+	var rval = "";
+	for (i = 0; i < lx.length; i++) {
+		rval += lx[i][1];
+		}
+	return(rval);
+	}
+
+function togglerulevis(tag,b) {
+	if (b == "close" || (document.getElementById(tag+"title").className == "ruletitle" && b != "open")) {
+		document.getElementById(tag+"title").className = "ruletitleclosed";
+		document.getElementById(tag+"parent").style.display = "none";
+		document.getElementById(tag+"parent").style.height = "0px";
+		}
+	else {
+		document.getElementById(tag+"title").className = "ruletitle";
+		document.getElementById(tag+"parent").style.display = "";
+		document.getElementById(tag+"parent").style.height = document.getElementById(tag+"parent").scrollHeight + "px";
+		}
+	}
+
+function grabsel(tag,vn,th) {
+	th.value = tostringhelper(ptcontent[selectedse[mainexpression]],"u");
+	ruleotron(tag,vn,th,"a");
+	}
+
+function rulestr(tag,name,r1,r2,i) {
+	return("<span id = '" + tag + "encompasser' class='ruleencompasser'>" + rulestrin(tag,name,r1,r2,i) + "</span>");
+	}
+
+function rulestrin(tag,name,r1,r2,i,controls) {
+	//returns a string for presenting rule
+	//tag is used to create ids
+	//name is a string to present to the user
+	//r1 is the parsetree for the top
+	//r2 is the parsetree for the bottom
+	//nodeselectors.push(tag+"encompasser");
+	var rstr = "";
+	//rstr += "<span id = '" + tag + "encompasser' class='ruleencompasser'>";
+	rstr += "<button id = '" + tag + "title' class='ruletitle' ";
+	rstr += "onclick='togglerulevis(\""+tag+"\");'>";
+	rstr += name + "</button>";
+	rstr += "<div class='ruleparent' id='" + tag + "parent'>";
+	rstr += "<div class='ruleparent'>";
+	rstr += "<span class='ruletop'>";
+	rstr += ruletostringhelper(r1,"u",tag+"t",tag,"t");
+	rstr += "=</span>";
+	rstr += "<canvas style='margin:0px' id='rulecanv" + tag + "' width=1000 height=110></canvas>"
+	rstr += "<br><span class='rulebottom'>";
+	rstr += ruletostringhelper(r2,"u",tag+"b",tag,"b");
+	rstr += "</span>";
+	rstr += "</div>";
+	rstr += "<div class='rulecontrols' id='" + tag + "controls'>";
+	var v;
+	if(controls) {rstr += controls + "<br>";}
+	rstr += "<button class='ruletab' title='Try to fill top line with selected expression' onclick='trytoinsert("+i+",\"t\")'>Autofill Top</button><br>";
+	rstr += "<button class='ruletab' title='Try to fill bottom line with selected expression' onclick='trytoinsert("+i+",\"b\")'>Autofill Bottom</button><br>";
+	rstr += "<button class='ruletab' title='If selected expression agrees with one line, replace it with the other' onclick='applyrule("+i+")'>Apply Rule</button><br>";
+	for (v in ruleregistry[tag]["a"]) {
+		rstr += v + ":";
+		rstr += "<button title='Insert selected expression in place of "+v+"' style='padding:0px;display:inline-block;vertical-align:text-bottom' onclick='grabsel(\"" + tag + "\",\"" + v + "\",this)'>&#9654;</button>";
+		registertag(tag + "re" + v,tag,v,"a");
+		rstr += "<input spellCheck='false' type='text' class='ruleinput' id='" + tag + "re" + v + "' oninput='ruleotron(\"" + tag + "\",\"" + v + "\",this,\"a\")' placeholder='" + v + "'></input><br>";
+		}
+	rstr += "</div>";
+	rstr += "</div>";
+	//rstr += "</span>";
+	return(rstr);
+	}
+
+function updatelongleftdistributivity() {
+	var ix = longotrons["longleftdistributivity"];
+	var n = longdata["longleftdistributivity"];
+	if (n <= 0) {longdata["longleftdistributivity"] = 1; n = 1;}
+	ruleregistry["rule" + ix] = undefined;
+	var i;
+	var topstr = "a*(";
+	var botstr = "";
+	for (i = 0; i < n; i++) {
+		if (i != 0) {topstr += "+"; botstr += "+";}
+		topstr += String.fromCharCode(98 + i);
+		botstr += "a*" + String.fromCharCode(98 + i);
+		}
+	topstr += ")";
+	rulelist[ix] = [5,"Long Left Distributivity",topstr,botstr,""];
+	var ctrls = "<span style='font:smaller qu'>Summands:</span> <button onclick='longdata[\"longleftdistributivity\"]++;updatelongleftdistributivity();'>+</button>";
+	ctrls += "<button onclick='longdata[\"longleftdistributivity\"]--;updatelongleftdistributivity();'>-</button>";
+	document.getElementById("rule"+ix+"encompasser").innerHTML = rulestrin("rule"+ix,"Long Left Distributivity",mkru(topstr),mkru(botstr),ix, ctrls);
+	rulecanvas("rule"+ix);
+	}
+
+function updatelongrightdistributivity() {
+	var ix = longotrons["longrightdistributivity"];
+	var n = longdata["longrightdistributivity"];
+	if (n <= 0) {longdata["longrightdistributivity"] = 1; n = 1;}
+	ruleregistry["rule" + ix] = undefined;
+	var i;
+	var topstr = "(";
+	var botstr = "";
+	for (i = 0; i < n; i++) {
+		if (i != 0) {topstr += "+"; botstr += "+";}
+		topstr += String.fromCharCode(98 + i);
+		botstr += String.fromCharCode(98 + i) + "*a";
+		}
+	topstr += ")*a";
+	rulelist[ix] = [5,"Long Right Distributivity",topstr,botstr,""];
+	var ctrls = "<span style='font:smaller qu'>Summands:</span> <button onclick='longdata[\"longrightdistributivity\"]++;updatelongrightdistributivity();'>+</button>";
+	ctrls += "<button onclick='longdata[\"longrightdistributivity\"]--;updatelongrightdistributivity();'>-</button>";
+	document.getElementById("rule"+ix+"encompasser").innerHTML = rulestrin("rule"+ix,"Long Right Distributivity",mkru(topstr),mkru(botstr),ix, ctrls);
+	rulecanvas("rule"+ix);
+	}
+
+function updatelongassociativity() {
+	var ix = longotrons["longassociativity"];
+	var p = longdata["longassociativity"]; //triple: num terms before paren, num terms in paren, num terms after paren
+	if (p[0] < 0) {longdata["longassociativity"][0] = 0; p[0] = 0;}
+	if (p[1] < 1) {longdata["longassociativity"][1] = 1; p[1] = 1;}
+	if (p[2] < 0) {longdata["longassociativity"][2] = 0; p[2] = 0;}
+	ruleregistry["rule"+ix] = undefined;
+	var i;
+	var j;
+	var topstr = "";
+	var botstr = "";
+	j = 0;
+	for (i = 0; i < p[0]; i++) {
+		topstr += String.fromCharCode(97+j);
+		topstr += "+";
+		botstr += String.fromCharCode(97+j);
+		botstr += "+";
+		j++;
+		}
+	topstr += "(";
+	for (i = 0; i < p[1]; i++) {
+		if (i != 0) {topstr += "+"; botstr += "+";}
+		topstr += String.fromCharCode(97+j);
+		botstr += String.fromCharCode(97+j);
+		j++;
+		}
+	topstr += ")";
+	for (i = 0; i < p[2]; i++) {
+		topstr += "+";
+		topstr += String.fromCharCode(97+j);
+		botstr += "+";
+		botstr += String.fromCharCode(97+j);
+		j++;
+		}
+	rulelist[ix] = [5,"Long Additive Associativity",topstr,botstr,""];
+	var ctrls = "<span style='font:smaller qu'>Terms before parentheses:</span> <button onclick='longdata[\"longassociativity\"][0]++;updatelongassociativity();'>+</button>";
+	ctrls += "<button onclick='longdata[\"longassociativity\"][0]--;updatelongassociativity();'>-</button><br>";
+	ctrls += "<span style='font:smaller qu'>Terms inside parentheses:</span> <button onclick='longdata[\"longassociativity\"][1]++;updatelongassociativity();'>+</button>";
+	ctrls += "<button onclick='longdata[\"longassociativity\"][1]--;updatelongassociativity();'>-</button><br>";	
+	ctrls += "<span style='font:smaller qu'>Terms after parentheses:</span> <button onclick='longdata[\"longassociativity\"][2]++;updatelongassociativity();'>+</button>";
+	ctrls += "<button onclick='longdata[\"longassociativity\"][2]--;updatelongassociativity();'>-</button>";
+	document.getElementById("rule"+ix+"encompasser").innerHTML = rulestrin("rule"+ix,"Long Additive Associativity",mkru(topstr),mkru(botstr),ix, ctrls);
+	rulecanvas("rule"+ix);
+	}
+
+function updatelongmassociativity() {
+	var ix = longotrons["longmassociativity"];
+	var p = longdata["longmassociativity"]; //triple: num terms before paren, num terms in paren, num terms after paren
+	if (p[0] < 0) {longdata["longmassociativity"][0] = 0; p[0] = 0;}
+	if (p[1] < 1) {longdata["longmassociativity"][1] = 1; p[1] = 1;}
+	if (p[2] < 0) {longdata["longmassociativity"][2] = 0; p[2] = 0;}
+	ruleregistry["rule"+ix] = undefined;
+	var i;
+	var j;
+	var topstr = "";
+	var botstr = "";
+	j = 0;
+	for (i = 0; i < p[0]; i++) {
+		topstr += String.fromCharCode(97+j);
+		topstr += "*";
+		botstr += String.fromCharCode(97+j);
+		botstr += "*";
+		j++;
+		}
+	topstr += "(";
+	for (i = 0; i < p[1]; i++) {
+		if (i != 0) {topstr += "*"; botstr += "*";}
+		topstr += String.fromCharCode(97+j);
+		botstr += String.fromCharCode(97+j);
+		j++;
+		}
+	topstr += ")";
+	for (i = 0; i < p[2]; i++) {
+		topstr += "*";
+		topstr += String.fromCharCode(97+j);
+		botstr += "*";
+		botstr += String.fromCharCode(97+j);
+		j++;
+		}
+	rulelist[ix] = [5,"Long Mult. Associativity",topstr,botstr,""];
+	var ctrls = "<span style='font:smaller qu'>Terms before parentheses:</span> <button onclick='longdata[\"longmassociativity\"][0]++;updatelongmassociativity();'>+</button>";
+	ctrls += "<button onclick='longdata[\"longmassociativity\"][0]--;updatelongmassociativity();'>-</button><br>";
+	ctrls += "<span style='font:smaller qu'>Terms inside parentheses:</span> <button onclick='longdata[\"longmassociativity\"][1]++;updatelongmassociativity();'>+</button>";
+	ctrls += "<button onclick='longdata[\"longmassociativity\"][1]--;updatelongmassociativity();'>-</button><br>";	
+	ctrls += "<span style='font:smaller qu'>Terms after parentheses:</span> <button onclick='longdata[\"longmassociativity\"][2]++;updatelongmassociativity();'>+</button>";
+	ctrls += "<button onclick='longdata[\"longmassociativity\"][2]--;updatelongmassociativity();'>-</button>";
+	document.getElementById("rule"+ix+"encompasser").innerHTML = rulestrin("rule"+ix,"Long Mult. Associativity",mkru(topstr),mkru(botstr),ix, ctrls);
+	rulecanvas("rule"+ix);
+	}
+
+function updatelongcomm() {
+	var ix = longotrons["longcomm"];
+	var p = longdata["longcomm"]; //triple: two terms to switch, length of expression
+	if (p[0] < 0) {longdata["longcomm"][0] = 0; p[0] = 0;}
+	if (p[1] < 0) {longdata["longcomm"][1] = 0; p[1] = 0;}
+	if (p[2] <= p[0]) {longdata["longcomm"][2] = p[0] + 1; p[2] = p[0] + 1;}
+	if (p[2] <= p[1]) {longdata["longcomm"][2] = p[1] + 1; p[2] = p[1] + 1;}
+	var topstr = "";
+	var botstr = "";
+	var i;
+	for (i = 0; i < p[2]; i++) {
+		if (i > 0) {topstr += "+"; botstr += "+";}
+		botstr += String.fromCharCode(97+i);
+		if (i == p[0]) {topstr+= String.fromCharCode(97+p[1]);}
+		else if (i == p[1]) {topstr+= String.fromCharCode(97+p[0]);}
+		else {topstr += String.fromCharCode(97+i);}
+		}
+	ruleregistry["rule"+ix] = undefined;
+	rulelist[ix] = [5,"Long Additive Commutativity", topstr, botstr, ""];
+	var ctrls = "<span style='font:smaller qu'>First to switch:</span> <button onclick='longdata[\"longcomm\"][0]++;updatelongcomm();'>+</button>";
+	ctrls += "<button onclick='longdata[\"longcomm\"][0]--;updatelongcomm();'>-</button><br>";
+	ctrls += "<span style='font:smaller qu'>Second to switch:</span> <button onclick='longdata[\"longcomm\"][1]++;updatelongcomm();'>+</button>";
+	ctrls += "<button onclick='longdata[\"longcomm\"][1]--;updatelongcomm();'>-</button><br>";
+	ctrls += "<span style='font:smaller qu'>Number of terms:</span> <button onclick='longdata[\"longcomm\"][2]++;updatelongcomm();'>+</button>";
+	ctrls += "<button onclick='longdata[\"longcomm\"][2]--;updatelongcomm();'>-</button>";
+	document.getElementById("rule"+ix+"encompasser").innerHTML = rulestrin("rule"+ix,"Long Additive Commutativity", mkru(topstr), mkru(botstr), ix,ctrls);
+	rulecanvas("rule"+ix);
+	}
+
+function updatelongmcomm() {
+	var ix = longotrons["longmcomm"];
+	var p = longdata["longmcomm"]; //triple: two terms to switch, length of expression
+	if (p[0] < 0) {longdata["longmcomm"][0] = 0; p[0] = 0;}
+	if (p[1] < 0) {longdata["longmcomm"][1] = 0; p[1] = 0;}
+	if (p[2] <= p[0]) {longdata["longmcomm"][2] = p[0] + 1; p[2] = p[0] + 1;}
+	if (p[2] <= p[1]) {longdata["longmcomm"][2] = p[1] + 1; p[2] = p[1] + 1;}
+	var topstr = "";
+	var botstr = "";
+	var i;
+	for (i = 0; i < p[2]; i++) {
+		if (i > 0) {topstr += "*"; botstr += "*";}
+		botstr += String.fromCharCode(97+i);
+		if (i == p[0]) {topstr+= String.fromCharCode(97+p[1]);}
+		else if (i == p[1]) {topstr+= String.fromCharCode(97+p[0]);}
+		else {topstr += String.fromCharCode(97+i);}
+		}
+	ruleregistry["rule"+ix] = undefined;
+	rulelist[ix] = [5,"Long Mult. Commutativity", topstr, botstr, ""];
+	var ctrls = "<span style='font:smaller qu'>First to switch:</span> <button onclick='longdata[\"longmcomm\"][0]++;updatelongmcomm();'>+</button>";
+	ctrls += "<button onclick='longdata[\"longmcomm\"][0]--;updatelongmcomm();'>-</button><br>";
+	ctrls += "<span style='font:smaller qu'>Second to switch:</span> <button onclick='longdata[\"longmcomm\"][1]++;updatelongmcomm();'>+</button>";
+	ctrls += "<button onclick='longdata[\"longmcomm\"][1]--;updatelongmcomm();'>-</button><br>";
+	ctrls += "<span style='font:smaller qu'>Number of terms:</span> <button onclick='longdata[\"longmcomm\"][2]++;updatelongmcomm();'>+</button>";
+	ctrls += "<button onclick='longdata[\"longmcomm\"][2]--;updatelongmcomm();'>-</button>";
+	document.getElementById("rule"+ix+"encompasser").innerHTML = rulestrin("rule"+ix,"Long Mult. Commutativity", mkru(topstr), mkru(botstr), ix,ctrls);
+	rulecanvas("rule"+ix);
+	}
+
+function updatelongflatten() {
+	var ix = longotrons["longflatten"];
+	var p = longdata["longflatten"];
+	ruleregistry["rule"+ix] = undefined;
+	rulelist[ix] = [5,"Long Additive Associativity", tostringhelper(p[0],"u"), tostringhelper(p[1],"u"),""];
+	var ctrls = "<span style='font:smaller qu'>Top:</span><input type='text' id='flattext'><button onclick='flatbutt()'>Enter</button>";
+	document.getElementById("rule"+ix+"encompasser").innerHTML = rulestrin("rule"+ix,"Long Additive Associativity", p[0],p[1],ix,ctrls);
+	rulecanvas("rule"+ix); 
+	}
+
+function updatelongmflatten() {
+	var ix = longotrons["longmflatten"];
+	var p = longdata["longmflatten"];
+	ruleregistry["rule"+ix] = undefined;
+	rulelist[ix] = [5,"Long Mult. Associativity", tostringhelper(p[0],"u"), tostringhelper(p[1],"u"),""];
+	var ctrls = "<span style='font:smaller qu'>Top:</span><input type='text' id='mflattext'><button onclick='mflatbutt()'>Enter</button>";
+	document.getElementById("rule"+ix+"encompasser").innerHTML = rulestrin("rule"+ix,"Long Mult. Associativity", p[0],p[1],ix,ctrls);
+	rulecanvas("rule"+ix); 
+	}
+
+function flatbutt() {
+	var r = parse(document.getElementById("flattext").value);
+	var t = flattop("+",r);
+	longdata["longflatten"] = [t,flatbot(t)];
+	updatelongflatten();
+	}
+
+function mflatbutt() {
+	var r = parse(document.getElementById("mflattext").value);
+	var t = flattop("*",r);
+	longdata["longmflatten"] = [t,flatbot(t)];
+	updatelongmflatten();
+	}
+
+var varcount = 0;
+
+function flattop(op,pt) {//takes expression (pt) and returns a pt that's the first part of the long flatten rule to insert it into
+	varcount = 0;
+	return(flattophelper(op,pt));
+	}
+
+function flattophelper(op,pt) {
+	var rpt;
+	var i;
+	if (pt[0] == op) {
+		rpt = [pt[0]];
+		for (i = 1; i < pt.length; i++) {
+			rpt.push(flattophelper(op,pt[i]));
+			}
+		return(rpt);
+		}
+	else {
+		return(["i",String.fromCharCode(97+(varcount++))]);
+		}
+	}
+
+function flatbot(toppt) {
+	var i;
+	if (toppt[0] != "+" && toppt[0] != "*") {return(toppt);}
+	var rpt = [toppt[0]];
+	var t;
+	for (i = 1; i < toppt.length; i++) {
+		t = flatbot(toppt[i]);
+		if (t[0] == "+" || t[0] == "*") {rpt = rpt.concat(t.slice(1));}
+		else {rpt = rpt.concat([t]);}
+		}
+	return(rpt);
+	}
+
+function makecolor(i) {
+	return(colorlist[i%7]);
+	//return("hsl("+((i*137.5+110)%360)+",100%,50%)")
+	}
+
+function mainboot() {
+	var str = decodeURIComponent(location.search).slice(1);
+	if (str == "") {str = "x(x+2)+3x";}
+	document.getElementById("main").innerHTML = supertostring(parse(str),mainexpression);
+	mainhistory.push([parse(str),false,"Original Expression"]);
+	}
+
+function oldtreestr(pt) {
+	var rstr = "";
+	var i;
+	switch(pt[0]) {
+		case "+":
+		case "*":
+		case "-":
+		case "^":
+		rstr = "<table><tr>";
+		for (i = 1; i < pt.length; i++) {
+			rstr += "<td style='vertical-align:bottom'>";
+			rstr += treestr(pt[i]);
+			rstr += "</td>";
+			}
+		rstr += "</tr>";
+		rstr += "<tr><td style='text-align:center' colspan="+(pt.length-1)+"><span style='border:1px solid;border-radius:50%'>"+pt[0]+"</span></td></tr></table>";
+		break;
+		case "v":
+		case "c":
+		case "i":
+		rstr = "<span style='border:1px solid; border-radius:50%'>"+pt[1]+"</span>";
+		break;
+		}
+	return(rstr);
+	}
+
+function colorbranch(tg, cl) {
+	if (tg == "") {return;}
+	var i;
+	for (i = 0; i < treeids.length; i++) {
+		if (treeids[i].startsWith(tg)) {
+			document.getElementById(treeids[i]).style.fill=cl;
+			}
+		}
+	}
+
+function recolortree(parenttag) {
+	if (parenttag != mainexpression) {console.log("recolortree got an unexpected parenttag:", parenttag);}
+	var i;
+	for (i = 0; i < treeids.length; i++) {
+		document.getElementById(treeids[i]).style.fill="white";
+		}
+	if (hoveredse[mainexpression].startsWith(selectedse[mainexpression]+"o")) { //hover inside selected expression (selected first, then hover)
+		colorbranch(selectedse[mainexpression], "#00B300");
+		colorbranch(hoveredse[mainexpression], "#92C5DE");
+		}
+	else { //hover not inside selected expression
+		colorbranch(hoveredse[mainexpression], "#92C5DE");
+		colorbranch(selectedse[mainexpression], "#00B300");
+		}
+	}
+
+function tmover(nid) {
+	hoveredse[mainexpression] = nid.slice(0,-1);
+	recolor(mainexpression);
+	}
+
+function tmout(nid) {
+	hoveredse[mainexpression] = "";
+	recolor(mainexpression);
+	}
+
+function tmclick(nid) {
+	mclick(3,nid.slice(0,-1),mainexpression);
+	}
+
+function ttest(str) {
+	document.getElementById("helpbox").style.display="";
+	document.getElementById("helpbox").innerHTML = tpstosvgstr(pttotps(parse(str)),mainexpression);
+	}
+
+function hidetree() {
+	document.getElementById("treeshower").style.display = "none";
+	document.getElementById("treebutt").className = "ruletab";
+	}
+
+function showtree() {
+	document.getElementById("treeshower").style.display = "";
+	document.getElementById("treeshower").innerHTML = tpstosvgstr(fittps(pttotps(ptcontent[mainexpression+"c"]),700),mainexpression);
+	document.getElementById("treebutt").className = "selectedruletab";
+	}
+
+function treebutt() {
+	if (document.getElementById("treeshower").style.display=="none") {
+		showtree();
+		}
+	else {
+		hidetree();
+		}
+	}
+
+function navtotag(n) {
+	var i;
+	var rstr = "";
+	for (i = 0; i < n.length; i++) {
+		rstr += "o"+(n[i]+1);
+		}
+	return(rstr);
+	}
+
+var treeids = [];
+
+function tpstosvgstr(tps,tag) {
+	treeids = [];
+	var i,j;
+	var h = 0;
+	var tgstr;
+	var sc = 0;
+	for (i = 0; i < tps[2].length; i++) {
+		if (tps[2][i][2].length > h) {h = tps[2][i][2].length;}
+		}
+	var dh = 300/h;
+	var rstr = "<svg width=700 height=400>";
+	for (i = 0; i < tps[2].length; i++) {
+		for (j = 0; j < tps[2].length; j++) {
+			if (ptcompare(tps[2][i][2].slice(0,-1),tps[2][j][2])) {
+				rstr += "<line x1="+tps[2][i][1]+" x2="+tps[2][j][1];
+				rstr += " y1="+(dh*(h-tps[2][i][2].length+.5))+" y2="+(dh*(h-tps[2][j][2].length+.5));
+				rstr += " style='stroke:black;stroke-width:2'></line>"
+				}
+			}
+		}
+	for (i = 0; i < tps[2].length; i++) {
+		tgstr=tag+"c"+navtotag(tps[2][i][2])+"t";
+		treeids.push(tgstr);
+		sc = Math.min(1,7/(tps[2][i][0].toString().length));
+		rstr += "<g onmouseover='tmover(\""+tgstr+"\")' onmouseout='tmout()' onclick='tmclick(\""+tgstr+"\")'>";
+		rstr += "<circle id='"+tgstr+"' style='stroke:black;fill:white' cx="+tps[2][i][1]+" cy="+(dh*(h-tps[2][i][2].length+.5))+" r=30></circle>";
+		rstr += "<text style='transform:scale("+sc+")' text-anchor='middle' alignment-baseline='central' x="+(tps[2][i][1]/sc)+" y="+(dh*(h-tps[2][i][2].length+.5)/sc)+">"+tps[2][i][0]+"</text>";
+		rstr += "</g>";
+		}
+	rstr += "</svg>";
+	return(rstr);
+	}
+
+
+function pttotps(pt) {
+	var i;
+	var rval;
+	var inp = [];
+	switch(pt[0]) {
+		case "+":
+		case "*":
+		case "-":
+		case "^":
+		for (i = 1; i < pt.length; i++) {
+			inp.push(pttotps(pt[i]));
+			}
+		rval = jointps(pt[0],inp);//tostringhelper(pt,"u",false),inp);
+		break;
+		case "v":
+		case "c":
+		case "i":
+		rval = [[0],[0],[[pt[1],0,[]]]];
+		break;
+		}
+	return(ptcopy(rval));
+	}
+
+function pushindextps(tps,ix) {
+	var i;
+	var rtna = [];
+	for (i = 0; i < tps[2].length; i++) {
+		rtna.push([	tps[2][i][0],
+				tps[2][i][1],
+				[ix].concat(tps[2][i][2])]);
+		}
+	return(ptcopy([tps[0],tps[1],rtna]));
+	}
+
+function fittps(tps,w) {
+	var i;
+	var minx = tps[2][0][1];
+	var maxx = tps[2][0][1];
+	for (i = 0; i < tps[2].length; i++) {
+		if (minx > tps[2][i][1]) {minx = tps[2][i][1];}
+		if (maxx < tps[2][i][1]) {maxx = tps[2][i][1];}
+		}
+	var rtps = ptcopy(tps);
+	for (i = 0; i < rtps[2].length; i++) {
+		rtps[2][i][1] = 50 + (rtps[2][i][1] - minx) * (w-100) / (maxx - minx);
+		}
+	return(rtps);
+	}
+
+function juxtaposetps(tps1,tps2) {
+	/*
+	tps (tree presentation structure) has:
+	0-x coordinates on the left from bottom to top.
+	1-x coordinates on the right from bottom to top.
+	2-an array of "treenodes", each a list:
+		0-text content,
+		1-x coordinate of center (in pixels)
+		2-nav (array for navigating to this location)
+	NOTE: tps may be temporarily a forest during the joining process.
+	*/
+	var rtna = ptcopy(tps1[2]);
+	var i;
+	var dist = -Infinity;
+	for (i = 0; i < Math.min(tps1[1].length, tps2[0].length); i++) {
+		if (dist < tps1[1][i]-tps2[0][i]) {dist = tps1[1][i]-tps2[0][i];}
+		}
+	dist += 10; //padding
+	for (i = 0; i < tps2[2].length; i++) {
+		rtna.push([	tps2[2][i][0],
+				tps2[2][i][1]+dist,
+				tps2[2][i][2]]);
+		}
+	var llist = tps1[0];
+	var rlist = [];
+	for (i = 0; i < tps2[1].length; i++) {
+		rlist.push(tps2[1][i]+dist);
+		}
+	if (tps1[1].length > tps2[0].length) {
+		for (i = tps2[0].length; i < tps1[1].length; i++) {
+			//rlist is too short. make it longer using tps1's rlist
+			rlist.push(tps1[1][i]);
+			}
+		}
+	if (tps1[1].length < tps2[0].length) {
+		for (i = tps1[1].length; i < tps2[0].length; i++) {
+			//llist is too short. make it longer using tps2's llist
+			rlist.push(tps2[0][i]+dist);
+			}
+		}
+	return(ptcopy([llist,rlist,rtna]));
+	}
+
+function jointps(str,tpsl) {
+	var i;
+	var rval = pushindextps(tpsl[0],0);
+	for (i = 1; i < tpsl.length; i++) {
+		rval = juxtaposetps(rval,pushindextps(tpsl[i],i));
+		}
+	var c = 0;	
+	var n = 0;
+	for (i = 0; i < rval[2].length; i++) {
+		if(rval[2][i][2].length==1) {
+			c += rval[2][i][1];
+			n++;
+			}
+		}
+	c = c/n;
+	rval[0] = [c].concat(rval[0]);
+	rval[1] = [c].concat(rval[1]);
+	rval[2] = [[str,c,[]]].concat(rval[2]);
+	return(ptcopy(rval));
+	}
+
+function drawhistory() {
+	var i;
+	var str = "<table>";
+	for (i = 0; i < mainhistory.length; i++) {
+		str += "<tr><td>";
+		if (i != 0) {
+			str += "=</td><td>";
+			}
+		else {str += "</td><td>";}
+		str += pasttostringhelper(mainhistory[i][0],"u",mainhistory[i][1]);
+		str += "</td><td style='width:200px'></td><td>";
+		str += "<span class='historyrule'>";
+		str += mainhistory[i][2];
+		str += "</span>";
+		str += "</td></tr>";
+		}
+	str += "</table>";
+	document.getElementById("history").innerHTML = str;
+	}
+
+function ruletabclick(n) {
+	selectedrulegroup = n;
+	ruletabsboot();
+	var i;
+	for (i = 0; i < rulelist.length; i++) {
+		if (rulelist[i][0] == n || n == 0) {
+			document.getElementById("rule"+i+"encompasser").style.display = "initial";
+			}
+		else {
+			document.getElementById("rule"+i+"encompasser").style.display = "none";
+			}
+		}
+	}
+
+function ruleall(b) {
+	var i;
+	for (i = 0; i < rulelist.length; i++) {
+		togglerulevis("rule"+i,b);
+		}
+	}
+
+function ruletabsboot() {
+	var i;
+	var str = "";
+	str += "<button class='ruletab' title='Open All' onclick='ruleall(\"open\");'>&#9660;</button>";
+	str += "<button class='ruletab' title='Squash All' onclick='ruleall(\"close\");'>&#9650;</button>";
+	for (i = 0; i < rulegroupslist.length; i++) {
+		str += "<button ";
+		if (i == selectedrulegroup) {
+			str += "class='selectedruletab'";
+			}
+		else {
+			str += "class='ruletab'";
+			}
+		str += " title='" + rulegroupslist[i][2] + "'";
+		str += " onclick='ruletabclick(" + i + ")'>";
+		str += rulegroupslist[i][1];
+		str += "</button>";
+		}
+	document.getElementById("ruletabs").innerHTML = str;
+	}
+
+function ruleboot() {
+	var i;
+	for (i = 0; i < rulelist.length; i++) {
+		if (rulelist[i][5] && rulelist[i][5]["calc"]) {
+			calculators["rule"+i] = rulelist[i][5]["calc"];
+			}
+		}
+	var str = "";
+	for (i = 0; i < rulelist.length; i++) {
+		str += rulestr("rule"+i,rulelist[i][1],mkru(rulelist[i][2]),mkru(rulelist[i][3]),i);
+		}
+	document.getElementById("rules").innerHTML = str;
+	for (i = 0; i < rulelist.length; i++) {
+		rulecanvas("rule"+i);
+		}
+	ruletabsboot();
+	updatelongleftdistributivity();
+	updatelongrightdistributivity();
+	updatelongassociativity();
+	updatelongmassociativity();
+	updatelongflatten();
+	updatelongmflatten();
+	updatelongcomm();
+	updatelongmcomm();
+	}
+
+function boot() {
+	mainboot();
+	ruleboot();
+	nodeselectors.push("ruletabs");
+	nodeselectors.push("rules");
+	}
+
+function newexp() {
+	savedderivs.push(ptcopy(mainhistory));
+	derivtable();
+	var str = document.getElementById("newexp").value;
+	document.getElementById("main").innerHTML = supertostring(parse(str),mainexpression);
+	mainhistory = [[parse(str),false,"Original Expression"]];
+	drawhistory();
+	document.getElementById("currderiv").innerHTML = pasttostringhelper(mainhistory[0][0],"u") + "=" + pasttostringhelper(mainhistory[mainhistory.length-1][0],"u");
+	}
+
+function undo() {
+	if (mainhistory.length <= 1) {err("Can't undo: At beginning of time"); return;}
+	var pt = mainhistory[mainhistory.length-2][0];
+	document.getElementById("main").innerHTML = supertostring(pt,mainexpression);
+	mainhistory.pop();
+	drawhistory();
+	document.getElementById("treeshower").innerHTML = tpstosvgstr(fittps(pttotps(ptcontent[mainexpression+"c"]),700),mainexpression);
+	}
+
+function tts() {
+	var pt = mainhistory[mainhistory.length-1][0];
+	utter(toenglishhelper(pt));
+	}
+
+function addrule(top,bot,name) {
+	rulelist.push([6,name,top,bot,name]);
+	var i = rulelist.length-1;
+	var str = rulestr("rule"+i,name,mkru(top),mkru(bot),i);
+	var node = document.createElement("DIV");
+	node.innerHTML = str;
+	document.getElementById("rules").appendChild(node);
+	rulecanvas("rule"+i);
+	}
+
+rulenumbering = 0;
+
+function newrule() { //when you click the button
+	var str = prompt("Please Enter a Name for this rule","Rule "+rulenumbering);
+	rulenumbering++;
+	addrule(tostringhelper(mainhistory[0][0],"u"),tostringhelper(mainhistory[mainhistory.length-1][0],"u"),str);
+	}
+
+function derivtorule(i) {
+	var str = prompt("Please Enter a Name for this rule","Rule "+rulenumbering);
+	rulenumbering++;
+	addrule(tostringhelper(savedderivs[i][0][0],"u"),tostringhelper(savedderivs[i][savedderivs[i].length-1][0],"u"),str);
+	}
+
+function derivtable() {
+	var i;
+	var str = "<table border=1 style='font-family:serif'>";
+	for (i = 0; i < savedderivs.length; i++) {
+		str += "<tr><td>";
+		str += pasttostringhelper(savedderivs[i][0][0],"u");
+		str += "</td><td>=";
+		str += pasttostringhelper(savedderivs[i][savedderivs[i].length-1][0],"u");
+		str += "</td><td>";
+		str += "<button class='ruletab' title='Save current work and load this in its place' onclick='loadderiv("+i+")'>Save/Load</button>";
+		str += "</td><td>";
+		str += "<button class='ruletab' onclick='delderiv("+i+")'>Delete</button>";
+		str += "</td><td>";
+		str += "<button class='ruletab' onclick='derivtorule("+i+")'>Make Rule</button>";
+		str += "</td></tr>";
+		}
+	str += "</table>";
+	document.getElementById("pastderivs").innerHTML = str;
+	}
+
+function showoptions() {
+	hidetree();
+	document.getElementById("optionsbox").style.display="";
+	document.getElementById("currderiv").innerHTML = pasttostringhelper(mainhistory[0][0],"u") + "=" + pasttostringhelper(mainhistory[mainhistory.length-1][0],"u");
+	derivtable();
+	}
+
+function savederiv() {
+	savedderivs.push(ptcopy(mainhistory));
+	derivtable();
+	}
+
+function delderiv(i) {
+	savedderivs.splice(i,1);
+	derivtable();
+	}
+
+function loadderiv(i) {
+	savederiv();
+	mainhistory = ptcopy(savedderivs[i]);
+	document.getElementById("main").innerHTML = supertostring(mainhistory[mainhistory.length-1][0],mainexpression);
+	drawhistory();
+	}
+
+</script>
+<style>
+:root {
+	--select-color: #00B300;
+	--select-echo-color: #CCDDAA;
+	--hover-color: #92C5DE;
+	--rule-title-color: #EEEEEE;
+	--rule-title-closed-color: #DDDDDD;
+	}
+.exencompasser {
+	display:inline-block;
+	font:xx-large serif;
+	cursor:default;
+	user-select:none;
+	-moz-user-select:none;
+	-webkit-user-select:none;
+	-ms-user-select:none';
+	}
+.se {
+	}
+.sehover {
+	background-color: var(--hover-color);
+	//border-bottom: 1px dotted;
+	//box-shadow:inset 0px -3px 0px 0px gray;
+	}
+.sesel {
+	background-color: var(--select-color);
+	//box-shadow:inset 0px -1px 0px 0px black, inset 0px 1px 0px 0px black;
+	}
+.selectedruletab {
+	cursor:pointer;
+	border: 2px solid;
+	background-color: var(--select-color);
+	font: large qu;
+	user-select:none;
+	-moz-user-select:none;
+	-webkit-user-select:none;
+	-ms-user-select:none;
+	padding: 0;
+	border-radius:3px;
+	}
+.ruletab {
+	background-color: inherit;
+	cursor:pointer;
+	border: 2px solid;
+	font: large qu;
+	user-select:none;
+	-moz-user-select:none;
+	-webkit-user-select:none;
+	-ms-user-select:none;
+	padding: 0;
+	border-radius:3px;
+	}
+.ruletab:hover {
+	background-color: var(--hover-color);
+	}
+.ruletab:active {
+	border: 2px inset;
+	}
+/*.ruletab:focus {
+	background-color: var(--hover-color);
+	}*/
+.ruletitle {
+	float:left;
+	width:100%;
+	background-color: var(--rule-title-color);
+	font: x-large qu;
+	cursor:pointer;
+	user-select:none;
+	-moz-user-select:none;
+	-webkit-user-select:none;
+	-ms-user-select:none;
+	padding:0px;
+	text-align:left;
+	border: 2px solid;
+	}
+.ruletitle:before {
+	content: "\25BE";
+	}
+.ruletitle:active {
+	border: 2px inset;
+	}
+.ruletitleclosed:active {
+	border: 2px inset;
+	}
+.ruletitleclosed {
+	float:left;
+	width:100%;
+	background-color: var(--rule-title-closed-color);
+	font: x-large qu;
+	cursor:pointer;
+	user-select:none;
+	-moz-user-select:none;
+	-webkit-user-select:none;
+	-ms-user-select:none;
+	padding:0px;
+	text-align:left;
+	border: 2px solid;
+	}
+.ruletitleclosed:before {
+	content: "\25B4";
+	}
+.ruleparent {
+	transition: height .15s ease-out; 
+	overflow: hidden;
+	width:100%; 
+	font: x-large serif; 
+	user-select:none; 
+	position: relative;
+	-moz-user-select:none; 
+	-webkit-user-select:none; 
+	-ms-user-select:none
+	}
+.ruleencompasser {
+	border-style: solid none none none;
+	float:left;
+	width:100%;
+	}
+.ruletop {
+	position:absolute;
+	top:0px;
+	width:100%;
+	text-align:center;
+	}
+.rulebottom{
+	position:absolute;
+	bottom:0px;
+	width:100%;
+	text-align:center;
+	}
+.ruleinput {
+	font: x-large serif;
+	width: 1ch;
+	height: 20px;
+	}
+.rulecontrols {
+	width:100%;
+	background-color: #DDDDDD;
+	font: x-large serif;
+	}
+.sidebar {
+	height:100%;
+	width:350px;
+	position:fixed;
+	right:0px;
+	top:0px;
+	border-style: none none none solid;
+	overflow-x: hidden;
+	overflow-y: hidden;
+	}
+.title {
+	font:xx-large qu;
+	position:fixed;
+	right:20px;
+	top:10px;
+	}
+button:active {
+	border: 2px inset gray;
+	}
+@font-face {
+	font-family:"qu";
+	src:url("Questrial-Regular.ttf"); //see Questrial.zip
+	font-display: swap;
+	}
+</style>
+</head>
+<body onload="boot()" style="font-size:large">
+<div id="sidebar" class="sidebar">
+<svg width=150 height=150>
+<g fill="green">
+<circle cx=35 cy=57 r=30> </circle>
+<circle cx=60 cy=32 r=30> </circle>
+<circle cx=110 cy=32 r=30> </circle>
+</g>
+<g style="stroke:black;stroke-width:2">
+<line x1=63 y1=85 x2=57 y2=79></line>
+<line x1=57 y1=85 x2=63 y2=79></line>
+<line x1=55 y1=77 x2=40 y2=62></line>
+<line x1=65 y1=77 x2=80 y2=62></line>
+<line x1=85 y1=53 x2=85 y2=61></line>
+<line x1=81 y1=57 x2=89 y2=57></line>
+<line x1=80 y1=52 x2=65 y2=37></line>
+<line x1=90 y1=52 x2=105 y2=37></line>
+<line x1=60 y1=88 x2=60 y2=147></line>
+</g>
+</svg>
+<span class="title"> Electronic<br>Polynomial<br>Educational<br>Experience</span>
+<div id="ruletabs">
+</div>
+<div id="rules" style="overflow-y: scroll;
+			overflow-x: hidden;
+			border-style: solid none none none;
+			position:absolute;
+			bottom:0px;
+			height:calc(100% - 180px);
+			width:100%">
+</div>
+</div>
+<div id="history" style="position:fixed; bottom:50px;">
+</div>
+<div style="border-top:1px solid; position:fixed; left:0px; bottom:0px; width:calc(100% - 350px); overflow-x:hidden; height:50px">
+<span id="main"></span>
+<button class='ruletab' title="Undo" onclick="undo()" style="float:right;margin-right:2px">
+<svg width=30 height=30>
+<g style="stroke:black;stroke-width:3;fill:none">
+<path d='M 3 18 A 15 15 0 0 1 27 18'></path>
+<polyline points='3,11 3,18 11,18'></polyline>
+</g>
+</svg>
+</button>
+<button class='ruletab' id="treebutt" title="Show Tree" onclick="treebutt()" style="float:right">
+<svg width=30 height=30>
+<g style="stroke:black;stroke-width:2">
+<polyline points="12,28 12,17 24,5 18,11 12,5 18,11 12,17 5,10 12,17"></polyline>
+</g>
+</svg>
+</button>
+<button class='ruletab' title="Text to Speech" onclick="tts()" style="float:right">
+<svg width=30 height=30>
+<circle cx=8 cy=15 r=5></circle>
+<g style="stroke:black;stroke-width:3;fill:none">
+<path d="M 15 8 A 10 10 0 0 1 15 22"></path>
+<path d="M 20 3 A 20 20 0 0 1 20 27"></path>
+</g>
+</svg>
+</button>
+</div>
+
+<span style='position:fixed; top:0px; right:0px'>
+<button style='font-size:xx-large;' class='ruletab' title='Options' onclick='showoptions()'><svg width=16 height=26>
+<g style="stroke:black;stroke-width:2">
+<line x1=3 y1=11 x2=13 y2=11></line>
+<line x1=3 y1=16 x2=13 y2=16></line>
+<line x1=3 y1=21 x2=13 y2=21></line>
+</g>
+</svg>
+</button><button style='font-size:xx-large;' class='ruletab' title='Help (New Window)' onclick='window.open("epeedemohelp.html");'>?</button>
+</span>
+
+<div id = 'optionsbox'
+	style='position:fixed;
+	font-family:qu;
+	display:none;
+	top:0px;
+	left:0px;
+	width:100vw;
+	height:100vh;
+	background-color: rgba(0,0,0,0.4);'
+	onclick = 'this.style.display="none";'>
+<div style='margin: 15vh 15vw;
+	position:absolute;
+	width:70vw;
+	height:70vh;
+	background-color:white;
+	overflow-y:scroll;'
+	onclick = 'event.stopPropagation()'>
+<button class='ruletab'
+	style='float:right;
+	font-size:xx-large;'
+	onclick='document.getElementById("optionsbox").style.display="none";'>X</button>
+
+<div style='margin:10px'>
+Enter a new expression: <input style='font:large serif' type='text' id='newexp'> and <button class="ruletab" onclick='newexp()'>Save and Start Over</button> <br>
+Current derivation: <br>
+<table border=1> <tr><td> <span style='font:large serif' id="currderiv"></span> </td><td><button class="ruletab" onclick='savederiv()'>Save</button></td>
+<td> <button class="ruletab" onclick='newrule()'>Make into New Rule</button></td></tr></table><br>
+Saved derivations:
+<div id="pastderivs"></div>
+</div>
+
+</div>
+</div>
+<div id="treeshower" style='display:none; position:fixed; top:0px; left:0px; right:350px; bottom:50px;'>
+</div>
+</body>
+</html>

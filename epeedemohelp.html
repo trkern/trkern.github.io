@@ -1,0 +1,201 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<title> Electronic Polynomial Educational Experience </title>
+</head>
+<style>
+@font-face {
+	font-family:"qu";
+	src:url("Questrial-Regular.ttf"); //see Questrial.zip
+	font-display: swap;
+	}
+.m {
+	font-family: larger serif;
+	background-color: #EEEEBB;
+	}
+.t {
+	font-family:"qu";
+	background-color: #DDDDDD;
+	}
+blockquote {
+	background-color: #CCDDAA;
+	padding: 20px;
+	border-left: 3px solid #225522;
+	}
+</style>
+<body style='font-family:qu;font-size:larger'>
+<svg width=1400 height=160>
+<g fill="green">
+<circle cx=35 cy=57 r=30> </circle>
+<circle cx=60 cy=32 r=30> </circle>
+<circle cx=110 cy=32 r=30> </circle>
+</g>
+<g style="stroke:black;stroke-width:2">
+<line x1=63 y1=85 x2=57 y2=79></line>
+<line x1=57 y1=85 x2=63 y2=79></line>
+<line x1=55 y1=77 x2=40 y2=62></line>
+<line x1=65 y1=77 x2=80 y2=62></line>
+<line x1=85 y1=53 x2=85 y2=61></line>
+<line x1=81 y1=57 x2=89 y2=57></line>
+<line x1=80 y1=52 x2=65 y2=37></line>
+<line x1=90 y1=52 x2=105 y2=37></line>
+<line x1=60 y1=88 x2=60 y2=147></line>
+</g>
+<text x=90 y=92 style="font-family:qu;font-size:40px"> trkern.github.io/epeedemo </text>
+<text x=90 y=138 style="font-family:qu;font-size:55px"> Electronic Polynomial Educational Experience </text>
+</svg>
+<h1> Introduction </h1>
+Welcome to EPEE, the Electronic Polynomial Educational Experience! This demo is designed to:
+<ul>
+<li> Provide a sense of what the finished product will feel like to use.
+<li> Provide an environment to experiment with the interface.
+<li> Provide an environment to experiment with code structure.
+</ul>
+<h1> Goals </h1>
+<ul>
+<li> Capture key algebraic concepts within the mechanics of the software:
+<ul>
+<li> All of algebra can be done using a small-ish set of very precise rules.
+<li> An algebra problem can be solved in a line-by-line fashion with each line following from the previous line by one of the rules.
+<li> When solving an algebraic problems, some rules, while valid, can lead down dead-ends or otherwise not help in solving the problem.
+<li> If you have an algebraic equation with a generic variable in it, you can plug whatever you like in for that variable to get another true equation.
+<blockquote>
+<b>Example:</b> If you know that <span class="m">x*x = x<sup>2</sup></span>, then you also know that: <span class="m">3*3 = 3<sup>2</sup></span>, <span class="m">y*y = y<sup>2</sup></span>, and <span class="m">(x+1)*(x+1) = (x+1)<sup>2</sup></span>.
+</blockquote>
+<li> If you know that two algebraic expressions are equal, you can replace any instance of one as a subexpression with the other.
+<blockquote>
+<b>Example:</b> If you know that <span class="m">1+2 = 3</span>, then you also know that: <span class="m">x<sup>1+2</sup>=x<sup>3</sup></span>, but you don't know that <span class="m">1+2x = 3x</span>, because <span class="m">1+2</span> does not show up as a subexpression of the latter.
+</blockquote>
+</ul>
+<li> Facilitate self-discovery of problem solving techniques.
+<li> Provide intrinsic rewards (mainly efficiency improvements) for:
+<ul>
+<li> Learning what rules are available
+<li> Learning the names of rules
+<li> Learning how to recognize subexpressions
+<li> Learning what steps to take to solve problems
+<li> Solving problems
+</ul>
+</ul>
+<h1> Walkthrough </h1>
+<ol>
+<li> To the bottom left of the screen you should see the expression <span class="m">x(x+2)+3x</span>. This is the current working expression. Hover your mouse over parts of the expression to highlight selectable subexpressions in blue.
+<li> Move your mouse between the first <span class="m">x</span> and <span class="m">(</span> to highlight <span class="m">x(x+2)</span> and click to select this subexpression.
+<li> To the right of the screen you will see a list of algebra rules, starting with <span class="t">Additive Associativity</span>. Click the title of the rule to shrink the <span class="t">Additive Associativity</span> widget since we won't be using it right away.
+<li> Above the list of rules is a line of tabs. Click the tab with the upwards pointing triangle (<span class="t">Squash All</span>) to hide all the rule widgets.
+<li> In the list of rules, find and click <span class="t">Left Distributivity</span> this will open up the <span class="t">Left Distributivity</span> widget.
+<li> The <span class="t">Left Distributivity</span> rule is that <span class="m">a(b+c) = ab + ac</span>, and this is true no matter what you replace <span class="m">a</span>, <span class="m">b</span>, and <span class="m">c</span> by. Type <span class="m">x</span> into any of the boxes that say <span class="m">a</span> with green borders. This will enter <span class="m">x</span> into all such boxes.
+<li> Type <span class="m">x</span> into any of the boxes that say <span class="m">b</span> with blue borders.
+<li> Type <span class="m">2</span> into any of the boxes that say <span class="m">c</span> with pink borders.
+<li> Entering these values into the rule has given us a specific fact: <span class="m">x(x+2) = x*x+x*2</span>. Make sure <span class="m">x(x+2)</span> is still selected in green in the bottom left, and click <span class="t">Apply Rule</span> in the <span class="t">Left Distributivity</span> widget to apply the rule to this part of the expression.
+<hr>
+<li> The expression in the bottom left should now read <span class="m">(x*x + x*2)+3x</span> and a history of your work should have shown up above it.
+<li> The tabs above the rules allow you to focus in on a specific kind of rules. Click on the <span class="t">Add.</span> tab to show just those rules related to addition.
+<li> Click <span class="t">Additive Associativity</span> to open up the <span class="t">Additive Associativity</span> widget. Our goal is to rework the parentheses of our current expression so we can combine the <span class="m">x*2</span> and <span class="m">3x</span>, and <span class="t">Additive Associativity</span> can do this for us.
+<li> Type <span class="m">x*x</span> into any of the boxes that say <span class="m">a</span> and have a green border.
+<li> Typing in all these formulas can get tedious. Select the subexpression <span class="m">x*2</span> by clicking on the dot between them, and then click the button with the rightward pointing triangle next to <span class="m">b:</span> beneath the <span class="t">Apply Rule</span> button. This should automatically enter <span class="m">x*2</span> into all the boxes corresponding to <span class="m">b</span>.
+<li> Select the subexpression <span class="m">3x</span> by clicking between the <span class="m">3</span> and the <span class="m">x</span>.
+<li> Click the button with the rightward pointing triangle next to <span class="m">c:</span> to enter it into the boxes for <span class="m">x</span>.
+<li> Select the entire expression <span class="m">(x*x+x*2)+3x</span> and click <span class="t">Apply Rule</span>.
+<hr>
+<li> Open up the <span class="t">Multiplicative Commutativity</span> widget under the <span class="t">Mult.</span> tab.
+<li> Select the subexpression <span class="m">x*2</span>. Click the <span class="t">Autofill Top</span> button in the <span class="t">Multiplicative Commutativity</span> widget. This will attempt to fill in the boxes in the rule automatically, and should enter <span class="m">x</span> into the green boxes and <span class="m">2</span> into the blue boxes.
+<li> Click <span class="t">Apply Rule</span>.
+<hr>
+<li> Open up the <span class="t">Right Distributivity</span> widget under the <span class="t">Mult.</span> tab.
+<li> Select the subexpression <span class="m">(2x+3x)</span>.
+<li> Click <span class="t">Autofill Bottom</span>.
+<li> Click <span class="t">Apply Rule</span>.
+<hr>
+<li> Open up the <span class="t">Calculate Sum</span> widget under the <span class="t">Calc.</span> tab.
+<li> Select the subexpression <span class="m">(2+3)</span>.
+<li> Click <span class="t">Autofill Top</span> and then <span class="t">Apply Rule</span>.
+<hr>
+<li> The current expression in the bottom left of the screen should read <span class="m">x*x+5x</span>. We'd like to rewrite <span class="m">x*x</span> as <span class="m">x^2</span>, but this is such a useful fact that we'd like to make a new rule out of it!
+<li> Click the <span class="t">Options</span> button in the top right corner of the screen. It will have three horizontal lines.
+<li> Where it says <span class="t">Enter a new expression:</span> type in <span class="m">x*x</span> and click <span class="t">Save and Start Over</span>.
+<li> Close out of the options window by clicking the <span class="t">X</span> in the top left corner of the options window.
+<li> Open up the <span class="t">One Exponent</span> widget under the <span class="t">Exp.</span> tab.
+<li> Select the first <span class="m">x</span> in the current expression.
+<li> Click <span class="t">Autofill Bottom</span> and then <span class="t">Apply Rule</span>.
+<li> Select the second <span class="m">x</span> in the current expression.
+<li> Click <span class="t">Autofill Bottom</span> and then <span class="t">Apply Rule</span>.
+<li> The current expression should now read <span class="m">x<sup>1</sup>x<sup>1</sup></span>.
+<hr>
+<li> Open up the <span class="t">Product Rule</span> widget under the <span class="t">Exp.</span> tab.
+<li> Select the entire current expression <span class="m">x<sup>1</sup>x<sup>1</sup></span>.
+<li> Click <span class="t">Autofill Top</span> and then <span class="t">Apply Rule</span>.
+<hr>
+<li> Open up the <span class="t">Calculate Sum</span> widget under the <span class="t">Calc.</span> tab.
+<li> Select the exponent <span class="m">1+1</span>.
+<li> Click <span class="t">Autofill Top</span> and then <span class="t">Apply Rule</span>.
+<hr>
+<li> Since we were able to get from <span class="m">x*x</span> to <span class="m">x^2</span>, we've convinced the program that these are equal. We can now make this into a new rule. Open back up the <span class="t">Options</span> window.
+<li> Under <span class="t">Current derivation:</span> next to <span class="m">x*x=x^2</span> click <span class="t">Make into New Rule</span>. Enter the name "Squaring" when the prompt window shows up.
+<li> Now let's go back to our previous problem. Under <span class="t">Saved Derivations</span>, click <span class="t">Save/Load</span> and close out of the <span class="t">Options</span> window.
+<hr>
+<li> Open up the <span class="t">Squaring</span> widget under the <span class="t">Custom</span> tab.
+<li> Select <span class="m">x*x</span>.
+<li> Click <span class="t">Autofill Top</span> and then <span class="t">Apply Rule</span>.
+<li> Huzzah! We now have computed that <span class="m">x(x+2)+3x = x<sup>2</sup>+5x</span>.
+</ol>
+<h1> The Workspace </h1>
+<img src="epeehelp1.png">
+<img src="epeehelp2.png">
+<h1> Using Rules </h1>
+Each rule is based on a fact of algebra. For instance, <span class="t">Additive Associativity</span> (see image above) is based around the fact that <span class="m">(a+b)+c=a+(b+c)</span>.
+This is a specific fact, but it's also true regardless of what you plug in for <span class="m">a</span>, <span class="m">b</span>, or <span class="m">c</span>.
+The rule widgets allow you to plug in whatever you like for these variables by typing it in to any of the boxes corresponding to that variable: in the top of the rule, in the bottom of the rule, or at the bottom of the widget.
+Once you've filled in the rule, you'll know that two specific expressions are equal. If the selected subexpression matches one of those two, either the top or the bottom,
+click on the <span class="t">Apply Rule</span> button to replace the selected subexpression with the expression it is equal to.
+<h2> Efficiency Improvements </h2>
+<ul>
+<li> Typing values into rules by hand is tedious. At the bottom of the rule widget is a series of buttons that will let you automatically enter the selected expression into the text box for a variable. These are marked by a rightward pointing triangle.
+<li> You can also automatically fill in the entire top or bottom of a rule using the <span class="t">Autofill Top</span> and <span class="t">Autofill Bottom</span> buttons. These will attempt to fill in the boxes so that the top or bottom line of the rule matches the selected expression.
+</ul>
+<h2> Long Rules </h2>
+This system was originally designed to handle only binary operations: adding or multiplying together two expressions at a time. However, being able to say that <span class="m">(x+1)(x+1)=x<sup>2</sup>+2x+1</span> is preferable to having to say that <span class="m">(x+1)(x+1) = (x<sup>2</sup>+2x)+1</span>.
+As such, there's a series of experimental special rules under the <span class="t">Long</span> tab which will allow you to work with long sums/products.
+Generally, these rules will try to work with you if you try to <span class="t">Autofill</span> them, and also come with controls for adjusting the rule template.
+<h1> Future Features </h1>
+<ul>
+<li> Allow users to play around in a sandbox with rules that aren't true (particularly common misconceptions), thus introducing users to the idea that one wrong rule will cause everything to be equal to everything else.
+<li> LaTeX output for easy incorporation into papers, homeworks, and instructional materials.
+<li> Optional automatic handling of associativity and commutativity.
+<li> Integrate a tutorial for using the system with an introduction to algebra.
+<li> Accessibility features!
+<li> Optional menu appears on selecting a subexpression with suggested ways of rewriting it.
+<li> Optional showing hidden parentheses on hover.
+<li> Improved parse tree drawing algorithm.
+<li> More intuitive saving of derivations and rules.
+<li> Derivations and rules will be saved between sessions.
+<li> Parser will be able to handle <span class="m">--x</span>.
+<li> Improved line-by-line summaries in the history ("Factored out a common factor of x" instead of "Left Distributivity")
+</ul>
+<h1> Eventual Goals </h1>
+<ul>
+<li> Make the software accessible to as wide an audience as possible, ideally including students of College Algebra (Algebra II) and people who have not used algebra in several decades and want to return to mathematics.
+<li> Streamline the software to allow students at the undergraduate level to perform long verified computations with ease.
+<li> Support a wide variety of mathematical environments
+<ul>
+<li> Rename to the Formal Algebra Reasoning Toolkit (FART)
+<li> Include rules for solving equalities.
+<li> Including rules for division also would require including rules for piecewise functions, and boolean logic, to handle situations like (x)(x+1)/(x)(x+1) which is 1 unless x = 0 OR x = -1.
+<li> Supporting division also requires a typesetting system for fractions.
+<li> Include trigonometric/exponential/logarithmic identities.
+<li> Allow function notation: "let f(x) = x+1" creates a new temporary rule allowing one to replace the x in f(x) = x+1 by any formula, and use the result to replace subexpressions.
+<li> Include differentiation rules.
+<li> Include formal logic rules.
+<li> Include linear algebraic rules.
+<li> Include modular arithmetic rules (specifcally, add 1+1+...+1 = 0).
+<li> Include a typing system to avoid incorrect conclusions (2^(-1) and f^(-1) mean completely different things).
+<li> Include highlighting to facilitate the typing system.
+<li> Support custom environments.
+</ul>
+<li> Develop an online text consisting mainly of interactives, which is integrated with the FART.
+</ul>
+</body>
+</html>

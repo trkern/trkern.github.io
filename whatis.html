@@ -312,8 +312,8 @@ The late Bill Thurston asked me and a classroom full of mathematicians (mainly g
 Below we follow the course of solving a basic math problem:
 
 <br><button onclick='undoa()'>Undo</button><button onclick='redoa()'>Redo</button>
-<div style="position:relative;width:1000;height:360">
-<svg id='svg1' style="width:1000;height:360">
+<div style="position:relative;width:1000px;height:360px">
+<svg id='svg1' style="width:100%;height:100%">
 <defs>
 <marker id="arrow" markerWidth=20 markerHeight=20 orient='auto' refY='10' refX='14'>
 <polyline stroke='black' stroke-width='1' fill='none' points="6,18 14,10 6,2"></polyline>
@@ -386,8 +386,8 @@ solve the problem there (5), and then convert back to get an answer of V.
 The interactive below will walk you through many ways of solving some real-world problems by converting them between different branches of mathematics. Can you think of another way of solving one of these problems?
 
 <br><button onclick='undob()'>Undo</button><button onclick='redob()'>Redo</button>
-<div style="position:relative;width:1200;height:1000">
-<svg id='svg2' style="width:1200;height:1000">
+<div style="position:relative;width:1200px;height:1000px">
+<svg id='svg2' style="width:100%;height:100%">
 <defs>
 <marker id="arrow" markerWidth=20 markerHeight=20 orient='auto' refY='10' refX='14'>
 <polyline stroke='black' stroke-width='1' fill='none' points="6,18 14,10 6,2"></polyline>
@@ -425,7 +425,7 @@ The interactive below will walk you through many ways of solving some real-world
 
 <span id='b1' class='head' style="left:0px;top:2%;width:20%;height:14%;display:initial;">
 <table border=2 class='tab' width=79% style="margin:10% auto">
-<tr class='con'><td><button onclick='chooseb(-1)'>&lt;</button>Choose a Problem<button onclick='chooseb(1)'>&gt;</button></td></tr>
+<tr class='con'><td>Choose a Problem<br><button onclick='chooseb(-1)'>&lt;</button><button onclick='chooseb(1)'>&gt;</button></td></tr>
 <tr><td id='cbtop'>Various Gravity Problems</td></tr>
 <tr class='con'><td>
 <button id='butt1' onclick='nextb(1,6,6)' title="It doesn't matter what rectangle we're trying to maximize the area of, so we can abstract away to a generic geometry problem.">Abstract</button>

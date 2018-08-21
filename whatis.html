@@ -1,0 +1,587 @@
+﻿<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<title> What is Mathematics? </title>
+<script>
+
+function arrow(x1,y1,x2,y2) {
+	var str = "<line x1="+x1+" x2="+x2+" y1="+y1+" y2="+y2+" stroke='black' stroke-width=3 marker-end='url(#arrow)'></line>";
+	return(str);
+	}
+
+function bootsvg1() {
+	var i;
+	var str = "";
+	var w = document.getElementById("svg1").getBoundingClientRect().width;
+	var h = document.getElementById("svg1").getBoundingClientRect().height;
+	for (i = -4; i < h+4; i++) {
+		str += (w/2+2*Math.sin(i/10))+","+ i + " ";
+		}
+	var str2 = str;
+	str2 += "-4," + (h+4) + " ";
+	str2 += "-4,-4";
+	var str3 = "<rect width=100% height=100% style='fill:#DDDDDD'></rect>";
+	document.getElementById("sinus").innerHTML = str3 + "<polyline points='"+str2+"' style='fill:#CCDDAA; stroke:#222255; stroke-width:3'></polyline>";
+	document.getElementById("arrow1").innerHTML = arrow("40%","25%","60%","25%");
+	document.getElementById("arrow2").innerHTML = arrow("75%","40%","75%","60%");
+	document.getElementById("arrow3").innerHTML = arrow("60%","75%","40%","75%");
+	}
+
+function bootsvg2() {
+	var i;
+	var str1 = "";
+	var str2 = "";
+	var str3 = "";
+	var str4 = "";
+	var w = document.getElementById("svg2").getBoundingClientRect().width;
+	var h = document.getElementById("svg2").getBoundingClientRect().height;
+	for (i = -4; i < h+4; i++) {
+		str1 += (.2*w+2*Math.sin(i/10))+","+i+" ";
+		str2 += (.4*w+2*Math.sin(i/10))+","+i+" ";
+		str3 += (.6*w+2*Math.sin(i/10))+","+i+" ";
+		str4 += (.8*w+2*Math.sin(i/10))+","+i+" ";
+		}
+	str1 += "-4,"+(h+4)+" ";
+	str1 += "-4,-4";
+	str2 += "-4,"+(h+4)+" ";
+	str2 += "-4,-4";
+	str3 += "-4,"+(h+4)+" ";
+	str3 += "-4,-4";
+	str4 += "-4,"+(h+4)+" ";
+	str4 += "-4,-4";
+	var str5 = "";
+	str5 = "<rect width=100% height=100% style='fill:#EEEEBB'></rect>";
+	str5 += "<polyline points='"+str4+"' style='fill:#FFCCCC;stroke:#222255; stroke-width:3'></polyline>";
+	str5 += "<polyline points='"+str3+"' style='fill:#BBCCFF;stroke:#222255; stroke-width:3'></polyline>";
+	str5 += "<polyline points='"+str2+"' style='fill:#CCEEFF;stroke:#222255; stroke-width:3'></polyline>";
+	str5 += "<polyline points='"+str1+"' style='fill:#CCDDAA;stroke:#222255; stroke-width:3'></polyline>";
+	document.getElementById("sinus2").innerHTML = str5;
+	document.getElementById("r1").innerHTML = arrow("18%","9%","21.5%","9%");
+	document.getElementById("r2").innerHTML = arrow("38.5%","9%","63%","9%");
+	document.getElementById("r3").innerHTML = arrow("77%","9%","83%","9%");
+	document.getElementById("r4").innerHTML = arrow("70%","14%","70%","19%");
+	document.getElementById("r5").innerHTML = arrow("90%","14%","90%","19%");
+	document.getElementById("r6").innerHTML = arrow("18%","9%","43%","23%");
+	document.getElementById("r7").innerHTML = arrow("57%","23%","63%","23%");
+	document.getElementById("r8").innerHTML = arrow("77%","23%","83%","23%");
+	document.getElementById("r9").innerHTML = "<path d='M "+.43*w+","+.27*h+" C "+.33*w+","+.37*h+" "+.53*w+","+.79*h+" "+.65*w+","+.89*h+"' style='stroke:black;fill:none;stroke-width:3' marker-end='url(#arrow)'></path>";
+	document.getElementById("r10").innerHTML = arrow("63%","27%","58%","32%");
+	document.getElementById("r11").innerHTML = arrow("70%","27%","70%","33%");
+	document.getElementById("r12").innerHTML = arrow("83%","14%","75%","46%");
+	document.getElementById("r13").innerHTML = arrow("85%","27%","78%","61%");
+	document.getElementById("r14").innerHTML = arrow("50%","41%","67%","89%");
+	document.getElementById("r15").innerHTML = arrow("67%","41%","65%","47%");
+	document.getElementById("r16").innerHTML = arrow("65%","55%","65%","61%");
+	document.getElementById("r17").innerHTML = arrow("73%","56%","70%","75%");
+	document.getElementById("r18").innerHTML = arrow("75%","56%","75%","61%");
+	document.getElementById("r19").innerHTML = arrow("65%","69%","67%","75%");
+	document.getElementById("r20").innerHTML = arrow("75%","69%","73%","75%");
+	document.getElementById("r21").innerHTML = arrow("70%","83%","70%","89%");
+	document.getElementById("r22").innerHTML = arrow("63%","93%","17%","93%");
+	for (i = 1; i < 23; i++) {
+		document.getElementById("r"+i).title = i;
+		}
+	}
+
+var achoice = 0;
+
+var achoices = [
+	["Tom has 2 apples and acquires 3 more.<br>How many apples does Tom have now?","5 apples"],
+	["Tom has 2 quarts of water and acquires 3 more.<br>How many quarts of water does Tom have now?", "5 quarts"],
+	["The distance from Oswego, NY to Minetto is 2 miles.<br>The distance from Minetto to Fulton is 3 miles.<br>How far is it from Oswego to Fulton via Minetto?", "5 miles"],
+	["An apple costs 2 dollars.<br>A pear costs 3 dollars.<br>How much does it cost to buy and apple and a pear?", "5 dollars"]
+	];
+
+var aids = ["a1","a2","a3","a4","arrow1","arrow2","arrow3"];
+
+var aclasshistory = [];
+
+var acurrhistory = 0;
+
+function historya() {
+	var i;
+	var l = [];
+	for (i = 0; i < aids.length; i++) {
+		l.push(document.getElementById(aids[i]).getAttribute("class"));
+		}
+	aclasshistory[acurrhistory++] = l;
+	}
+
+function choosea(d) {
+	achoice += d;
+	achoice %= achoices.length;
+	if (achoice < 0) {achoice += achoices.length;}
+	document.getElementById("catop").innerHTML = achoices[achoice][0];
+	document.getElementById("cabot").innerHTML = achoices[achoice][1];
+	}
+
+function nexta(c,a,n) { //c = current, a = arrow, n = next
+	document.getElementById("a"+c).setAttribute("class","tail");
+	document.getElementById("arrow"+a).setAttribute("class","varrow"); //note .className doesn't quite work correctly in svgs
+	document.getElementById("a"+n).setAttribute("class","head");
+	historya();
+	}
+
+function undoa() {
+	if (acurrhistory <= 1) {return;}
+	acurrhistory--;
+	var i;
+	for (i = 0; i < aids.length; i++) {
+		document.getElementById(aids[i]).setAttribute("class",aclasshistory[acurrhistory-1][i]);
+		}
+	}
+
+function redoa() {
+	if (acurrhistory >= aclasshistory.length) {return;}
+	acurrhistory++;
+	var i;
+	for (i = 0; i < aids.length; i++) {
+		document.getElementById(aids[i]).setAttribute("class",aclasshistory[acurrhistory-1][i]);
+		}
+	}
+
+var bchoice = 0;
+
+var bchoices = [
+	["You throw a juggling ball up in the air at 16 ft/s. How long does it take to reach its maximum height?",".5 seconds",0],
+	["You throw a cannon ball up in the air at 16 ft/s. How long does it take to reach its maximum height?",".5 seconds",0],
+	["You throw a bus up in the air at 16 ft/s. How long does it take to reach its maximum height?",".5 seconds",0],
+	["You throw a ball of paper up in the air at 16 ft/s. How long does it take to reach its maximum height?",".5 seconds",0],
+	["You have 2 km of fencing and want to fence the largest possible rectangular field. How long should you make one of the sides of the rectangle?", ".5 km", 1],
+	["You have 1 yard of fencing and want to fence the largest possible rectangular garden in the corner of your yard (so two neigboring sides are already fenced). How long should you make one of the sides of the rectangle?", ".5 yards", 1],
+	];
+
+var bids = [];
+
+var bclasshistory = [];
+
+var bcurrhistory = 0;
+
+var bseen = {};
+
+function bootbids() {
+	var i;
+	for (i = 1; i < 18; i++) {
+		bids.push("b"+i);
+		}
+	for (i = 1; i < 23; i++) {
+		bids.push("r"+i);
+		}
+	}
+
+function handleseenb() {//there are MANY better ways of doing this
+	var n;
+	for (n in bseen) {
+		if (document.getElementById(n).getAttribute("class") == "unseen") {
+			document.getElementById(n).setAttribute("class", "seen");
+			}
+		if (document.getElementById(n).getAttribute("class") == "harrow") {
+			document.getElementById(n).setAttribute("class", "sarrow");
+			}
+		}
+	}
+
+function historyb() {
+	var i;
+	var l = [];
+	for (i = 0; i < bids.length; i++) {
+		l.push(document.getElementById(bids[i]).getAttribute("class"));
+		}
+	bclasshistory[bcurrhistory++] = l;
+	}
+
+function chooseb(d) {
+	bchoice += d;
+	bchoice %= bchoices.length;
+	if (bchoice < 0) {bchoice += bchoices.length;}
+	document.getElementById("cbtop").innerHTML = bchoices[bchoice][0];
+	document.getElementById("cbbot").innerHTML = bchoices[bchoice][1];
+	var k = bchoices[bchoice][2];
+	document.getElementById("butt"+(1-k)).style.display = "none";
+	document.getElementById("butt"+k).style.display = "";
+	}
+
+function nextb(c,a,n) { //c = current, a = arrow, n = next
+	document.getElementById("b"+c).setAttribute("class","tail");
+	document.getElementById("r"+a).setAttribute("class","varrow"); //note .className doesn't quite work correctly in svgs
+	document.getElementById("b"+n).setAttribute("class","head");
+	bseen["b"+n] = true;
+	bseen["r"+a] = true;
+	historyb();
+	bclasshistory.splice(bcurrhistory);
+	}
+
+function undob() {
+	if (bcurrhistory <= 1) {return;}
+	bcurrhistory--;
+	var i;
+	for (i = 0; i < bids.length; i++) {
+		document.getElementById(bids[i]).setAttribute("class",bclasshistory[bcurrhistory-1][i]);
+		}
+	handleseenb();
+	}
+
+function redob() {
+	if (bcurrhistory >= bclasshistory.length) {return;}
+	bcurrhistory++;
+	var i;
+	for (i = 0; i < bids.length; i++) {
+		document.getElementById(bids[i]).setAttribute("class",bclasshistory[bcurrhistory-1][i]);
+		}
+	handleseenb();
+	}
+
+function boot() {
+	bootsvg1();
+	bootsvg2();
+	
+	choosea(0);
+	historya();
+
+	chooseb(0);
+	bootbids();
+	historyb();
+	}
+
+</script>
+<style>
+@font-face {
+	font-family:"e";
+	src:url("EagleLake-Regular.ttf"); //see Eagle_Lake.zip
+	}
+@font-face {
+	font-family:"qu";
+	src:url("Questrial-Regular.ttf"); //see questrial.zip
+	}
+body {
+	font-family: "qu", serif;
+	font-size: large;
+	}
+h1, h2, h3 { font-family: "e", serif;
+	}
+.unseen {
+	display:none;
+	}
+.seen, .tail, .head {
+	position:absolute;
+	display:flex;
+	justify-content:center;
+	align-items:center;
+	}
+.tab {
+	border-collapse:collapse;
+	border: 1px solid black;
+	}
+.tail .tab {
+	background-color:white;
+	}
+.head .tab {
+	background-color:white;
+	border: 3px solid #225522;
+	}
+.seen .con, .tail .con {
+	display:none;
+	}
+.harrow {
+	display:none;
+	}
+.varrow {
+	}
+.sarrow {
+	opacity:.5;
+	}
+td {
+	text-align: center;
+	}
+blockquote {
+	background-color: #CCDDAA;
+	padding: 20px;
+	border-left: 3px solid #225522;
+	}
+</style>
+</head>
+<body onload="boot();" onresize="bootsvg2();">
+<h1> What is Math? </h1>
+The late Bill Thurston asked me and a classroom full of mathematicians (mainly graduate students) "What is Mathematics?". There were nearly as many different responses as there were people in the room. Regardless of your relationship with mathematics, I'm sure you as well can think of a few interesting answers to the question. Here I explore one possible answer.
+
+<h1> There and Back Again </h1>
+
+Below we follow the course of solving a basic math problem:
+
+<br><button onclick='undoa()'>Undo</button><button onclick='redoa()'>Redo</button>
+<div style="position:relative;width:1000;height:360">
+<svg id='svg1' style="width:100%;height:100%">
+<defs>
+<marker id="arrow" markerWidth=20 markerHeight=20 orient='auto' refY='10' refX='14'>
+<polyline stroke='black' stroke-width='1' fill='none' points="6,18 14,10 6,2"></polyline>
+</marker>
+</defs>
+<g id='sinus'></g>
+<text x='25%' y=4 fill="black" text-anchor="middle" alignment-baseline="hanging" style="font-size:larger">Real World</text>
+<text x='75%' y=4 fill="black" text-anchor="middle" alignment-baseline="hanging" style="font-size:larger">Mathematics</text>
+<g id='arrow1' class="harrow"></g>
+<g id='arrow2' class="harrow"></g>
+<g id='arrow3' class="harrow"></g>
+</svg>
+<span id='a1' class='head' style="left:0px;top:0px;width:50%;height:50%;">
+<table border=2 class='tab'>
+<tr class='con'><td><button onclick='choosea(-1)'>&lt;</button>Choose a Problem<button onclick='choosea(1)'>&gt;</button></td></tr>
+<tr><td id='catop' style="height:3.2em"></td></tr>
+<tr class='con'><td><button onclick='nexta(1,1,2)' title="Take a problem and abstract away the real-world content, leaving only the underlying structure. This typically involves a mathematical model, and so is only as correct a step as the model is.">Abstract</button></td></tr>
+</table>
+</span>
+<span id='a2' class='unseen' style="left:50%;top:0px;width:50%;height:50%;">
+<table border=2 class='tab'>
+<tr><td>2 + 3</td></tr>
+<tr class='con'><td><button onclick='nexta(2,2,3)' title="Solve the resulting math problem.">Compute</button></td></tr>
+</table>
+</span>
+<span id='a3' class='unseen' style="left:50%;top:50%;width:50%;height:50%;">
+<table border=2 class='tab'>
+<tr><td>5</td></tr>
+<tr class='con'><td><button onclick='nexta(3,3,4)' title="Put the real-world content back in using our original model.">Interpret</button></td></tr>
+</table>
+</span>
+<span id='a4' class='unseen' style="left:0px;top:50%;width:50%;height:50%;">
+<table border=2 class='tab'>
+<tr><td id='cabot'>5 units</td></tr>
+</table>
+</span>
+</div>
+
+<ol>
+<li> Take a problem and abstract away the real-world content, leaving only the underlying structure. This typically involves a mathematical model, and so is only as correct a step as the model is.
+<li> Solve the resulting math problem.
+<li> Put the real-world content back in using our original model.
+</ol>
+
+Notice that steps 1. and 3. are potentially imprecise, but step 2. is precise.
+We'll see some examples below where converting to a math problem introduces a definite amount of imprecision.
+
+One way to visualize this is as pushing the imprecision to the beginning and end of the problem-solving process:
+<table border=1>
+<tr><td style="background-color:#CCDDAA">1. Convert to a mathematical model<br>(Introduces Error)</td><td style="background-color:#DDDDDD">2. Solve the corresponding math problem<br>(Doesn't Introduce Error)</td><td style="background-color:#CCDDAA">3. Interpret your solution using the model<br>(Introduces Error)</td></tr>
+</table>
+<br>
+As such, my definition for mathematics, at least, the one I'm proposing here, is as follows:
+
+<blockquote>
+<u>Mathematics</u> is the precise, error-free study of abstract structures, relationships, patterns, and quantities, such as those which appear in models of the real world.
+</blockquote>
+
+<h1> Choose-your-own Mathventure </h1>
+
+The pattern above of converting, solving, and converting back shows up <u>within</u> mathematics itself:
+<ul>
+<li>If you were tasked with solving the problem of adding the roman numerals II + III, you would probably first convert to arabic numerals (2+3),
+solve the problem there (5), and then convert back to get an answer of V.
+<li>Many geometry problems can be solved by converting them to algebra problems, solving, and then converting back.
+<li>My Ph.D. Thesis involved converting a problem from logic to a problem about finite automata, solving it there, and then converting back.
+<li>The successful proof of Fermat's Last Theorem (a problem of number theory) involved converting it to a problem involving complex curves and then solving that problem.
+</ul>
+
+The interactive below will walk you through many ways of solving some real-world problems by converting them between different branches of mathematics. Can you think of another way of solving one of these problems?
+
+<br><button onclick='undob()'>Undo</button><button onclick='redob()'>Redo</button>
+<div style="position:relative;width:1200;height:1000">
+<svg id='svg2' style="width:100%;height:100%">
+<defs>
+<marker id="arrow" markerWidth=20 markerHeight=20 orient='auto' refY='10' refX='14'>
+<polyline stroke='black' stroke-width='1' fill='none' points="6,18 14,10 6,2"></polyline>
+</marker>
+</defs>
+<g id="sinus2"></g>
+<text x='10%' y=4 fill="black" text-anchor="middle" alignment-baseline="hanging" style="font-size:larger">Real World</text>
+<text x='30%' y=4 fill="black" text-anchor="middle" alignment-baseline="hanging" style="font-size:larger">Physics</text>
+<text x='50%' y=4 fill="black" text-anchor="middle" alignment-baseline="hanging" style="font-size:larger">Geometry</text>
+<text x='70%' y=4 fill="black" text-anchor="middle" alignment-baseline="hanging" style="font-size:larger">Algebra</text>
+<text x='90%' y=4 fill="black" text-anchor="middle" alignment-baseline="hanging" style="font-size:larger">Calculus</text>
+<g id="r1" class="harrow"></g>
+<g id="r2" class="harrow"></g>
+<g id="r3" class="harrow"></g>
+<g id="r4" class="harrow"></g>
+<g id="r5" class="harrow"></g>
+<g id="r6" class="harrow"></g>
+<g id="r7" class="harrow"></g>
+<g id="r8" class="harrow"></g>
+<g id="r9" class="harrow"></g>
+<g id="r10" class="harrow"></g>
+<g id="r11" class="harrow"></g>
+<g id="r12" class="harrow"></g>
+<g id="r13" class="harrow"></g>
+<g id="r14" class="harrow"></g>
+<g id="r15" class="harrow"></g>
+<g id="r16" class="harrow"></g>
+<g id="r17" class="harrow"></g>
+<g id="r18" class="harrow"></g>
+<g id="r19" class="harrow"></g>
+<g id="r20" class="harrow"></g>
+<g id="r21" class="harrow"></g>
+<g id="r22" class="harrow"></g>
+</svg>
+
+<span id='b1' class='head' style="left:0px;top:2%;width:20%;height:14%;display:initial;">
+<table border=2 class='tab' width=79% style="margin:10% auto">
+<tr class='con'><td><button onclick='chooseb(-1)'>&lt;</button>Choose a Problem<button onclick='chooseb(1)'>&gt;</button></td></tr>
+<tr><td id='cbtop'>Various Gravity Problems</td></tr>
+<tr class='con'><td>
+<button id='butt1' onclick='nextb(1,6,6)' title="It doesn't matter what rectangle we're trying to maximize the area of, so we can abstract away to a generic geometry problem.">Abstract</button>
+<button id='butt0' onclick='nextb(1,1,2)' title="We can abstract away details such as what we're throwing in the air, air resistance, variations in gravity, and other lower-order effects. Note that this model is clearly an approximation: our answer will not be an exact reflection of reality.">Abstract</button>
+</td></tr>
+</table>
+</span>
+
+<span id='b2' class='unseen' style="left:20%;top:2%;width:20%;height:14%;">
+<table border=2 class='tab' width=80%>
+<tr><td>An object thrown upwards at 16 ft/s experiences downward acceleration of 32 ft/s<sup>2</sup>.<br>When does it reach its maximum height?</td></tr>
+<tr class='con'><td>
+<button onclick='nextb(2,2,3)' title="We can use the equation for motion under constant acceleration to turn this into a purely algebraic maximization problem.">Abstract</button>
+</td></tr>
+</table>
+</span>
+
+<span id='b3' class='unseen' style="left:60%;top:2%;width:20%;height:14%;">
+<table border=2 class='tab'>
+<tr><td>Maximize<br>-16x<sup>2</sup>+16x</td></tr>
+<tr class='con'><td>
+<button onclick='nextb(3,4,7)' title="Dividing by 16 doesn't change the value of x that maximizes the expression.">Rewrite</button><br>
+<button onclick='nextb(3,3,4)' title="At the maximum, the derivative is 0 or undefined. So let's find some points that do that.">Use Calculus</button>
+</td></tr>
+</table>
+</span>
+
+<span id='b4' class='unseen' style="left:80%;top:2%;width:20%;height:14%;">
+<table border=2 class='tab'>
+<tr><td>Solve (-16x<sup>2</sup>+16x)' = 0<br>and test</td></tr>
+<tr class='con'><td>
+<button onclick='nextb(4,5,8)' title="Divide both sides of the equation by 16.">Rewrite</button><br>
+<button onclick='nextb(4,12,12)' title="Compute the derivative. There's a chance that something will go wrong, for instance, the point that we find might actually be a minimum (how embarrassing!), or the derivative might be undefined at the maximum. Various tests will ensure that this really is a maximum.">Differentiate</button>
+</td></tr>
+</table>
+</span>
+
+<span id='b5' class='unseen' style="left:0px;top:16%;width:20%;height:14%;">
+<table border=2 class='tab'>
+<tr><td>This box is a ghost and shouldn't be seen</td></tr>
+<tr class='con'><td>
+</td></tr>
+</table>
+</span>
+
+<span id='b6' class='unseen' style="left:40%;top:16%;width:20%;height:14%;">
+<table border=2 class='tab'>
+<tr><td>The length plus width<br>of a rectangle is 1.<br>What is its maximum<br>possible area?</td></tr>
+<tr class='con'><td>
+<button onclick='nextb(6,9,17)' title="Experience with these sorts of geometry problems suggests that the maximum is attained when the rectangle is a square.">Geometric Intuition</button><br>
+<button onclick='nextb(6,7,7)' title="Setting the length of one side to be x, we can write a formula for the area of the rectangle, and use algebra to maximize that formula.">Use Algebra</button>
+</td></tr>
+</table>
+</span>
+
+<span id='b7' class='unseen' style="left:60%;top:16%;width:20%;height:14%;">
+<table border=2 class='tab'>
+<tr><td>Maximize x-x<sup>2</sup></td></tr>
+<tr class='con'><td>
+<button onclick='nextb(7,10,9)' title="We can find some points on the graph of this expression. Since it's a quadratic, the graph is a vertically-oriented parabola. The maximum is attained at the top of the graph, i.e. the vertex of the parabola.">Draw a Graph</button><br>
+<button onclick='nextb(7,11,10)' title="Using some tricky algebra, we can rewrite x-x^2 in a more convenient form.">Complete the Square</button>
+</td></tr>
+</table>
+</span>
+
+<span id='b8' class='unseen' style="left:80%;top:16%;width:20%;height:14%;">
+<table border=2 class='tab'>
+<tr><td>Solve (x-x<sup>2</sup>)' = 0<br>and test</td></tr>
+<tr class='con'><td>
+<button onclick='nextb(8,13,14)' title="Compute the derivative. There's a chance that something will go wrong, for instance, the point that we find might actually be a minimum (how embarrassing!), or the derivative might be undefined at the maximum. Various tests will ensure that this really is a maximum.">Differentiate</button>
+</td></tr>
+</table>
+</span>
+
+<span id='b9' class='unseen' style="left:40%;top:30%;width:20%;height:14%;">
+<table border=2 class='tab'>
+<tr><td>Find the vertex<br>of the vertical parabola<br>passing through<br>(0,0),(1,0),(2,-2)</td></tr>
+<tr class='con'><td>
+<button onclick='nextb(9,14,17)' title="We can locate the vertex of this parabola using a geometric construction. Hint: Vertical parabolic mirrors focus vertical light rays towards their focus, which has the same x-coordinate as the vertex.">Do Geometry</button>
+</td></tr>
+</table>
+</span>
+
+<span id='b10' class='unseen' style="left:60%;top:30%;width:20%;height:14%;">
+<table border=2 class='tab'>
+<tr><td>Maximize<br>-(x-½)<sup>2</sup> + ¼</td></tr>
+<tr class='con'><td>
+<button onclick='nextb(10,15,11)' title="Subtracting 1/4 won't change the x that gives us the maximum value">Rewrite</button>
+</td></tr>
+</table>
+</span>
+
+<span id='b11' class='unseen' style="left:60%;top:44%;width:10%;height:14%;">
+<table border=2 class='tab'>
+<tr><td>Maximize<br>-(x-½)<sup>2</sup></td></tr>
+<tr class='con'><td>
+<button onclick='nextb(11,16,13)' title="If we multiply by -1, we change the problem from finding a maximum to finding a minimum.">Rewrite</button>
+</td></tr>
+</table>
+</span>
+
+<span id='b12' class='unseen' style="left:70%;top:44%;width:10%;height:14%;">
+<table border=2 class='tab'>
+<tr><td>Solve -32x+16=0</td></tr>
+<tr class='con'><td>
+<button onclick='nextb(12,17,15)' title="Divide both sides by -32.">Solve</button><br>
+<button onclick='nextb(12,18,14)' title="Divide both sides by 16.">Rewrite</button>
+</td></tr>
+</table>
+</span>
+
+<span id='b13' class='unseen' style="left:60%;top:58%;width:10%;height:14%;">
+<table border=2 class='tab'>
+<tr><td>Minimize<br>(x-½)<sup>2</sup></td></tr>
+<tr class='con'><td>
+<button onclick='nextb(13,19,15)' title="The smallest possible square is 0.">Rewrite</button>
+</td></tr>
+</table>
+</span>
+
+<span id='b14' class='unseen' style="left:70%;top:58%;width:10%;height:14%;">
+<table border=2 class='tab'>
+<tr><td>Solve<br>1-2x=0</td></tr>
+<tr class='con'><td>
+<button onclick='nextb(14,20,15)' title="Divide both sides by -2.">Rewrite</button>
+</td></tr>
+</table>
+</span>
+
+<span id='b15' class='unseen' style="left:60%;top:72%;width:20%;height:14%;">
+<table border=2 class='tab'>
+<tr><td>Solve<br>x - ½ = 0</td></tr>
+<tr class='con'><td>
+<button onclick='nextb(15,21,17)' title="Add 1/2 to both sides.">Solve</button>
+</td></tr>
+</table>
+</span>
+
+<span id='b16' class='unseen' style="left:0%;top:86%;width:20%;height:14%;">
+<table border=2 class='tab'>
+<tr><td id='cbbot'>Answer</td></tr>
+</table>
+</span>
+
+<span id='b17' class='unseen' style="left:60%;top:86%;width:20%;height:14%;">
+<table border=2 class='tab'>
+<tr><td>x=½</td></tr>
+<tr class='con'><td>
+<button onclick='nextb(17,22,16)' title="Add the real-world content of the original problem back in.">Interpret</button>
+</td></tr>
+</table>
+</span>
+
+</div>
+
+
+
+</body>
+</html>

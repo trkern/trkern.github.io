@@ -1,0 +1,590 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<meta name=description content="When using approximations, it's useful to keep track not only of the approximate value, but also how good the approximation is.">
+<link rel="icon" href="icon.png">
+<title> Reasoning about Approximation </title>
+<script src="math.min.js" type="text/javascript"></script>
+<script src="tgr.js"></script>
+<script>
+var efrac = "718281828459045235360287471352662497757247093699959574966967627724076630353547594571382178525166427427466391932003059921817413596629043572900334295260595630738132328627943490763233829880753195251019011573834187930702154089149934884167509244761460668082264800168477411853742345442437107539077744992069551702761838606261331384583000752044933826560297606737113200709328709127443747047230696977209310141692836819025515108657463772111252389784425056953696770785449969967946864454905987931636889230098793127736178215424999229576351482208269895193668033182528869398496465105820939239829488793320362509443117301238197068416140397019837679320683282376464804295311802328782509819455815301756717361332069811250996181881593041690351598888519345807273866738589422879228499892086805825749279610484198444363463244968487560233624827041978623209002160990235304369941849146314093431738143640546253152096183690888707016768396424378140592714563549061303107208510383750510115747704171898610687396965521267154688957035035";
+var pifrac ="141592653589793238462643383279502884197169399375105820974944592307816406286208998628034825342117067982148086513282306647093844609550582231725359408128481117450284102701938521105559644622948954930381964428810975665933446128475648233786783165271201909145648566923460348610454326648213393607260249141273724587006606315588174881520920962829254091715364367892590360011330530548820466521384146951941511609433057270365759591953092186117381932611793105118548074462379962749567351885752724891227938183011949129833673362440656643086021394946395224737190702179860943702770539217176293176752384674818467669405132000568127145263560827785771342757789609173637178721468440901224953430146549585371050792279689258923542019956112129021960864034418159813629774771309960518707211349999998372978049951059731732816096318595024459455346908302642522308253344685035261931188171010003137838752886587533208381420617177669147303598253490428755468731159562863882353787593751957781857780532171226806613001927876611195909216420199";
+
+var numdigs = 10;
+
+function resetdigs() {
+	numdigs = 10;
+	showdigs();
+	}
+
+function adddig() {
+	numdigs++;
+	showdigs();
+	}
+
+function showdigs() {
+	var en;
+	var pin;
+	var sn;
+	en = efrac.slice(0,numdigs);
+	pin = pifrac.slice(0,numdigs);
+	sn = addnumstrs(en,pin);
+	document.getElementById("ed").innerHTML = "2."+en+"...";
+	document.getElementById("pid").innerHTML = "3."+pin+"...";
+	document.getElementById("sd").innerHTML = "5."+sn+"...";
+	}
+
+function addnumstrs(s1,s2) {//have to be the same length for now, no leading carry
+	var c = 0;
+	var o = "";
+	var i;
+	var t;
+	for (i = s1.length-1; i >= 0; i--) {
+		t = (+s1[i]) + (+s2[i]) +c;
+		if (t >= 10) {t -= 10; c=1;}
+		else {c = 0;}
+		o = "" + t + o;
+		}
+	return(o);
+	}
+
+var grx;
+var gry;
+var grstx;
+var grsty;
+
+function bootgr1() {
+	grx = 10*Math.random()-5;
+	gry = 10*Math.random()-5;
+	tgr_grapher("gr1",[{type:"dot",x:grx,y:gry}]);
+	grstx = grx.toString();
+	grstx = grstx.slice(0,grstx.indexOf(".")+1);
+	document.getElementById("inx").value = grstx;
+	grsty = gry.toString();
+	grsty = grsty.slice(0,grsty.indexOf(".")+1);
+	document.getElementById("iny").value = grsty;
+	}
+
+function grin() {
+	var xin = document.getElementById("inx").value;
+	var yin = document.getElementById("iny").value;
+	if (!xin.startsWith(grstx)) {
+		document.getElementById("inx").value = grstx;
+		}
+	if (grx.toString().startsWith(xin)) {
+		document.getElementById("inx").className="good";
+		}
+	else {
+		document.getElementById("inx").className="bad";
+		}
+	if (!yin.startsWith(grsty)) {
+		document.getElementById("iny").value = grsty;
+		}
+	if (gry.toString().startsWith(yin)) {
+		document.getElementById("iny").className="good";
+		}
+	else {
+		document.getElementById("iny").className="bad";
+		}
+	}
+
+
+var canvx1 = 200;
+var canvy1 = 300;
+var canvx2 = 400;
+var canvy2 = 200;
+
+var canvx1min = 150;
+var canvx1max = 250;
+var canvy1min = 250;
+var canvy1max = 350;
+var canvx2min = 350;
+var canvx2max = 450;
+var canvy2min = 150;
+var canvy2max = 250;
+var canvxorigin = 50;
+var canvyorigin = 350;
+
+var canvx1off = "no";
+var canvy1off = "no";
+var canvx2off = "no";
+var canvy2off = "no";
+
+function mdown(e) {
+	var rect=e.target.getBoundingClientRect();
+	var eX = e.clientX-rect.x;
+	var eY = e.clientY-rect.y;
+	var off1x = eX-canvx1;
+	var off1y = eY-canvy1;
+	var off2x = eX-canvx2;
+	var off2y = eY-canvy2;
+	canvx1off = "no";
+	canvy1off = "no";
+	canvx2off = "no";
+	canvy2off = "no";
+	if (off1x*off1x+off1y*off1y <= 25) {
+		canvx1off = off1x;
+		canvy1off = off1y;
+		}
+	if (off2x*off2x+off2y*off2y <= 25) {
+		canvx2off = off2x;
+		canvy2off = off2y;
+		}
+	}
+
+function mmove(e) {
+	if (canvx1off != "no") {
+		var rect=e.target.getBoundingClientRect();
+		var eX = e.clientX-rect.x;
+		var eY = e.clientY-rect.y;
+		var nx = eX - canvx1off;
+		var ny = eY - canvy1off;
+		canvx1 = Math.max(canvx1min,Math.min(canvx1max,nx));
+		canvy1 = Math.max(canvy1min,Math.min(canvy1max,ny));
+		upcanv();
+		}
+	if (canvx2off != "no") {
+		var rect=e.target.getBoundingClientRect();
+		var eX = e.clientX-rect.x;
+		var eY = e.clientY-rect.y;
+		var nx = eX - canvx2off;
+		var ny = eY - canvy2off;
+		canvx2 = Math.max(canvx2min,Math.min(canvx2max,nx));
+		canvy2 = Math.max(canvy2min,Math.min(canvy2max,ny));
+		upcanv();
+		}
+	}
+
+function mup(e) {
+	canvx1off = "no";
+	canvy1off = "no";
+	canvx2off = "no";
+	canvy2off = "no";
+	}
+
+function upcoords() {
+	var rx1 = ((canvx1 - canvxorigin)/100).toFixed(2);
+	var rx2 = ((canvx2 - canvxorigin)/100).toFixed(2);
+	var ry1 = ((canvy1 - canvyorigin)/(-100)).toFixed(2);
+	var ry2 = ((canvy2 - canvyorigin)/(-100)).toFixed(2);
+	console.log(rx1,ry1,rx2,ry2);
+	}
+
+function upcanv() {
+	var ctx = document.getElementById("canv").getContext("2d");
+	ctx.clearRect(0,0,document.getElementById("canv").width,document.getElementById("canv").height);
+	ctx.lineWidth = 2;
+	var i;
+	ctx.strokeStyle = "#BBBBBB";
+	for (i = 50; i <= 250; i += 100) {
+		ctx.beginPath();
+		ctx.moveTo(0,i);
+		ctx.lineTo(800,i);
+		ctx.stroke();
+		}
+	for (i = 150; i <= 750; i += 100) {
+		ctx.beginPath();
+		ctx.moveTo(i,0);
+		ctx.lineTo(i,400);
+		ctx.stroke();
+		}
+	ctx.strokeStyle = "black";
+	ctx.beginPath();
+	ctx.moveTo(0,350);
+	ctx.lineTo(800,350);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(50,0);
+	ctx.lineTo(50,400);
+	ctx.stroke();
+	ctx.strokeStyle="#4477AA";
+	ctx.strokeRect(canvx1min,canvy1min,canvx1max-canvx1min,canvy1max-canvy1min);
+	ctx.strokeStyle="#CCBB44";
+	ctx.strokeRect(canvx2min,canvy2min,canvx2max-canvx2min,canvy2max-canvy2min);
+	ctx.beginPath();
+	ctx.strokeStyle="#AA3377";
+	ctx.moveTo(canvx1,canvy1);
+	ctx.lineTo(canvx2,canvy2);
+	ctx.stroke();
+	ctx.strokeStyle="black";
+	ctx.beginPath();
+	ctx.fillStyle = "black";
+	ctx.arc(canvxorigin,canvyorigin,5,0,2*Math.PI);
+	ctx.fill();
+	ctx.beginPath();
+	ctx.fillStyle = "#4477AA";
+	ctx.arc(canvx1,canvy1,5,0,2*Math.PI);
+	ctx.fill();
+	ctx.beginPath();
+	ctx.fillStyle = "#CCBB44";
+	ctx.arc(canvx2,canvy2,5,0,2*Math.PI);
+	ctx.fill();
+	ctx.beginPath();
+	ctx.fillStyle = "#66CCEE";
+	ctx.arc((canvx1+canvx2)/2,(canvy1+canvy2)/2,5,0,2*Math.PI);
+	ctx.fill();
+	ctx.beginPath();
+	ctx.fillStyle = "#228833";
+	ctx.arc(canvx1+canvx2-canvxorigin,canvy1+canvy2-canvyorigin,5,0,2*Math.PI);
+	ctx.fill();
+	var rx1 = ((canvx1 - canvxorigin)/100);
+	var rx2 = ((canvx2 - canvxorigin)/100);
+	var ry1 = ((canvy1 - canvyorigin)/(-100));
+	var ry2 = ((canvy2 - canvyorigin)/(-100));
+	ctx.fillStyle="black";
+	ctx.font="18px serif";
+	ctx.textBaseline="top"; 
+	/*ctx.fillText("("+rx1.toFixed(2)+","+ry1.toFixed(2)+")",canvx1,canvy1);
+	ctx.fillText("("+rx2.toFixed(2)+","+ry2.toFixed(2)+")",canvx2,canvy2);
+	ctx.fillText("("+((rx1+rx2)/2).toFixed(2)+","+((ry1+ry2)/2).toFixed(2)+")",(canvx1+canvx2)/2,(canvy1+canvy2)/2);
+	ctx.fillText("("+(rx1+rx2).toFixed(2)+","+(ry1+ry2).toFixed(2)+")",canvx1+canvx2-canvxorigin,canvy1+canvy2-canvyorigin);
+	ctx.fillText("Distance: " + Math.sqrt((rx1-rx2)*(rx1-rx2)+(ry1-ry2)*(ry1-ry2)).toFixed(5) + "...",60,60);*/
+	ctx.fillText(" Pt.1",canvx1,canvy1);
+	ctx.fillText(" Pt.2",canvx2,canvy2);
+	ctx.fillText(" Mid.",(canvx1+canvx2)/2,(canvy1+canvy2)/2);
+	ctx.fillText(" Sum",canvx1+canvx2-canvxorigin,canvy1+canvy2-canvyorigin);
+	document.getElementById("canvdata1").innerHTML = "("+rx1.toFixed(2)+","+ry1.toFixed(2)+")";
+	document.getElementById("canvdata2").innerHTML = "("+rx2.toFixed(2)+","+ry2.toFixed(2)+")";
+	document.getElementById("canvdata3").innerHTML = Math.sqrt((rx1-rx2)*(rx1-rx2)+(ry1-ry2)*(ry1-ry2)).toFixed(5) + "...";
+	document.getElementById("canvdata4").innerHTML = "("+((rx1+rx2)/2).toFixed(2)+","+((ry1+ry2)/2).toFixed(2)+")";
+	document.getElementById("canvdata5").innerHTML = "("+(rx1+rx2).toFixed(2)+","+(ry1+ry2).toFixed(2)+")";
+	}
+
+var xresizemode = 0;
+var padxmin = -1;
+var padxmax = 2;
+var padymin = 0;
+var padymax = 0;
+
+function mathjsfct(str) {
+	var f = math.compile(str);
+	return(function(ooo){return(f.eval({x:ooo}));});
+	}
+
+function carnivalfunction() {
+	var str = document.getElementById("carnivalfun").value;
+	return(mathjsfct(str));
+	}
+
+function updatecarnivalfun() {
+	var f = carnivalfunction();
+	var i;
+	var x;
+	var l = [{type:"plot", fct:carnivalfunction()}];
+	for (i = 0; i <= 500; i++) {
+		x = i*(padxmax-padxmin)/500 + padxmin;
+		l.push({type:"line", x:x, y:-Infinity, x2:x, y2:f(x), color:"rgba(255,0,0,.1)"});
+		l.push({type:"line", x:x, y:f(x), x2:Infinity, y2:f(x), color:"rgba(0,0,255,.1)"});
+		}
+	tgr_update_grapher_objs("gr2", l);
+	}
+
+function drawpaddle() {
+	var pd = tgr_graph_array["gr2"].plotdata;
+	var ctxx = document.getElementById("xbar").getContext("2d");
+	var cmin = tgr_tocanv([padxmin,padymin],pd);
+	var cmax = tgr_tocanv([padxmax,padymax],pd);
+	ctxx.clearRect(0, 0, ctxx.canvas.width, ctxx.canvas.height);
+	ctxx.strokeStyle = "black";
+	ctxx.lineWidth = 2;
+	ctxx.beginPath();
+	ctxx.moveTo(cmin[0],4);
+	ctxx.lineTo(cmin[0],16);
+	ctxx.lineTo(cmax[0],16);
+	ctxx.lineTo(cmax[0],4);
+	ctxx.stroke();
+	}
+
+function xbarmleave(e) {
+	if (xresizemode == 0) {document.body.style.cursor = "auto";}
+	}
+
+function xbarmmove(e) {
+	e.preventDefault();
+	var pd = tgr_graph_array["gr2"].plotdata;
+	var cmin = tgr_tocanv([padxmin,padymin],pd)[0];
+	var cmax = tgr_tocanv([padxmax,padymax],pd)[0];
+	var rect=document.getElementById("xbar").getBoundingClientRect();
+	var eX = e.clientX-rect.x;
+	var eY = e.clientY-rect.y;
+	var w = 3;
+	if (xresizemode != 0) {
+		document.body.style.cursor = "col-resize";
+		}
+	else if (eX < cmin + w && eX > cmin - w) {
+		document.body.style.cursor = "col-resize";
+		}
+	else if (eX < cmax + w && eX > cmax - w) {
+		document.body.style.cursor = "col-resize";
+		}
+	else {
+		document.body.style.cursor = "auto";
+		}
+	var wall;
+	if (xresizemode == 1) {
+		wall = padxmax;
+		padxmin = Math.min(Math.max(pd.xmin,tgr_fromcanv([eX,0],pd)[0]),wall);
+		drawpaddle();
+		updatecarnivalfun();
+		}
+	if (xresizemode == 2) {
+		wall = padxmin;
+		padxmax = Math.max(Math.min(pd.xmax,tgr_fromcanv([eX,0],pd)[0]),wall);
+		drawpaddle();
+		updatecarnivalfun();
+		}
+	}
+
+function xbarmdown(e) {
+	e.preventDefault();
+	var pd = tgr_graph_array["gr2"].plotdata;
+	var cmin = tgr_tocanv([padxmin,padymin],pd)[0];
+	var cmax = tgr_tocanv([padxmax,padymax],pd)[0];
+	var rect=e.target.getBoundingClientRect();
+	var eX = e.clientX-rect.x;
+	var eY = e.clientY-rect.y;
+	var w = 3;
+	if (eX < cmin + w && eX > cmin - w) {
+		xresizemode = 1;
+		window.addEventListener("mousemove",xbarmmove);
+		window.addEventListener("mouseup",xbarmup);
+		}
+	else if (eX < cmax + w && eX > cmax - w) {
+		xresizemode = 2;
+		window.addEventListener("mousemove",xbarmmove);
+		window.addEventListener("mouseup",xbarmup);
+		}
+	else {
+		xresizemode = 0;
+		}
+	}
+
+function xbarmup(e) {
+	e.preventDefault();
+	xresizemode = 0;
+	document.body.style.cursor = "auto";
+	window.removeEventListener("mousemove",xbarmmove);
+	window.removeEventListener("mouseup",xbarmup);
+	}
+
+function bootgr2() {
+	tgr_grapher("gr2", [],{width:500, height:500, ctarg:"ct", on_redraw:drawpaddle});
+	updatecarnivalfun();
+	}
+
+function boot() {
+	resetdigs();
+	bootgr1();
+	grin();
+	upcanv();
+	bootgr2();
+	}
+
+</script>
+<style>
+/*@font-face {
+	font-family:"qu";
+	src:url("Questrial-Regular.ttf"); //see questrial.zip
+	}
+body {
+	font-family: "qu", serif;
+	font-size: large;
+	}*/
+blockquote {
+	background-color: #CCDDAA;
+	padding: 20px;
+	border-left: 3px solid #225522;
+	}
+.question:before {
+	color: #225522;
+	content: 'Q: ';
+	font-size:xx-large;
+	line-height:0em;
+	}
+.bad {
+	background-color:#FFCCCC;
+	}
+.bad+span:after {
+	content:"\2717";
+	}
+.good {
+	background-color:#BBCCEE;
+	}
+.good+span:after {
+	content:"\2713";
+	}
+
+.spacer {
+	height:20em;
+	margin-bottom:-21em;"
+	}
+
+</style>
+</head>
+<body onload="boot()">
+<h1>Real Numbers</h1>
+Stop for a moment and ponder the following question:
+
+<blockquote class="question">
+What is e + &pi;? What could an answer to this question even look like?
+<button onclick="document.getElementById('next1').style.display='';"> Go on </button>
+</blockquote>
+
+<div class="spacer"></div>
+<div id="next1" style="display:none">
+
+<p>One possible solution is to give a decimal approximation to the result. 
+The decimal expansions for e and &pi; are infinite, so there's no way of reporting all of the digits of e + &pi;.
+<span title = "Actually, we aren't currently certain that e + pi isn't rational, that is, its decimal digits might start repeating forever at some point." style='color:blue'>[<u>?</u>]</span>
+But we could report some of those digits and that would tell us some important things about the number, such as how it compared to other numbers.</p>
+
+<p> How could we compute that sum? We could take the first [some number] of digits of e and the first [some number] of digits of &pi; and add them, then report the answer.
+</p>
+
+<table border=1>
+<tr> <td> e = </td><td id="ed" style="font:large monospace"></td></tr>
+<tr> <td> &pi; = </td><td id="pid" style="font:large monospace"></td></tr>
+<tr> <td> e + &pi; = </td><td id="sd" style="font:large monospace"></td></tr>
+</table> <button onclick="resetdigs();">Reset</button><button onclick="adddig()">+</button>
+
+<p> Pay careful attention to what occasionally happens with the digits of the sum (including the first time you add a digit). 
+How awful! Not only can we not report all of the digits, but we're sometimes not even reporting the right digits!
+</p>
+
+<blockquote class="question">
+How could you tell if a digit of the sum above is safe to report, that is, how do you know it's actually a digit of the actual sum?
+<button onclick="numdigs=63;showdigs()">Hint</button>
+</blockquote>
+
+<h1> Measurement </h2>
+
+<p>
+Real world measured values behave similarly to e and &pi;: we can't have all of the digits at once, but we can have as many digits as we want.
+<span title = "Up until the Planck length, where our typical model of the structure of physical space breaks down." style='color:blue'>[<u>?</u>]</span>
+</p>
+
+<p> Shown below is the coordinate plane with a random point highlighted. 
+Zoom in using the scroll wheel or buttons below to try to figure out as many digits of its x and y coordinates as possible, and enter them in the text boxes below.
+<span title = "Due to how the computer deals with numbers, you'll only be able to zoom in to a certain number of digits, 
+but you can pretend that it keeps going forever." style='color:blue'>[<u>?</u>]</span>
+
+</p>
+
+x:<input type="text" oninput="grin()" id="inx" class="good" style="width:8em"></input><span></span>
+y:<input type="text" oninput="grin()" id="iny" class="good" style="width:8em"></input><span></span>
+<div id="gr1"> </div>
+
+<blockquote class="question">
+Saying that the decimal digits of &pi; starts with 3.1415 is the same as saying that &pi; is between what two numbers? 
+<button onclick="document.getElementById('next2').style.display='';"> Go on </button>
+</blockquote>
+
+<div class="spacer"></div>
+<div id="next2" style="display:none">
+
+<h1 id="title2"> Interval Arithmetic </h1>
+
+<p>Similar to talking about real numbers in terms of their decimal digits, we can also talk about real numbers as falling into intervals of values
+with the endpoints of those intervals being some particularly nice numbers, such as those with only finitely many decimal digits.
+For instance, we can talk about &pi; as being somewhere in the interval [3.1415,3.1416], that is, &pi; is somewhere between 3.1415 and 3.1416.</p>
+
+<p>Interval arithmetic then allows us to use these intervals to figure out what intervals other numbers fall into.</p>
+
+<blockquote class="question">
+Just knowing that &pi; falls between 3.1415 and 3.1416, and that e falls between 2.7182 and 2.7183, what is the largest and smallest possible value e+&pi; could be?
+</blockquote>
+
+<p>
+It might be easier to answer this sort of question if we used variables instead of constants that have fixed values:
+</p>
+<blockquote class="question">
+Just knowing that a falls between 1 and 2, and that b falls between 3 and 4, what is the largest and smallest possible value a+b could be?
+</blockquote>
+<p>
+The interactive below will allow you to explore this problem on the x-axis: The x-coordinate of Point 1 is restricted to being between 1 and 2 and the
+x-coordinate of Point 2 is restricted to being between 3 and 4. Click and drag the points to change their x-coordinates and the point marked "Sum" will move so that
+its x-coordinate is the sum of the x-coordinates of Points 1 and 2. What is the largest value you can get the x-coordinate of the Sum to be? What is the smallest?
+</p>
+
+<p> At the same time, a similar problem is happening in the y direction, and the midpoint and distance between the two points is also shown.
+You can ask similar questions about the midpoint and distance: 
+<ul>
+<li> What is the largest and smallest possible value of the x-coordinate of the Midpoint?
+<li> What is the largest and smallest possible value of the y-coordinate of the Midpoint?
+<li> What is the largest and smallest possible value of the distance between the two points?
+</ul>
+</p>
+
+<canvas id="canv" width=800 height=400 style="border:1px solid" onmousedown="mdown(event)" onmousemove="mmove(event)" onmouseup="mup(event)" onmouseleave="mup(event)"></canvas>
+<br>
+<svg width=.8em height=.8em><circle cx="50%" cy="50%" r="50%" fill="#4477AA"></circle></svg> (drag to adjust) Point 1: <span id="canvdata1" style="vertical-align:middle;"></span><br>
+<svg width=.8em height=.8em><circle cx="50%" cy="50%" r="50%" fill="#CCBB44"></circle></svg> (drag to adjust) Point 2: <span id="canvdata2" style="vertical-align:middle;"></span><br>
+<svg width=.8em height=.8em><circle cx="50%" cy="50%" r="50%" fill="#AA3377"></circle></svg> Distance: <span id="canvdata3" style="vertical-align:middle;"></span><br>
+<svg width=.8em height=.8em><circle cx="50%" cy="50%" r="50%" fill="#66CCEE"></circle></svg> Midpoint: <span id="canvdata4" style="vertical-align:middle;"></span><br>
+<svg width=.8em height=.8em><circle cx="50%" cy="50%" r="50%" fill="#228833"></circle></svg> Sum: <span id="canvdata5" style="vertical-align:middle;"></span><br>
+
+<p> Once you know a range that a value falls into, you can figure out what you know about its decimal digits. 
+For instance, once we know that e+&pi; falls between 5.8597 and 5.8599, we are certain that its decimal expansion starts with 5.859,
+and that the ten thousandths digit is either 7 or 8.
+</p>
+
+<h1> Advanced Interval Arithmetic </h1>
+
+<p>
+One may get the impression of interval arithmetic as being really quite easy from the interactive above. 
+To figure out the largest possible value of a + b, simply add the largest possible value of a and the largest possible value of b.
+To figure out the smallest possible value of a + b, simply add the smallest possible values of a and b. 
+The range of possible values of a + b is then the interval from the smallest value of a + b to the largest.
+</p>
+
+<p>
+But some situations require a more subtle approach:
+</p>
+
+<blockquote class="question">
+Knowing that a is between -1 and 2, what are the possible values of a<sup>2</sup>?
+<button onclick="document.getElementById('next3').style.display='';"> Go on </button>
+</blockquote>
+
+<div class="spacer"></div>
+<div id="next3" style="display:none">
+<p>
+The interactive below will allow you to explore these sorts of questions. 
+You can adjust the left and right end of the bar below the function by clicking and dragging the bars at the ends.
+This will change the interval of input values, and you can watch as the interval of corresponding output values changes.
+</p>
+<table>
+<tr> <td>
+<div id="gr2"></div>
+</td><td style='vertical-align:top;'>
+Enter a function: <br>
+<input type="text" id="carnivalfun" value="x^2" onchange="updatecarnivalfun()"></input>
+</td></tr>
+<tr> <td style='vertical-align:top;'>
+<canvas width=500 height=20 style="border:1px solid;" id="xbar" onmousedown="xbarmdown(event)" onmousemove="xbarmmove(event)"
+onmouseup="xbarmup(event)" onmouseleave="xbarmleave(event)"> </canvas>
+</td><td>
+<span id="ct"></span>
+</td></tr>
+</table>
+
+<h1> Summary </h1>
+
+<ul>
+<li> Many situations, such as infinite decimals and real-world measurements, require us to use numerical approximations.
+<li> When using these sorts of approximations, it's useful to keep track not only of the approximate value, but also how good the approximation is.
+<li> We can do this by:
+<ul>
+<li> Keeping track of which decimal digits we're absolutely confident of.
+<li> Keeping track of an interval of values we know that the true value falls into.
+</ul>
+</ul>
+
+</div>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,289 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name=description content="An Interactive about Rotation">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<title> Trigonometric Sum Formulas </title>
+<script>
+var a;
+var b;
+var z = 250;
+var selline = -1;
+
+function numtoch(i) {
+	return(String.fromCharCode(64+i));
+	}
+
+function drawline(c,p1,p2,ix) {
+	if (ix && (ix == selline)) {
+		c.strokeStyle = "blue";
+		}
+	c.beginPath();
+	c.moveTo(z*p1[0]+z,-z*p1[1]+z);
+	c.lineTo(z*p2[0]+z,-z*p2[1]+z);
+	c.stroke();
+	if (ix) {
+		lines.push([[z*p1[0]+z,-z*p1[1]+z],[z*p2[0]+z,-z*p2[1]+z],ix]);
+		c.font = "16px serif";
+		c.beginPath();
+		c.fillStyle = "black";
+		c.textAlign = "center";
+		c.textBaseline = "middle";
+		c.strokeStyle= "white";
+		c.lineWidth= 7;
+		c.strokeText(numtoch(ix),z*(p1[0]+p2[0])/2+z,-z*(p1[1]+p2[1])/2+z);
+		c.fillText(numtoch(ix),z*(p1[0]+p2[0])/2+z,-z*(p1[1]+p2[1])/2+z);
+		c.strokeStyle="black";
+		c.lineWidth=2;
+		}
+	return([z*p1[0]+z,-z*p1[1]+z,z*p2[0]+z,-z*p2[1]+z]);
+	}
+
+function dist(pt1,pt2) {
+	return(Math.sqrt((pt1[0]-pt2[0])*(pt1[0]-pt2[0]) + (pt1[1]-pt2[1])*(pt1[1]-pt2[1])));
+	}
+
+function drawarrow(ctx,p1,p2,ix) {
+	if (ix && ix == selline) {
+		ctx.strokeStyle = "blue";
+		ctx.fillStyle="blue";
+		}
+	var pt1 = [z*p1[0]+z,-z*p1[1]+z];
+	var pt2 = [z*p2[0]+z,-z*p2[1]+z];
+	var lg = dist(pt1,pt2);
+	var x = 5*(pt1[0]-pt2[0])/lg;
+	var y = 5*(pt1[1]-pt2[1])/lg;
+	ctx.beginPath();
+	ctx.moveTo(pt1[0],pt1[1]);
+	ctx.lineTo(pt2[0]+x,pt2[1]+y);
+	ctx.stroke();
+	ctx.moveTo(pt2[0],pt2[1]);
+	ctx.lineTo(pt2[0]+2*x+y,pt2[1]+2*y-x);
+	ctx.lineTo(pt2[0]+2*x-y,pt2[1]+2*y+x);
+	ctx.lineTo(pt2[0],pt2[1]);
+	ctx.fill();
+	if (ix) {
+		lines.push([[z*p1[0]+z,-z*p1[1]+z],[z*p2[0]+z,-z*p2[1]+z],ix]);
+		ctx.font = "16px serif";
+		ctx.beginPath();
+		ctx.fillStyle = "black";
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+		ctx.strokeStyle= "white";
+		ctx.lineWidth= 7;
+		ctx.strokeText(numtoch(ix),z*(p1[0]+p2[0])/2+z,-z*(p1[1]+p2[1])/2+z);
+		ctx.fillText(numtoch(ix),z*(p1[0]+p2[0])/2+z,-z*(p1[1]+p2[1])/2+z);
+		ctx.strokeStyle="black";
+		ctx.lineWidth=1;
+		}
+	return([z*p1[0]+z,-z*p1[1]+z,z*p2[0]+z,-z*p2[1]+z]);
+	}
+
+var lines = [];
+
+function drawcanv() {
+	lines = [];
+	var ctx = document.getElementById("cv").getContext("2d");
+	ctx.clearRect(0,0,2.4*z,2.4*z);
+	ctx.lineWidth=2;
+	var O = [0,0];
+	var P = [Math.cos(a)*Math.cos(b),Math.sin(a)*Math.cos(b)];
+	var Q = [Math.cos(a+b),Math.sin(a+b)];
+	drawline(ctx,O,P,2);
+	drawline(ctx,O,Q,1);
+	drawline(ctx,P,Q,3);
+	ctx.lineWidth=1;
+	var maxy = Math.min(0,Math.sin(a)*Math.cos(b),Math.sin(a+b));
+	var maxx = Math.max(0,Math.cos(a)*Math.cos(b),Math.cos(a+b));
+	drawline(ctx,O,[0,maxy-.3],0);
+	drawline(ctx,[P[0],P[1]+.3],[P[0],maxy-.2],0);
+	drawline(ctx,Q,[Q[0],maxy-.3],0);
+	drawarrow(ctx,[0,maxy-.05],[P[0],maxy-.05],4);
+	drawarrow(ctx,[0,maxy-.25],[Q[0],maxy-.25],6);
+	drawarrow(ctx,[P[0],maxy-.15],[Q[0],maxy-.15],5);
+	drawline(ctx,O,[maxx+.3,0]);
+	drawline(ctx,P,[maxx+.2,P[1]]);
+	drawline(ctx,Q,[maxx+.3,Q[1]]);
+	drawarrow(ctx,[maxx+.05,0],[maxx+.05,P[1]],7);
+	drawarrow(ctx,[maxx+.25,0],[maxx+.25,Q[1]],9);
+	drawarrow(ctx,[maxx+.15,P[1]],[maxx+.15,Q[1]],8);
+	ctx.strokeStyle="black";
+	ctx.fillStyle="black";
+	var lg = dist(Q,P);
+	var ox = .1*(Q[0]-P[0])/lg;
+	var oy = .1*(Q[1]-P[1])/lg;
+	if (dist(Q,P) < .2 || dist(O,P) <.2) {
+		var ll = Math.min(dist(Q,P),dist(O,P));
+		var ox = .5*ll*(Q[0]-P[0])/lg;
+		var oy = .5*ll*(Q[1]-P[1])/lg;
+		}
+	if (b >= 0 && b < Math.PI/2) {
+		drawline(ctx,[P[0]+ox,P[1]+oy],[P[0]+ox-oy,P[1]+oy+ox]);
+		drawline(ctx,[P[0]-oy,P[1]+ox],[P[0]+ox-oy,P[1]+oy+ox]);
+		}
+	if (b >= Math.PI/2 && b < Math.PI) {
+		drawline(ctx,[P[0]+ox,P[1]+oy],[P[0]+ox+oy,P[1]+oy-ox]);
+		drawline(ctx,[P[0]+oy,P[1]-ox],[P[0]+ox+oy,P[1]+oy-ox]);
+		}
+	if (b >= Math.PI && b < 3*Math.PI/2) {
+		drawline(ctx,[P[0]+ox,P[1]+oy],[P[0]+ox-oy,P[1]+oy+ox]);
+		drawline(ctx,[P[0]-oy,P[1]+ox],[P[0]+ox-oy,P[1]+oy+ox]);	
+		}
+	if (b >= 3*Math.PI/2 && b < 2*Math.PI) {
+		drawline(ctx,[P[0]+ox,P[1]+oy],[P[0]+ox+oy,P[1]+oy-ox]);
+		drawline(ctx,[P[0]+oy,P[1]-ox],[P[0]+ox+oy,P[1]+oy-ox]);	
+		}
+	ctx.beginPath();
+	ctx.arc(z,z,.08*z,0,-a,true);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.arc(z,z,.12*z,-a,-a-b,true);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.arc(z*P[0]+z,-z*P[1]+z,.08*z,-Math.PI/2,-Math.PI/2-a,true);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(z,z);
+	ctx.lineTo(z+.12*z*Math.cos(a),z-.12*z*Math.sin(a));
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(z*P[0]+z,-z*P[1]+z);
+	ctx.lineTo(z*P[0]+z-.08*z*Math.sin(a),-z*P[1]+z-.08*z*Math.cos(a));
+	ctx.stroke();
+	ctx.font = "10px serif";
+	ctx.beginPath();
+	ctx.fillStyle = "black";
+	ctx.textAlign = "center";
+	ctx.textBaseline = "middle";
+	ctx.strokeStyle= "white";
+	ctx.lineWidth= 2;
+	ctx.strokeText("a",z+.08*z*Math.cos(a/2),z-.08*z*Math.sin(a/2));
+	ctx.fillText("a",z+.08*z*Math.cos(a/2),z-.08*z*Math.sin(a/2));
+	ctx.strokeText("b",z+.12*z*Math.cos(b/2+a),z-.12*z*Math.sin(b/2+a));
+	ctx.fillText("b",z+.12*z*Math.cos(b/2+a),z-.12*z*Math.sin(b/2+a));
+	ctx.strokeStyle="black";
+	ctx.lineWidth=1;
+	}
+
+function line_to_point_dist_squared(ix1,iy1,ix2,iy2,ixp,iyp) {
+	var x1 = ix1-ix2;
+	var xp = ixp-ix2;
+	var y1 = iy1-iy2;
+	var yp = iyp-iy2;
+	var t = (xp*x1+yp*y1)/(x1*x1+y1*y1);
+	if (t < 0) {
+		return(xp*xp+yp*yp);
+		}
+	if (t > 1) {
+		return((x1-xp)*(x1-xp)+(y1-yp)*(y1-yp));
+		}
+	return((xp*y1-x1*yp)*(xp*y1-x1*yp)/(x1*x1+y1*y1));
+	}
+
+function mm(e) {
+	var rect=document.getElementById("cv").getBoundingClientRect();
+	var eX = e.clientX-rect.x;
+	var eY = e.clientY-rect.y;
+	var mind = .01*z*z;
+	var minl = -1;
+	var t;
+	for (i = 0; i < lines.length; i++) {
+		t = line_to_point_dist_squared(...lines[i][0],...lines[i][1],eX,eY);
+		if (t < mind) {
+			minl = lines[i][2];
+			mind = t;
+			}
+		}
+	selline = minl;
+	update();
+	}
+
+function update() {
+	a = Number(document.getElementById("sla").value);
+	b = Number(document.getElementById("slb").value);
+	drawcanv();
+	}
+
+var answers = [
+	["",-1],
+	["Sin(a)",-1],
+	["Sin(b)",3],
+	["Cos(a)",-1],
+	["Cos(b)",2],
+	["Sin(a+b)",9],
+	["Cos(a+b)",6],
+	["Cos(a)Cos(b)",4],
+	["Cos(a)Sin(b)",8],
+	["Sin(a)Cos(b)",7],
+	["Sin(a)Sin(b)",5]
+	];
+
+function hi(i) {
+	selline = i;
+	update();
+	}
+
+function selchk(ix) {
+	if (document.getElementById("selector"+ix).value == ix) {
+		document.getElementById("selector"+ix).className = "good";
+		}
+	else {
+		document.getElementById("selector"+ix).className = "bad";
+		}
+	}
+
+function selector(ix) {
+	var str = "<select id='selector"+ix+"' oninput='selchk("+ix+")'>";
+	var i;
+	for (i = 0; i < answers.length; i++) {
+		str += "<option value="+answers[i][1]+">"+answers[i][0]+"</option>";
+		}
+	str += "</select><span></span>";
+	return(str);
+	}
+
+function bootnumbers() {
+	var str = "";
+	var i;
+	for (i = 1; i <= 9; i++) {
+		str += "<br><span id='n"+i+"' onmouseover='hi("+i+")' onmouseout='hi(-1)'>";
+		str += numtoch(i) + " = ";
+		if (i == 1) {str += "1";}
+		else {
+			str += selector(i);
+			}
+		str += "</span>";
+		}
+	document.getElementById("numbers").innerHTML = str;
+	}
+
+</script>
+<style>
+.bad {
+	background-color:#FFCCCC;
+	}
+.bad+span:after {
+	content:"\2717";
+	}
+.good {
+	background-color:#BBCCEE;
+	}
+.good+span:after {
+	content:"\2713";
+	}
+</style>
+</head>
+<body onload="bootnumbers();update();">
+<table border=1>
+<tr><td>
+<canvas id="cv" width=600 height=600 onmousemove="mm(event)"></canvas>
+</td><td style="vertical-align:top">
+<span id="numbers"></span>
+<br>a: <input style="vertical-align:middle" type="range" min=0 max=6.28 step=.01 value=.7 id="sla" oninput="update()">
+<br>b: <input style="vertical-align:middle" type="range" min=0 max=6.28 step=.01 value=.5 id="slb" oninput="update()">
+</td></tr>
+</table>
+</body>
+</html>

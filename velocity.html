@@ -1,0 +1,1187 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="car.png">
+<link rel="image_src" href="velocity.png">
+<meta name=description content="">
+<title> Velocity </title>
+<script src="math.min.js" type="text/javascript"></script>
+<script src="tgr.js"></script>
+<script>
+
+var carx = 0;
+var cartv = 0;
+var carmode = false;
+var cari = false;
+var keysdown = [0,0,0,0];
+var gplist = [];
+var gvlist = [];
+var carback;
+var gpback;
+var gvback;
+var grxresizemode = 0;
+var grxmin = 30;
+var grxmax = 30;
+var grxtan = 30;
+var avgi = false;
+var avgix = 0;
+var avglist = [];
+var replayi = false;
+var replayix = 0;
+var tangix = 0;
+
+var answers = {//answers, hint
+	t1:[["60 miles","60"], "This problem involves looking up values on the table. To figure out where the car is at a particular time, find that time in the first row, then look at the corresponding entry in the second row. For instance, to find the position 3 hours into the trip, we need to look across the first row to find '3'. Since this is the second to last entry, we need to read the second to last entry of the second row, '10 miles'."],
+	t2:[["2.5 hours","2.5"], "We can also look up entries in the table backwards. To figure out when the car is at a particular location, find that location in the second row, then look at the correspoinding entry in the first row. For instance, to find the time the car was at mile marker 10, we need to look across the second row to find '10'. Since this is both the second and second to last entry of the second row, we need to read the second and second to last entries of the first row, '.5 hours' and '3 hours'. This is two separate times, but since '40' shows up only once in row 2, we only want one answer (even though, technically, the car had to pass mile marker 40 at another time in the trip)."],
+	t3:[["The car traveled from mile marker 0 to mile marker 60, stayed for a half hour, then turned around and drove back to mile marker 0."], "It may help to draw out a highway and imagine the car being at its locations at various times. Remember that each column of the table tells you something about the trip, for instance, the second column tells you that the car was at mile marker 10 half an hour into your trip."],
+	t4:[["60", "60 miles"], "This is also a table reading problem. For instance, if the question asked for f(.5), you'd need to look up .5 hours on the table to get 10 miles. Usually we consider functions like this to be outputting numbers without units, so '10' would be a better answer."],
+	t5:[["30 miles","30"], "To find the distance between two numbers, simply subtract one from the other. Distance is always nonnegative, so if the result is negative, get rid of the minus sign to make it positive."],
+	t6:[["30 minutes",".5"], "Take the difference between the two times."],
+	t7:[["60 mph", "60 miles / hour", "60"], "Dividing by .5 is the same as multiplying by 2."],
+	t8:[["10 miles","10"], "To find the distance between two numbers, subtract one from the other. Distance is always nonnegative, so if the result is negative, get rid of the minus sign to make it positive."],
+	t9:[["50 mph", "50 miles / hour", "50"], "Rewrite the difference in time as a fraction. To divide by a fraction, multiply by that fraction's reciprocal."],
+	t10:[["30 miles","30"], "Take your answer to question 6, and, if appropriate, make your answer negative."],
+	t11:[["-10 miles", "-10"], "Take your answer to question 9, and, if appropriate, make your answer negative."],
+	t12:[["e-s"],"Look carefully at your answers to the previous questions, to see how the numbers are related. Your answer should be a mathematical formula involving e and s."],
+	t13:[["60 mph", "60 miles / hour", "60"], "You can also compute the answer to this question by taking the answer to question 8, and, if appropriate, making it negative."],
+	t14:[["-50 mph", "-50 miles / hour", "-50"], "You can also compute the answer to this question by taking the answer to question 10, and, if appropriate, making it negative."],
+	t15:[[],"Don't worry about computing instantaneous velocity exactly. How would you *approximate* it?"],
+	t18:[["S22"],"If you don't notice parts of the graph where the approximation is bad, start a new journey where you move the car back and forth and use the brakes. Then set the interval to t-h,t+h and h to 1 second."],
+	t19:[["(f(t+h)-f(t))/h","(f(h+t)-f(t))/h"], "Click 'show step-by-step' to walk through this problem."],
+	t20:[["f(t+h)","f(h+t)"], "When we say 'f(t) is the position of the car at time t' it doesn't just mean that for some specific time t, it means that for any t. No matter what you put between the parentheses after f, you have a formula for the position at that time. We can even plug formulas into f to find the position at those times."],
+	t21:[["f(t+h)-f(t)","f(h+t)-f(t)"], "Subtract from your answer above, the position of the car at time t (which I've already given you)."],
+	t22:[["h"], "Compute the difference between the two times."],
+	t23:[["(f(t+h)-f(t))/h","(f(h+t)-f(t))/h"], "Divide your answer to question 2 by your answer to question 3. Careful! Pay attention to order of operations. You may need to add parentheses."],
+	t24:[["Does Not Exist"], "What happens when you divide by 0?"],
+	t25:[["(2t*h + h^2)/(5h)","(2th + h^2)/(5h)","(2ht + h^2)/(5h)"],"Click 'show step-by-step' to walk through this problem."],
+	t26:[["(t+h)^2/5"], "If you have a formula like f(t) = t^2/5, you can plug in whatever you want for t in both sides of the equation to get another true fact. Don't forget parentheses!"],
+	t27:[["(t+h)^2/5 - t^2/5"], "The formula for f(t) is t^2/5."],
+	t28:[["(2t*h + h^2)/5","(2th + h^2)/5","(2ht + h^2)/5"],"Expand out a binomial squared by foiling."],
+	t29:[["(2t*h + h^2)/(5h)","(2th + h^2)/(5h)","(2ht + h^2)/(5h)"],"Careful: order of operations goes from left to right and multiplication and division are resolved at the same time, so you need to put parentheses around the denominator. Also, don't try to cancel out the fraction yet. You can only cancel out terms in fractions if the terms are not zero.\nNote: some algebra courses brush over this fact. It is very important in calculus!"],
+	t30:[["(2t+h)/5"],"When canceling a term out of a fraction, if the numerator or denominator is a sum, you must cancel that term out of all terms of that sum."],
+	t31:[["2t/5"],"Your answer should just be in terms of t."],
+	t32:[["6/5 miles per minute","6/5","72 mph"],"Plug 3 in for t."],
+	t33:[["5/2 minutes", "5/2"],"Solve for the value of t that makes 2t/5 = 1."]
+	}
+
+function dedot(str) {
+	var rstr = "";
+	var i;
+	var sawachar = false;
+	for (i = 0; i < str.length; i++) {
+		if (str[i] == "." && sawachar) {
+			}
+		else {
+			rstr += str[i];
+			}
+		sawachar=false;
+		if (str[i] <= "z" && str[i] >= "a") {sawachar = true;}
+		if (str[i] <= "Z" && str[i] >= "A") {sawachar = true;}
+		}
+	return(rstr);
+	}
+
+function mathjsequal(a,b) {
+	math.createUnit("min", "minute", {override:true});
+	a = dedot(a).replace("per", "/");
+	b = dedot(b).replace("per", "/");
+	if (unityequal(a,b)) {return(true);}
+	if (mathyequal(a,b)) {return(true);}
+	return(false);
+	}
+
+function unityequal(a,b) {
+	try {
+		return(math.unit(a).equals(math.unit(b)));
+		}
+	catch {
+		return(false);
+		}
+	}
+
+function mathyequal(a,b) {
+	try {
+		a = math.simplify(a).toString();
+		b = math.simplify(b).toString();
+		return(math.simplify("(" + a + ")-(" + b + ")").toString() == "0");
+		}
+	catch {
+		return(false);
+		}
+	}
+
+function check(id) {
+	var ans = document.getElementById(id).value;
+
+	var i;
+	var c = false;
+	for (i = 0; i < answers[id][0].length; i++) {
+		if (mathjsequal(answers[id][0][i],ans)) {
+			alert("Correct!");
+			return;
+			}
+		}
+	alert("Try Again!");
+	}
+
+function hint(id) {
+	alert(answers[id][1]);
+	}
+
+function show(id) {
+	alert("Possible Answers:\n" + answers[id][0].join("\n"));
+	}
+
+function checkp() {
+	var a1 = document.getElementById("t16").value;
+	var a2 = document.getElementById("t17").value;
+	var c = true;
+	try {
+		if (math.simplify("("+a2+")-("+a1+")").eval({h:0}) != 0) {c = false;}
+		if (math.simplify("("+a2+")-t").eval({h:0}) != 0) {c = false;}
+		var i;
+		var testers = [.0001,.001, .01, .02, .2];
+		for (i  = 0; i < testers.length; i++) {
+			if (math.simplify("("+a2+")-t").eval({h:testers[i]}) < 0) {c = false;}
+			if (math.simplify("("+a1+")-t").eval({h:testers[i]}) > 0) {c = false;}
+			}
+	
+		if (c) {alert("Correct!");}
+		else {alert("Try Again!");}
+		}
+	catch {
+		alert("Try Again!");
+		}
+	}
+
+function hintp() {
+	alert("Try finding formulas for the time h units before t and the time h units of time after t.");
+	}
+
+function showp() {
+	alert("Possible Answers:\nt,t+h\nt-h,t\nt-h,t+h");
+	}
+
+var selectanswers = {
+	s1:0,
+	s2:2,
+	s3:1
+	}
+
+function select(id) {
+	if (document.getElementById(id).value == selectanswers[id]) {
+		document.getElementById(id).className = "good";
+		}
+	else if (document.getElementById(id).value == -1) {
+		document.getElementById(id).className = ""
+		}
+	else {
+		document.getElementById(id).className = "bad";
+		}
+	}
+
+function drawcari() {
+	var ctx = document.getElementById("car").getContext("2d");
+	ctx.clearRect(0,0,800,100);
+	//draw the sky
+	ctx.fillStyle="skyblue";
+	ctx.fillRect(0,0,700,60);
+	//draw the ground
+	ctx.fillStyle="lightgreen";
+	ctx.fillRect(0,50,700,50);
+	//draw the road
+	ctx.beginPath();
+	ctx.fillStyle="dimgray";
+	ctx.fillRect(0,60,700,30);
+	var i;
+	ctx.lineWidth=2;
+	ctx.strokeStyle = "yellow";
+	for (i = 0; i < 14; i++) {
+		ctx.beginPath();
+		ctx.moveTo(50*i+10,75);
+		ctx.lineTo(50*i+40,75);
+		ctx.stroke();
+		}
+	//draw the highway markers
+	ctx.font = "20px overpass";
+	ctx.textAlign = "center";
+	ctx.strokeStyle = "gray";
+	for (i = 0; i <= 6; i++) {
+		ctx.fillStyle = "#266435";
+		ctx.fillRect(40+i*100,30,20,20);
+		ctx.fillStyle = "white";
+		ctx.fillText(i,50+i*100,47);
+		ctx.beginPath();
+		ctx.moveTo(50+i*100,50);
+		ctx.lineTo(50+i*100,60);
+		ctx.stroke();
+		}
+	carback = ctx.getImageData(0,0,800,100);
+	}
+
+function drawacar(ctx,x,col) {
+	ctx.beginPath();
+	ctx.moveTo(30+x,79);
+	ctx.lineTo(30+x,67);
+	ctx.lineTo(33+x,67);
+	ctx.lineTo(40+x,57);
+	ctx.lineTo(55+x,57);
+	ctx.lineTo(60+x,67);
+	ctx.lineTo(70+x,67);
+	ctx.lineTo(70+x,79);
+	ctx.closePath();
+	ctx.strokeStyle="black";
+	ctx.fillStyle = col;
+	ctx.lineWidth = 4;
+	ctx.fill();
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(30+x,67);
+	ctx.lineTo(70+x,67);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.arc(40+x,79,5,0,2*Math.PI);
+	ctx.fillStyle = "#555555";
+	ctx.fill();
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.arc(60+x,79,5,0,2*Math.PI);
+	ctx.fill();
+	ctx.stroke();
+	}
+
+function drawcar() {
+	var ctx = document.getElementById("car").getContext("2d");
+	ctx.putImageData(carback,0,0);
+	//draw the shadow car
+	if (document.getElementById("c2").checked && replayi) {
+		var tix = xtoindex(grxtan);
+		drawacar(ctx,gvlist[tix]*(replayix-tix)+gplist[tix],"blue");
+		}
+	//draw the car
+	drawacar(ctx,carx,"red");
+	//draw the speedometer
+	ctx.clearRect(700,0,100,100);
+	ctx.fillStyle="#555555";
+	ctx.strokeStyle="black";
+	ctx.lineWidth = 4;
+	ctx.beginPath();
+	ctx.arc(750,65,40,Math.PI/6,Math.PI*5/6,true);
+	ctx.fill();
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(750,65);
+	ctx.lineTo(750+30*Math.sin(1.5*cartv),65-30*Math.cos(1.5*cartv));
+	ctx.lineWidth = 2;
+	ctx.stroke();
+	ctx.fillStyle="white";
+	var vstr;
+	if (document.getElementById("c1").checked) {vstr = cartv.toFixed(2).toString();}
+	else {vstr = Math.floor(60*cartv);}
+	ctx.fillText(vstr,750,80);
+	}
+
+function drawpgraphi() {
+	var ctx = document.getElementById("grp").getContext("2d");
+	ctx.clearRect(0,0,800,220);
+	var i;
+	ctx.font = "20px overpass";
+	ctx.fillStyle = "black";
+	ctx.textBaseline = "middle";
+	ctx.textAlign = "center";
+	for (i = 0; i <= 6; i++) {
+		ctx.fillText(i,20,190-30*i);
+		ctx.beginPath();
+		ctx.moveTo(30,190-30*i);
+		ctx.lineTo(780,190-30*i);
+		ctx.stroke();
+		}
+	for (i = 0; i <= 25; i++) {
+		ctx.fillText(i,30+i*30,200);
+		ctx.beginPath();
+		ctx.moveTo(30+i*30,10);
+		ctx.lineTo(30+i*30,190);
+		ctx.stroke();
+		}
+	gpback = ctx.getImageData(0,0,800,220);
+	}
+
+function drawpgraph() {
+	var ctx = document.getElementById("grp").getContext("2d");
+	ctx.putImageData(gpback,0,0);
+	ctx.strokeStyle = "black";
+	ctx.lineWidth = 1;
+	ctx.beginPath();
+	ctx.moveTo(30,190);
+	for (i = 0; i < Math.min(gplist.length,2500); i++) {
+		ctx.lineTo(30+i*30/100,190-30*gplist[i]/100);
+		}
+	ctx.stroke();
+	ctx.lineWidth = 4;
+	ctx.strokeStyle="#009988";
+	ctx.beginPath();
+	ctx.moveTo(grxmin,0);
+	ctx.lineTo(grxmin,220);
+	ctx.stroke();
+	ctx.strokeStyle="#CC3311";
+	ctx.beginPath();
+	ctx.moveTo(grxmax,0);
+	ctx.lineTo(grxmax,220);
+	ctx.stroke();
+	if (document.getElementById("c0").checked || avgi) {
+		ctx.strokeStyle="#EE7733";
+		ctx.lineWidth=2;
+		ctx.beginPath();
+		ctx.moveTo(grxmin,190-.3*gplist[xtoindex(grxmin)]);
+		ctx.lineTo(grxmax,190-.3*gplist[xtoindex(grxmax)]);
+		ctx.stroke();
+		}
+	if (replayi) {
+		ctx.strokeStyle="#BBBBBB";
+		ctx.lineWidth=4;
+		ctx.beginPath();
+		ctx.moveTo(30+.3*replayix,0);
+		ctx.lineTo(30+.3*replayix,220);
+		ctx.stroke();
+		}
+	if (document.getElementById("c2").checked) {
+		ctx.strokeStyle="#0077BB";
+		ctx.lineWidth=4;
+		ctx.beginPath();
+		ctx.moveTo(grxtan,0);
+		ctx.lineTo(grxtan,220);
+		ctx.stroke();
+		ctx.lineWidth=1;
+		ctx.beginPath();
+		var tix = xtoindex(grxtan);
+		ctx.moveTo(30,190-(gvlist[tix]*(30-grxtan))-.3*gplist[tix]);
+		ctx.lineTo(780,190-(gvlist[tix]*(780-grxtan))-.3*gplist[tix]);
+		ctx.stroke();
+		}
+	}
+
+function xtoindex(x) {
+	var r = Math.floor((x-30)/.3);
+	return(Math.max(0,Math.min(gplist.length-1,r)));
+	}
+
+function drawvgraphi() {
+	var ctx = document.getElementById("grv").getContext("2d");
+	ctx.clearRect(0,0,800,240);
+	var i;
+	ctx.lineWidth = 1;
+	ctx.strokeStyle = "black";
+	ctx.font = "20px overpass";
+	ctx.fillStyle = "black";
+	ctx.textBaseline = "middle";
+	ctx.textAlign = "right";
+	if (!document.getElementById("c1").checked) {
+		for (i = -75; i <= 75; i += 25) {
+			ctx.fillText(i,30,110-i);
+			}
+		for (i = -100; i <= 100; i+=25) {
+			ctx.beginPath();
+			ctx.moveTo(30,110-i);
+			ctx.lineTo(780,110-i);
+			ctx.stroke();
+			}
+		}
+	else {
+		for (i = -3; i <= 3; i++) {
+			ctx.fillText(.5*i,30,110-30*i);
+			ctx.beginPath();
+			ctx.moveTo(30,110-i*30);
+			ctx.lineTo(780,110-i*30);
+			ctx.stroke();
+			}
+		}
+	ctx.textAlign = "center";
+	for (i = 0; i <= 25; i++) {
+		ctx.fillText(i,30+i*30,220);
+		ctx.beginPath();
+		ctx.moveTo(30+i*30,10);
+		ctx.lineTo(30+i*30,210);
+		ctx.stroke();
+		}
+	ctx.beginPath();
+	ctx.strokeStyle = "#33BBEE";
+	ctx.lineWidth = 3;
+	ctx.moveTo(30,110);
+	ctx.lineTo(780,110);
+	ctx.stroke();
+	gvback = ctx.getImageData(0,0,800,240);
+	}
+
+function avgvbet(x1,x2) {
+	var i1 = xtoindex(x1);
+	var i2 = xtoindex(x2);
+	var i;
+	var s = 0;
+	for (i = i1; i <= i2; i++) {
+		s += gvlist[i];
+		}
+	return(s/(i2-i1+1));
+	}
+
+function drawvgraph() {
+	var ctx = document.getElementById("grv").getContext("2d");
+	ctx.putImageData(gvback,0,0);
+	ctx.strokeStyle = "black";
+	ctx.lineWidth = 1;
+	ctx.beginPath();
+	ctx.moveTo(30,110);
+	var i;
+	for (i = 0; i < Math.min(gplist.length,2500); i++) {
+		ctx.lineTo(30+i*30/100,110-60*gvlist[i]);
+		}
+	ctx.stroke();
+	ctx.lineWidth = 4;
+	ctx.strokeStyle="#009988";
+	ctx.beginPath();
+	ctx.moveTo(grxmin,0);
+	ctx.lineTo(grxmin,240);
+	ctx.stroke();
+	ctx.strokeStyle="#CC3311";
+	ctx.beginPath();
+	ctx.moveTo(grxmax,0);
+	ctx.lineTo(grxmax,240);
+	ctx.stroke();
+	if (document.getElementById("c0").checked || avgi) {
+		ctx.strokeStyle="#EE7733";
+		ctx.lineWidth=2;
+		ctx.beginPath();
+		var a = avgvbet(grxmin,grxmax);
+		ctx.moveTo(grxmin,110-60*a);
+		ctx.lineTo(grxmax,110-60*a);
+		ctx.stroke();
+		}
+	if (avgi) {
+		ctx.lineWidth=3;
+		ctx.strokeStyle="#EE3377";
+		ctx.beginPath();
+		for (i in avglist) {
+			ctx.lineTo(30+.3*i,110-60*avglist[i]);
+			}
+		ctx.stroke(); 
+		}
+	if (replayi) {
+		ctx.strokeStyle="#BBBBBB";
+		ctx.lineWidth=4;
+		ctx.beginPath();
+		ctx.moveTo(30+.3*replayix,0);
+		ctx.lineTo(30+.3*replayix,240);
+		ctx.stroke();
+		}
+	if (document.getElementById("c2").checked) {
+		ctx.strokeStyle="#0077BB";
+		ctx.lineWidth=4;
+		ctx.beginPath();
+		ctx.moveTo(grxtan,0);
+		ctx.lineTo(grxtan,220);
+		ctx.stroke();
+		}
+	}
+
+//Scale: 100 pixels is reported as 1 mile, 
+//60 seconds (6000 ticks) is reported as 1 hour,
+//1 second (100 ticks) is reported as 1 minute
+
+function keyd(e) {
+	if (e.key == "ArrowLeft") {e.preventDefault(); keysdown[0]=1;}
+	if (e.key == "ArrowRight") {e.preventDefault(); keysdown[1]=1;}
+	if (e.key == "ArrowDown") {e.preventDefault(); keysdown[2]=1;}
+	if (e.key == "ArrowUp") {e.preventDefault(); keysdown[3]=1;}
+	}
+
+function keyu(e) {
+	if (e.key == "ArrowLeft") {e.preventDefault(); keysdown[0]=0;}
+	if (e.key == "ArrowRight") {e.preventDefault(); keysdown[1]=0;}
+	if (e.key == "ArrowDown") {e.preventDefault(); keysdown[2]=0;}
+	if (e.key == "ArrowUp") {e.preventDefault(); keysdown[3]=0;}
+	}
+
+function bdown(i) {
+	var j;
+	for (j = 0; j <= 2; j++) {
+		keysdown[j] = 0;
+		}
+	keysdown[i] = 1;
+	}
+
+function bup(i) {
+	keysdown[i] = 0;
+	}
+
+function startcar() {
+	stopreplay();
+	if (carmode == true) {return;}
+	carmode = true;
+	cari = setInterval(movecar,10);
+	document.onkeydown = keyd;
+	document.onkeyup = keyu;
+	gplist = [];
+	gvlist = [];
+	grxmin = 30;
+	grxmax = 30;
+	}
+
+function stopcar() {
+	cartv = 0;
+	carmode = false;
+	carx = 0;
+	if (cari) {clearInterval(cari); cari = false;}
+	document.onkeydown = false;
+	document.onkeyup = false;
+	drawcar();
+	drawpgraph();
+	drawvgraph();
+	}
+
+function movecar() {
+	if (keysdown[0] && cartv < 0) {cartv += -.004;}
+	if (keysdown[0] && cartv >= 0) {cartv += -.007;}
+	if (keysdown[1] && cartv < 0) {cartv += .007;}
+	if (keysdown[1] && cartv >= 0) {cartv += .004;}
+	if (keysdown[1] == 0 && keysdown[0] == 0 && keysdown[2] == 0 && cartv < 0) {cartv = Math.min(0,cartv+.002);}
+	if (keysdown[1] == 0 && keysdown[0] == 0 && keysdown[2] == 0 && cartv >= 0) {cartv = Math.max(0,cartv-.002);}
+	if (keysdown[2]) {cartv = cartv * .95;}
+	if (cartv > 1.66) {cartv = 1.66;}
+	if (cartv < -1.66) {cartv = -1.66;}
+	carx += cartv;
+	if (carx < 0) {carx = 0; cartv=0;}
+	if (carx > 600) {carx = 600; cartv=0;}
+	gplist.push(carx);
+	gvlist.push(cartv);
+	drawcar();
+	drawpgraph();
+	drawvgraph();
+	if (gplist.length > 2500) {stopcar();}
+	if (30+.3*gplist.length > grxmax - 3) {
+		grxmax = 30+.3*gplist.length;
+		}
+	}
+
+function replaytick() {
+
+	if(replayix >= gplist.length) {stopreplay(); return;}	
+
+	carx = gplist[replayix];
+	cartv = gvlist[replayix];
+	
+	drawcar();
+	drawpgraph();
+	drawvgraph();
+
+	replayix++;
+	}
+
+function replaycar() {
+	stopcar();
+	if (replayi) {clearInterval(replayi);}
+	replayi = setInterval(replaytick,10);
+	replayix = 0;
+	}
+
+function stopreplay() {
+	if (replayi) {clearInterval(replayi); replayi = false;}
+	replayix = 0;
+
+	drawpgraph();
+	drawvgraph();
+	}
+
+function grmleave(e) {
+	if (grxresizemode == 0) {document.body.style.cursor = "auto";}
+	}
+
+function grmmove(e) {
+	e.preventDefault();
+	var rect=document.getElementById("grp").getBoundingClientRect();
+	var eX = e.clientX-rect.x;
+	var eY = e.clientY-rect.y;
+	var w = 3;
+	if (grxresizemode != 0) {
+		document.body.style.cursor = "col-resize";
+		}
+	else if (eX < grxmin + w && eX > grxmin - w) {
+		document.body.style.cursor = "col-resize";
+		}
+	else if (eX < grxmax + w && eX > grxmax - w) {
+		document.body.style.cursor = "col-resize";
+		}
+	else if (document.getElementById("c2").checked && eX < grxtan + w && eX > grxtan - w) {
+		document.body.style.cursor = "col-resize";
+		}
+	else {
+		document.body.style.cursor = "auto";
+		}
+	if (grxresizemode == 1) {
+		grxmin = Math.min(Math.max(30,eX),grxmax);
+		drawpgraph();
+		drawvgraph();
+		}
+	if (grxresizemode == 2) {
+		grxmax = Math.max(Math.min(30+.3*gplist.length,eX),grxmin);
+		drawpgraph();
+		drawvgraph();
+		}
+	if (grxresizemode == 3) {
+		grxtan = Math.min(Math.max(30,eX),30+.3*gplist.length);
+		drawpgraph();
+		drawvgraph();
+		}
+	}
+
+function grmdown(e) {
+	e.preventDefault();
+	var rect=e.target.getBoundingClientRect();
+	var eX = e.clientX-rect.x;
+	var eY = e.clientY-rect.y;
+	var w = 3;
+	if (document.getElementById("c2").checked && eX < grxtan + w && eX > grxtan - w) {
+		grxresizemode = 3;
+		window.addEventListener("mousemove",grmmove);
+		window.addEventListener("mouseup",grmup);	
+		}
+	else if (eX < grxmin + w && eX > grxmin - w) {
+		grxresizemode = 1;
+		window.addEventListener("mousemove",grmmove);
+		window.addEventListener("mouseup",grmup);
+		}
+	else if (eX < grxmax + w && eX > grxmax - w) {
+		grxresizemode = 2;
+		window.addEventListener("mousemove",grmmove);
+		window.addEventListener("mouseup",grmup);
+		}
+	else {
+		grxresizemode = 0;
+		}
+	}
+
+function grmup(e) {
+	e.preventDefault();
+	grxresizemode = 0;
+	document.body.style.cursor = "auto";
+	window.removeEventListener("mousemove",grmmove);
+	window.removeEventListener("mouseup",grmup);
+	}
+
+function upchk() {
+	drawcar();
+	drawvgraphi();
+	drawpgraph();
+	drawvgraph();
+	}
+
+function avgtick() {
+	var type = Number(document.getElementById("isel").value);
+	var hval = Number(document.getElementById("hsel").value);
+
+	if ((type == 1 || type == 2) && avgix == 0) {
+		avgix = hval;
+		}
+
+	var lowerx;
+	var upperx;
+
+	if (type == 0) { //t,t+h
+		lowerx = avgix;
+		upperx = avgix + hval;
+		}
+	else if (type == 1) { //t-h,t
+		lowerx = avgix - hval;
+		upperx = avgix;
+		}
+	else if (type == 2) { //t-h,t+h
+		lowerx = avgix - hval;
+		upperx = avgix + hval;
+		}
+	if (lowerx < 0) {avgix++; return;}
+	if (upperx >= gplist.length) {avgstop(); return;}
+	
+	avglist[avgix] = (gplist[upperx]-gplist[lowerx])/(upperx-lowerx);
+	
+	grxmin = 30+.3*lowerx;
+	grxmax = 30+.3*upperx;
+	
+	//use the already existing paddles and orange line drawing stuff.
+	
+	if (document.getElementById("c2").checked) {
+		grxtan = 30+.3*avgix;
+		}
+
+	drawvgraph();
+	drawpgraph();
+
+	avgix++;
+	}
+
+function avgstop() {
+	if (avgi) {clearInterval(avgi);}
+	avgi = false;
+	}
+
+function avgbutt() {
+	if (avgi) {clearInterval(avgi);}
+	avglist = [];
+	avgix = 0;
+	avgi = setInterval(avgtick,1);
+	}
+
+function goon() {
+	document.getElementById("goon1").style = "";
+	document.getElementById("tablav").style = "";
+	}
+
+function boot() {
+	drawcari();
+	drawpgraphi();
+	drawvgraphi();
+	drawcar();
+	drawpgraph();
+	drawvgraph();
+	}
+
+</script>
+<style>
+blockquote {
+	background-color: #CCDDAA;
+	padding: 20px;
+	border-left: 3px solid #266435;
+	}
+.traffic {
+	background-color: #266435;
+	border: 5px solid white;
+	border-radius: 15px;
+	padding: 0px 30px;
+	width: 200px;
+	margin-left: auto;
+	margin-right:auto;
+	position: relative;
+	color: white;
+	text-align: center;
+	}
+.traffic:before {
+	content: "";
+	position: absolute;
+	z-index: -1;
+	top:-6px;
+	left:-6px;
+	right:-6px;
+	bottom:-6px;
+	background-color: #266435;
+	}
+blockquote.caution {
+	background-color: #EEEEBB;
+	padding: 20px;
+	border-left: 3px solid yellow;
+	}
+.arrowbutton {
+	font-size:20px;
+	font-family: overpass;
+	width:20px;
+	height:30px;
+	padding:0px;
+	vertical-align:middle;
+	margin:0px;
+	}
+textarea {
+	width: 700px;
+	height: 100px;
+	}
+.tabl {
+	margin-left:auto;
+	margin-right:auto;
+	background-color:white;
+	color:black;
+	}
+.bad {
+	background-color:#FFCCCC;
+	}
+.bad+span:after {
+	content:"\2717";
+	}
+.good {
+	background-color:#BBCCEE;
+	}
+.good+span:after {
+	content:"\2713";
+	}
+
+.spacer {
+	height:20em;
+	margin-bottom:-21em;"
+	}
+
+@font-face {
+	font-family:"overpass";
+	src:url("overpass-regular.otf"); //see overpass.zip
+	}
+h1, h2, h3 { font-family: "overpass", serif;
+	}
+body {
+	text-align: justify;
+	}
+</style>
+</head>
+<body onload="boot();drawcar();drawpgraph();">
+<h1 class="traffic" style="height:50px">Velocity</h1>
+<div id="tablscrollbox">
+<p>
+If you have trouble with questions below involving functions, it may help to read more <a href="anoteaboutfunctions.html">about functions</a>.
+</p>
+<div style="z-index:1;position:sticky;top:0px">
+<div class="traffic" style="width:300px">
+<br>
+<table id="tabl" class="tabl" border=1>
+<tr><td>Time (hours)</td><td>0</td><td>.5</td><td>1</td><td>1.5</td><td>2</td><td>2.5</td><td>3</td><td>3.2</td></tr>
+<tr><td>Position (miles)</td><td>0</td><td>10</td><td>30</td><td>60</td><td>60</td><td>40</td><td>10</td><td>0</td></tr>
+</table>
+<br>
+</div>
+</div>
+<ol>
+<li>
+<p>A car is moving down a road. We can use highway markers to tell how far down
+the road the car is at any one time.
+Shown above is a table of where the car is at particular times.</p>
+<blockquote class="caution">
+Note: This webpage uses math.js to parse your solutions to problems with numerical or algebraic answers. Math.js can handle units (which you should include when appropriate)
+but not long worded answers, so your answer should look like "30 miles" or "10 mi", not "5th mile marker". <b> Only use units if the answer is a number, not a formula. </b>
+Sorry if you have the correct answer, but the parser doesn't correctly recognize it!
+</blockquote>
+<p>Where was the car 1.5 hours after the trip started? 
+<input type="text" id="t1"><button onclick="check('t1')">Check Answer</button><button onclick="hint('t1')">Hint</button><button onclick="show('t1')">Show Answer</button>
+</p>
+<li>
+<p>When was the car at mile marker 40?
+<input type="text" id="t2"><button onclick="check('t2')">Check Answer</button><button onclick="hint('t2')">Hint</button><button onclick="show('t2')">Show Answer</button>
+</p>
+<li>
+<p>Did it take longer to travel from mile marker 0 to mile marker 60, or to return back?
+<select id="s1" oninput="select('s1')">
+<option disabled selected value=-1>-Select your answer-</option>
+<option value=0>To travel from mile marker 0 to mile marker 60</option>
+<option value=1>To return back from mile marker 60 to mile marker 0</option>
+</select><span></span>
+</p>
+<li>
+<p>Describe in your own words what might have happened during this trip.
+<br><textarea id="t3"></textarea><button onclick="hint('t3')">Hint</button><button onclick="show('t3')">Show Answer</button>
+</p>
+<li>
+<p> Let f be a function where we input some time into the function
+and get the position of the car at that time. 
+That is, for any time t (in hours), f(t) is the position of the car at time t (in miles). What is f(2)?
+<input type="text" id="t4"><button onclick="check('t4')">Check Answer</button><button onclick="hint('t4')">Hint</button><button onclick="show('t4')">Show Answer</button>
+</p>
+</ol>
+<h2 class="traffic" style="height:75px">Velocity versus Speed</h2>
+<ol start=6>
+<li>
+<p>If the car is moving at a constant speed, we can compute that speed by taking the distance
+the car travels in a particular time divided by that amount of time. Suppose the car was moving at a
+constant speed between 1 hour and 1.5 hours into its trip. 
+What is the distance between where the car was 1 hour into the trip and 1.5 hours into the trip?
+<input type="text" id="t5"><button onclick="check('t5')">Check Answer</button><button onclick="hint('t5')">Hint</button><button onclick="show('t5')">Show Answer</button>
+</p>
+<li><p>How much time elapsed? 
+<input type="text" id="t6"><button onclick="check('t6')">Check Answer</button><button onclick="hint('t6')">Hint</button><button onclick="show('t6')">Show Answer</button>
+</p>
+<li><p>Divide your answers above to find the speed of the car. 
+<input type="text" id="t7"><button onclick="check('t7')">Check Answer</button><button onclick="hint('t7')">Hint</button><button onclick="show('t7')">Show Answer</button>
+Note that since the numbers on the table are in miles and hours, your answer is in miles per hour.
+Is this a reasonable speed for a car to be going?
+</p>
+<li><p>Assume the car was moving at a constant speed between 3 hours and 3.2 hours into the trip.
+What is the distance between where the car was 3 hour into the trip and 3.2 hours into the trip?
+<input type="text" id="t8"><button onclick="check('t8')">Check Answer</button><button onclick="hint('t8')">Hint</button><button onclick="show('t8')">Show Answer</button>
+</p>
+<li><p>Divide your answer above by the time that elapsed to find the speed the car was going.
+<input type="text" id="t9"><button onclick="check('t9')">Check Answer</button><button onclick="hint('t9')">Hint</button><button onclick="show('t9')">Show Answer</button>
+</p>
+<blockquote> <p>Since distance is always positive (or zero), speed is also always going to be positive (or zero).
+On the other hand, we aren't keeping track of which way the car is going. 
+These two issues with speed can cancel each other out. Let's keep track of which way the car is going
+in the sign we're not using.
+</p>
+<p> Specifically, we will define two new quantities, called <i>displacement</i> and <i>velocity</i>.
+If the car is going in the direction of increasing mile markers (from mile marker 0 to mile marker 60)
+its <i>displacement</i> is just the distance it traveled. If the car is going in the direction of decreasing
+mile markers (from mile marker 60 to mile marker 0), then its <i>displacement</i> is just negative 
+the distance it traveled.
+</blockquote>
+<li><p>What is the car's displacement between where it was 1 hour into the trip and 1.5 hours into the trip?
+<input type="text" id="t10"><button onclick="check('t10')">Check Answer</button><button onclick="hint('t10')">Hint</button><button onclick="show('t10')">Show Answer</button>
+</p>
+<li><p>What is the car's displacement between where it was 3 hours into the trip and 3.2 hours into the trip?
+<input type="text" id="t11"><button onclick="check('t11')">Check Answer</button><button onclick="hint('t11')">Hint</button><button onclick="show('t11')">Show Answer</button>
+</p>
+<li><p>If we let the variable s refer to the car's starting location, and e refer to the car's ending location,
+write down as nice a formula for the car's displacement as possible:
+<input type="text" id="t12"><button onclick="check('t12')">Check Answer</button><button onclick="hint('t12')">Hint</button><button onclick="show('t12')">Show Answer</button>
+</p>
+<blockquote>
+<p> We then take the car's displacement and divide by the time elapsed to get its velocity. Note that, again,
+velocity is positive if the car is travelling in the direction of increasing mile markers and negative
+if the car is travelling in the direction of decreasing mile markers.
+</p>
+</blockquote>
+<li><p>Assume the car was moving at a constant velocity between 1 hours and 1.5 hours into the trip.
+What is the car's velocity between when it was 1 hour into the trip and 1.5 hours into the trip?
+<input type="text" id="t13"><button onclick="check('t13')">Check Answer</button><button onclick="hint('t13')">Hint</button><button onclick="show('t13')">Show Answer</button>
+</p>
+<li><p>Assume the car was moving at a constant velocity between 3 hours and 3.2 hours into the trip.
+What is the car's velocity between when it was 3 hours into the trip and 3.2 hours into the trip?
+<input type="text" id="t14"><button onclick="check('t14')">Check Answer</button><button onclick="hint('t14')">Hint</button><button onclick="show('t14')">Show Answer</button>
+</p>
+</ol>
+</div>
+<h2 class="traffic" style="height:112px">Average and Instantaneous Velocities</h2>
+<ol start=16>
+<blockquote>
+<p>So far, we can handle the situation where the car is going at a constant velocity, but this doesn't reflect the reality of highway driving.
+When driving on the highway, your speed varies slightly from moment to moment, and can vary substantially throughout your trip.
+</p>
+<p>One question we could ask is, at any instant, what is your current velocity? (i.e. what does it currently say on your speedometer?)
+This is called your <i>instantaneous velocity</i>. Just as the car has different positions at different times, so too does it have different
+instantaneous velocities at different times, and we can ask what your instantaneous velocity is at various given times.
+</p>
+<p> On the other hand, we could also ask what your <i>average velocity</i> is. That is, if you wrote down your velocity at every time, what would be the average?
+There are two ways to calculate average velocity over a time interval:
+<ul>
+<li> Make a list of all the velocities at all times in the interval and take their average. 
+(We can't actually do this, but we can, for instance, sample our velocity every second, and take the average of those, to get a good approximation)
+<li> Calculate total distance traveled and divide by time elapsed.
+</ul>
+</p>
+</blockquote>
+<li><p>Below is an interactive that will allow you to simulate a car trip. Click the "Start Journey" button and use the left and right arrow keys to move the car.
+Try to make some observations about the relationship between the graph of position as a function of time
+and the graph of velocity as a function of time.</p>
+<table><tr><td>
+<canvas id="car" width=800 height=100 style="border:1px solid gray"></canvas>
+<br><canvas id="grp" width=800 height=220 style="border:1px solid gray" onmousedown="grmdown(event)" onmousemove="grmmove(event)" onmouseup="grmup(event)" onmouseleave="grmleave(event)"></canvas>
+<br><canvas id="grv" width=800 height=240 style="border:1px solid gray" onmousedown="grmdown(event)" onmousemove="grmmove(event)" onmouseup="grmup(event)" onmouseleave="grmleave(event)"></canvas>
+</td>
+<td style="vertical-align:top">
+<button onclick="startcar()">Start Journey</button><button onclick="stopcar()">End Journey</button><button onclick="replaycar()">Replay Journey</button>
+<br><button onmousedown="bdown(0)" onmouseup="bup(0)" class="arrowbutton">&larr;</button><button onmousedown="bdown(1)" onmouseup="bup(1)" class="arrowbutton">&rarr;</button><button onmousedown="bdown(2)" onmouseup="bup(2)" class="arrowbutton">&darr;</button>
+<br><input type="checkbox" id="c0" onchange="upchk()"> Show Average Velocity <br>(click and drag vertical lines to adjust endpoints)
+<br><input type="checkbox" id="c1" onchange="upchk()"> Use Miles per Minute
+<br>Getting Started:
+<ul>
+<li>Press the "Start Journey" button.
+<li>Use the left or right arrow keys to move the car along the road.
+</ul>
+Key:
+<ul>
+<li> x-axis: time since the trip started (in minutes)
+<li> First graph y-axis: position (in miles)
+<li> Second graph y-axis: velocity (in mph)
+</ul>
+Controls:
+<ul>
+<li> Left arrow: forward
+<li> Right arrow: back
+<li> Down arrow: brake
+<li> Or use the buttons above
+</ul>
+<table border=1 id="tablav" style="display:none">
+<tr><td>
+Approximate Instantaneous Velocity:<br>
+</td></tr><tr><td>
+Interval over which to compute<br>
+average velocity at time t:
+<select id="isel">
+<option value=0>t,t+h</option>
+<option value=1>t-h,t</option>
+<option value=2>t-h,t+h</option>
+</select><br>
+h:
+<select id="hsel">
+<option value=200>2 sec </option>
+<option value=100>1 sec </option>
+<option value=50>.5 sec </option>
+<option value=25>.25 sec </option>
+<option value=10>.1 sec </option>
+</select>
+<button onclick="avgbutt()">Compute!</button>
+</td></tr>
+</table>
+<table border=1><tr><td>
+Matching Velocity</td></tr>
+<tr><td>
+<input type="checkbox" id="c2" onchange="upchk()"> Show Matching Velocity Car During Replay
+</td></tr>
+</table>
+</td></tr></table>
+<li><p> Once you've recorded the data for a journey on the graphs, check the "Show Average Velocity" checkbox.
+You can adjust the vertical bars on the left and right to change the interval of time over which the average value is computed.
+On the top graph, you can compute average velocity by taking the slope of the line between two points on the graph.
+Convince yourself that taking the rise over the run is the same as taking the overall change in distance divided by the change in time.
+</p>
+<li><p> Check the "Use Miles per Minute" checkbox.
+On the bottom graph, you can compute average velocity by just taking the average value of the graph over the given interval.
+You can approximate this by computing the value of the graph at a bunch of different points and taking their average.
+By adjusting the interval of time over which the average value is computed, convince yourself that these two ways of 
+calculating average velocity give you the same answers.
+</p>
+<li><p>We now have two ways of computing average velocity, but we don't actually yet have a way to compute instantaneous velocity: 
+in the interactive above, instantaneous velocity was automatically recorded. Imagine for a moment that you only had access to the top graph
+(position as a function of time) and wanted to figure out what your instantaneous velocity was at a particular instant.
+It's worth taking a moment to ponder this. You can fill out your thoughts in the box below, and then click the "Go on" button when you want to see a possible answer.
+<br><textarea id="t15"></textarea><button onclick="hint('t15')">Hint</button><button onclick="goon()">Go on</button>
+</p>
+</ol>
+<div class="spacer"></div>
+<div id="goon1" style="display:none">
+<h2 class="traffic">Computing Instantaneous Velocity</h2>
+<ol start=20>
+<blockquote>
+Our strategy for computing instantaneous velocity consists of two steps:
+<ul>
+<li> Use average velocity to compute successively better and better approximations for instantaneous velocity.
+<li> As we improve our approximations, they will get closer and closer to the true value, 
+so we just need to figure out what value they're getting closer and closer to.
+</ul>
+</blockquote>
+<blockquote class="caution">
+<b>Caution:</b> If we have a sequence of approximations, it's tempting to try to figure out what they're getting closer and closer to just by looking at
+their decimal digits. Eventually the decimal digits will "settle down" to the true decimal digits of the answer. This technique is far from ideal, though:
+<ul>
+<li> We only find out some of the decimal digits of the answer, not a nice formula for the answer.
+<li> Decimal digits can be deceptive as to when they're "settling down". They may appear to stop changing for a while, only to start changing again later on.
+</ul>
+In many situations, we can use simple algebra to get a nice formula that is clearly the value our approximations are approaching.
+</blockquote>
+<li><p> Our strategy for computing an approximation to your instantaneous velocity at a particular time t will be to pick some small time interval containing time t
+and compute the average velocity of the car over that interval of time. Assume the variable h represents some positive, but small amount of time. Give a possible lower and upper
+bound for this interval in terms of t and h:<br>Lower:<input type="text" id="t16"> Upper:
+<input type="text" id="t17"><button onclick="checkp()">Check Answer</button><button onclick="hintp()">Hint</button><button onclick="showp()">Show Answer</button>
+</p>
+<blockquote class="caution">
+Don't forget: if your answer is a formula, don't include units. The poor parser can't handle it!
+</blockquote>
+<li><p> When you clicked "Go on" above, it unlocked a new feature in the car journey interactive under "Approximate Instantaneous Velocity".
+This will allow you to pick various interval formulas as above, and plot the computed approximation (the average velocity over the given interval)
+versus the actual instantaneous velocity. Which of the options for the intervals gives you the best approximation? 
+<select id="s2" onchange="select('s2')">
+<option disabled selected value=-1>-Select your answer-</option>
+<option value=0>t,t+h</option>
+<option value=1>t-h,t</option>
+<option value=2>t-h,t+h</option>
+</select><span></span>
+</p>
+<li><p> Where on the graph does using average velocity seem to give you particularly bad approximations for the instantaneous velocity? <br>
+<textarea id="t18"></textarea><button onclick="hint('t18')">Hint</button><button onclick="show('t18')">Show Answer</button>
+</p>
+<li><p> Which seems to be most important to getting a good approximation, choosing the right interval, or choosing a small value of h? 
+<select id="s3" onchange="select('s3')">
+<option disabled selected value=-1>-Select your answer-</option>
+<option value=0>The right interval</option>
+<option value=1>A small value of h</option>
+</select><span></span>
+</p>
+</ol>
+<h2 class="traffic">A Very Useful Formula</h2>
+<ol start=24>
+<li><p>Let's go back to the situation where we use the function f to represent the position of the car as a function of time. 
+That is, f(t) is the position of the car at time t. Write down a formula for the car's average velocity between time t and time t+h.
+<input type="text" id="t19"><button onclick="check('t19')">Check Answer</button><button onclick="hint('t19')">Hint</button><button onclick="show('t19')">Show Answer</button><button onclick="document.getElementById('sbs1').style = ''">Step-by-step</button>
+</p>
+<div id="sbs1" style="display:none">
+<ol>
+<li><p> Write down a formula for the position of the car at time t+h. 
+<input type="text" id="t20"><button onclick="check('t20')">Check Answer</button><button onclick="hint('t20')">Hint</button><button onclick="show('t20')">Show Answer</button>
+</p>
+<li><p> Write down a formula for the displacement between its position at time t and time t+h.
+<input type="text" id="t21"><button onclick="check('t21')">Check Answer</button><button onclick="hint('t21')">Hint</button><button onclick="show('t21')">Show Answer</button>
+</p>
+<li><p> Write down a formula for the time elapsed between time t and t+h. 
+<input type="text" id="t22"><button onclick="check('t22')">Check Answer</button><button onclick="hint('t22')">Hint</button><button onclick="show('t22')">Show Answer</button>
+</p>
+<li><p> Write down a formula for the average velocity of the car between time t and a time h units after time t.
+<input type="text" id="t23"><button onclick="check('t23')">Check Answer</button><button onclick="hint('t23')">Hint</button><button onclick="show('t23')">Show Answer</button>
+</p>
+</ol>
+</div>
+<li><p> We are interested in considering what happens to this formula above as h gets closer and closer to zero. What happens when h actually equals 0?
+<input type="text" id="t24"><button onclick="hint('t24')">Hint</button><button onclick="show('t24')">Show Answer</button>
+</p>
+</ol>
+<h2 class="traffic">An Example:<br>Your Initial Acceleration</h2>
+<ol start=26>
+<li><p> Going back to your car journey above, if you accelerate leftwards right off the line, notice that your position as a function of time forms a parabola.
+This parabola is given by the formula f(t) = t<sup>2</sup>/5, where t is measured in minutes and f(t) is measured in feet. Plug this function into the formula above. 
+<input type="text" id="t25"><button onclick="check('t25')">Check Answer</button><button onclick="hint('t25')">Hint</button><button onclick="show('t25')">Show Answer</button><button onclick="document.getElementById('sbs2').style = ''">Step-by-step</button>
+</p>
+<div id="sbs2" style="display:none">
+<ol>
+<li><p> Plug in t+h for t in the formula for f(t) to find f(t+h). 
+<input type="text" id="t26"><button onclick="check('t26')">Check Answer</button><button onclick="hint('t26')">Hint</button><button onclick="show('t26')">Show Answer</button>
+</p>
+<li><p> Subtract from your answer above the formula for f(t) to find f(t+h)-f(t). 
+<input type="text" id="t27"><button onclick="check('t27')">Check Answer</button><button onclick="hint('t27')">Hint</button><button onclick="show('t27')">Show Answer</button>
+</p>
+<li><p> If you haven't already, simplify your result. 
+<input type="text" id="t28"><button onclick="check('t28')">Check Answer</button><button onclick="hint('t28')">Hint</button><button onclick="show('t28')">Show Answer</button>
+</p>
+<li><p> Divide your answer above by h. 
+<input type="text" id="t29"><button onclick="check('t29')">Check Answer</button><button onclick="hint('t29')">Hint</button><button onclick="show('t29')">Show Answer</button>
+</p>
+</ol>
+</div>
+<li><p> Assuming h is not 0 (recall that we want h to be very small, but we don't want h to be zero), we can further simplify your answer above. Simplify as much as you can.
+<input type="text" id="t30"><button onclick="check('t30')">Check Answer</button><button onclick="hint('t30')">Hint</button><button onclick="show('t30')">Show Answer</button>
+</p>
+<li><p> So we've computed a nice formula for the car's average velocity between time t and t+h.
+Recall that as h gets smaller and smaller (closer to 0), this average velocity gets closer and closer to the true instantaneous velocity.
+As h gets smaller and smaller, what does your answer above get closer and closer to? 
+<input type="text" id="t31"><button onclick="check('t31')">Check Answer</button><button onclick="hint('t31')">Hint</button><button onclick="show('t31')">Show Answer</button>
+</p>
+<li><p> We can now figure out the instantaneous velocity at whatever time we want. Plug in t = 3 to find the instantaneous velocity at 3 minutes. 
+<input type="text" id="t32"><button onclick="check('t32')">Check Answer</button><button onclick="hint('t32')">Hint</button><button onclick="show('t32')">Show Answer</button>
+</p>
+<li><p> When is the instantaneous velocity 1 mile per minute? (i.e. how long does it take to go from 0 to 60 miles per hour? Note: your answer will be unrealistic.)
+<input type="text" id="t33"><button onclick="check('t33')">Check Answer</button><button onclick="hint('t33')">Hint</button><button onclick="show('t33')">Show Answer</button>
+</p>
+</ol>
+<h2 class="traffic">Matching Speed</h2>
+<ol>
+<blockquote>
+There's actually another way of figuring out your car's instantaneous velocity at a particular moment: drive a second car past such that:
+<ul>
+<li> The second car matches the first car's position and velocity at the time in question.
+<li> The second car is travelling at a constant velocity.
+</ul>
+We then just measure the velocity of the second car. Since it has a constant velocity, its average velocity and instantaneous velocity are the same.
+</blockquote>
+The car journey interactive above has a feature under "Matching Velocity" that allows you to visualize this second car.
+</ol>
+<h2 class="traffic">Further Destinations</h2>
+<ol>
+<p>In this webpage, we focused on velocity, a measure of your change in position over time. But the techniques we used in this webpage can be extended to study
+almost anything that changes over time.</p>
+<p>
+For instance, suppose you have a bank account that has continuously compounding interest. 
+You might be intersted in figuring out how fast the amount of money you have is increasing
+at any one instant. Just like with our velocity situation:
+<ul>
+<li> We can't use a simple change in money over change in time formula, since the rate at which the money in your account increases depends on how much money you have
+in your account. That is, the rate of change is itself changing.
+<li> We have a formula for how much money you have in your account at any one time, just as we had a formula for your position at any one time. (see
+<a href="https://en.wikipedia.org/wiki/Compound_interest#Continuous_compounding">Wikipedia</a> 
+<span title='Note that the "rate" used in the formula is a yearly percentage, whereas this calculation will give you rate in dollars per hour.'
+style='color:blue'>[<u>Note</u>]</span>)
+</ul>
+</p>
+<p>
+Indeed, in many fields of study that involve numbers, those numbers change over time and the rate that they change changes over time, and we can use the techniques of
+this page to study how those numbers change. Can you think of some other examples of quantities that change over time that you might want to study?
+</p>
+</ol>
+</div>
+</body>
+</html>

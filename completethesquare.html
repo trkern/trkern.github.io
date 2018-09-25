@@ -1,0 +1,90 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<meta name=description content="Take the guesswork out of factoring!">
+<link rel="icon" href="icon.png">
+<title> Completing the square </title>
+<script>
+
+var ta = 0;
+var tb = 0;
+var tc = 0;
+
+function magic(p,x,t) {
+	var colstr = x;
+	if (x == t) {
+		colstr = "<font style='color:blue'>" + x + "</font>";
+		}
+	if (x >= 0 && p) {return("+"+colstr);}
+	return(colstr);
+	}
+
+function upd() {
+	var a = Number(document.getElementById("ia").value);
+	var h = Number(document.getElementById("ih").value);
+	var k = Number(document.getElementById("ik").value);
+	
+	document.getElementById("oa").innerHTML = magic(0,a,ta);
+	document.getElementById("ob").innerHTML = magic(1,2*a*h,tb);
+	document.getElementById("oc").innerHTML = magic(1,a*h*h-k,tc);
+	}
+
+function ribet(mn,mx) {
+	return(Math.floor(Math.random()*(mx-mn+1))+mn);
+	}
+
+var alist = [-2,-1,1,2,5,10];
+
+function newtarg(m) {
+	var th;
+	var tk;
+	if (m == 0) {
+		ta = 1;
+		th = ribet(-10,10);
+		tk = ribet(-10,10);
+		tb = 2*ta*th;
+		tc = ta*th*th-tk;
+		}
+	if (m == 1) {
+		ta = 1-2*ribet(0,1);
+		th = .5*ribet(-10,10);
+		tb = 2*ta*th;
+		tc = ribet(-10,10);
+		}
+	if (m == 2) {
+		ta = alist[ribet(0,5)];
+		tb = ribet(-10,10);
+		tc = ribet(-10,10);
+		}
+	if (m == 3) {
+		ta = ribet(-50,50);
+		th = ribet(-50,50);
+		tk = ribet(-50,50);
+		tb = 2*ta*th/100;
+		tc = (ta*th*th-100*tk)/1000;
+		ta = ta/10;
+		}
+	document.getElementById("ta").innerHTML = magic(0,ta,NaN);
+	document.getElementById("tb").innerHTML = magic(1,tb,NaN);
+	document.getElementById("tc").innerHTML = magic(1,tc,NaN);
+	upd();
+	}
+
+</script>
+</head>
+<body onload="newtarg(0)">
+<table>
+<tr><td></td><td colspan=3 style="text-align:right">
+<input type="number" value=1 style="width:3em" id="ia" oninput="upd()">(x+<input type="number" style="width:3em" value=3 step=.5 id="ih" oninput="upd()">)<sup>2</sup> - <input type="number" style="width:3em" value=0 step=.25 id="ik" oninput="upd()">
+</td></tr>
+<tr><td style="text-align:right">=</td><td style="width:5em;text-align:right;"><span id="oa"></span>x<sup>2</sup></td><td style="width:5em;text-align:right;"><span id="ob"></span>x</td><td style="width:5em;text-align:right;"><span id="oc"></span></td></tr>
+<tr><td>Target:</td><td style="width:5em;text-align:right"><span id="ta"></span>x<sup>2</sup></td><td style="width:5em;text-align:right"><span id="tb"></span>x</td><td style="width:5em;text-align:right"><span id="tc"></span></td></tr></table>
+<button onclick="newtarg(0)">New Target (Easy)</button><br>
+<button onclick="newtarg(1)">New Target (Medium)</button><br>
+<button onclick="newtarg(2)">New Target (Hard)</button><br>
+<button onclick="newtarg(3)">New Target (Extreme)</button>
+</body>
+</html>

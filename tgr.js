@@ -10,7 +10,7 @@ plotdata //Structure containing data for how the graph should look
 	xmax
 	ymin
 	ymax
-	oxmin
+	oxmin //original
 	oxmax
 	oymin
 	oymax
@@ -33,6 +33,7 @@ grapher_obj.type //string one of the following:
 	//"dot"
 	//"line"
 	//"vf" (vector field, still working on)
+	//"vec"
 grapher_obj.fct //function being plotted (as a javascript function)
 grapher_obj.hints //some hints for the plot.
 	//A hint is: [ptx,pty,lc,rc]
@@ -92,6 +93,12 @@ function tgr_tograph(x,mn,mx,side) {
 		var rval = m*0+b;
 		if (rval < 7) {return(7);}
 		if (rval > side-7) {return(side-7);}
+		return(rval);
+		}
+	if (Array.isArray(x) && x[0] == "fakezero") {
+		var rval = m*0+b;
+		if (rval < x[1]) {return(x[1]);}
+		if (rval > side-x[1]) {return(side-x[1]);}
 		return(rval);
 		}
 	return(m*x+b);
@@ -185,6 +192,7 @@ function tgr_draw_graph(id) {
 		var lowb = Math.ceil(pd.xmin/Math.pow(10,n));
 		var upb = Math.floor(pd.xmax/Math.pow(10,n));
 		var lud = upb-lowb;
+		var w;
 		for (i = 0; i <= lud; i++) {
 			ctx.beginPath();
 			ctx.strokeText(tgr_sci((i+lowb),n), ...tgr_tocanv([(i+lowb)*Math.pow(10,n),"fakezero"],pd));
@@ -196,8 +204,9 @@ function tgr_draw_graph(id) {
 		var lud = upb-lowb;
 		for (i = 0; i <= lud; i++) {
 			ctx.beginPath();
-			ctx.strokeText(tgr_sci((i+lowb),n), ...tgr_tocanv(["fakezero",(i+lowb)*Math.pow(10,n)],pd));
-			ctx.fillText(tgr_sci((i+lowb),n), ...tgr_tocanv(["fakezero",(i+lowb)*Math.pow(10,n)],pd));
+			w = ctx.measureText(tgr_sci((i+lowb),n)).width;
+			ctx.strokeText(tgr_sci((i+lowb),n), ...tgr_tocanv([["fakezero",w/2],(i+lowb)*Math.pow(10,n)],pd));
+			ctx.fillText(tgr_sci((i+lowb),n), ...tgr_tocanv([["fakezero",w/2],(i+lowb)*Math.pow(10,n)],pd));
 			}
 		}
 	for (i = 0; i < tgr_graph_array[id].grapher_objs.length; i++) {
@@ -333,6 +342,29 @@ function tgr_plot(grapher_obj, ctx, pd) {
 		ctx.lineWidth = 2;
 		ctx.moveTo(...tgr_tocanv([lx1,ly1],pd));
 		ctx.lineTo(...tgr_tocanv([lx2,ly2],pd));
+		ctx.stroke();
+		}
+	if (grapher_obj.type == "vec") {
+		var lx1, lx2, ly1, ly2, lg;
+		lx1 = tgr_plug(grapher_obj.x,pd);
+		ly1 = tgr_plug(grapher_obj.y,pd);
+		lx2 = tgr_plug(grapher_obj.x2,pd);
+		ly2 = tgr_plug(grapher_obj.y2,pd);
+		var p1 = tgr_tocanv([lx1,ly1],pd);
+		var p2 = tgr_tocanv([lx2,ly2],pd);
+		lg = Math.sqrt((p1[0]-p2[0])*(p1[0]-p2[0])+(p1[1]-p2[1])*(p1[1]-p2[1]));
+		var xx = 7*(p1[0]-p2[0])/lg;
+		var yy = 7*(p1[1]-p2[1])/lg;
+		ctx.beginPath();
+		ctx.strokeStyle = grapher_obj.color;
+		ctx.lineWidth = 2;
+		ctx.moveTo(...p1);
+		ctx.lineTo(...p2);
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.moveTo(p2[0]+2*xx+yy,p2[1]+2*yy-xx);
+		ctx.lineTo(...p2);
+		ctx.lineTo(p2[0]+2*xx-yy,p2[1]+2*yy+xx);
 		ctx.stroke();
 		}
 	}

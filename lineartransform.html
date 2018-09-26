@@ -752,6 +752,23 @@ function eigen() {
 	return([l1, l2, normalize(v1),normalize(v2)]);
 	}
 
+function mexplink() {
+	var a = Number(document.getElementById("a").value);
+	var b = Number(document.getElementById("b").value);
+	var c = Number(document.getElementById("c").value);
+	var d = Number(document.getElementById("d").value);
+
+	var v1 = 1;
+	var v2 = 0;
+	
+	if (document.getElementById("v1")) {
+		v1 = Number(document.getElementById("v1").value);
+		v2 = Number(document.getElementById("v2").value);
+		}
+
+	window.open("matrixpowers.html?"+a+","+b+","+c+","+d+","+v1+","+v2);
+	}
+
 </script>
 </head>
 <body onload="start()">
@@ -768,7 +785,7 @@ More detailed instructions can be found at the bottom of the page.
 
 <p id="debug"> </p>
 <p id="templates"> </p>
-<button id = "workbenchbutt" onclick="toggleworkbench()">Show Matrix Multiplication Workbench &#9660;</button> <button onclick="morph()"> Morph</button><br>
+<button id = "workbenchbutt" onclick="toggleworkbench()">Show Matrix Multiplication Workbench &#9660;</button> <button onclick="morph()"> Morph</button> <button onclick="mexplink()">Matrix Powers (New Page)</button><br>
 <div id="workbench">  </div>
 <table border = 0> <tr> <td>
 <table border = 0>

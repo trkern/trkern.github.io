@@ -1,0 +1,75 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<meta name=description content="Plot of A^k v for k = 0,...,n:">
+<link rel="icon" href="icon.png">
+<title> Matrix Powers </title>
+<script src="tgr.js"></script>
+
+<script>
+
+var a, b, c, d;
+
+function mmult(v) {
+	return([a*v[0]+b*v[1],c*v[0]+d*v[1]]);
+	}
+
+function Upd() {
+	a = Number(document.getElementById("a").value);
+	b = Number(document.getElementById("b").value);
+	c = Number(document.getElementById("c").value);
+	d = Number(document.getElementById("d").value);
+	e = Number(document.getElementById("e").value);
+	f = Number(document.getElementById("f").value);
+	n = Number(document.getElementById("n").value);
+	var l = [];
+	var v = [e,f];
+	var i;
+	for (i = 0; i <= n; i++) {
+		l.push({type:"vec", x:0, y:0, x2:v[0], y2:v[1]});
+		v = mmult(v);
+		}
+	tgr_update_grapher_objs("gr",l);
+	}
+
+function boot() {
+	tgr_grapher("gr", [],{width:500, height:500});
+	var str = decodeURIComponent(location.search).slice(1);
+	if (str != "") {
+		var v = str.split(",");
+		document.getElementById("a").value = v[0];
+		document.getElementById("b").value = v[1];
+		document.getElementById("c").value = v[2];
+		document.getElementById("d").value = v[3];
+		document.getElementById("e").value = v[4];
+		document.getElementById("f").value = v[5];
+		}
+	Upd();
+	}
+
+</script>
+
+</head>
+<body onload="boot()">
+A = <table style="display:inline;">
+<tr> <td rowspan=2 style="border-left:1px solid; border-top:1px solid; border-bottom:1px solid"> </td> <td> <input type ="number" id="a" value="1" oninput="Upd()" style="width: 4em"> </td> <td> <input type ="number" id="b" value="0" oninput="Upd()" style="width: 4em"> </td> <td rowspan=2 style="border-right:1px solid; border-top:1px solid; border-bottom:1px solid"> </td> </tr> 
+<tr> <td> <input type ="number" id="c" value="0" oninput="Upd()" style="width: 4em"> </td> <td> <input type ="number" id="d" value="1" oninput="Upd()" style="width: 4em"> </td>
+</table>
+<br>
+v = <table style="display:inline;">
+<tr> <td rowspan=2 style="border-left:1px solid; border-top:1px solid; border-bottom:1px solid"> </td> <td> <input type ="number" id="e" value="1" oninput="Upd()" style="width: 4em"> </td> <td rowspan=2 style="border-right:1px solid; border-top:1px solid; border-bottom:1px solid"> </td> </tr> 
+<tr> <td> <input type ="number" id="f" value="0" oninput="Upd()" style="width: 4em"> </td> </table> </td>
+</table>
+<br>
+n = <input type="number" id="n" value="0" oninput="Upd()" style="width:4em">
+<br>
+
+Plot of A<sup>k</sup>v for k = 0,...,n:
+
+<div id="gr"></div>
+
+</body>
+</html>

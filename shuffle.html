@@ -1,0 +1,1848 @@
+﻿<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<meta name=description content="Some Mathematics behind Shuffling Cards">
+<title> Shuffling Cards </title>
+<script>
+
+function ribet(mn,mx) {
+	return(Math.floor(Math.random()*(mx-mn+1))+mn);
+	}
+
+function rperm(n) {
+	var i;
+	var l = [];
+	var t;
+	var j;
+	for (i = 0; i < n; i++) {
+		l.push(i);
+		}
+	for (i = 0; i < n-1; i++) {
+		j = ribet(i,n-1);
+		t = l[i];
+		l[i] = l[j];
+		l[j] = t;
+		}
+	return(l);
+	}
+
+function permcycle(p,i) {
+	var j = i;
+	var l = [i];
+	j = p[i];
+	while (j != i) {
+		l.push(j);
+		j = p[j];
+		}
+	return(l);
+	}
+
+function rif(n,j) {
+	var l = [];
+	for (i = 0; i < n; i++) {
+		l.push(i+n*j);
+		l.push(i+n*(1-j));
+		}
+	return(l);
+	}
+
+function fir(n,j) {
+	var odds = [];
+	var evens = [];
+	var i;
+	for (i = 0; i < n; i++) {
+		odds.push(2*i);
+		evens.push(2*i+1);
+		}
+	if (j) {
+		return(evens.concat(odds));
+		}
+	else {
+		return(odds.concat(evens));
+		}
+	}
+
+function applyperm(p,s) {
+	var i;
+	var l = [];
+	for (i = 0; i < p.length; i++) {
+		l.push(s[p[i]]);
+		}
+	return(l);
+	}
+
+function colorthingie(x) { //https://ux.stackexchange.com/questions/107318/formula-for-color-contrast-between-text-and-background
+	if (x <= .03928) {return(x/12.92);}
+	else {return(Math.pow((x+.055)/1.055,2.4));}
+	}
+
+function lum(r,g,b) {
+	return(.2126*colorthingie(r/255)+.7152*colorthingie(g/255)+.0722*colorthingie(b/255));
+	}
+
+function coltorgb(col) {
+	var ctx = document.getElementById("flicker").getContext("2d");
+	ctx.fillStyle = col;
+	ctx.fillRect(0,0,1,1);
+	return(ctx.getImageData(0,0,1,1).data)
+	}
+
+function colcontrast(col1,col2) {
+	var l1 = lum(...coltorgb(col1));
+	var l2 = lum(...coltorgb(col2));
+	if (l1 > l2) {
+		return((l1+.05)/(l2+.05));
+		}
+	else {
+		return((l2+.05)/(l1+.05));
+		}
+	}
+
+function coltextoptimal(col) {
+	var l = lum(...coltorgb(col));
+	if (l > .175) {return("black");}
+	return("white");
+	}
+
+var colorset = [];
+var halfnumcards = 0;
+var inout = 1;
+var rifh = 649;
+
+function palify(n,k) {
+	var l = [];
+	var i;
+	if (k == "white") {
+		for (i = 0; i < n; i++) {
+			l.push("white");
+			}
+		}
+	if (k == "black") {
+		for (i = 0; i < n; i++) {
+			l.push("black");
+			}
+		}
+	if (k == "monochrome") {
+		for (i = 0; i < n; i++) {
+			l.push("hsl(0,0%,"+90*i/n+"%)");
+			}
+		}
+	if (k == "rainbow1") {
+		for (i = 0; i < n; i++) {
+			l.push("hsl("+360*i/n+",100%,50%)");
+			}
+		}
+	if (k == "rainbow2") {
+		for (i = 0; i < n/6; i++) {
+			l.push("red");
+			}
+		for (; i < 2*n/6; i++) {
+			l.push("orange");
+			}
+		for (; i < 3*n/6; i++) {
+			l.push("yellow");
+			}
+		for (; i < 4*n/6; i++) {
+			l.push("green");
+			}
+		for (; i < 5*n/6; i++) {
+			l.push("blue");
+			}
+		for (; i < n; i++) {
+			l.push("purple");
+			}
+		}
+	if (k == "rainbow3") {
+		for (i = 0; i < n; i++) {
+			l.push(["red","orange","yellow","green","blue","purple"][i%6]);
+			}
+		}
+	if (k == "rainbowd") {
+		for (i = 0; i < n; i++) {
+			l.push("hsl("+360*i/n+",100%,21%)");
+			}
+		}
+	if (k == "rainbowl") {
+		for (i = 0; i < n; i++) {
+			l.push("hsl("+360*i/n+",100%,72%)");
+			}
+		}
+	if (k == "suits1") {
+		for (i = 0; i < n/4; i++) {
+			l.push("black");
+			}
+		for (; i < 2*n/4; i++) {
+			l.push("red");
+			}
+		for (; i < 3*n/4; i++) {
+			l.push("green");
+			}
+		for (; i < n; i++) {
+			l.push("blue");
+			}
+		}
+	if (k == "tb") {
+		for (i = 0; i < n; i++) {
+			l.push("black");
+			}
+		l[0] = "blue";
+		l[n-1] = "red";
+		}
+	if (k == "f2") {
+		for (i = 0; i < n; i++) {
+			l.push("black");
+			}
+		l[n-2] = "blue";
+		l[n-1] = "red";	
+		}
+	if (k == "r2") {
+		for (i = 0; i < n; i++) {
+			l.push("black");
+			}
+		var lll = ribet(0,n-2);
+		l[lll] = "blue";
+		l[lll+1] = "red";
+		}
+	if (k == "hmmm") {
+		if (n == 0) {return([]);}
+		for (i = 0; i < n; i++) {
+			l.push("black");
+			}
+		var j = permcycle(rif(halfnumcards,inout),1);
+		for (i = 0; i < j.length; i++) {
+			l[j[i]] = "red";
+			}
+		}
+	if (k == "hmmm2") {
+		if (n == 0) {return([]);}
+		for (i = 0; i < n; i++) {
+			l.push("black");
+			}
+		var j = permcycle(rif(Number(document.getElementById("numcardssel2").value)/2,document.getElementById("inoutsel2").value),1);
+		for (i = 0; i < j.length; i++) {
+			l[j[i]] = "red";
+			}
+		}
+	if (k == "hmmm3") {
+		if (n == 0) {return([]);}
+		for (i = 0; i < n; i++) {
+			l.push("black");
+			}
+		var j = permcycle(cyperm,1);
+		for (i = 0; i < j.length; i++) {
+			l[j[i]] = "red";
+			}
+		}
+	if (k == "bright") { //color schemes below are from: https://personal.sron.nl/~pault/
+		for (i = 0; i < n; i++) {
+			l.push(["#4477AA","#66CCEE","#228833","#CCBB44","#EE6677","#AA3377","#BBBBBB"][i%7]);
+			}
+		}
+	if (k == "high-contrast") {
+		for (i = 0; i < n; i++) {
+			l.push(["#DDAA33","#BB5566","#004488","#000000"][i%4]);
+			}
+		}
+	if (k == "vibrant") {
+		for (i = 0; i < n; i++) {
+			l.push(["#0077BB","#33BBEE","#009988","#EE7733","#CC3311","#EE3377","#BBBBBB"][i%7]);
+			}
+		}
+	if (k == "muted") {
+		for (i = 0; i < n; i++) {
+			l.push(["#332288","#88CCEE","#44AA99","#117733","#999933","#DDCC77","#CC6677","#882255","#AA4499"][i%9]);
+			}	
+		}
+	return(l);
+	}
+
+function quady(i,x) {
+	return((2-4*i)*x*x+(4*i-1)*x);
+	}
+
+function merge_anim(r,k) {
+	var ctx = document.getElementById("riffle").getContext("2d");
+	ctx.clearRect(0,0,500,rifh+1);
+	var i = 0;
+	var th;
+	ctx.lineWidth = 2;
+	for (i = 0; i < halfnumcards; i++) {
+		ctx.strokeStyle = colorset[i];
+		ctx.beginPath();
+		th = quady((i+.5*k)/(halfnumcards*2)+.25,r/60);
+		ctx.moveTo(175*Math.cos(th),rifh-175*Math.sin(th)-(i+.5*k)*16);
+		ctx.lineTo(275*Math.cos(th),rifh-275*Math.sin(th)-(i+.5*k)*16);
+		ctx.stroke();
+		}
+	for (i = 0; i < halfnumcards; i++) {
+		ctx.strokeStyle = colorset[i+halfnumcards];
+		ctx.beginPath();
+		th = quady((i+.5*(1-k))/(halfnumcards*2)+.25,r/60);
+		ctx.moveTo(500-175*Math.cos(th),rifh-175*Math.sin(th)-(i+.5*(1-k))*16);
+		ctx.lineTo(500-275*Math.cos(th),rifh-275*Math.sin(th)-(i+.5*(1-k))*16);
+		ctx.stroke();
+		}
+	}
+
+function cut_anim(r,k) {
+	var ctx = document.getElementById("riffle").getContext("2d");
+	ctx.clearRect(0,0,500,rifh+1);
+	var i = 0;
+	var th;
+	ctx.lineWidth = 2;
+	for (i = 0; i < halfnumcards; i++) {
+		ctx.strokeStyle = colorset[i];
+		ctx.beginPath();
+		ctx.moveTo(200-50*r/60,rifh-(i*8));
+		ctx.lineTo(300-50*r/60,rifh-(i*8));
+		ctx.stroke();
+		}
+	for (i = 0; i < halfnumcards; i++) {
+		ctx.strokeStyle = colorset[i+halfnumcards];
+		ctx.beginPath();
+		ctx.moveTo(200+50*r/60,rifh-(halfnumcards*8)-(i*8));
+		ctx.lineTo(300+50*r/60,rifh-(halfnumcards*8)-(i*8));
+		ctx.stroke();
+		}
+	}
+
+function bridge_anim(r,k) {
+	var ctx = document.getElementById("riffle").getContext("2d");
+	ctx.clearRect(0,0,500,rifh+1);
+	var i = 0;
+	var th;
+	ctx.lineWidth = 2;
+	for (i = 0; i < halfnumcards; i++) {
+		ctx.strokeStyle = colorset[i];
+		ctx.beginPath();
+		var x = 150 + (r/60)*(175*Math.cos(1)-150);
+		var y = rifh-(i*8)+(r/60)*(-175*Math.sin(1)-(i+.5*k)*16+i*8);
+		ctx.moveTo(x,y);
+		ctx.lineTo(x+100*Math.cos(r/60),y-100*Math.sin(r/60));
+		ctx.stroke();
+		}
+	for (i = 0; i < halfnumcards; i++) {
+		ctx.strokeStyle = colorset[i+halfnumcards];
+		ctx.beginPath();
+		var x = 350 + (r/60)*(150-175*Math.cos(1));
+		var y = rifh-(halfnumcards*8)-(i*8) + (r/60)*(8*halfnumcards-175*Math.sin(1)-(i+.5*(1-k))*16+(i*8));
+		ctx.moveTo(x,y);
+		ctx.lineTo(x-100*Math.cos(r/60),y-100*Math.sin(r/60));
+		ctx.stroke();
+		}
+	}
+
+function flatten_anim(r,k) {
+	var ctx = document.getElementById("riffle").getContext("2d");
+	ctx.clearRect(0,0,500,rifh+1);
+	var i = 0;
+	var th;
+	ctx.lineWidth = 2;
+	for (i = 0; i < halfnumcards; i++) {
+		ctx.strokeStyle = colorset[i];
+		ctx.beginPath();
+		ctx.moveTo(175+(r/60)*25,rifh-(i+.5*k)*16);
+		ctx.lineTo(275+(r/60)*25,rifh-(i+.5*k)*16);
+		ctx.stroke();
+		}
+	for (i = 0; i < halfnumcards; i++) {
+		ctx.strokeStyle = colorset[i+halfnumcards];
+		ctx.beginPath();
+		ctx.moveTo(500-175-(r/60)*25,rifh-(i+.5*(1-k))*16);
+		ctx.lineTo(500-275-(r/60)*25,rifh-(i+.5*(1-k))*16);
+		ctx.stroke();
+		}
+	}
+
+function anim() {
+	var r = Number(document.getElementById("ran").value);
+	k = inout;
+	if (r < 10) {cut_anim(0,k);}
+	if (r >= 10 && r <= 70) {cut_anim(r-10,k);}
+	if (r > 70 && r < 80) {cut_anim(60,k);}
+	if (r >= 80 && r <= 140) {bridge_anim(r-80,k);}
+	if (r > 140 && r < 150) {bridge_anim(60,k);}
+	if (r >= 150 && r <= 210) {merge_anim(210-r,k);}
+	if (r > 210 && r < 220) {merge_anim(0,k);}
+	if (r >= 220 && r <= 280) {flatten_anim(r-220,k);}
+	if (r > 280) {flatten_anim(60,k);}
+	}
+
+function q() {
+	if (document.getElementById("ran").value >= 279) {
+		colorset = applyperm(rif(halfnumcards,inout),colorset);
+		document.getElementById("ran").value = 0;
+		}
+	document.getElementById("ran").value++;
+	anim();
+	}
+
+var riffleanimmode = 0;
+var riffleanim;
+
+function stopstart() {
+	riffleanimmode = 1 - riffleanimmode;
+	if (riffleanimmode) {
+		document.getElementById("stopstart").innerHTML = "stop";
+		riffleanim = setInterval(q,10);
+		}
+	else {
+		document.getElementById("stopstart").innerHTML = "start";
+		clearInterval(riffleanim);
+		}
+	}
+
+function updshuf() {
+	halfnumcards = Number(document.getElementById("numcardssel").value)/2;
+	inout = Number(document.getElementById("inoutsel").value);
+	colorset = palify(halfnumcards*2,document.getElementById("colorssel").value);
+	anim();
+	}
+
+function updtabl() {
+	var n = Number(document.getElementById("numcardssel2").value);
+	var i = Number(document.getElementById("inoutsel2").value);
+	var str = "<table border=1 style='display:inline-block'><tr>";
+	var j;
+	for (j = 0; j < n; j++) {
+		str += "<td>"+(j+1)+"</td>";
+		}
+	str += "</tr><tr>";
+	var str2 = "";
+	var str3 = "";
+	for (j = 0; j < n/2; j++) {
+		str2 += "<td>"+(2*j+2)+"</td>";
+		str3 += "<td>"+(2*j+1)+"</td>";
+		}
+	if (i) {
+		str += str2 + str3;
+		}
+	else {
+		str += str3 + str2;
+		}
+	str += "</tr></table>";
+	document.getElementById("riftabl").innerHTML = str;
+	drawrifperm();
+	}
+
+function drawrifperm() {
+	var c = document.getElementById("rifperm").getContext("2d");
+	c.clearRect(0,0,200,200);
+	c.lineWidth = 1;
+	var n = Number(document.getElementById("numcardssel2").value);
+	var ii = Number(document.getElementById("inoutsel2").value)
+	var pal = palify(n,document.getElementById("colorssel2").value);
+	var i;
+	var perm = fir(n/2,ii);
+	drawperm(c,perm,25,1,150,198,1,pal);
+	c.lineWidth = 2;
+	for (i = 0; i < n; i++) {
+		c.strokeStyle=pal[i];
+		c.beginPath();
+		c.moveTo(0,i*(198/(n-1))+1);
+		c.lineTo(20,i*(198/(n-1))+1);
+		c.stroke();
+		c.strokeStyle=pal[rif(n/2,ii)[i]];
+		c.beginPath();
+		c.moveTo(180,i*(198/(n-1))+1);
+		c.lineTo(200,i*(198/(n-1))+1);
+		c.stroke();
+		}
+	}
+
+var cycoords = [];
+var cygrid = [];
+var cydrg = -1;
+var cyoffsetx = 0;
+var cyoffsety = 0;
+var cysel = -1;
+var cyarrows = [];
+var cyperm = [];
+var cycolors = [];
+var cytextcolors = [];
+
+function cyrndloc() {
+	var i;
+	var x,y;
+	for (i = 0; i < 1000; i++) {
+		x = ribet(20,980);
+		y = ribet(20,380);
+		if (cydhere(x,y,1600,-1) == -1) {return([x,y]);}
+		}
+	console.log("gave up");
+	return([x,y]); //give up
+	}
+
+function cyplop(x,y,c,i) {
+	var a,b;
+	x = Math.floor(x/40);
+	y = Math.floor(y/40);
+	for (a = -1; a <= 1; a++) {
+		for (b = -1; b <= 1; b++) {
+			if (a < 0 || a >= 10) {break;}
+			if (b < 0 || b >= 10) {break;}
+			cygrid[a+x][b+y][c] = i;
+			}
+		}
+	}
+
+function cycolupd() {
+	var n = cyperm.length;
+	var k = document.getElementById("cycolorssel").value;
+	cycolors = palify(n,k);
+	var i;
+	cytextcolors = [];
+	for (i = 0; i < cycolors.length; i++) {
+		cytextcolors.push(coltextoptimal(cycolors[i]));
+		}
+	cystackboot();
+	cydraw();
+	}
+
+function cyboot() {
+	var n = cyperm.length;
+	cyarrows = [];
+	cycoords = [];
+	cygrid = [];
+	var a,b,c,p;
+	for (a = 0; a < 25; a++) {
+		cygrid.push([]);
+		for (b = 0; b < 10; b++) {
+			cygrid[a].push([]);
+			for (c = 0; c < n; c++) {
+				cygrid[a][b].push(0);
+				}
+			}
+		}
+	for (c = 0; c < n; c++) {
+		p = cyrndloc();
+		cycoords.push(p);
+		cyplop(p[0],p[1],c,1);
+		}
+	cycolupd();
+	cydraw();
+	}
+
+function cydraw() {
+	var i;
+	var ctx = document.getElementById("cycle").getContext("2d");
+	ctx.clearRect(0,0,1010,400);
+	ctx.fillStyle = "black";
+	ctx.textAlign = "center";
+	ctx.textBaseline = "middle";
+	ctx.font = "28px sans-serif";
+	ctx.lineWidth = 5;
+	var r;
+	for (i = 0; i < cycoords.length; i++) {
+		ctx.fillStyle = cycolors[i];
+		ctx.beginPath();
+		if (i == cysel) {
+			ctx.strokeStyle = "black";
+			ctx.lineWidth = 1;
+			r = 23;
+			}
+		else {
+			ctx.strokeStyle = "black";
+			ctx.lineWidth = 5;
+			r = 20;
+			}
+		ctx.arc(...cycoords[i],r,0,6.29);
+		ctx.fill();
+		ctx.stroke();
+		ctx.lineWidth = 1;
+		ctx.fillStyle = cytextcolors[i];
+		ctx.fillText(i+1,...cycoords[i]);
+		}
+	ctx.strokeStyle="black";
+	ctx.lineWidth=2;
+	for (i = 0; i < cyarrows.length; i++) {
+		var p1 = cycoords[cyarrows[i][0]];
+		var p2 = cycoords[cyarrows[i][1]];
+		var lg = Math.sqrt(d2(p1[0],p1[1],p2[0],p2[1]));
+		var x = (p2[0]-p1[0])/lg;
+		var y = (p2[1]-p1[1])/lg;
+		ctx.beginPath();
+		ctx.moveTo(p1[0]+23*x,p1[1]+23*y);
+		ctx.lineTo(p2[0]-23*x,p2[1]-23*y);
+		ctx.stroke();
+		ctx.moveTo(p2[0]-33*x+10*y,p2[1]-33*y-10*x);
+		ctx.lineTo(p2[0]-23*x,p2[1]-23*y);
+		ctx.lineTo(p2[0]-33*x-10*y,p2[1]-33*y+10*x);
+		ctx.stroke();
+		}
+	}
+
+function d2(x1,y1,x2,y2) {
+	return((x1-x2)**2+(y1-y2)**2);
+	}
+
+function cydhere(x,y,dd,ignor) {
+	var ch = cygrid[Math.floor(x/40)][Math.floor(y/40)];
+	var i;
+	for (i = 0; i < cycoords.length; i++) {
+		if (i != ignor && d2(x,y,cycoords[i][0],cycoords[i][1]) < dd) {
+			return(i);
+			}
+		}
+	return(-1);
+	}
+
+function cymd(e) {
+	var rect = document.getElementById("cycle").getBoundingClientRect();
+	var x = e.clientX - rect.x;
+	var y = e.clientY - rect.y;
+	var c = cydhere(x,y,400);
+	var th = document.getElementById("cy_sel").value;
+	if (e.ctrlKey) {th = "arrow";}
+	if (e.shiftKey) {th = "drag";}
+	if (c != -1) {
+		if (th == "drag") {
+			cydrg = c;
+			var tx = cycoords[c][0];
+			var ty = cycoords[c][1];
+			cyplop(tx,ty,c,0);
+			offsetx = tx - x;
+			offsety = ty - y;
+			}
+		else if (th == "arrow") {
+			if (cysel != -1) {
+				cytryarrow(cysel,c);
+				}
+			cysel = c;
+			}
+		}
+	else {
+		cysel = -1;
+		}
+	cydraw();
+	}
+
+function cymm(e) {
+	if (cydrg == -1) {return;}
+	var rect = document.getElementById("cycle").getBoundingClientRect();
+	var x = e.clientX - rect.x + cyoffsetx;
+	var y = e.clientY - rect.y + cyoffsety;
+	if (x < 20 || x > 980) {return;}
+	if (y < 20 || y > 380) {return;}
+	if (cydhere(x,y,1600,cydrg) != -1) {return;}
+	cycoords[cydrg] = [x,y];
+	cydraw();
+	}
+
+function cymu(e) {
+	if (cydrg != -1) {
+		cyplop(cycoords[cydrg][0],cycoords[cydrg][1],cydrg,1);
+		}
+	cydrg = -1;
+	}
+
+function cytryarrow(p1,p2) {
+	var i;
+	if (cyperm[p1] != p2) {return;}
+	for (i = 0; i < cyarrows.length; i++) {
+		if (cyarrows[i][0] == p1 && cyarrows[i][1] == p2) {return;}
+		}
+	cyarrows.push([p1,p2]);
+	}
+
+function cydrawtabl() {
+	var str = "<table border=1><tr>";
+	var i;
+	for (i = 0; i < cyperm.length; i++) {
+		str += "<td>" + (i+1) + "</td>";
+		}
+	str += "</tr><tr>";
+	for (i = 0; i < cyperm.length; i++) {
+		str += "<td>" + (cyperm[i]+1) + "</td>";
+		}
+	str += "</tr></table>";
+	document.getElementById("cytabl").innerHTML = str;
+	cyupdcyex();
+	cyboot();
+	}
+
+function cyrnd() {
+	var n = Number(document.getElementById("cynum").value);
+	cyperm = rperm(n);
+	cydrawtabl();
+	}
+
+function cycpy() {
+	var n = Number(document.getElementById("numcardssel2").value);
+	var i = Number(document.getElementById("inoutsel2").value);
+	var odds = [];
+	var evens = [];
+	var j;
+	for (j = 0; j < n/2; j++) {
+		odds.push(2*j); //the webpage starts counting at 1!
+		evens.push(2*j+1);
+		}
+	if (i) {
+		cyperm = evens.concat(odds);
+		}
+	else {
+		cyperm = odds.concat(evens);
+		}
+	cydrawtabl();
+	}
+
+function cyarrs() {
+	var i;
+	for (i = 0; i < cyperm.length; i++) {
+		cyarrows.push([i,cyperm[i]]);
+		}
+	cydraw();
+	}
+
+function cypush() {
+	var i;
+	var l = [];
+	for (i = 0; i < cycolors.length; i++) {
+		l.push(["orange"]);
+		}
+	for (i = 0; i < cycolors.length; i++) {
+		l[cyperm[i]] = cycolors[i];
+		}
+	for (i = 0; i < cycolors.length; i++) {
+		cycolors[i] = l[i];
+		}
+	cytextcolors = [];
+	for (i = 0; i < cycolors.length; i++) {
+		cytextcolors.push(coltextoptimal(cycolors[i]));
+		}
+	cydraw();
+	cystackpush();
+	}
+
+function cyupdcyex() {
+	var i;
+	for (i = 0; i < cyperm.length; i++) {
+		if (cyperm[i] != i) {break;}
+		}
+	if (i == cyperm.length) {
+		var str = "<ul><li>You've gotten the rare 'don't do anything' shuffle! You don't need to draw any lines. Maybe rerandomize?</ul>";
+		}
+	else {
+		var str = "<ul> <li> For instance, since the first column of your table has a "+(i+1)+" over a ";
+		str += (cyperm[i]+1);
+		str += ", you should draw an arrow from the circled "+(i+1)+" to the circled " + (cyperm[i]+1) + ".</ul>";
+		}
+	document.getElementById("cyex").innerHTML = str;
+	}
+
+function cystackboot() {
+	var str = "";
+	var i;
+	for (i = 0; i < cyperm.length; i++) {
+		str += "<div style='position:absolute; top:"+i+"em; left:0px'>"+(i+1)+".</div>";
+		str += "<div id='cystack"+i+"' style='transition:top 1s;display:inline-block; width:100px; height:4px; position:absolute; top:"+i+".5em; left:20px; background-color:"+cycolors[i]+"'> </div>";
+		}
+	document.getElementById("cystack").innerHTML = str;
+	cydrawperm();
+	}
+
+function cystackpush() {
+	var i;
+	var t;
+	for (i = 0; i < cyperm.length; i++) {
+		t = document.getElementById("cystack"+i).style.top;
+		t = Number(t.slice(0,-3));
+		document.getElementById("cystack"+i).style.top = cyperm[t] + ".5em";
+		}
+	cydrawperm();
+	}
+
+function cychkanim() {
+	var k = document.getElementById("chkanim").checked;
+	var i;
+	if (k) {
+		for (i = 0; i < cyperm.length; i++) {
+			document.getElementById("cystack"+i).style.transition="top 1s";
+			}
+		}
+	else {
+		for (i = 0; i < cyperm.length; i++) {
+			document.getElementById("cystack"+i).style.transition="";
+			}
+		}
+	}
+
+function cydrawperm() {
+	var c = document.getElementById("cyperm").getContext("2d");
+	c.clearRect(0,0,200,200);
+	c.lineWidth = 1;
+	var pal = cycolors;
+	var i;
+	var n = cyperm.length;
+	drawperm(c,cyperm,25,1,150,198,1,cycolors);
+	c.lineWidth = 2;
+	for (i = 0; i < n; i++) {
+		c.strokeStyle=pal[i];
+		c.beginPath();
+		c.moveTo(0,i*(198/(n-1))+1);
+		c.lineTo(20,i*(198/(n-1))+1);
+		c.stroke();
+		c.beginPath();
+		c.moveTo(180,cyperm[i]*(198/(n-1))+1);
+		c.lineTo(200,cyperm[i]*(198/(n-1))+1);
+		c.stroke();
+		}
+	}
+
+
+var lrids = [];
+var lrn = 0;
+
+function lrcolupd() {
+	var str = "";
+	lrn = 0;
+	var n = Number(document.getElementById("lrnum").value);
+	var k = document.getElementById("lrcolorssel").value;
+	var l = palify(n,k);
+	var i;
+	lrids = [];
+	for (i = 0; i < n; i++) {
+		lrids.push(i);
+		str += "<div style='position:absolute; top:"+i+"em; left:0px'>"+(i+1)+".</div>";
+		str += "<div id='lrstack"+i+"' style='transition:top 1s;display:inline-block; width:100px; height:4px; position:absolute; top:"+i+".5em; left:20px; background-color:"+l[i]+"'> </div>";
+		}
+	document.getElementById("lrstack").innerHTML = str;
+	document.getElementById("lrhist").getContext("2d").clearRect(0,0,800,400);
+	var ctx = document.getElementById("lrhist").getContext("2d");
+	for (i = 0; i < n; i++) {
+		ctx.fillStyle = document.getElementById("lrstack"+lrids[i]).style["background-color"];
+		ctx.fillRect(0,5*i,5,5);
+		}
+	lrn++;
+	}
+
+function lrshuf() {
+	var n = Number(document.getElementById("lrnum").value);
+	var i;
+	var t;
+	for (i = 0; i < n-1; i++) {
+		if ((i > 0 && ribet(0,2) == 0) || (i == 0 && ribet(0,3) == 0)) {
+			t = document.getElementById("lrstack"+lrids[i]).style.top;
+			t = Number(t.slice(0,-3));
+			document.getElementById("lrstack"+lrids[i]).style.top = (t+1)+".5em";
+			i++;
+			t = document.getElementById("lrstack"+lrids[i]).style.top;
+			t = Number(t.slice(0,-3));
+			document.getElementById("lrstack"+lrids[i]).style.top = (t-1)+".5em";
+			t = lrids[i-1];
+			lrids[i-1] = lrids[i];
+			lrids[i] = t;
+			}
+		}
+	var ctx = document.getElementById("lrhist").getContext("2d");
+	for (i = 0; i < n; i++) {
+		ctx.fillStyle = document.getElementById("lrstack"+lrids[i]).style["background-color"];
+		ctx.fillRect(5*lrn,5*i,5,5);
+		}
+	lrn++;
+	}
+
+
+function lrchkanim() {
+	var k = document.getElementById("lrchkanim").checked;
+	var n = Number(document.getElementById("lrnum").value);
+	var i;
+	if (k) {
+		for (i = 0; i < n; i++) {
+			document.getElementById("lrstack"+i).style.transition="top 1s";
+			}
+		}
+	else {
+		for (i = 0; i < n; i++) {
+			document.getElementById("lrstack"+i).style.transition="";
+			}
+		}
+	}
+
+var lrpermtooltips = [];
+
+function lrpprobstep(n,column) {
+	var i,j;
+	var rval = [];
+	for (i = 0; i < n; i++) {
+		rval.push(0);
+		}
+	rval[0] += 2*column[0]/3;
+	rval[1] += column[0]/3;
+	for (i = 1; i < n-1; i++) {
+		rval[i-1] += column[i]/4;
+		rval[i] += column[i]/2;
+		rval[i+1] += column[i]/4;
+		}
+	rval[n-2] += column[n-1]/3;
+	rval[n-1] += 2*column[n-1]/3;
+	return(rval);
+	}
+
+function lrpnumstep(n,column) {
+	var i,j;
+	var rval = [];
+	for (i = 0; i < n; i++) {
+		rval.push(0);
+		}
+	rval[0] += column[0];
+	rval[1] += column[0];
+	for (i = 1; i < n-1; i++) {
+		rval[i-1] += column[i];
+		rval[i] += column[i];
+		rval[i+1] += column[i];
+		}
+	rval[n-2] += column[n-1];
+	rval[n-1] += column[n-1];
+	return(rval);
+	}
+
+function perceptualgray(v) {
+	return("rgb("+((1-Math.sqrt(v))*255)+","+((1-Math.sqrt(v))*255)+","+((1-Math.sqrt(v))*255)+")");
+	}
+
+function lrpmover(e) {
+	var rect = e.target.getBoundingClientRect();
+	var x = e.clientX - rect.x;
+	var y = e.clientY - rect.y;
+	var el = document.getElementById("lrpermtooltip");
+	for (i = 0; i < lrpermtooltips.length; i++) {
+		if (x >= lrpermtooltips[i][0] && y >= lrpermtooltips[i][1] && x <= lrpermtooltips[i][2] && y <= lrpermtooltips[i][3]) {
+			//e.target.title = lrpermtooltips[i];
+			el.style.display = "";
+			el.style.top = "";
+			el.style.bottom = "";
+			el.style.left = "";
+			el.style.right = "";
+			if (y < 300) {
+				el.style.top = (y+10) + "px";
+				}
+			else {
+				el.style.bottom = (600-(y-10)) + "px";
+				}
+			if (x < 600) {
+				el.style.left = (x+10) + "px";
+				}
+			else {
+				el.style.right = (1200-(x-10)) + "px";
+				}
+			el.innerHTML = lrpermtooltips[i][4];
+			return;
+			}
+		}
+	el.style.display = "none";
+	//e.target.tile = "";
+	}
+
+function lrpdrawcell(c,x,y,w,h,v,numpaths,m,i,j,vmx) { //v = value, m = mode (0 = grayscale, 1 = bar)
+	lrpermtooltips.push([x,y,x+w,y+h,"After "+j+" shuffles,<br>Probability: "+v+"<br> of ending up in position "+ (i+1)]);
+	c.strokeStyle = "black";
+	if (m == 0) {
+		c.beginPath();
+		c.rect(x,y,w,h);
+		c.fillStyle = perceptualgray(v);
+		c.fill();
+		c.stroke();
+		}
+	if (m == 1) {
+		c.beginPath();
+		c.rect(x,y,v*w,h);
+		c.fillStyle = "black";
+		c.fill();
+		c.beginPath();
+		c.rect(x,y,w,h);
+		c.stroke();
+		}
+	if (m == 2) {
+		c.beginPath();
+		c.rect(x,y+(1-v)*h,w,v*h);
+		c.fillStyle = "black";
+		c.fill();
+		c.beginPath();
+		c.rect(x,y,w,h);
+		c.stroke();
+		}
+	if (m == 3) {
+		c.beginPath();
+		c.rect(x,y,v*w/vmx,h);
+		c.fillStyle = "black";
+		c.fill();
+		c.beginPath();
+		c.rect(x,y,w,h);
+		c.stroke();
+		}
+	}
+
+function lrpupd() {//n = number of cards, ii = initial card position.
+	var n = Number(document.getElementById("lrpnumc").value);
+	var ncols = Number(document.getElementById("lrpnums").value);
+	var ii = Number(document.getElementById("lrpii").value) - 1;
+	var mod = document.getElementById("lrpcellsel").value;
+	var i,j,k,t;
+	var ctx = document.getElementById("lrperm").getContext("2d");
+	ctx.clearRect(0,0,1200,600);
+	lrpermtooltips = [];
+	var w = 1200/(ncols+.5);
+	var h = 600/(n-.5);
+	var numpathlist = [];
+	var probslist = [];
+	for (i = 0; i < n; i++) {
+		numpathlist.push(0);
+		probslist.push(0);
+		}
+	numpathlist[ii] = 1;
+	probslist[ii] = 1;
+	for (j = 0; j < ncols; j++) {
+		for (i = 0; i < n; i++) {
+			t = probslist[i];
+			if (i == 0 && t != 0) {
+				ctx.strokeStyle = perceptualgray(2*t/3);
+				ctx.beginPath();
+				ctx.moveTo((j+.5)*w,(i+.25)*h);
+				ctx.lineTo((j+1)*w,(i+.25)*h);
+				ctx.stroke();
+				ctx.strokeStyle = perceptualgray(t/3);
+				ctx.beginPath();
+				ctx.moveTo((j+.5)*w,(i+.25)*h);
+				ctx.lineTo((j+1)*w,(i+1.25)*h);
+				ctx.stroke();
+				}
+			else if (i == n-1 && t != 0) {
+				ctx.strokeStyle = perceptualgray(2*t/3);
+				ctx.beginPath();
+				ctx.moveTo((j+.5)*w,(i+.25)*h);
+				ctx.lineTo((j+1)*w,(i+.25)*h);
+				ctx.stroke();
+				ctx.strokeStyle = perceptualgray(t/3);
+				ctx.beginPath();
+				ctx.moveTo((j+.5)*w,(i+.25)*h);
+				ctx.lineTo((j+1)*w,(i-.75)*h);
+				ctx.stroke();
+				}
+			else if (t != 0) {
+				ctx.strokeStyle = perceptualgray(t/2);
+				ctx.beginPath();
+				ctx.moveTo((j+.5)*w,(i+.25)*h);
+				ctx.lineTo((j+1)*w,(i+.25)*h);
+				ctx.stroke();
+				ctx.strokeStyle = perceptualgray(t/4);
+				ctx.beginPath();
+				ctx.moveTo((j+.5)*w,(i+.25)*h);
+				ctx.lineTo((j+1)*w,(i-.75)*h);
+				ctx.stroke();
+				ctx.beginPath();
+				ctx.moveTo((j+.5)*w,(i+.25)*h);
+				ctx.lineTo((j+1)*w,(i+1.25)*h);
+				ctx.stroke();
+				}
+			lrpdrawcell(ctx,j*w,i*h,w/2,h/2,t,numpathlist[i],mod,i,j,Math.max.apply(null, probslist));
+			}
+		probslist = lrpprobstep(n,probslist);
+		numpathlist = lrpnumstep(n,numpathlist);
+		}
+	for (i = 0; i < n; i++) {
+		lrpdrawcell(ctx,j*w,i*h,w/2,h/2,probslist[i],numpathlist[i],mod,i,j,Math.max.apply(null, probslist));
+		}
+	}
+
+var rrpermtooltips = [];
+
+function rrpmover(e) {
+	var rect = e.target.getBoundingClientRect();
+	var x = e.clientX - rect.x;
+	var y = e.clientY - rect.y;
+	var el = document.getElementById("rrpermtooltip");
+	for (i = 0; i < rrpermtooltips.length; i++) {
+		if (x >= rrpermtooltips[i][0] && y >= rrpermtooltips[i][1] && x <= rrpermtooltips[i][2] && y <= rrpermtooltips[i][3]) {
+			//e.target.title = lrpermtooltips[i];
+			el.style.display = "";
+			el.style.top = "";
+			el.style.bottom = "";
+			el.style.left = "";
+			el.style.right = "";
+			if (y < 300) {
+				el.style.top = (y+10) + "px";
+				}
+			else {
+				el.style.bottom = (600-(y-10)) + "px";
+				}
+			if (x < 600) {
+				el.style.left = (x+10) + "px";
+				}
+			else {
+				el.style.right = (1200-(x-10)) + "px";
+				}
+			el.innerHTML = rrpermtooltips[i][4];
+			return;
+			}
+		}
+	el.style.display = "none";
+	//e.target.tile = "";
+	}
+function rrpdrawcell(c,x,y,w,h,v,numpaths,m,i,j,k,vmx) { //v = value, m = mode (0 = grayscale, 1 = bar)
+	rrpermtooltips.push([x,y,x+w,y+h,"After "+(j+.5*k)+" shuffles,<br>Probability: "+v+"<br> of ending up in position "+ (i+1)]);
+	c.strokeStyle = "black";
+	if (m == 0) {
+		c.beginPath();
+		c.rect(x,y,w,h);
+		c.fillStyle = perceptualgray(v);
+		c.fill();
+		c.stroke();
+		}
+	if (m == 1) {
+		c.beginPath();
+		c.rect(x,y,v*w,h);
+		c.fillStyle = "black";
+		c.fill();
+		c.beginPath();
+		c.rect(x,y,w,h);
+		c.stroke();
+		}
+	if (m == 2) {
+		c.beginPath();
+		c.rect(x,y+(1-v)*h,w,v*h);
+		c.fillStyle = "black";
+		c.fill();
+		c.beginPath();
+		c.rect(x,y,w,h);
+		c.stroke();
+		}
+	if (m == 3) {
+		c.beginPath();
+		c.rect(x,y,v*w/vmx,h);
+		c.fillStyle = "black";
+		c.fill();
+		c.beginPath();
+		c.rect(x,y,w,h);
+		c.stroke();
+		}
+	}
+
+function rrpupd() {//n = number of cards, ii = initial card position.
+	var n = Number(document.getElementById("rrpnumc").value);
+	var ncols = Number(document.getElementById("rrpnums").value);
+	var ii = Number(document.getElementById("rrpii").value) - 1;
+	var mod = document.getElementById("rrpcellsel").value;
+	var i,j,k,t;
+	var ctx = document.getElementById("rrperm").getContext("2d");
+	ctx.clearRect(0,0,1200,600);
+	rrpermtooltips = [];
+	var w = 1200/(2*ncols+.5);
+	var h = 600/(n-.5);
+	var numpathlist = [];
+	var probslist = [];
+	for (i = 0; i < n; i++) {
+		numpathlist.push(0);
+		probslist.push(0);
+		}
+	numpathlist[ii] = 1;
+	probslist[ii] = 1;
+	var perm = rif(n/2,1);
+	var mrep = fir(n/2,1);
+	for (j = 0; j < ncols; j++) {
+		for (i = 0; i < n; i++) {
+			rrpdrawcell(ctx,2*j*w,i*h,w/2,h/2,probslist[i],numpathlist[i],mod,i,j,0,Math.max.apply(null, probslist));
+			ctx.beginPath();
+			ctx.moveTo((2*j+.5)*w,(i+.25)*h);
+			ctx.bezierCurveTo((2*j+.75)*w,(i+.25)*h,(2*j+.75)*w,(mrep[i]+.25)*h,(2*j+1)*w,(mrep[i]+.25)*h);
+			//ctx.lineTo((2*j+1)*w,(mrep[i]+.25)*h);
+			ctx.stroke();
+			}
+		probslist = applyperm(perm,probslist);
+		for (i = 0; i < n; i++) {
+			t = probslist[i];
+			if (i == 0 && t != 0) {
+				ctx.strokeStyle = perceptualgray(2*t/3);
+				ctx.beginPath();
+				ctx.moveTo((2*j+1.5)*w,(i+.25)*h);
+				ctx.lineTo((2*j+2)*w,(i+.25)*h);
+				ctx.stroke();
+				ctx.strokeStyle = perceptualgray(t/3);
+				ctx.beginPath();
+				ctx.moveTo((2*j+1.5)*w,(i+.25)*h);
+				ctx.lineTo((2*j+2)*w,(i+1.25)*h);
+				ctx.stroke();
+				}
+			else if (i == n-1 && t != 0) {
+				ctx.strokeStyle = perceptualgray(2*t/3);
+				ctx.beginPath();
+				ctx.moveTo((2*j+1.5)*w,(i+.25)*h);
+				ctx.lineTo((2*j+2)*w,(i+.25)*h);
+				ctx.stroke();
+				ctx.strokeStyle = perceptualgray(t/3);
+				ctx.beginPath();
+				ctx.moveTo((2*j+1.5)*w,(i+.25)*h);
+				ctx.lineTo((2*j+2)*w,(i-.75)*h);
+				ctx.stroke();
+				}
+			else if (t != 0){
+				ctx.strokeStyle = perceptualgray(t/2);
+				ctx.beginPath();
+				ctx.moveTo((2*j+1.5)*w,(i+.25)*h);
+				ctx.lineTo((2*j+2)*w,(i+.25)*h);
+				ctx.stroke();
+				ctx.strokeStyle = perceptualgray(t/4);
+				ctx.beginPath();
+				ctx.moveTo((2*j+1.5)*w,(i+.25)*h);
+				ctx.lineTo((2*j+2)*w,(i-.75)*h);
+				ctx.stroke();
+				ctx.beginPath();
+				ctx.moveTo((2*j+1.5)*w,(i+.25)*h);
+				ctx.lineTo((2*j+2)*w,(i+1.25)*h);
+				ctx.stroke();
+				}
+			rrpdrawcell(ctx,(2*j+1)*w,i*h,w/2,h/2,probslist[i],numpathlist[i],mod,i,j,1,Math.max.apply(null, probslist));
+			}
+		probslist = lrpprobstep(n,probslist);
+		numpathlist = lrpnumstep(n,numpathlist);
+		}
+	for (i = 0; i < n; i++) {
+		rrpdrawcell(ctx,2*j*w,i*h,w/2,h/2,probslist[i],numpathlist[i],mod,i,j,0,Math.max.apply(null, probslist));
+		}
+	}
+
+var normtooltips = [];
+
+function normmover(e) {
+	var rect = e.target.getBoundingClientRect();
+	var x = e.clientX - rect.x;
+	var y = e.clientY - rect.y;
+	var el = document.getElementById("normtooltip");
+	for (i = 0; i < normtooltips.length; i++) {
+		if (x >= normtooltips[i][0] && y >= normtooltips[i][1] && x <= normtooltips[i][2] && y <= normtooltips[i][3]) {
+			el.style.display = "";
+			el.style.top = "";
+			el.style.bottom = "";
+			el.style.left = "";
+			el.style.right = "";
+			if (y < 200) {
+				el.style.top = (y+10) + "px";
+				}
+			else {
+				el.style.bottom = (400-(y-10)) + "px";
+				}
+			if (x < 250) {
+				el.style.left = (x+10) + "px";
+				}
+			else {
+				el.style.right = (500-(x-10)) + "px";
+				}
+			el.innerHTML = normtooltips[i][4];
+			return;
+			}
+		}
+	el.style.display = "none";
+	}
+
+function normupd() {
+	var n = Number(document.getElementById("normn").value);
+	normtooltips = [];
+	var ctx = document.getElementById("norm").getContext("2d");
+	ctx.clearRect(0,0,500,400);
+	var l = [];
+	var i,j;
+	var tstr = "";
+	for (i = 0; i < n; i++) {
+		l.push(0);
+		}
+	l[(n-1)/2] = 1;
+	for (i = 0; i < n; i++) {
+		l = lrpprobstep(n,l);
+		}
+	for (i = 0; i < n; i++) {
+		ctx.beginPath();
+		ctx.rect((i-n/2)*100/Math.sqrt(n)+250,400-(500*l[i]*Math.sqrt(n)),100/Math.sqrt(n),500*l[i]*Math.sqrt(n));
+		//ctx.moveTo((i+.5-n/2)*100/Math.sqrt(n)+250,0);
+		//ctx.lineTo((i+.5-n/2)*100/Math.sqrt(n)+250,500*l[i]*Math.sqrt(n));
+		ctx.stroke();
+		if (i+.5-n/2 == 0) {
+			tstr = "Of not changing position."
+			}
+		if (i+.5-n/2 > 0) {
+			tstr = "Of moving up "+(i+.5-n/2)+" places.";
+			}
+		if (i+.5-n/2 < 0) {
+			tstr = "Of moving down "+-(i+.5-n/2)+" places.";
+			}
+		normtooltips.push([(i-n/2)*100/Math.sqrt(n)+250,400-(500*l[i]*Math.sqrt(n)),(i+1-n/2)*100/Math.sqrt(n)+250,400,"After "+n+" shuffles,<br>Probability "+l[i]+"<br>"+tstr]);
+		}
+
+	if (document.getElementById("normchk").checked) {
+		ctx.beginPath();
+		for (i = 0; i < 500; i++) {
+			ctx.lineTo(i,400-(282.1*Math.exp(-(i-250)*(i-250)/10000)));
+			}
+		ctx.stroke();
+		}
+	}
+
+function drawperm(c,p,x,y,w,h,j,pal) {
+	var i;
+	var lh = h/(p.length-1);
+	var lw = w/(p.length+3);
+	for (i = 0; i < p.length; i++) {
+		if (pal) {
+			c.strokeStyle = pal[i];
+			}
+		c.beginPath();
+		c.moveTo(x,y+lh*i);
+		if (j) {c.bezierCurveTo(x+w/4,y+lh*i,x+3*w/4,y+lh*p[i],x+w,y+lh*p[i]);}
+		else {c.bezierCurveTo(x+lw*(i+2),y+lh*i,x+lw*(i+2),y+lh*p[i],x+w,y+lh*p[i]);}
+		c.stroke();
+		}
+	}
+
+function boot3perm() {
+	var c = document.getElementById("3perm").getContext("2d");
+	drawperm(c,[2,0,1],50,1,50,48,1);
+	var i;
+	for (i = 0; i < 3; i++) {
+		c.lineWidth=2;
+		c.beginPath();
+		c.moveTo(0,i*24+1);
+		c.lineTo(40,i*24+1);
+		c.stroke();
+		c.beginPath();
+		c.moveTo(110,i*24+1);
+		c.lineTo(150,i*24+1);
+		c.stroke();
+		}
+	}
+
+function testperm(n,i) {
+	var c = document.getElementById("perm").getContext("2d");
+	c.clearRect(0,0,200,200);
+	var l = rperm(n);
+	console.log(l);
+	drawperm(c,l,0,0,200,200,i);
+	}
+
+function boot() {
+	cut_anim();
+	cyboot();
+	cyrnd();
+	updshuf();
+	updtabl();
+	lrcolupd();
+	boot3perm();
+	lrpupd();
+	rrpupd();
+	normupd();
+	}
+
+</script>
+<style>
+blockquote {
+	background-color: #CCDDAA;
+	padding: 20px;
+	border-left: 3px solid #266435;
+	}
+blockquote.caution {
+	background-color: #EEEEBB;
+	padding: 20px;
+	border-left: 3px solid yellow;
+	}
+.card {
+	padding: 0px;
+	margin-left: auto;
+	margin-right:auto;
+	margin-top: 40px;
+	margin-bottom: 40px;
+	width:200px;
+	border-radius: 5px;
+	text-align: center;
+	position: relative;
+	background: white;
+	font-family: sans-serif;
+	}
+.card:nth-of-type(2n):before {
+	background: repeating-linear-gradient(
+		45deg,
+		white,
+		white 2px,
+		transparent 2px,
+		transparent 10px),
+		repeating-linear-gradient(
+		-45deg,
+		white,
+		white 2px,
+		#1A2C6A 2px,
+		#1A2C6A 10px);
+	}
+.card:before {
+	content: "";
+	background: repeating-linear-gradient(
+		45deg,
+		white,
+		white 2px,
+		transparent 2px,
+		transparent 10px),
+		repeating-linear-gradient(
+		-45deg,
+		white,
+		white 2px,
+		#d80a17 2px,
+		#d80a17 10px);
+	border: 10px solid white;
+	border-radius: 15px;
+	position: absolute;
+	z-index: -1;
+	top:-30px;
+	left:-30px;
+	right:-30px;
+	bottom:-30px;
+	color: white;
+	text-align: center;
+	box-shadow: 5px 5px 20px grey;
+	}
+.question:before {
+	color: #225522;
+	content: 'Q: ';
+	font-size:xx-large;
+	line-height:0em;
+	}
+</style>
+</head>
+<body onload="boot();">
+
+<h1 class="card"> Card Shuffling </h1>
+
+<p>In this series of interactives, we will explore various mathematical topics related to shuffling decks of cards.
+In the process, you will hopefully be convinced that riffle shuffling is actually a fairly good technique for shuffling cards.</p>
+
+<h1 class="card"> Perfect Riffles </h1>
+
+<blockquote>
+A <i>riffle shuffle</i> is performed by taking a deck of cards, dividing the deck in half ("cutting" the deck), and then interleaving the two halves.
+There are two possible ways of interleaving the two halves, one (an in-shuffle) where the top and bottom cards wind up inside the deck,
+and the other (an out-shuffle) where the top and bottom cards wind up in the same location.
+</blockquote>
+<p> The interactive below will allow you to visualize perfect riffle shuffles: </p>
+<table border=1>
+<tr><td>
+<canvas id="riffle" width=500 height=650></canvas>
+</td><td valign="bottom">
+<button onclick="stopstart()" id="stopstart">start</button>
+<input type="range" value=0 min=0 max=290 id="ran" oninput="anim()"><br>
+Number of Cards:
+<select id="numcardssel" onchange="updshuf()">
+<option value=0>0</option>
+<option value=2>2</option>
+<option value=4>4</option>
+<option value=6>6</option>
+<option value=8>8</option>
+<option value=10>10</option>
+<option value=12 selected>12</option>
+<option value=14>14</option>
+<option value=16>16</option>
+<option value=18>18</option>
+<option value=20>20</option>
+<option value=22>22</option>
+<option value=24>24</option>
+<option value=26>26</option>
+<option value=28>28</option>
+<option value=30>30</option>
+<option value=32>32</option>
+<option value=34>34</option>
+<option value=36>36</option>
+<option value=38>38</option>
+<option value=40>40</option>
+<option value=42>42</option>
+<option value=44>44</option>
+<option value=46>46</option>
+<option value=48>48</option>
+<option value=50>50</option>
+<option value=52>52</option>
+</select><br>
+Shuffle Type:
+<select id="inoutsel" onchange="updshuf()">
+<option value=0>Out Shuffle</option>
+<option value=1 selected>In Shuffle</option>
+</select><br>
+Color Palette:
+<select id="colorssel" onchange="updshuf()">
+<option value="black">All Black</option>
+<option value="monochrome">Monochrome</option>
+<option value="rainbow1">Rainbow 1</option>
+<option value="rainbow2">Rainbow 2</option>
+<option value="rainbow3">Rainbow 3</option>
+<option value="rainbowd">Dark Rainbow</option>
+<option value="rainbowl">Light Rainbow</option>
+<option value="bright">Bright</option>
+<option value="high-contrast">High-Contrast</option>
+<option value="vibrant">Vibrant</option>
+<option value="muted">Muted</option>
+<option value="suits1">Suits</option>
+<option value="tb">Top and Bottom</option>
+<option value="f2">First Two</option>
+<option value="r2">Random Two</option>
+<option value="hmmm">Hmmm...</option>
+</select>
+</td></tr></table>
+
+<ul>
+<li> Press "start" to begin the animation.
+<li> Press "stop" and move the slider to manually watch the animation.
+<li> Change the "Color Palette" to "Rainbow 1" to color each card differently to make it easier to follow each card.
+</ul>
+
+<blockquote class="question">
+The first couple of shuffles seem to mix up the deck fairly well, but what happens after many shuffles? 
+Keep playing with the interactive until you're convinced that perfect riffle shuffles aren't a great way of shuffling cards.
+</blockquote>
+
+<h1 class="card"> Fixed Shuffles </h1>
+
+<p>One might wonder if the problem here is caused by the fact that we're shuffling the cards the same way each time, 
+or have we just chosen a particularly bad choice of fixed shuffle? 
+To answer this question, we need some way to talk about deterministic ways of reordering decks of cards.
+We'll have two ways of presenting a reordering.
+First, we can present a way of reordering the card as a table. Each column will have a card's original position in the deck
+above its new position in the deck.
+</p>
+
+<p> For instance, if we had a three card deck and moved the top card to the bottom, we would represent this as:
+</p>
+<table border=1 style="margin:0 auto">
+<tr><td>1</td><td>2</td><td>3</td></tr>
+<tr><td>3</td><td>1</td><td>2</td></tr>
+</table>
+<p>
+Because the first (top) card moves into the third (bottom) position, the second card moves into the first (top) position, and the third card moves into the second position.
+</p>
+
+<p> We can also represent these permutations using function diagrams. In these, we draw two decks of cards side by side and draw a line from a card's original position
+in the first deck to its new position in the second deck. Going back to our three card deck where we move the top card to the bottom, we would represent this as:
+</p>
+<canvas id="3perm" width=150 height=50 style="margin:0 auto;display:block"></canvas>
+
+<p>
+Below, you can experiment with various presentations for riffle shuffles:
+</p>
+
+<table border = 1>
+<tr><td>
+<canvas id="rifperm" width=200 height=200></canvas>
+</td><td valign=top>
+<div id="riftabl"></div>
+Number of Cards:
+<select id="numcardssel2" onchange="updtabl()">
+<option value=0>0</option>
+<option value=2>2</option>
+<option value=4>4</option>
+<option value=6>6</option>
+<option value=8>8</option>
+<option value=10>10</option>
+<option value=12 selected>12</option>
+<option value=14>14</option>
+<option value=16>16</option>
+<option value=18>18</option>
+<option value=20>20</option>
+<option value=22>22</option>
+<option value=24>24</option>
+<option value=26>26</option>
+<option value=28>28</option>
+<option value=30>30</option>
+<option value=32>32</option>
+<option value=34>34</option>
+<option value=36>36</option>
+<option value=38>38</option>
+<option value=40>40</option>
+<option value=42>42</option>
+<option value=44>44</option>
+<option value=46>46</option>
+<option value=48>48</option>
+<option value=50>50</option>
+<option value=52>52</option>
+</select><br>
+Shuffle Type:
+<select id="inoutsel2" onchange="updtabl()">
+<option value=0>Out Shuffle</option>
+<option value=1 selected>In Shuffle</option>
+</select><br>
+Color Palette:
+<select id="colorssel2" onchange="updtabl()">
+<option value="black">All Black</option>
+<option value="monochrome">Monochrome</option>
+<option value="rainbow1">Rainbow 1</option>
+<option value="rainbow2">Rainbow 2</option>
+<option value="rainbow3">Rainbow 3</option>
+<option value="rainbowd">Dark Rainbow</option>
+<option value="rainbowl">Light Rainbow</option>
+<option value="bright">Bright</option>
+<option value="high-contrast">High-Contrast</option>
+<option value="vibrant">Vibrant</option>
+<option value="muted">Muted</option>
+<option value="suits1">Suits</option>
+<option value="tb">Top and Bottom</option>
+<option value="f2">First Two</option>
+<option value="r2">Random Two</option>
+<option value="hmmm2">Hmmm...</option>
+</select>
+</td></tr></table>
+
+<blockquote> We can also represent fixed shuffles using a <i>transition diagram</i>. In these, we draw an arrow from a to b if the card in position a winds up in position b.</blockquote>
+
+<table border=1><tr><td>
+<canvas id="cyperm" width=200 height=200></canvas>
+</td><td>
+<div id="cytabl"></div>
+<button onclick="cyrnd()">New Random Shuffle</button> with <input type="number" id="cynum" value=12 style="width:3em"> cards.<br>
+<button onclick="cycpy()">Copy Riffle Shuffle Above</button><br>
+Mouse click to:
+<select id="cy_sel">
+<option value="drag">drag</option>
+<option value="arrow">draw arrow</option>
+</select><br>
+<button onclick="cyarrs()">Fill in All Arrows</button><br>
+Color Palette:
+<select id="cycolorssel" onchange="cycolupd()">
+<option value="white">All White</option>
+<option value="black">All Black</option>
+<option value="monochrome">Monochrome</option>
+<option value="rainbow1" selected>Rainbow 1</option>
+<option value="rainbow2">Rainbow 2</option>
+<option value="rainbow3">Rainbow 3</option>
+<option value="rainbowd">Dark Rainbow</option>
+<option value="rainbowl">Light Rainbow</option>
+<option value="bright">Bright</option>
+<option value="high-contrast">High-Contrast</option>
+<option value="vibrant">Vibrant</option>
+<option value="muted">Muted</option>
+<option value="suits1">Suits</option>
+<option value="tb">Top and Bottom</option>
+<option value="f2">First Two</option>
+<option value="r2">Random Two</option>
+<option value="hmmm3">Hmmm...</option>
+</select><br>
+<button onclick="cypush()">Apply Shuffle to Colors</button><br><input type="checkbox" checked id="chkanim" onchange="cychkanim()"> Animate
+</td></tr></table>
+<canvas style="border:1px solid" id="cycle" width=1000 height=400 onmousedown="cymd(event)" onmousemove="cymm(event)" onmouseup="cymu(event)"></canvas>
+<span style="border:1px solid; width:200px; height:400px; vertical-align:top; display:inline-block; position:relative" id="cystack"></span>
+
+<p>Usage:
+<ul>
+<li> To begin, press "New Random Shuffle" or "Copy Riffle Shuffle Above". This will show the table for the chosen type of shuffle.
+<li> This will draw some circles with numbers in them. Your goal is to draw an arrow from the circle with the number a to the circle with the number b if the permutation takes a card in position a to position b. You can tell this from looking at the table.
+<span id="cyex">
+<ul>
+<li> For instance, if the first column of your table had a 1 over a 3, you should draw an arrow from the circled 1 to the circled 3.
+</ul>
+</span>
+<li> You can either select "draw arrow" under the "Mouse click to" drop down menu, or hold down the ctrl key while clicking to draw arrows.
+<li> The interactive will only draw an arrow from the previously selected circle to the newly selected circle if there is supposed to be an arrow.
+<li> You should move the circles around to try to make sense of the pattern. You can either select "drag" under the "Mouse click to" drop down menu or hold down the alt key while clicking and dragging to move circles around.
+<li> Depending on your Color Palette, different colors will represent different cards (some will just loop through a fixed list of colors, causing repetition). Press the "Apply Shuffle to Colors" button to move the colors according to the shuffle rule.
+Notice that the cards on the right move the same way each time.
+</ul>
+</p>
+
+<h1 class="card"> A Little Bit of Randomness </h1>
+
+<p>
+It should hopefully be clear at this point that just applying the same nonrandom shuffle each time to our deck of cards is a bad idea. 
+There are 80,658,175,170,943,878,571,660,636,856,403,766,975,289,505,440,883,277,824,000,000,000,000 different possible orders of cards in a 52 card
+deck, and we really don't want to just be cycling through a small handful of them.
+</p>
+
+<p>
+So let's introduce a little bit of randomness to the deck, as follows:
+<ol>
+<li> Randomly pick out some (disjoint) adjacent pairs of cards,
+<li> For each pair, switch the cards in the pair.
+</ol>
+</p>
+
+<p> Specifically, the top and bottom cards have a one in three chance of swapping with the next card in, and the cards in the middle of the deck have a
+one in four chance of moving up one space, one in two chance of staying put, and a one in four chance of moving down one space.
+Each card has a chance of moving, and if it does move, it will only move up or down one space in the deck.
+You also shouldn't worry about the mechanics of how we're going to implement this randomness in a real physical card deck --
+I'll explain that later.
+</p>
+
+Number of Cards: <input type="number" id="lrnum" value=12 style="width:3em" onchange="lrcolupd()">
+Color Palette:
+<select id="lrcolorssel" onchange="lrcolupd()">
+<option value="white">All White</option>
+<option value="black">All Black</option>
+<option value="monochrome" selected>Monochrome</option>
+<option value="rainbow1">Rainbow 1</option>
+<option value="rainbow2">Rainbow 2</option>
+<option value="rainbow3">Rainbow 3</option>
+<option value="rainbowd">Dark Rainbow</option>
+<option value="rainbowl">Light Rainbow</option>
+<option value="bright">Bright</option>
+<option value="high-contrast">High-Contrast</option>
+<option value="vibrant">Vibrant</option>
+<option value="muted">Muted</option>
+<option value="suits1">Suits</option>
+<option value="tb">Top and Bottom</option>
+<option value="f2">First Two</option>
+<option value="r2">Random Two</option>
+</select>
+<button onclick="lrshuf()">Introduce Randomness</button><input type="checkbox" checked id="lrchkanim" onchange="lrchkanim()"> Animate<br>
+<div id="lrstack" style="border:1px solid; width:160px; height:400px; vertical-align:top; display:inline-block; position:relative">
+</div> <canvas id="lrhist" width=800 height=400 style="border:1px solid"></canvas>
+
+<p>
+As before, this isn't a really great way of randomizing the cards in the deck. 
+In this case, cards at the beginning of the deck stay in the beginning of the deck, and cards at the end of the deck stay in the end of the deck. 
+We need to introduce randomness a fair number of times before these trends reduce in intensity, and even then their effects linger for a very long time
+(it may help to look at the "suits" color palette).
+</p>
+
+<p> Let's look at this type of shuffling in another way. The interactive below will allow you to visualize the probability that a card starting in a certain position will wind up in a particular position after a certain number of shuffles. In the first column, only one cell is filled in, representing the position the card begins in. In the second column, we see the possible positions the card could wind up in after our first introduction of randomness, labeled by the probability of our card winding up in those positions. In the third column, we see the possible positions the card could wind up in after introducing randomness twice, labeled by the probability of our card winding up in those positions.</p>
+
+<p> Hint: Hover your mouse over a box to get more information about what it's telling you. </p>
+
+Number of cards: <input type="number" id="lrpnumc" value=12 style="width:3em" oninput="lrpupd()">
+Number of shuffles: <input type="number" id="lrpnums" value=30 style="width:3em" oninput="lrpupd()">
+Starting Position: <input type="number" id="lrpii" value=2 style="width:3em" oninput="lrpupd()">
+Show Probability as: <select id="lrpcellsel" oninput="lrpupd()">
+<option value=0>Grayscale</option>
+<option value=1>Horizontal Bar Graph</option>
+<option value=2>Vertical Bar Graph</option>
+<option value=3>Horizontal Bar Graph (scaled)</option>
+</select>
+
+<div style="position:relative; width:1200px">
+<canvas id="lrperm" style="border:1px solid" width=1200 height=600 onmousemove="lrpmover(event)" onmouseleave="lrpmover(event)"></canvas>
+<span style="position:absolute; z-index:1; pointer-events:none; border:1px solid; background-color:white" id="lrpermtooltip"></span>
+</div>
+
+<p>
+Notice that even for a fairly small sized deck (12 cards) and a lot of shuffles (30 shuffles), our initial card is <i>significantly</i> more likely to wind up in some positions than others. This indicates that the deck is not nearly randomly shuffled. Play around with the interactive to get a sense of just how many shuffles you need before the card is roughly equally likely to wind up in any position in the deck.
+</p>
+
+<h1 class="card">A Normal Side Note</h1>
+
+<p>An interesting pattern emerges if we start with a card in the middle of a really large deck of cards
+and plot the probabilities of that card winding up in various positions,
+using a properly scaled bar chart.
+</p>
+
+Number of Shuffles: <input type="number" id="normn" value=15 step=2 min=3 style="width:3em" oninput="normupd()"> <input type="checkbox" id="normchk" oninput="normupd()">Show Gaussian
+<div style="position:relative; width:500px">
+<canvas id="norm" width=500 height=400 onmousemove="normmover(event)" onmouseleave="normmover(event)"></canvas>
+<span style="position:absolute; z-index:1; pointer-events:none; border:1px solid; background-color:white" id="normtooltip"></span>
+</div>
+
+<blockquote>
+As the number of shuffles increases, the tops of the bars in the bar graph above get closer and closer to forming a particular curve.
+This curve is called a <i>Gaussian</i> or <i>Normal</i> curve, and is given by a suitable transformation of the equation y=e<sup>-x²</sup>. 
+</blockquote>
+
+<p>This is neat, but, alas, this is not what we're looking for. We're hoping that the distribution of probabilities is flat, 
+that is, the probabilities are roughly equal that a card will wind up in any position.</p>
+
+<h1 class="card">Combining Shuffles</h1>
+
+<p>Finally, let's combine our two shuffling techniques to produce an <i>imperfect riffle</i>.
+<ul>
+<li> First, we apply a perfect riffle shuffle to our deck as in the top of the page,
+<li> Then, we introduce a small amount of randomness by swapping adjacent pairs, as above.
+</ul>
+This is a mathematical model of real world riffle shuffling: 
+cards wind up roughly where they would with a perfect riffle shuffle, but may be moved slightly.
+</p>
+
+<p> The interactive below will allow you to visualize the probability of a card starting in a particular position winding up in a particular position
+after some number of shuffles of this type.
+</p>
+
+Number of cards: <input type="number" id="rrpnumc" value=12 step=2 style="width:3em" oninput="rrpupd()">
+Number of shuffles: <input type="number" id="rrpnums" value=4 style="width:3em" oninput="rrpupd()">
+Starting Position: <input type="number" id="rrpii" value=2 style="width:3em" oninput="rrpupd()">
+Show Probability as: <select id="rrpcellsel" oninput="rrpupd()">
+<option value=0>Grayscale</option>
+<option value=1>Horizontal Bar Graph</option>
+<option value=2>Vertical Bar Graph</option>
+<option value=3>Horizontal Bar Graph (scaled)</option>
+</select>
+
+<div style="position:relative; width:1200px">
+<canvas id="rrperm" style="border:1px solid" width=1200 height=600 onmousemove="rrpmover(event)" onmouseleave="rrpmover(event)"></canvas>
+<span style="position:absolute; z-index:1; pointer-events:none; border:1px solid; background-color:white" id="rrpermtooltip"></span>
+</div>
+
+<blockquote class="question">
+How many shuffles does it take to even out the probabilities for 12 cards? 52 cards? 100 cards? Hint: use the horizontal bar graph (scaled) visualization.
+</blockquote>
+
+<p> It's clear that our imperfect riffle is much better than just doing our introduce a small amount of randomness operation. But why?</p>
+
+<h1 class="card">Chaos and Scale</h1>
+
+<blockquote>
+A system is said to be <i>chaotic</i> if small changes in its input or initial configuration lead to large changes in its output or final configuration.
+</blockquote>
+
+<blockquote class="caution">
+<p>Note that this definition agrees in part with our intuitive use of the word <i>chaotic</i> in the sense of being unpredictable. 
+Our ability to measure real-world systems is limited: small changes to a system might be too small for us to measure, but, if changes are magnified
+by the system, those immeasurably small initial changes may produce fairly substantial changes to the system that we weren't able to predict.</p>
+
+<p>
+However our mathematical definition of chaotic doesn't exclude the possibility of the system being entirely unrandom in its behavior.
+</p>
+</blockquote>
+
+<p>
+A good source of chaos is <i>iterative systems</i>, systems where the same operation is applied repeatedly, such as our card shuffling operation.
+Although our perfect riffle shuffle is entirely predictable in its behavior, it nonetheless meets our definition of chaotic. 
+If two cards start out next to each other or near each other, their distance gets repeatedly doubled until they wind up in separate halves of the cut.
+(You can visualize this using the "First Two" or "Random Two" color palettes in the interactive at the top of the page.) We can alternately phrase this as:
+if we change the starting position of a card, the distance between where the card winds up and where it would have wound up gets repeatedly doubled
+(until they wind up in separate halves of the cut). While the first few doublings don't produce a significant effect, the effect becomes very significant as
+the number of doublings increases.
+</p>
+
+<p>
+So what happens when we alternate our perfect riffle shuffle with our small introduction of randomness?
+</p>
+
+<ul>
+<li> The first perfect riffle doesn't actually do very much.
+<li> The first small introduction of randomness introduces a very small change to the positions of cards in the deck.
+<li> The second perfect riffle doubles the random change produced by the first small introduction of randomness. 
+Specifically, instead of being a change in position of one space, the change is now a change in position of two spaces.
+<li> The second small introduction of randomness introduces a very small change to the positions of cards in the deck.
+Note that this change is at a different scale (1 space) than the change introduced by the first small introduction of randomness (2 spaces).
+<li> The third perfect riffle shuffle doubles both of the random changes above. The first random change is now a change in position of 4 spaces, 
+and the second random change is now a change in position of 2 spaces, making room for the change in position introduced by the coming small introduction of randomness.
+</ul>
+
+<p>We can follow these changes in the table below:</p>
+
+<table border=1>
+<tr><td>Time</td><td>Effect of 1<sup>st</sup> randomness</td><td>Effect of 2<sup>nd</sup> randomness</td><td>Effect of 3<sup>rd</sup> randomness</td><td>Effect of 4<sup>th</sup> randomness</td><td>Effect of 5<sup>th</sup> randomness</td><td>Effect of 6<sup>th</sup> randomness</td><td>Effect of 7<sup>th</sup> randomness</td></tr>
+<tr><td>1<sup>st</sup> perfect riffle</td></tr>
+<tr><td>1<sup>st</sup> randomness</td><td>1 space</td></tr>
+<tr><td>2<sup>nd</sup> perfect riffle</td><td>2 spaces</td></tr>
+<tr><td>2<sup>nd</sup> randomness</td><td>2 spaces</td><td>1 space</td></tr>
+<tr><td>3<sup>rd</sup> perfect riffle</td><td>4 spaces</td><td>2 spaces</td></tr>
+<tr><td>3<sup>rd</sup> randomness</td><td>4 spaces</td><td>2 spaces</td><td>1 space</td></tr>
+<tr><td>4<sup>th</sup> perfect riffle</td><td>8 spaces</td><td>4 spaces</td><td>2 spaces</td></tr>
+<tr><td>4<sup>th</sup> randomness</td><td>8 spaces</td><td>4 spaces</td><td>2 spaces</td><td>1 space</td></tr>
+<tr><td>5<sup>th</sup> perfect riffle</td><td>16 spaces</td><td>8 spaces</td><td>4 spaces</td><td>2 spaces</td></tr>
+<tr><td>5<sup>th</sup> randomness</td><td>16 spaces</td><td>8 spaces</td><td>4 spaces</td><td>2 spaces</td><td>1 space</td></tr>
+<tr><td>6<sup>th</sup> perfect riffle</td><td>32 spaces</td><td>16 spaces</td><td>8 spaces</td><td>4 spaces</td><td>2 spaces</td></tr>
+<tr><td>6<sup>th</sup> randomness</td><td>32 spaces</td><td>16 spaces</td><td>8 spaces</td><td>4 spaces</td><td>2 spaces</td><td>1 space</td></tr>
+<tr><td>7<sup>th</sup> perfect riffle</td><td>64 spaces</td><td>32 spaces</td><td>16 spaces</td><td>8 spaces</td><td>4 spaces</td><td>2 spaces</td></tr>
+<tr><td>7<sup>th</sup> randomness</td><td>64 spaces</td><td>32 spaces</td><td>16 spaces</td><td>8 spaces</td><td>4 spaces</td><td>2 spaces</td><td>1 space</td></tr>
+</table>
+
+
+<p>Since these changes are all at different scales, they don't interfere with each other much, and the changes quickly get large enough to cover the entire deck.</p>
+
+<p>
+Compare this with just applying the small introduction of randomness operation over and over again: Each operation introduces a change at the scale of one space, 
+and so risk cancelling each other out.
+</p>
+
+<canvas id="flicker" width=1 height=1></canvas>
+</body>
+</html>

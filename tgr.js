@@ -428,6 +428,14 @@ function tgr_update_bound_boxes(id) {
 	document.getElementById("tgr_plotmaxy_"+id).value = tgr_graph_array[id].plotdata.ymax;
 	}
 
+function tgr_evt(id,e) {
+	tgr_graph_array[id].plotdata.xmin = document.getElementById("tgr_plotminx_"+id).value;
+	tgr_graph_array[id].plotdata.xmax = document.getElementById("tgr_plotmaxx_"+id).value;
+	tgr_graph_array[id].plotdata.ymin = document.getElementById("tgr_plotminy_"+id).value;
+	tgr_graph_array[id].plotdata.ymax = document.getElementById("tgr_plotmaxy_"+id).value;
+	tgr_draw_graph(id);
+	}
+
 function tgr_wheel(id,e) {
 	var m = 1;
 	e.preventDefault();

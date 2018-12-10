@@ -1,0 +1,709 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name=description content="An Interactive about Approximation">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="trigineq.png">
+<title> Trigonometric Inequalities </title>
+<script src="underscore-min.js"></script>
+<script src="kas.js"></script>
+<script src="tgr.js"></script>
+<script>
+
+var answers;
+
+var rad_answers = {
+	t1: [["sin(x)"], "What does trigonometry tell you about the ratio between the length A and the length of the hypotenuse (1) of its right triangle?"],
+	t2: [["x"], "What is the circumference of the whole circle? What fraction of that circumference is the arc B?"],
+	t3: [["tan(x)"], "What does trigonometry tell you about the ratio between the length A and the length of the base (1) of its right triangle?"],
+	t4: [["tan(x)/2"], "The area of a triangle is half of its base times its height."],
+	t5: [["x/2"], "What is the area of the whole circle? What fraction of that area is the arc?"],
+	t6: [["2 cos(x)"], "tan(x) = sin(x)/cos(x)."],
+	t7: [["1-cos(x)"], "Focus on what the length OB is."],
+	}
+
+var deg_answers = {
+	t1: [["sin(x)"], "What does trigonometry tell you about the ratio between the length A and the length of the hypotenuse (1) of its right triangle?"],
+	t2: [["pi/180 x"], "What is the circumference of the whole circle? What fraction of that circumference is the arc B?"],
+	t3: [["tan(x)"], "What does trigonometry tell you about the ratio between the length A and the length of the base (1) of its right triangle?"],
+	t4: [["tan(x)/2"], "The area of a triangle is half of its base times its height."],
+	t5: [["pi/90 x"], "What is the area of the whole circle? What fraction of that area is the arc?"],
+	t6: [["2 cos(x)"], "tan(x) = sin(x)/cos(x)."],
+	t7: [["1-cos(x)"], "Focus on what the length OB is."],
+	}
+
+
+function mathyequal(a,b) {
+	try {
+		return(KAS.compare(KAS.parse(a).expr,KAS.parse(b).expr).equal);
+		}
+	catch {
+		return(false);
+		}
+	}
+
+function check(id) {
+	var ans = document.getElementById(id).value;
+
+	var i;
+	var c = false;
+	for (i = 0; i < answers[id][0].length; i++) {
+		if (mathyequal(answers[id][0][i],ans)) {
+			alert("Correct!");
+			return;
+			}
+		}
+	alert("Try Again!");
+	}
+
+function hint(id) {
+	alert(answers[id][1]);
+	}
+
+function show(id) {
+	alert("Possible Answers:\n" + answers[id][0].join("\n"));
+	}
+
+function dist(pt1,pt2) {
+	return(Math.sqrt((pt1[0]-pt2[0])*(pt1[0]-pt2[0]) + (pt1[1]-pt2[1])*(pt1[1]-pt2[1])));
+	}
+
+function drawarrow(ctx,pt1,pt2) {
+	var lg = dist(pt1,pt2);
+	var x = 5*(pt1[0]-pt2[0])/lg;
+	var y = 5*(pt1[1]-pt2[1])/lg;
+	ctx.beginPath();
+	ctx.moveTo(pt1[0],pt1[1]);
+	ctx.lineTo(pt2[0]+x,pt2[1]+y);
+	ctx.stroke();
+	ctx.moveTo(pt2[0],pt2[1]);
+	ctx.lineTo(pt2[0]+2*x+y,pt2[1]+2*y-x);
+	ctx.lineTo(pt2[0]+2*x-y,pt2[1]+2*y+x);
+	ctx.lineTo(pt2[0],pt2[1]);
+	ctx.fill();
+	}
+
+function arrowhead(ctx,pt1,pt2) {
+	var lg = dist(pt1,pt2);
+	var x = 5*(pt1[0]-pt2[0])/lg;
+	var y = 5*(pt1[1]-pt2[1])/lg;
+	ctx.beginPath();
+	ctx.fillStyle="black";
+	ctx.moveTo(pt2[0],pt2[1]);
+	ctx.lineTo(pt2[0]+2*x+y,pt2[1]+2*y-x);
+	ctx.lineTo(pt2[0]+2*x-y,pt2[1]+2*y+x);
+	ctx.lineTo(pt2[0],pt2[1]);
+	ctx.fill();
+	}
+
+function labeldistance(ctx,pt1,pt2,l) {
+	var lg = dist(pt1,pt2);
+	var x = 5*(pt1[0]-pt2[0])/lg;
+	var y = 5*(pt1[1]-pt2[1])/lg;
+	ctx.lineWidth=1;
+	ctx.fillStyle="black";
+	ctx.strokeStyle="black";
+	ctx.beginPath();
+	ctx.moveTo(pt1[0]-2*y,pt1[1]+2*x);
+	ctx.lineTo(pt2[0]-2*y,pt2[1]+2*x);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(pt2[0]-2*y,pt2[1]+2*x);
+	ctx.lineTo(pt2[0]+2*x+y-2*y,pt2[1]+2*y-x+2*x);
+	ctx.lineTo(pt2[0]+2*x-y-2*y,pt2[1]+2*y+x+2*x);
+	ctx.lineTo(pt2[0]-2*y,pt2[1]+2*x);
+	ctx.fill();
+	ctx.beginPath();
+	ctx.moveTo(pt2[0],pt2[1]);
+	ctx.lineTo(pt2[0]-4*y,pt2[1]+4*x);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(pt1[0]-2*y,pt1[1]+2*x);
+	ctx.lineTo(pt1[0]-2*x+y-2*y,pt1[1]-2*y-x+2*x);
+	ctx.lineTo(pt1[0]-2*x-y-2*y,pt1[1]-2*y+x+2*x);
+	ctx.lineTo(pt1[0]-2*y,pt1[1]+2*x);
+	ctx.fill();
+	ctx.beginPath();
+	ctx.moveTo(pt1[0],pt1[1]);
+	ctx.lineTo(pt1[0]-4*y,pt1[1]+4*x);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.font="16px serif";
+	ctx.fillStyle = "black";
+	ctx.textAlign = "center";
+	ctx.textBaseline = "middle";
+	ctx.strokeStyle="white";
+	ctx.lineWidth = 7;
+	ctx.strokeText(l,.5*pt1[0]+.5*pt2[0]-2*y,.5*pt1[1]+.5*pt2[1]+2*x);
+	ctx.fillText(l,.5*pt1[0]+.5*pt2[0]-2*y,.5*pt1[1]+.5*pt2[1]+2*x);
+	}
+
+function labelarc(ctx,c,r,a1,a2,l) {
+	ctx.beginPath();
+	ctx.lineWidth=1;
+	ctx.strokeStyle="black";
+	ctx.beginPath();
+	ctx.moveTo(c[0]+r*Math.cos(a1),c[1]-r*Math.sin(a1));
+	ctx.lineTo(c[0]+(r+20)*Math.cos(a1),c[1]-(r+20)*Math.sin(a1));
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(c[0]+r*Math.cos(a2),c[1]-r*Math.sin(a2));
+	ctx.lineTo(c[0]+(r+20)*Math.cos(a2),c[1]-(r+20)*Math.sin(a2));
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.arc(c[0],c[1],r+10,a1,-a2,-1);
+	ctx.stroke();
+	arrowhead(ctx,[c[0]+(r+10)*Math.cos(a2),c[1]-(r+10)*Math.sin(a2)],[c[0]+(r+10)*Math.cos(a2)-Math.sin(a2),c[1]-(r+10)*Math.sin(a2)-Math.cos(a2)]);
+	arrowhead(ctx,[c[0]+(r+10)*Math.cos(a1),c[1]-(r+10)*Math.sin(a1)],[c[0]+(r+10)*Math.cos(a1)+Math.sin(a1),c[1]-(r+10)*Math.sin(a1)+Math.cos(a1)]);
+	ctx.beginPath();
+	ctx.font="16px serif";
+	ctx.fillStyle = "black";
+	ctx.textAlign = "center";
+	ctx.textBaseline = "middle";
+	ctx.strokeStyle="white";
+	ctx.lineWidth = 5;
+	ctx.strokeText(l,c[0]+(r+10)*Math.cos((a2+a1)/2),c[1]-(r+10)*Math.sin((a2+a1)/2));
+	ctx.fillText(l,c[0]+(r+10)*Math.cos((a2+a1)/2),c[1]-(r+10)*Math.sin((a2+a1)/2));
+	}
+
+function labelangle(ctx,c,a1,a2,l) {
+	ctx.beginPath();
+	ctx.strokeStyle="black";
+	ctx.lineWidth=1;
+	ctx.arc(c[0],c[1],30,-a1,-a2,1);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.fillStyle = "black";
+	ctx.strokeStyle = "white";
+	ctx.lineWidth=5;
+	ctx.font="16px serif";
+	ctx.textAlign = "center";
+	ctx.textBaseline = "middle";
+	ctx.strokeText(l,c[0]+30*Math.cos((a1+a2)/2),c[1]-30*Math.sin((a1+a2)/2));
+	ctx.fillText(l,c[0]+30*Math.cos((a1+a2)/2),c[1]-30*Math.sin((a1+a2)/2));
+	}
+
+function labelpoint(ctx,pt,ox,oy,l) {
+	ctx.beginPath();
+	ctx.fillStyle = "black";
+	ctx.strokeStyle = "white";
+	ctx.lineWidth=5;
+	ctx.font="16px serif";
+	ctx.textAlign = "center";
+	ctx.textBaseline = "middle";
+	ctx.strokeText(l,pt[0]+8*ox,pt[1]+8*oy);
+	ctx.fillText(l,pt[0]+8*ox,pt[1]+8*oy);
+	}
+
+function rightangle(ctx,pt1,pt2,pt3) {
+	var d12 = dist(pt1,pt2);
+	var d23 = dist(pt2,pt3);
+	var d = Math.min(d12,d23);
+	var s = 10;
+	if (d < 100) {
+		s = d/10;
+		}
+	ctx.lineWidth=1;
+	ctx.strokeStyle="black";
+	ctx.beginPath();
+	ctx.moveTo(pt2[0]-s*(pt2[0]-pt1[0])/d12,pt2[1]-s*(pt2[1]-pt1[1])/d12);
+	ctx.lineTo(pt2[0]-s*(pt2[0]-pt1[0])/d12-s*(pt2[0]-pt3[0])/d23,pt2[1]-s*(pt2[1]-pt1[1])/d12-s*(pt2[1]-pt3[1])/d23);
+	ctx.lineTo(pt2[0]-s*(pt2[0]-pt3[0])/d23,pt2[1]-s*(pt2[1]-pt3[1])/d23);
+	ctx.stroke();
+	}
+
+var s1_a = 1;
+
+function s1_a_upd(e) {
+	s1_a = Number(e.target.value);
+	document.getElementById("s1_a_r").value = s1_a;
+	document.getElementById("s1_a_n").value = s1_a;
+	s1_upd();
+	}
+
+function s1_upd() {
+	var ctx = document.getElementById("s1_c").getContext("2d");
+	ctx.clearRect(0,0,400,400);
+	ctx.beginPath();
+	ctx.strokeStyle="black";
+	ctx.lineWidth=2;
+	ctx.arc(25,375,350,0,-Math.PI/2,1);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(25,25);
+	ctx.lineTo(25,375);
+	ctx.lineTo(375,375);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(25,375);
+	ctx.lineTo(25+350*Math.cos(s1_a),375-350*Math.sin(s1_a));
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(25+350*Math.cos(s1_a),375-350*Math.sin(s1_a));
+	ctx.lineTo(25+350*Math.cos(s1_a),375);
+	ctx.stroke();
+	labelangle(ctx,[25,375],0,s1_a,"x");
+	rightangle(ctx,[25,375],[25+350*Math.cos(s1_a),375],[25+350*Math.cos(s1_a),375-350*Math.sin(s1_a)]);
+	labeldistance(ctx,[375,375],[25,375],"1");
+	labeldistance(ctx,[25+350*Math.cos(s1_a),375],[25+350*Math.cos(s1_a),375-350*Math.sin(s1_a)],"A");
+	labelarc(ctx,[25,375],350,0,s1_a,"B");
+	}
+
+var s2_a = .8;
+
+function s2_a_upd(e) {
+	s2_a = Number(e.target.value);
+	document.getElementById("s2_a_r").value = s2_a;
+	document.getElementById("s2_a_n").value = s2_a;
+	s2_upd();
+	}
+
+function s2_upd() {
+	s2_icon_upd();
+	var ctx = document.getElementById("s2_c").getContext("2d");
+	ctx.clearRect(0,0,400,400);
+	if (document.getElementById("s2_ck_bw").checked) {
+		ctx.strokeStyle = "black";
+		ctx.lineWidth = 1;
+		var i;
+		for (i = 25; i < 375; i += 10) {
+			ctx.beginPath();
+			ctx.moveTo(i,375);
+			ctx.lineTo(i,375-(i-25)*Math.tan(s2_a));
+			ctx.stroke();
+			}
+		for (i = 25; i < 375; i += 10) {
+			if ((375-i)/Math.tan(s2_a) < 350*Math.sqrt(1-((375-i)/350)*((375-i)/350))) {
+				ctx.beginPath();
+				ctx.moveTo(25+(375-i)/Math.tan(s2_a),i);
+				ctx.lineTo(25+350*Math.sqrt(1-((375-i)/350)*((375-i)/350)),i);
+				ctx.stroke();
+				}
+			}
+		}
+	else {
+		ctx.beginPath();
+		ctx.fillStyle="#77AADD";
+		ctx.moveTo(25,375);
+		ctx.lineTo(375,375-350*Math.tan(s2_a));
+		ctx.lineTo(375,375);
+		ctx.fill();
+		ctx.beginPath();
+		ctx.fillStyle="#EE8866";
+		ctx.arc(25,375,350,0,-s2_a,1);
+		ctx.fill();
+		ctx.beginPath();
+		ctx.moveTo(25,375);
+		ctx.lineTo(375,375);
+		ctx.lineTo(25+350*Math.cos(s2_a),375-350*Math.sin(s2_a));
+		ctx.fill();
+		ctx.lineWidth=2;
+		ctx.strokeStyle="#EE8866";
+		ctx.stroke();
+		}
+
+	ctx.beginPath();
+	ctx.strokeStyle="black";
+	ctx.lineWidth=2;
+	ctx.arc(25,375,350,0,-Math.PI/2,1);
+	ctx.stroke();
+	ctx.lineWidth=2;
+	ctx.beginPath();
+	ctx.moveTo(25,25);
+	ctx.lineTo(25,375);
+	ctx.lineTo(375,375);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(25,375);
+	ctx.lineTo(375,375-350*Math.tan(s2_a));
+	ctx.lineTo(375,375);
+	ctx.stroke();
+	labelangle(ctx,[25,375],0,s2_a,"x");
+	rightangle(ctx,[25,375],[375,375],[375,375-350*Math.tan(s2_a)]);
+	labeldistance(ctx,[375,375],[25,375],"1");
+	labeldistance(ctx,[375,375-350*Math.tan(s2_a)],[375,375],"A");
+	}
+
+function s2_icon_upd() {
+	var ctx1 = document.getElementById("s2_c_tri1").getContext("2d");
+	var ctx2 = document.getElementById("s2_c_tri2").getContext("2d");
+	var ctx3 = document.getElementById("s2_c_arc").getContext("2d");
+	ctx1.clearRect(0,0,20,20);
+	ctx2.clearRect(0,0,20,20);
+	ctx3.clearRect(0,0,20,20);
+	if (document.getElementById("s2_ck_bw").checked) {
+		var i;
+		for (i = 0; i <= 20; i += 5) {
+			ctx1.beginPath();
+			ctx1.moveTo(i,0);
+			ctx1.lineTo(i,20);
+			ctx1.stroke();
+			ctx1.beginPath();
+			ctx1.moveTo(0,i);
+			ctx1.lineTo(20,i);
+			ctx1.stroke();
+			ctx2.beginPath();
+			ctx2.moveTo(i,0);
+			ctx2.lineTo(i,20);
+			ctx2.stroke();
+			ctx3.beginPath();
+			ctx3.moveTo(i,0);
+			ctx3.lineTo(i,20);
+			ctx3.stroke();
+			ctx3.beginPath();
+			ctx3.moveTo(0,i);
+			ctx3.lineTo(20,i);
+			ctx3.stroke();
+			}
+		}
+	else {
+		ctx1.fillStyle = "#EE8866";
+		ctx1.fillRect(0,0,20,20);
+		ctx2.fillStyle = "#77AADD";
+		ctx2.fillRect(0,0,20,20);
+		ctx3.fillStyle = "#EE8866";
+		ctx3.fillRect(0,0,20,20);
+		}
+	}
+
+var s3_a = 1;
+
+function s3_a_upd(e) {
+	s3_a = Number(e.target.value);
+	document.getElementById("s3_a_r").value = s3_a;
+	document.getElementById("s3_a_n").value = s3_a;
+	s3_upd();
+	}
+
+function s3_upd_old() {
+	var ctx = document.getElementById("s3_c").getContext("2d");
+	ctx.clearRect(0,0,400,400);
+	ctx.beginPath();
+	ctx.strokeStyle="black";
+	ctx.lineWidth=2;
+	ctx.arc(25,375,350,0,-Math.PI/2,1);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(25,25);
+	ctx.lineTo(25,375);
+	ctx.lineTo(375,375);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(25,375);
+	ctx.lineTo(25+350*Math.cos(s3_a),375-350*Math.sin(s3_a));
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(25+350*Math.cos(s3_a),375-350*Math.sin(s3_a));
+	ctx.lineTo(25+350*Math.cos(s3_a),375);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(25+350*Math.cos(s3_a),375-350*Math.sin(s3_a));
+	ctx.lineTo(375,375);
+	ctx.stroke();
+	if (document.getElementById("s3_ck_sb").checked) {
+		ctx.beginPath();
+		ctx.moveTo(25,375);
+		ctx.lineTo(25+(350*Math.cos(s3_a)+350)/2,375-(350*Math.sin(s3_a)/2));
+		ctx.stroke();
+		rightangle(ctx,[25,375],[25+(350*Math.cos(s3_a)+350)/2,375-(350*Math.sin(s3_a)/2)],[375,375]);
+		}
+	labelangle(ctx,[25+350*Math.cos(s3_a),375-350*Math.sin(s3_a)],-Math.PI/2,-Math.PI/2+s3_a/2,"y");
+	labelangle(ctx,[25,375],0,s3_a,"x");
+	rightangle(ctx,[25,375],[25+350*Math.cos(s3_a),375],[25+350*Math.cos(s3_a),375-350*Math.sin(s3_a)]);
+	labeldistance(ctx,[25,375],[25,25],"1");
+	labeldistance(ctx,[25+350*Math.cos(s3_a),375],[25+350*Math.cos(s3_a),375-350*Math.sin(s3_a)],"A");
+	labelarc(ctx,[25,375],350,0,s3_a,"B");
+	labeldistance(ctx,[375,375],[25+350*Math.cos(s3_a),375],"C");
+	labeldistance(ctx,[25+350*Math.cos(s3_a),375-350*Math.sin(s3_a)],[375,375],"D");
+	}
+
+function s3_upd() {
+	var ctx = document.getElementById("s3_c").getContext("2d");
+	var O = [25,375];
+	var A = [25+350*Math.cos(s3_a),375-350*Math.sin(s3_a)];
+	var B = [25+350*Math.cos(s3_a),375];
+	var C = [375,375];
+	var D = [25+(350*Math.cos(s3_a)+350)/2,375-(350*Math.sin(s3_a)/2)];
+	var E = [25,25];
+	ctx.clearRect(0,0,400,400);
+	ctx.beginPath();
+	ctx.strokeStyle="black";
+	ctx.lineWidth=2;
+	ctx.arc(...O,350,0,-Math.PI/2,1);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(...E);
+	ctx.lineTo(...O);
+	ctx.lineTo(...C);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(...O);
+	ctx.lineTo(...A);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(...A);
+	ctx.lineTo(...B);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(...A);
+	ctx.lineTo(...C);
+	ctx.stroke();
+	if (document.getElementById("s3_ck_sb").checked) {
+		ctx.beginPath();
+		ctx.moveTo(...O);
+		ctx.lineTo(...D);
+		ctx.stroke();
+		rightangle(ctx,O,D,A);
+		labelpoint(ctx,D,1,-1,"D");
+		}
+	rightangle(ctx,O,B,A);
+	labelpoint(ctx,O,-1,1,"O");
+	labelpoint(ctx,A,1,-1,"A");
+	labelpoint(ctx,B,0,1,"B");
+	labelpoint(ctx,C,1,1,"C");
+	labelangle(ctx,O,0,s3_a,"x");
+	}
+
+function s3_sel1(e) {
+	if (e.target.value == 1) {
+		document.getElementById("s3_sel1").innerHTML = "Correct!";
+		document.getElementById("s3_sel1").style.color = "#222255";
+		}
+	else {
+		document.getElementById("s3_sel1").innerHTML = "Try Again!";
+		document.getElementById("s3_sel1").style.color = "#663333";
+		}
+	}
+
+function s3_sel2(e) {
+	if (e.target.value == 1) {
+		document.getElementById("s3_sel2").style.display = "";
+		}
+	else {
+		document.getElementById("s3_sel2").style.display = "none";
+		}
+	}
+
+function boot() {
+	answers = rad_answers;
+	s1_upd();
+	s2_upd();
+	s3_upd();
+	tgr_grapher("tgr1",[{type:"plot", color:"#DDAA33", fct:Math.sin},
+			{type:"plot", color:"#BB5566", fct:function(x){return(x)}},
+			{type:"plot", color:"#004488", fct:function(x){return(x*Math.cos(x))}}]);
+	tgr_grapher("tgr2",[{type:"plot", color:"#DDAA33", fct:function(x){return(Math.cos(x))}},
+			{type:"plot", color:"#BB5566", fct:function(x){return(1-x*x/2)}},
+			{type:"plot", color:"#004488", fct:function(x){return(1-Math.cos(x)*Math.cos(x)*x*x/2)}}]);
+	}
+
+function degrad(e) {
+	if (e.target.value == 1) {
+		var i;
+		for (i = 0; i <= 22; i++) {
+			document.getElementById("deg"+i).style.display = "inline";
+			}
+		for (i = 0; i <= 3; i++) {
+			document.getElementById("rad"+i).style.display = "none";
+			}
+		answers = deg_answers;
+		tgr_update_grapher_objs("tgr1",[{type:"plot", color:"#DDAA33", fct:function(x){return(Math.sin(x*Math.PI/180))}},
+			{type:"plot", color:"#BB5566", fct:function(x){return(Math.PI*x/180)}},
+			{type:"plot", color:"#004488", fct:function(x){return(Math.PI*x*Math.cos(x*Math.PI/180)/180)}}]);
+		tgr_update_grapher_objs("tgr2",[{type:"plot", color:"#DDAA33", fct:function(x){return(Math.cos(x*Math.PI/180))}},
+			{type:"plot", color:"#BB5566", fct:function(x){return(1-x*x*Math.PI*Math.PI/(2*180*180))}},
+			{type:"plot", color:"#004488", fct:function(x){return(1-Math.cos(x*Math.PI/180)*Math.cos(x*Math.PI/180)*x*x*Math.PI*Math.PI/(2*180*180))}}]);
+		}
+	else {
+		var i;
+		for (i = 0; i <= 22; i++) {
+			document.getElementById("deg"+i).style.display = "none";
+			}
+		for (i = 0; i <= 3; i++) {
+			document.getElementById("rad"+i).style.display = "inline";
+			}
+		answers = rad_answers;
+		tgr_update_grapher_objs("tgr1",[{type:"plot", color:"#DDAA33", fct:Math.sin},
+			{type:"plot", color:"#BB5566", fct:function(x){return(x)}},
+			{type:"plot", color:"#004488", fct:function(x){return(x*Math.cos(x))}}]);
+		tgr_update_grapher_objs("tgr2",[{type:"plot", color:"#DDAA33", fct:function(x){return(Math.cos(x))}},
+			{type:"plot", color:"#BB5566", fct:function(x){return(1-x*x/2)}},
+			{type:"plot", color:"#004488", fct:function(x){return(1-Math.cos(x)*Math.cos(x)*x*x/2)}}]);
+		}
+	}
+
+</script>
+<style>
+h1 {
+	text-align: center;
+	font-family: serif;
+	background-color: #EEDD88;
+	}
+</style>
+</head>
+<body onload="boot()">
+
+<p>
+Pick a Mode:
+<select oninput="degrad(event)">
+<option value=0>Radians</option>
+<option value=1>Degrees</option>
+</select>
+</p>
+
+<p>Throughout this webpage, we assume that <var>x</var> is strictly between 0 and <span id="rad0">&pi;/2</span><span id="deg0" style="display:none">90</span>.</p>
+
+<p>When entering an answer involving pi, you can just type "pi".</p>
+
+<h1> sin(<var>x</var>) &lt; <table id="deg1" style="vertical-align:40%;display:none;font-size:.7em"><tr><td style="border-bottom:2px solid">&pi;</td></tr><tr><td>180</td></tr></table><var>x</var></h1>
+
+<table>
+<tr><td>
+<canvas id="s1_c" width=400 height=400 style="border:1px solid"></canvas>
+<br>
+Angle:
+<input type="range" min=0 max=1.57 value=1 step=.01 id="s1_a_r" oninput="s1_a_upd(event)" style="vertical-align:middle">
+<input type="number" min=0 max=1.57 value=1 step=.01 id="s1_a_n" oninput="s1_a_upd(event)" style="width:4em">
+</td>
+<td style="vertical-align:top">
+<p> Write a formula for the length A in terms of <var>x</var>:</p>
+<input type="text" id="t1"><button onclick="check('t1')">Check Answer</button><button onclick="hint('t1')">Hint</button><button onclick="show('t1')">Show Answer</button>
+<p> Write a formula for the arclength B in terms of <var>x</var>:</p>
+<input type="text" id="t2"><button onclick="check('t2')">Check Answer</button><button onclick="hint('t2')">Hint</button><button onclick="show('t2')">Show Answer</button>
+<p>
+Note that A represents a direct path from the common point to the baseline, while B represents an indirect path from the common point to the baseline.
+</p>
+</td>
+</tr>
+</table>
+
+<h1><span id="deg2" style="display:none"><table style="vertical-align:40%;display:inline;font-size:.7em"><tr><td style="border-bottom:2px solid">&pi;</td></tr><tr><td>180</td></tr></table></span><var>x</var>cos(<var>x</var>) &lt; sin(<var>x</var>)</h1>
+
+<table>
+<tr><td>
+<canvas id="s2_c" width=400 height=400 style="border:1px solid"></canvas>
+<br>
+Angle:
+<input type="range" min=0 max=1.57 value=.8 step=.01 id="s2_a_r" oninput="s2_a_upd(event)" style="vertical-align:middle">
+<input type="number" min=0 max=1.57 value=.8 step=.01 id="s2_a_n" oninput="s2_a_upd(event)" style="width:4em">
+
+<input type="checkbox" id="s2_ck_bw" oninput="s2_upd()"> Crosshatch mode
+</td>
+<td style="vertical-align:top">
+<p> Write a formula for the length A in terms of <var>x</var>:</p>
+<input type="text" id="t3"><button onclick="check('t3')">Check Answer</button><button onclick="hint('t3')">Hint</button><button onclick="show('t3')">Show Answer</button>
+<p> Write a formula for the area of the triangle <canvas id="s2_c_tri1" width=20 height=20 style="border:1px solid"></canvas> <canvas id="s2_c_tri2" width=20 height=20 style="border:1px solid"></canvas>. </p>
+<input type="text" id="t4"><button onclick="check('t4')">Check Answer</button><button onclick="hint('t4')">Hint</button><button onclick="show('t4')">Show Answer</button>
+<p> Write a formula for the area of the arc <canvas id="s2_c_arc" width=20 height=20 style="border:1px solid"></canvas>. </p>
+<input type="text" id="t5"><button onclick="check('t5')">Check Answer</button><button onclick="hint('t5')">Hint</button><button onclick="show('t5')">Show Answer</button>
+<div id="deg10" style="display:none"> <p>Write out the inequality that the area of the triangle is larger than the area of the arc. What do you need to multiply both sides by to get the inequality <table id="deg3" style="vertical-align:40%;display:none;font-size:.7em;text-align:center"><tr><td style="border-bottom:2px solid">&pi;</td></tr><tr><td>180</td></tr></table><var>x</var>cos(<var>x</var>) < sin(<var>x</var>)?
+Note that this quantity is positive for the given values of <var>x</var>.</p></div>
+<div id="rad1"> <p> Write out the inequality that the area of the triangle is larger than the area of the arc. What do you need to multiply both sides by to get the inequality <var>x</var>cos(<var>x</var>) < sin(<var>x</var>)?
+Note that this quantity is positive for the given values of <var>x</var>.</p></div>
+<input type="text" id="t6"><button onclick="check('t6')">Check Answer</button><button onclick="hint('t6')">Hint</button><button onclick="show('t6')">Show Answer</button>
+</td>
+</tr>
+</table>
+<h1><span id="deg11" style="display:none"><table style="vertical-align:40%;display:inline;font-size:.7em"><tr><td style="border-bottom:2px solid">&pi;</td></tr><tr><td>180</td></tr></table></span><var>x</var>cos(<var>x</var>) &lt; sin(<var>x</var>) &lt; <table id="deg12" style="vertical-align:40%;display:none;font-size:.7em"><tr><td style="border-bottom:2px solid">&pi;</td></tr><tr><td>180</td></tr></table><var>x</var></h1>
+
+<div id="deg16" style="display:none">
+Note that for values of <var>x</var> close to 0, cos(<var>x</var>) is very close to 1, so the above inequality tells us that sin(<var>x</var>) is very close to <table id="deg13" style="vertical-align:40%;display:none;font-size:.7em;text-align:center"><tr><td style="border-bottom:2px solid">&pi;</td></tr><tr><td>180</td></tr></table><var>x</var> for small values of <var>x</var>.
+Hint: Zoom out horizontally.
+</div>
+
+<div id="rad2">
+Note that for values of <var>x</var> close to 0, cos(<var>x</var>) is very close to 1, so the above inequality tells us that sin(<var>x</var>) is very close to <var>x</var> for small values of <var>x</var>.
+</div>
+
+<table>
+<tr><td>
+<div id="tgr1"></div>
+</td>
+<td style="vertical-align:top">
+<span style="background-color:#BB5566;width:10px;height:10px;display:inline-block"></span> <var>y</var> = <table id="deg14" style="vertical-align:40%;display:none;font-size:.7em;text-align:center"><tr><td style="border-bottom:2px solid">&pi;</td></tr><tr><td>180</td></tr></table><var>x</var><br>
+<span style="background-color:#DDAA33;width:10px;height:10px;display:inline-block"></span> <var>y</var> = sin(<var>x</var>)<br>
+<span style="background-color:#004488;width:10px;height:10px;display:inline-block"></span> <var>y</var> = <table id="deg15" style="vertical-align:40%;display:none;font-size:.7em;text-align:center"><tr><td style="border-bottom:2px solid">&pi;</td></tr><tr><td>180</td></tr></table><var>x</var>cos(<var>x</var>)<br>
+</td>
+</tr>
+</table>
+
+<h1> 1- <table id="deg4" style="vertical-align:40%;display:none;font-size:.7em;text-align:center"><tr><td style="border-bottom:2px solid">&pi;<sup>2</sup></td></tr><tr><td>180<sup>2</sup></td></tr></table><table style="vertical-align:40%;display:inline;font-size:.7em"><tr><td style="border-bottom:2px solid"><var>x</var><sup>2</sup></td></tr><tr><td>2</td></tr></table> &lt; cos(<var>x</var>) </h1>
+
+<table>
+<tr><td>
+<canvas id="s3_c" width=400 height=400 style="border:1px solid"></canvas>
+<br>
+Angle:
+<input type="range" min=0 max=1.57 value=1 step=.01 id="s3_a_r" oninput="s3_a_upd(event)" style="vertical-align:middle">
+<input type="number" min=0 max=1.57 value=1 step=.01 id="s3_a_n" oninput="s3_a_upd(event)" style="width:4em">
+
+<input type="checkbox" id="s3_ck_sb" oninput="s3_upd()" checked> Show bisector
+</td>
+<td style="vertical-align:top">
+<p>Given that the length OC (the radius of the circle centered at O) is 1, write a formula for the length BC.</p>
+<input type="text" id="t7"><button onclick="check('t7')">Check Answer</button><button onclick="hint('t7')">Hint</button><button onclick="show('t7')">Show Answer</button>
+<p> Select a correct argument that angle BAC is x/2. 
+<select oninput="s3_sel1(event)">
+<option disabled selected value=-1>-Select your answer-</option>
+<option>Triangle BAC is congruent to triangle DOC.</option>
+<option value=1>Triangle BAC is similar but not congruent to triangle DOC.</option>
+<option>Triangle BAC is congruent to triangle DOA.</option>
+<option>Triangle BAC is similar but not congruent to triangle DOA.</option>
+</select>
+<span id="s3_sel1"></span>
+</p>
+<p>Let <var>y</var> represent the length of the line segment AC. Note that <var>y</var> is less than <table id="deg5" style="vertical-align:40%;display:none;font-size:.7em;text-align:center"><tr><td style="border-bottom:2px solid">&pi;</td></tr><tr><td>180</td></tr></table><var>x</var>, since <var>x</var> is the length of the arc AC.
+Select the correct trig function:</p>
+<p> The length BC = <var>y</var> times
+<select oninput="s3_sel2(event)">
+<option disabled selected value=-1>-Select your answer-</option>
+<option value=1>sin(x/2)</option>
+<option>cos(x/2)</option>
+<option>tan(x/2)</option>
+<option>cot(x/2)</option>
+<option>sec(x/2)</option>
+<option>csc(x/2)</option>
+</select> <div id="s3_sel2" style="display:none">Correct! Note that this is in turn less than <table id="deg6" style="vertical-align:40%;display:none;font-size:.7em;text-align:center"><tr><td style="border-bottom:2px solid">&pi;</td></tr><tr><td>180</td></tr></table><var>x</var> times <table id="deg7" style="vertical-align:40%;display:none;font-size:.7em;text-align:center"><tr><td style="border-bottom:2px solid">&pi;</td></tr><tr><td>180</td></tr></table><var>x</var>/2.</div>
+</td></tr></table>
+
+<h1> cos(<var>x</var>) &lt; 1- <table id="deg8" style="vertical-align:40%;display:none;font-size:.7em;text-align:center"><tr><td style="border-bottom:2px solid">&pi;<sup>2</sup></td></tr><tr><td>180<sup>2</sup></td></tr></table><table style="vertical-align:40%;display:inline;font-size:.7em"><tr><td style="border-bottom:2px solid"><var>x</var><sup>2</sup>(cos(<var>x</var>))<sup>2</sup></td></tr><tr><td>2</td></tr></table> </h1>
+
+<table>
+<tr><td>
+1 - cos(<var>x</var>) </td><td> &gt; </td><td> (1-cos(<var>x</var>)) (1+cos(<var>x</var>))/2
+</td></tr>
+<tr><td>
+</td><td>=</td><td>(sin(<var>x</var>))<sup>2</sup>/2
+</td></tr>
+<tr><td>
+</td><td> &gt; </td><td>
+<table id="deg9" style="vertical-align:40%;display:none;font-size:.7em;text-align:center"><tr><td style="border-bottom:2px solid">&pi;<sup>2</sup></td></tr><tr><td>180<sup>2</sup></td></tr></table><table style="vertical-align:40%;display:inline;font-size:.7em;text-align:center"><tr><td style="border-bottom:2px solid"><var>x</var><sup>2</sup>(cos(<var>x</var>))<sup>2</sup></td></tr><tr><td>2</td></tr></table>
+</td></tr>
+</table>
+
+<h1> 1- <table id="deg18" style="vertical-align:40%;display:none;font-size:.7em;text-align:center"><tr><td style="border-bottom:2px solid">&pi;<sup>2</sup></td></tr><tr><td>180<sup>2</sup></td></tr></table><table style="vertical-align:40%;display:inline;font-size:.7em"><tr><td style="border-bottom:2px solid"><var>x</var><sup>2</sup></td></tr><tr><td>2</td></tr></table> &lt; cos(<var>x</var>) &lt; 1- <table id="deg17" style="vertical-align:40%;display:none;font-size:.7em;text-align:center"><tr><td style="border-bottom:2px solid">&pi;<sup>2</sup></td></tr><tr><td>180<sup>2</sup></td></tr></table><table style="vertical-align:40%;display:inline;font-size:.7em"><tr><td style="border-bottom:2px solid"><var>x</var><sup>2</sup>(cos(<var>x</var>))<sup>2</sup></td></tr><tr><td>2</td></tr></table> </h1>
+
+<div id="deg19" style="display:none">
+Note that for values of <var>x</var> close to 0, cos(<var>x</var>) is very close to 1, so the above inequality tells us that cos(<var>x</var>) is very close to 1-<table id="deg20" style="vertical-align:40%;display:none;font-size:.7em;text-align:center"><tr><td style="border-bottom:2px solid">&pi;<sup>2</sup></td></tr><tr><td>180<sup>2</sup></td></tr></table><table style="vertical-align:40%;display:inline;font-size:.7em"><tr><td style="border-bottom:2px solid"><var>x</var><sup>2</sup></td></tr><tr><td>2</td></tr></table> for small values of <var>x</var>.
+Hint: Zoom out horizontally.
+</div>
+
+<div id="rad3">
+Note that for values of <var>x</var> close to 0, cos(<var>x</var>) is very close to 1, so the above inequality tells us that cos(<var>x</var>) is very close to 1-<table style="vertical-align:40%;display:inline;font-size:.7em"><tr><td style="border-bottom:2px solid"><var>x</var><sup>2</sup></td></tr><tr><td>2</td></tr></table> for small values of <var>x</var>.
+</div>
+
+<table>
+<tr><td>
+<div id="tgr2"></div>
+</td>
+<td style="vertical-align:top">
+<span style="background-color:#BB5566;width:10px;height:10px;display:inline-block"></span> <var>y</var> = 1- <table id="deg21" style="vertical-align:40%;display:none;font-size:.7em;text-align:center"><tr><td style="border-bottom:2px solid">&pi;<sup>2</sup></td></tr><tr><td>180<sup>2</sup></td></tr></table><table style="vertical-align:40%;display:inline;font-size:.7em;text-align:center"><tr><td style="border-bottom:2px solid"><var>x</var><sup>2</sup></td></tr><tr><td>2</td></tr></table><br>
+<span style="background-color:#DDAA33;width:10px;height:10px;display:inline-block"></span> <var>y</var> = sin(<var>x</var>)<br>
+<span style="background-color:#004488;width:10px;height:10px;display:inline-block"></span> <var>y</var> =  1- <table id="deg22" style="vertical-align:40%;display:none;font-size:.7em;text-align:center"><tr><td style="border-bottom:2px solid">&pi;<sup>2</sup></td></tr><tr><td>180<sup>2</sup></td></tr></table><table style="vertical-align:40%;display:inline;font-size:.7em;text-align:center"><tr><td style="border-bottom:2px solid"><var>x</var><sup>2</sup>(cos(<var>x</var>))<sup>2</sup></td></tr><tr><td>2</td></tr></table><br>
+</td>
+</tr>
+</table>
+
+</body>
+</html>

@@ -496,6 +496,10 @@ function boot() {
 	tgr_grapher("tgr2",[{type:"plot", color:"#DDAA33", fct:function(x){return(Math.cos(x))}},
 			{type:"plot", color:"#BB5566", fct:function(x){return(1-x*x/2)}},
 			{type:"plot", color:"#004488", fct:function(x){return(1-Math.cos(x)*Math.cos(x)*x*x/2)}}]);
+	if(decodeURIComponent(location.search) == "?degrees") {
+		document.getElementById("degrad").options[1].selected = true;
+		degrad({target:{value:1}});
+		}
 	}
 
 function degrad(e) {
@@ -546,7 +550,7 @@ h1 {
 
 <p>
 Pick a Mode:
-<select oninput="degrad(event)">
+<select oninput="degrad(event)" id="degrad">
 <option value=0>Radians</option>
 <option value=1>Degrees</option>
 </select>

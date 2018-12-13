@@ -1,0 +1,1186 @@
+﻿<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="cannon.png">
+<meta name=description content="An Interactive about Trig Derivatives">
+<title> Cannons/Sensitivity </title>
+<script src="underscore-min.js"></script>
+<script src="kas.js"></script>
+<script src="math.min.js"></script>
+<script>
+
+var answers = {
+	t1: [["vt"], "Distance is Velocity times Time"],
+	t2: [["vt cos(a)"], "Use trigonometry"],
+	t3: [["vt sin(a)"], "Use trigonometry"],
+	t4: [["v cos(a)"], "The ts cancel"],
+	t5: [["v sin(a)"], "The ts cancel"],
+	t6: [["v^2 sin(2a) / g", "2 v^2 sin(a) cos(a) / g"], 
+	"When solving problems that ask you to solve in terms of some variables, try plugging in specific values for those variables (usually something simple and nonzero like 1 or 2) and solving. While you won't get the answer, it is very likely that the solving process you used will be line by line very close to the one you need to use on the original problem."],
+	t7: [["v t cos(a)"], "Plug in u"],
+	t8: [["-1/2 g t^2 + v t sin(a)"], "Plug in w"],
+	t9: [["2w/g"], "You need to solve 0 = -1/2 g t^2 + wt. I like to factor the right hand side, but you could also bring one of the terms over to the other side, or, if you're feeling silly, use the quadratic formula."],
+	t10: [["2 v cos(a)/g"], "You need to solve the problem above or solve for y(t) in terms of v, t, and a first."],
+	t11: [["x/u"], "Look back at the list of formulas you're starting from."],
+	t12: [["-1/2 g x^2/u^2 + wx/u"], "You need to solve the problem above first."],
+	t13: [["-1/2 g x^2/(v cos(a))^2 + x tan(a)"], "You need to solve some of the above problems first. Perhaps 3, 4, and 6, or 2 and 5."],
+	t14: [["2 sin(a) cos(a)"], "The trig sum identity is that sin(a+b) = sin(a)cos(b)+cos(a)sin(b)."],
+	t15: [["v^2 sin(2a) / g"], "The double angle formula is that sin(2a) = 2sin(a)cos(a)"],
+	t16: [[".9 sin(2a)"], "Don't forget not to include units."],
+	t17: [[".9 sin(2(a+h))"], "Replace the a in your answer above with (a+h)."],
+	t18: [[".9 (sin(2a) cos(2h) + cos(2a) sin(2h))"], "The trig sum identity is that sin(a+b) = sin(a)cos(b)+cos(a)sin(b)."],
+	t19: [[".9 (sin(2a) cos(2h) + cos(2a) sin(2h) - sin(2a))"], "Be careful about the leading .9."],
+	t20: [[".9 (cos(2h)-1) and .9 sin(2h)"], "Be careful about the leading .9"],
+	t21: [[".9 * (-2)(sin^2(h))"], "The double angle formula is cos(2h) = cos^2(a) - sin^2(a). Then use that 1=sin^2(a)+cos^2(a)."]
+	}
+
+function dist(pt1,pt2) {
+	return(Math.sqrt((pt1[0]-pt2[0])*(pt1[0]-pt2[0]) + (pt1[1]-pt2[1])*(pt1[1]-pt2[1])));
+	}
+
+function drawarrow(ctx,pt1,pt2) {
+	var lg = dist(pt1,pt2);
+	var x = 5*(pt1[0]-pt2[0])/lg;
+	var y = 5*(pt1[1]-pt2[1])/lg;
+	ctx.beginPath();
+	ctx.moveTo(pt1[0],pt1[1]);
+	ctx.lineTo(pt2[0]+x,pt2[1]+y);
+	ctx.stroke();
+	ctx.moveTo(pt2[0],pt2[1]);
+	ctx.lineTo(pt2[0]+2*x+y,pt2[1]+2*y-x);
+	ctx.lineTo(pt2[0]+2*x-y,pt2[1]+2*y+x);
+	ctx.lineTo(pt2[0],pt2[1]);
+	ctx.fill();
+	}
+
+function labeldistance(ctx,pt1,pt2,l) {
+	var lg = dist(pt1,pt2);
+	var x = 5*(pt1[0]-pt2[0])/lg;
+	var y = 5*(pt1[1]-pt2[1])/lg;
+	ctx.lineWidth=1;
+	ctx.fillStyle="black";
+	ctx.strokeStyle="black";
+	ctx.beginPath();
+	ctx.moveTo(pt1[0]-2*y,pt1[1]+2*x);
+	ctx.lineTo(pt2[0]-2*y,pt2[1]+2*x);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(pt2[0]-2*y,pt2[1]+2*x);
+	ctx.lineTo(pt2[0]+2*x+y-2*y,pt2[1]+2*y-x+2*x);
+	ctx.lineTo(pt2[0]+2*x-y-2*y,pt2[1]+2*y+x+2*x);
+	ctx.lineTo(pt2[0]-2*y,pt2[1]+2*x);
+	ctx.fill();
+	ctx.beginPath();
+	ctx.moveTo(pt2[0],pt2[1]);
+	ctx.lineTo(pt2[0]-4*y,pt2[1]+4*x);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(pt1[0]-2*y,pt1[1]+2*x);
+	ctx.lineTo(pt1[0]-2*x+y-2*y,pt1[1]-2*y-x+2*x);
+	ctx.lineTo(pt1[0]-2*x-y-2*y,pt1[1]-2*y+x+2*x);
+	ctx.lineTo(pt1[0]-2*y,pt1[1]+2*x);
+	ctx.fill();
+	ctx.beginPath();
+	ctx.moveTo(pt1[0],pt1[1]);
+	ctx.lineTo(pt1[0]-4*y,pt1[1]+4*x);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.font="16px serif";
+	ctx.fillStyle = "black";
+	ctx.textAlign = "center";
+	ctx.textBaseline = "middle";
+	ctx.strokeStyle="white";
+	ctx.lineWidth = 7;
+	ctx.strokeText(l,.5*pt1[0]+.5*pt2[0]-2*y,.5*pt1[1]+.5*pt2[1]+2*x);
+	ctx.fillText(l,.5*pt1[0]+.5*pt2[0]-2*y,.5*pt1[1]+.5*pt2[1]+2*x);
+	}
+
+function rightangle(ctx,pt1,pt2,pt3) {
+	var d12 = dist(pt1,pt2);
+	var d23 = dist(pt2,pt3);
+	var d = Math.min(d12,d23);
+	var s = 10;
+	if (d < 100) {
+		s = d/10;
+		}
+	ctx.lineWidth=1;
+	ctx.strokeStyle="black";
+	ctx.beginPath();
+	ctx.moveTo(pt2[0]-s*(pt2[0]-pt1[0])/d12,pt2[1]-s*(pt2[1]-pt1[1])/d12);
+	ctx.lineTo(pt2[0]-s*(pt2[0]-pt1[0])/d12-s*(pt2[0]-pt3[0])/d23,pt2[1]-s*(pt2[1]-pt1[1])/d12-s*(pt2[1]-pt3[1])/d23);
+	ctx.lineTo(pt2[0]-s*(pt2[0]-pt3[0])/d23,pt2[1]-s*(pt2[1]-pt3[1])/d23);
+	ctx.stroke();
+	}
+
+function mathyequal(a,b) {
+	try {
+		return(KAS.compare(KAS.parse(a).expr,KAS.parse(b).expr).equal);
+		}
+	catch {
+		return(false);
+		}
+	}
+
+function check20() {
+	var ansa = document.getElementById("t20a").value;
+	var ansb = document.getElementById("t20b").value;
+	if (mathyequal(".9 (cos(2h)-1)",ansa) && mathyequal(".9 sin(2h)",ansb)) {
+		alert("Correct!");
+		}
+	else {
+		alert("Try Again!");
+		}
+	}
+
+function check(id) {
+	var ans = document.getElementById(id).value;
+
+	var i;
+	var c = false;
+	for (i = 0; i < answers[id][0].length; i++) {
+		if (mathyequal(answers[id][0][i],ans)) {
+			alert("Correct!");
+			return;
+			}
+		}
+	alert("Try Again!");
+	}
+
+function hint(id) {
+	alert(answers[id][1]);
+	}
+
+function show(id) {
+	alert("Possible Answers:\n" + answers[id][0].join("\n"));
+	}
+
+var hv_a = 45;
+var hv_t = 0;
+
+function hv_a_upd(e) {
+	hv_a = Number(e.target.value);
+	document.getElementById("hv_a_r").value = hv_a;
+	document.getElementById("hv_a_n").value = hv_a;
+	hv_draw();
+	}
+
+function hv_t_upd(e) {
+	hv_t = Number(e.target.value);
+	document.getElementById("hv_t_r").value = hv_t;
+	document.getElementById("hv_t_n").value = hv_t;
+	hv_draw();
+	}
+
+function hv_draw() {
+	var ctx = document.getElementById("hv_c").getContext("2d");
+	ctx.clearRect(0,0,420,420);
+	var c = Math.cos(hv_a*Math.PI/180);
+	var s = -Math.sin(hv_a*Math.PI/180);
+	var v0 = 700;
+	if (document.getElementById("hv_ck_sl").checked) {
+		ctx.lineWidth=1;
+		ctx.beginPath();
+		ctx.strokeStyle = "black";
+		ctx.arc(20,400,30,0,-hv_a*Math.PI/180,1);
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.moveTo(20,400);
+		ctx.lineTo(50,400);
+		ctx.stroke();
+		ctx.font="16px serif";
+		ctx.beginPath();
+		ctx.fillStyle = "black";
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+		ctx.strokeStyle="white";
+		ctx.lineWidth = 5;
+		ctx.strokeText("a",20+30*Math.cos(.5*hv_a*Math.PI/180),400-30*Math.sin(.5*hv_a*Math.PI/180));
+		ctx.fillText("a",20+30*Math.cos(.5*hv_a*Math.PI/180),400-30*Math.sin(.5*hv_a*Math.PI/180));
+		ctx.beginPath();
+		ctx.strokeStyle="black";
+		ctx.lineWidth=2;
+		ctx.moveTo(20,400);
+		ctx.lineTo(20+v0*hv_t*c,400);
+		ctx.lineTo(20+v0*hv_t*c,400+v0*hv_t*s);
+		ctx.stroke();
+		}
+	if (document.getElementById("hv_ck_st").checked) {
+		ctx.lineWidth=2;
+		ctx.strokeStyle="green";
+		ctx.beginPath();
+		ctx.moveTo(20,400);
+		ctx.lineTo(20+1000*c,400+1000*s);
+		ctx.stroke();
+		}
+	ctx.beginPath();
+	ctx.fillStyle="blue";
+	ctx.arc(20+v0*hv_t*c,400+v0*hv_t*s,5,0,2*Math.PI);
+	ctx.fill();
+	ctx.beginPath();
+	ctx.moveTo(20+17*c-6*s,400+6*c+17*s);
+	ctx.lineTo(20-6*c-6*s,400+6*c-6*s);
+	ctx.lineTo(20-6*c+6*s,400-6*c-6*s);
+	ctx.lineTo(20+17*c+6*s,400-6*c+17*s);
+	ctx.fillStyle="black";
+	ctx.fill();
+	ctx.beginPath();
+	ctx.arc(20,400,3,0,2*Math.PI);
+	ctx.fillStyle="red";
+	ctx.fill();
+	if (document.getElementById("hv_ck_sl").checked) {
+		labeldistance(ctx,[20,400],[20+v0*hv_t*c,400+v0*hv_t*s],"d");
+		labeldistance(ctx,[20+v0*hv_t*c,400],[20,400],"x");
+		labeldistance(ctx,[20+v0*hv_t*c,400+v0*hv_t*s],[20+v0*hv_t*c,400],"y");
+		rightangle(ctx,[20,400],[20+v0*hv_t*c,400],[20+v0*hv_t*c,400+v0*hv_t*s]);
+		}
+	}
+
+
+var pm_a = 45;
+var pm_t = 0;
+
+function pm_a_upd(e) {
+	pm_a = Number(e.target.value);
+	document.getElementById("pm_a_r").value = pm_a;
+	document.getElementById("pm_a_n").value = pm_a;
+	pm_draw();
+	}
+
+function pm_t_upd(e) {
+	pm_t = Number(e.target.value);
+	document.getElementById("pm_t_r").value = pm_t;
+	document.getElementById("pm_t_n").value = pm_t;
+	pm_draw();
+	}
+
+function pm_draw() {
+	var ctx = document.getElementById("pm_c").getContext("2d");
+	ctx.clearRect(0,0,620,320);
+	var ra = pm_a*Math.PI/180;
+	var c = Math.cos(ra);
+	var s = -Math.sin(ra);
+	var v = 3*600; // v in pixels per second (1m = 600px)
+	var g = 10*600; // g in pixels per second^2
+	var vsog = v*v/g;
+	var i;
+	ctx.strokeStyle="black";
+	ctx.lineWidth=1;
+	ctx.beginPath();
+	ctx.moveTo(0,300);
+	ctx.lineTo(620,300);
+	ctx.stroke();
+	if (document.getElementById("pm_ck_sc").checked) {
+		ctx.strokeStyle="black";
+		ctx.lineWidth=2;
+		ctx.beginPath();
+		ctx.moveTo(20+vsog*Math.sin(2*ra)-5,300-5);
+		ctx.lineTo(20+vsog*Math.sin(2*ra)+5,300+5);
+		ctx.moveTo(20+vsog*Math.sin(2*ra)-5,300+5);
+		ctx.lineTo(20+vsog*Math.sin(2*ra)+5,300-5);
+		ctx.stroke();
+		}
+	if (document.getElementById("pm_ck_sl").checked) {
+		ctx.strokeStyle="black";
+		ctx.lineWidth=1;
+		ctx.beginPath();
+		ctx.moveTo(20,300);
+		ctx.lineTo(20+v*c*pm_t,300);
+		ctx.lineTo(20+v*c*pm_t,300+.5*g*pm_t*pm_t+v*s*pm_t);
+		ctx.stroke();
+		}
+	if (document.getElementById("pm_ck_st").checked) {
+		ctx.lineWidth=2;
+		ctx.strokeStyle="green";
+		ctx.beginPath();
+		for (i = 0; i < 2; i += .01) {
+			ctx.lineTo(20+v*c*i,300+.5*g*i*i+v*s*i);
+			}
+		ctx.stroke();
+		}
+	ctx.beginPath();
+	ctx.fillStyle="blue";
+	ctx.arc(20+v*c*pm_t,300+.5*g*pm_t*pm_t+v*s*pm_t,5,0,2*Math.PI);
+	ctx.fill();
+	if (document.getElementById("pm_ck_sl").checked) {
+		ctx.beginPath();
+		ctx.lineWidth=1;
+		ctx.strokeStyle = "black";
+		ctx.arc(20,300,30,0,-ra,1);
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.moveTo(20,300);
+		ctx.lineTo(50,300);
+		ctx.stroke();
+		ctx.font="16px serif";
+		ctx.beginPath();
+		ctx.fillStyle = "black";
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+		ctx.strokeStyle="white";
+		ctx.lineWidth = 5;
+		ctx.strokeText("a",20+30*Math.cos(.5*ra),300-30*Math.sin(.5*ra));
+		ctx.fillText("a",20+30*Math.cos(.5*ra),300-30*Math.sin(.5*ra));
+		}
+	ctx.beginPath();
+	ctx.moveTo(20+17*c-6*s,300+6*c+17*s);
+	ctx.lineTo(20-6*c-6*s,300+6*c-6*s);
+	ctx.lineTo(20-6*c+6*s,300-6*c-6*s);
+	ctx.lineTo(20+17*c+6*s,300-6*c+17*s);
+	ctx.fillStyle="black";
+	ctx.fill();
+	ctx.beginPath();
+	ctx.arc(20,300,3,0,2*Math.PI);
+	ctx.fillStyle="red";
+	ctx.fill();
+	if (document.getElementById("pm_ck_sl").checked) {
+		labeldistance(ctx,[20+v*c*pm_t,300],[20,300],"x");
+		labeldistance(ctx,[20+v*c*pm_t,300+.5*g*pm_t*pm_t+v*s*pm_t],[20+v*c*pm_t,300],"y");
+		}
+	}
+
+
+var pm2_a = 45;
+var pm2_e = 0;
+var pm2_t = 0;
+var pm2_v = 3;
+
+function pm2_a_upd(e) {
+	pm2_a = Number(e.target.value);
+	document.getElementById("pm2_a_r").value = pm2_a;
+	document.getElementById("pm2_a_n").value = pm2_a;
+	pm2_draw();
+	}
+
+function pm2_e_upd(e) {
+	pm2_e = Number(e.target.value);
+	document.getElementById("pm2_e_r").value = pm2_e;
+	document.getElementById("pm2_e_n").value = pm2_e;
+	pm2_draw();
+	}
+
+function pm2_t_upd(e) {
+	pm2_t = Number(e.target.value);
+	document.getElementById("pm2_t_r").value = pm2_t;
+	document.getElementById("pm2_t_n").value = pm2_t;
+	pm2_draw();
+	}
+
+function pm2_v_upd(e) {
+	pm2_v = Number(e.target.value);
+	if (document.getElementById("pm2_ck_fv").checked) {
+		pm2_v = 3;
+		}
+	document.getElementById("pm2_v_r").value = pm2_v;
+	document.getElementById("pm2_v_n").value = pm2_v;
+	pm2_draw();
+	}
+
+function pm2_draw() {
+	var ctx = document.getElementById("pm2_c").getContext("2d");
+	ctx.clearRect(0,0,620,320);
+	var ra = (pm2_a+pm2_e)*Math.PI/180;
+	var c = Math.cos(ra);
+	var s = -Math.sin(ra);
+	var v = pm2_v*600; // v in pixels per second (1m = 600px)
+	var g = 10*600; // g in pixels per second^2
+	var vsog = v*v/g;
+	var i;
+	ctx.strokeStyle="black";
+	ctx.lineWidth=1;
+	ctx.beginPath();
+	ctx.moveTo(0,300);
+	ctx.lineTo(620,300);
+	ctx.stroke();
+	if (document.getElementById("pm2_ck_sc").checked) {
+		ctx.strokeStyle="black";
+		ctx.lineWidth=2;
+		ctx.beginPath();
+		ctx.moveTo(20+vsog*Math.sin(2*ra)-5,300-5);
+		ctx.lineTo(20+vsog*Math.sin(2*ra)+5,300+5);
+		ctx.moveTo(20+vsog*Math.sin(2*ra)-5,300+5);
+		ctx.lineTo(20+vsog*Math.sin(2*ra)+5,300-5);
+		ctx.stroke();
+		}
+	if (document.getElementById("pm2_ck_sl").checked) {
+		ctx.strokeStyle="black";
+		ctx.lineWidth=1;
+		ctx.beginPath();
+		ctx.moveTo(20,300);
+		ctx.lineTo(20+v*c*pm2_t,300);
+		ctx.lineTo(20+v*c*pm2_t,300+.5*g*pm2_t*pm2_t+v*s*pm2_t);
+		ctx.stroke();
+		}
+	if (document.getElementById("pm2_ck_st").checked) {
+		ctx.lineWidth=2;
+		ctx.strokeStyle="green";
+		ctx.beginPath();
+		for (i = 0; i < 2; i += .01) {
+			ctx.lineTo(20+v*c*i,300+.5*g*i*i+v*s*i);
+			}
+		ctx.stroke();
+		}
+	ctx.beginPath();
+	ctx.fillStyle="blue";
+	ctx.arc(20+v*c*pm2_t,300+.5*g*pm2_t*pm2_t+v*s*pm2_t,5,0,2*Math.PI);
+	ctx.fill();
+	if (document.getElementById("pm2_ck_sl").checked) {
+		ctx.beginPath();
+		ctx.lineWidth=1;
+		ctx.strokeStyle = "black";
+		ctx.arc(20,300,30,0,-ra,1);
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.moveTo(20,300);
+		ctx.lineTo(50,300);
+		ctx.stroke();
+		ctx.font="16px serif";
+		ctx.beginPath();
+		ctx.fillStyle = "black";
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+		ctx.strokeStyle="white";
+		ctx.lineWidth = 5;
+		ctx.strokeText("a",20+30*Math.cos(.5*ra),300-30*Math.sin(.5*ra));
+		ctx.fillText("a",20+30*Math.cos(.5*ra),300-30*Math.sin(.5*ra));
+		}
+	ctx.beginPath();
+	ctx.moveTo(20+17*c-6*s,300+6*c+17*s);
+	ctx.lineTo(20-6*c-6*s,300+6*c-6*s);
+	ctx.lineTo(20-6*c+6*s,300-6*c-6*s);
+	ctx.lineTo(20+17*c+6*s,300-6*c+17*s);
+	ctx.fillStyle="black";
+	ctx.fill();
+	ctx.beginPath();
+	ctx.arc(20,300,3,0,2*Math.PI);
+	ctx.fillStyle="red";
+	ctx.fill();
+	if (document.getElementById("pm2_ck_sl").checked) {
+		labeldistance(ctx,[20+v*c*pm2_t,300],[20,300],"x("+pm2_t+")");
+		labeldistance(ctx,[20+v*c*pm2_t,300+.5*g*pm2_t*pm2_t+v*s*pm2_t],[20+v*c*pm2_t,300],"y("+pm2_t+")");
+		}
+	document.getElementById("pm2_s_a").innerHTML = (pm2_a+pm2_e);
+	document.getElementById("pm2_s_l").innerHTML = (pm2_v*pm2_v*Math.sin(2*ra)/10).toFixed(10);
+	document.getElementById("pm2_s_bl").innerHTML = (pm2_v*pm2_v*Math.sin(2*pm2_a*Math.PI/180)/10).toFixed(10);
+	document.getElementById("pm2_s_el").innerHTML = ((pm2_v*pm2_v*Math.sin(2*ra)/10) - (pm2_v*pm2_v*Math.sin(2*pm2_a*Math.PI/180)/10)).toFixed(10);
+	}
+
+function pm2_lc(e) {
+	if (!e.target.checked) {
+		pm2_e_upd({target:{value:0}});
+		document.getElementById("pm2_a_r").step = .1;
+		document.getElementById("pm2_a_n").step = .01;
+		document.getElementById("pm2_cr").style.display = "none";
+		}
+	if (e.target.checked) {
+		document.getElementById("pm2_a_r").step = 1;
+		document.getElementById("pm2_a_n").step = 1;
+		document.getElementById("pm2_cr").style.display = "";
+		}
+	}
+
+
+var lc_a = 45;
+
+var lc_f = function (x) {
+	return(.9*Math.sin(2*x*Math.PI/180));
+	}
+
+function lc_a_upd(e) {
+	lc_a = Number(e.target.value);
+	document.getElementById("lc_a_r").value = lc_a;
+	document.getElementById("lc_a_n").value = lc_a;
+	lc_upd();
+	}
+
+function lc_upd() {
+	var c = Number(document.getElementById("lc_c_n").value);
+	var e = Number(document.getElementById("lc_e_n").value);
+	var str = "<table border=1>";
+	var i;
+	str += "<tr><td style='height:1em'>Launch Angle (degrees)</td><td style='height:1em'>Landing Position (meters)</td><td rowspan=2 style='height:2em'> Differences </td></tr>";
+	for (i = -c; i <= c; i++) {
+		str += "<tr><td rowspan=2 style='height:2em'>"+(lc_a+i*e).toFixed(10)+"</td><td rowspan=2 style='height:2em'>"+lc_f(lc_a+i*e).toFixed(10)+"</td></tr>";
+		if (i != c) {str += "<tr><td rowspan=2 style='height:2em'>"+(lc_f(lc_a+(i+1)*e)-lc_f(lc_a+i*e)).toFixed(10)+"</td></tr>";}
+		}
+	str += "</table>";
+	document.getElementById("lc_tabl").innerHTML = str;
+	}
+
+function svot_upd() {
+	var fstr = document.getElementById("svot_f").value;
+	fstr = KAS.parse(fstr,{}).expr.normalize().print(); //for converting from KAS
+	var cstr = document.getElementById("svot_n_c").value;
+	var pstr = document.getElementById("svot_n_p").value;
+
+	var str = "<table border=1 style='font-family:monospace'>";
+	var row1 = "<tr><td><var>x</var></td>";
+	var row2 = "<tr><td><var>f</var>(<var>x</var>)</td>";
+	var row3 = "<tr><td>" + cstr + "<var>x</var><sup>" + pstr + "</sup></td>";
+	var i;
+	for (i = 1; i <= 7; i++) {
+		x = math.eval("10^(-"+i+")");
+		row1 += "<td>" + x.toFixed(20) + "</td>";
+		row2 += "<td>" + math.eval(fstr,{x:x}).toFixed(20); + "</td>";
+		row3 += "<td>" + math.eval("("+cstr+")*x^("+pstr+")",{x:x}).toFixed(20); + "</td>";
+		}
+	str += row1 + "</tr>" + row2 + "</tr>" + row3 + "</tr></table>";
+	document.getElementById("svot_tabl").innerHTML = str;
+	}
+
+function lca_tabl_load() {
+	var str = "<table border=1>";
+	var i,j;
+	str += "<tr><td>Angle<br>Step</td>";
+	for (i = 0; i <= 90; i+=15) {
+		str += "<td>"+i+" degrees<br>step .1</td>";
+		}
+	str += "</tr>";
+	str += "<tr><td>The landing positions are all roughly:</td>";
+	var l = [0,.45,.78,.90];
+	for (i = 0; i <= 6; i++) {
+		str += "<td><select onchange='lca_s(0,"+i+",event)'>";
+		str += "<option value=-1>Choose an Answer</option>";
+		for (j = 0; j < l.length; j++) {
+			str += "<option value="+j+">"+l[j]+"</option>";
+			}
+		str += "</select><span></span></td>";
+		}
+	str += "</tr>";
+	str += "<tr><td>Negative landing positions:</td>";
+	l = ["Aren't on the chart","Are meaningful","Aren't meaningful"];
+	for (i = 0; i <= 6; i++) {
+		str += "<td><select onchange='lca_s(1,"+i+",event)'>";
+		str += "<option value=-1>Choose an Answer</option>";
+		for (j = 0; j < l.length; j++) {
+			str += "<option value="+j+">"+l[j]+"</option>";
+			}
+		str += "</select><span></span></td>";
+		}
+	str += "</tr>";
+	str += "<tr><td>The differences between successive landing positions are about:</td>";
+	l = [-.0031,-.0027,-.0016,0,.0016,.0027,.0031];
+	for (i = 0; i <= 6; i++) {
+		str += "<td><select onchange='lca_s(2,"+i+",event)'>";
+		str += "<option value=-1>Choose an Answer</option>";
+		for (j = 0; j < l.length; j++) {
+			str += "<option value="+j+">"+l[j]+"</option>";
+			}
+		str += "</select><span></span></td>";
+		}
+	str += "</tr>";
+	str += "<tr><td>Increasing the launch angle from the base angle causes the landing position to:</td>";
+	l = ["Increase","Decrease"];
+	for (i = 0; i <= 6; i++) {
+		str += "<td><select onchange='lca_s(3,"+i+",event)'>";
+		str += "<option value=-1>Choose an Answer</option>";
+		for (j = 0; j < l.length; j++) {
+			str += "<option value="+j+">"+l[j]+"</option>";
+			}
+		str += "</select><span></span></td>";
+		}
+	str += "</tr>";
+	str += "<tr><td>Decreasing the launch angle from the base angle causes the landing position to:</td>";
+	l = ["Increase","Decrease"];
+	for (i = 0; i <= 6; i++) {
+		str += "<td><select onchange='lca_s(4,"+i+",event)'>";
+		str += "<option value=-1>Choose an Answer</option>";
+		for (j = 0; j < l.length; j++) {
+			str += "<option value="+j+">"+l[j]+"</option>";
+			}
+		str += "</select><span></span></td>";
+		}
+	str += "</tr>";
+	str += "<tr><td>Dividing the step by 10 (going from .1 to .01 or from .01 to .001) seems to divide the differences by:</td>";
+	l = [10,100];
+	for (i = 0; i <= 6; i++) {
+		str += "<td><select onchange='lca_s(5,"+i+",event)'>";
+		str += "<option value=-1>Choose an Answer</option>";
+		for (j = 0; j < l.length; j++) {
+			str += "<option value="+j+">"+l[j]+"</option>";
+			}
+		str += "</select><span></span></td>";
+		}
+	str += "</tr>";
+	str += "</table>";
+	document.getElementById("lca_tabl").innerHTML = str;
+	}
+
+var lca_answers = [
+	[0,1,2,3,2,1,0],
+	[2,0,0,0,0,0,1],
+	[6,5,4,3,2,1,0],
+	[0,0,0,1,1,1,1],
+	[0,0,0,0,1,1,1],
+	[0,0,0,1,0,0,0]
+	];
+
+function lca_s(p,i,e) {
+	if(e.target.value == -1) {
+		e.target.className = "";
+		}
+	else if(lca_answers[p][i] == e.target.value) {
+		e.target.className = "good";
+		}
+	else {
+		e.target.className = "bad";
+		}
+	}
+
+/*
+<ul>
+<li> Around 45 degrees, with a step of .1:
+<ul>
+<li> The landing positions are all roughly the same value, .9 meters.
+<li> Since the landing positions are all very close to each other (even for a step of .1), launching at any angle close to our desired launch angle will result in very nearly hitting our desired landing position.
+<li> The differences between successive landing positions are very small (less than .0002), but the differences themselves seem relatively different from each other.
+<li> Dividing the step by 10 (going from .1 to .01 to .001) seems to divide the differences by 100.
+<li> As such, reducing our error in launch angle has a big payoff: a smallish error in launch angle will result in a small error in landing position, and a really small error in launch angle will result in a very very small error in landing position.
+</ul>
+<li> Around 30 degrees, with a step of .1:
+<ul> 
+<li> The landing positions are all pretty close to .78 meters (specifically, 9 sqrt(3)/20), but noticeably different from each other.
+<li> Since the landing positions are somewhat different than each other, we need to pay more attention to the angle we launch the cannonball at.
+At least, being off by a degree won't result in the cannonball winding up completely on the other side of the world from our target.
+<li> The differences between successive landing positions are larger than before (now around .0015, or pi/2000), and the differences themselves are relatively close to each other (mainly because the differences are larger).
+<li> Dividing the step by 10 (going from .1 to .01 to .001) seems to divide the differences by 10.
+<li> As such, reducing our error in launch angle has less of a payoff: there's still a payoff to reducing our error, but we get back roughly what we put in.
+</ul>
+<li> Around 60 degrees, with a step of .1:
+<ul>
+<li> Exactly the same as the above, except the differences are negative. Now, increasing the launch angle decreases the landing position.
+</ul>
+<li> Around 0 degrees, with a step of .1:
+<ul>
+<li> A negative launch angle doesn't really mean anything in the context of the problem, but the formula still gives us values.
+<li> The landing positions are relatively close to 0, and noticeably different from each other.
+<li> The differences between successive landing positions are all pretty much the same (.00314, or pi/1000). These differences are double the size of the differences for 30 or 60 degrees.
+<li> Since the landing positions start close to 0, and their differences are each about pi/1000, the landing position is pi/1000 times the number of steps off from 0, or pi/100 times the angle.
+</ul>
+<li> Around 90 degrees, with a step of .1:
+<ul>
+<li> Exactly the same as the above, except the differences are negative. Now, increasing the launch angle decreases the landing position.
+</ul>
+</ul>
+
+Around [0,15,30,45,60,75,90] degrees, with a step of .1:
+<ul>
+<li> The landing positions are all roughly [0,.45,.78,.90]. Negative landing positions [aren't on the chart, are meaningful, aren't meaningful].
+<li> The differences between successive landing positions are about [.0031,.0027,.0016,0,-.0016,-.0027,-.0031].
+<li> Increasing the launch angle [increases,decreases] the landing position.
+<li> Decreasing the launch angle [increases,decreases] the landing position.
+<li> Dividing the step by 10 (going from .1 to .01 or from .01 to .001) seems to divide the differences by [10,100].
+</ul>
+
+*/
+
+function dsin(x) {return(Math.sin(x*Math.PI/180));}
+function dcos(x) {return(Math.cos(x*Math.PI/180));}
+function dtan(x) {return(Math.tan(x*Math.PI/180));}
+function dcot(x) {return(Math.cot(x*Math.PI/180));}
+function dsec(x) {return(Math.sec(x*Math.PI/180));}
+function dcsc(x) {return(Math.csc(x*Math.PI/180));}
+
+function mathjstodeg() {
+	math.import({
+		sin:dsin,
+		cos:dcos,
+		tan:dtan,
+		cot:dcot,
+		sec:dsec,
+		csc:dcsc},{override:true});
+	math.config({number:"BigNumber", precision:64});
+	}
+
+function sho(id) {
+	if (document.getElementById(id).style.display != "") {
+		document.getElementById(id).style.display="";
+		}
+	else {
+		document.getElementById(id).style.display="none";
+		}
+	}
+
+function boot() {
+	hv_draw();
+	pm_draw();
+	pm2_draw();
+	lc_upd();
+	mathjstodeg();
+	svot_upd();
+	lca_tabl_load();
+	}
+
+</script>
+<style>
+blockquote {
+	background-color: #CCDDAA;
+	padding: 20px;
+	border-left: 3px solid #266435;
+	}
+blockquote.caution {
+	background-color: #EEEEBB;
+	padding: 20px;
+	border-left: 3px solid yellow;
+	}
+blockquote.formula {
+	background-color: #DDDDDD;
+	padding: 20px;
+	border: 1px solid black;
+	border-left: 3px solid black;
+	}
+.question:before {
+	color: #225522;
+	content: 'Q: ';
+	font-size:xx-large;
+	line-height:0em;
+	}
+.bad {
+	background-color:#FFCCCC;
+	}
+.bad+span:after {
+	content:"\2717";
+	}
+.good {
+	background-color:#BBCCEE;
+	}
+.good+span:after {
+	content:"\2713";
+	}
+</style>
+</head>
+<body style="font-family:sans-serif" onload="boot()">
+<h1 style="text-align:center;font-size:3em">Projectile Motion and Sensitivity</h1>
+
+<p> In this interactive, we will be considering the problem of a cannonball launched from a cannon aiming towards a target
+located in the same horizontal plane as the cannon. We can work out the path of the projectile using basic physics and some trigonometry.
+</p>
+
+<p>
+Of course, everything involved in this interactive will be a mathematical idealization. We will assume:
+<ul>
+<li> The earth is flat,
+<li> The force of gravity does not depend on how far off the surface of the earth you are, 
+<li> The force of gravity does not depend on where on the surface of the earth you are,
+<li> The cannonball doesn't experience any air resistance,
+<li> We know the exact values of important quantities like:
+<ul> 
+<li> The gravitational constant, 
+<li> The angle we're launching the cannonball at,
+<li> The velocity we're launching the cannonball at,
+<li> The distance between the cannon and the target.
+</ul>
+</ul>
+A great deal of information about our gravitational approximations is available on <a href="https://en.wikipedia.org/wiki/Gravity_of_Earth">Wikipedia</a>.
+</p>
+
+<p>
+Each of these idealizations/approximations introduces some amount of error, and later on in this interactive, we'll be looking into how we can reason about that error.
+</p>
+
+<blockquote class="caution">
+This interactive uses <a href="https://github.com/Khan/KAS">KAS.js</a> (<a href="https://github.com/Khan/KAS/blob/master/LICENSE.txt">MIT License</a>) to check if your solution is the same as the solution we have on file.
+Do not use units in your answers.
+Please be patient if you have the correct answer but the parser doesn't recognize it!
+KAS.js depends on <a href="https://underscorejs.org/">underscore.js</a> (<a href="https://github.com/jashkenas/underscore/blob/master/LICENSE">MIT License</a>).
+</blockquote>
+
+<h1>Projectile Motion</h1>
+
+<p>In the next few sections, we will work out a formula for how far a cannonball will fly if it is launched from a cannon with initial velocity <var>v</var>
+at an angle of <var>a</var> from the horizontal. You can skip ahead to the section on <a href="">reasoning about error</a> if you like.</p>
+
+<blockquote>
+<p> In our mathematically idealized gravitational situation:</p>
+<p> If an object is launched from a cannon with an initial horizontal velocity of <var>u</var>, 
+then its horizontal position, how far to the right of the cannon it is, <var>t</var> units of time after being launched is <var>ut</var>.
+We will write <var>x(t)</var> to represent the object's horizontal position at time <var>t</var>, so:</p>
+<div style="text-align:center"><var>x(t)</var> = <var>ut</var>.</div>
+<p> If an object is launched from a cannon with an initial vertical velocity of <var>w</var>,
+then its vertical position, how far abover the cannon it is, <var>t</var> units of time after being launched is -.5<var>gt<sup>2</sup>+wt</var>,
+where <var>g</var> is the downward acceleration of gravity.
+We will write <var>y(t)</var> to represent the object's vertical position at time <var>t</var>, so:</p>
+<div style="text-align:center"><var>y(t)</var> = -<table style="vertical-align:40%;display:inline;font-size:smaller"><tr><td style="border-bottom:2px solid">1</td></tr><tr><td>2</td></tr></table><var>gt<sup>2</sup>+wt</var></div>
+</blockquote>
+
+<blockquote class="caution">
+While the notation <var>x(t)</var> might look like <var>x</var> times <var>t</var>, we're actually using function notation here.
+The <var>x</var> coordinate of our cannonball depends on how much time has elapsed from when we launched the cannonball.
+The more time has elapsed, the further it has travelled horizontally. While it might seem strange to use the variable <var>x</var> to stand for a function,
+it's even stranger to write a product of two variables with the second in parentheses. Why not just write <var>xt</var>?
+</blockquote>
+
+<blockquote class="caution">
+<p>When working with variables that represent real world quantities we need to be careful about units. 
+The <a href="https://en.wikipedia.org/wiki/Mars_Climate_Orbiter#Cause_of_failure">Mars Climate Orbiter</a> went off course since its trajectory calculation
+software reported the numerical value of how much the thrusters fired, but not the units. The calculation was done using American units, but other parts of the software
+expected the result to be in metric units. So what may have been 1000 pound-seconds was interpreted as 1000 Newton-seconds, or only 224.8 pound-seconds.</p>
+<p>
+We have two options for dealing with units, either using unit arithmetic (a topic for another interactive) or always using the same units for your entire calculation.
+In this interactive we will use metric units everywhere: meters, kilograms, and seconds.
+</p>
+</blockquote>
+
+<p>
+There are two really interesting things here: the cannonball's horizontal movement and its vertical movement are entirely independent of each other.
+For instance if we changed the cannonball's initial horizontal velocity without changing its vertical position, 
+its vertical position at any time would be exactly the same; only its horizontal position would change.
+</p>
+
+<p>
+The other interesting feature of our equations is that mysterious-seeming &frac12;.
+</p>
+
+<h1>Horizontal and Vertical Velocities</h1>
+
+<p>
+You might wonder what we mean by horizontal and vertical velocities (<var>u</var> and <var>w</var>, above) 
+and how they relate to our cannonball's initial velocity (which we saved the variable <var>v</var> for).
+</p>
+
+<p>
+Let's begin by imagining that we've turned off gravity for a moment: when the cannonball is fired it continues moving in a straight line at the same speed.
+</p>
+
+<table><tr><td>
+<canvas id="hv_c" width=420 height=420 style="border:1px solid"></canvas><br>
+Angle (degrees): <input type="range" min=0 max=90 value=45 id="hv_a_r" oninput="hv_a_upd(event)" style="vertical-align:middle">
+<input type="number" min=0 max=90 value=45 id="hv_a_n" oninput="hv_a_upd(event)" style="width:4em"><br>
+Time (seconds): <input type="range" min=0 max=.8 value=0 step=.001 id="hv_t_r" oninput="hv_t_upd(event)" style="vertical-align:middle">
+<input type="number" value=0 id="hv_t_n" oninput="hv_t_upd(event)" style="width:4em"><br>
+<input type="checkbox" id="hv_ck_sl" oninput="hv_draw()"> Show Labels <input type="checkbox" id="hv_ck_st" oninput="hv_draw()"> Show Trajectory
+</td>
+<td valign="top">
+<p>
+In the interactive to the left, we've labeled the <var>x</var> and <var>y</var> coordinates of the cannonball,
+as well as its distance <var>d</var> from the cannon (you'll need to set time larger than 0 to see this).
+The cannonball's velocity (<var>v</var>) is the rate that its distance from the cannon is changing over time (i.e. <var>d/t</var>).
+The cannonball's horizontal velocity (<var>u</var>) is the rate that its horizontal distance from the cannon
+(i.e. its <var>x</var> coordinate) is changing over time (i.e. <var>x/t</var>);
+The cannonball's vertical velocity (<var>w</var>) is the rate that its vertical distance from the cannon
+(i.e. its <var>y</var> coordinate is changing over time (i.e. <var>y/t</var>);
+</p>
+<p>Write a formula for <var>d</var> in terms of <var>v</var> and <var>t</var>:
+<input type="text" id="t1"><button onclick="check('t1')">Check Answer</button><button onclick="hint('t1')">Hint</button><button onclick="show('t1')">Show Answer</button>
+</p>
+<p>Write a formula for <var>x</var> in terms of <var>v</var>, <var>t</var> and <var>a</var>.
+<input type="text" id="t2"><button onclick="check('t2')">Check Answer</button><button onclick="hint('t2')">Hint</button><button onclick="show('t2')">Show Answer</button>
+</p>
+<p>Write a formula for <var>y</var> in terms of <var>v</var>, <var>t</var> and <var>a</var>.
+<input type="text" id="t3"><button onclick="check('t3')">Check Answer</button><button onclick="hint('t3')">Hint</button><button onclick="show('t3')">Show Answer</button>
+</p>
+<p>
+Since the horizontal position is changing at a constant rate, we can calculate the horizontal velocity by dividing the horizontal distance by the time elapsed. 
+</p><p>
+Write a formula for the horizontal velocity <var>u</var> in terms of <var>v</var>, <var>t</var> and <var>a</var>.
+<input type="text" id="t4"><button onclick="check('t4')">Check Answer</button><button onclick="hint('t4')">Hint</button><button onclick="show('t4')">Show Answer</button>
+</p>
+<p>
+Similarly, we can calculate the vertical velocity by dividing the vertical distance by the time elapsed. 
+</p><p>
+Write a formula for the vertical velocity <var>w</var> in terms of <var>v</var>, <var>t</var> and <var>a</var>.
+<input type="text" id="t5"><button onclick="check('t5')">Check Answer</button><button onclick="hint('t5')">Hint</button><button onclick="show('t5')">Show Answer</button>
+</p>
+</td>
+</tr>
+</table>
+
+<h1> Parabolic Motion </h1>
+
+<p> Now let's return to considering the cannon problem.</p>
+
+<canvas id="pm_c" width=620 height=320 style="border:1px solid"></canvas><br>
+Angle (degrees): <input type="range" min=0 max=90 value=45 id="pm_a_r" oninput="pm_a_upd(event)" style="vertical-align:middle">
+<input type="number" min=0 max=90 value=45 id="pm_a_n" oninput="pm_a_upd(event)" style="width:4em"><br>
+Time (seconds): <input type="range" min=0 max=.6 value=0 step=.001 id="pm_t_r" oninput="pm_t_upd(event)" style="vertical-align:middle">
+<input type="number" value=0 id="pm_t_n" oninput="pm_t_upd(event)" style="width:4em"><br>
+<input type="checkbox" id="pm_ck_sl" oninput="pm_draw()"> Show Labels 
+<input type="checkbox" id="pm_ck_st" oninput="pm_draw()"> Show Trajectory
+<input type="checkbox" id="pm_ck_sc" oninput="pm_draw()"> Show Collision Point
+<p>
+Let's combine your results from the previous section with the formulas for projectile motion:
+<blockquote class="formula">
+Horizontal Position as a function of Time:
+<div style="text-align:center"><var>x(t)</var> = <var>ut</var>.</div>
+Vertical Position as a function of Time:
+<div style="text-align:center"><var>y(t)</var> = -<table style="vertical-align:40%;display:inline;font-size:smaller"><tr><td style="border-bottom:2px solid">1</td></tr><tr><td>2</td></tr></table><var>gt<sup>2</sup>+wt</var></div>
+<button id="pm_b1" onclick="document.getElementById('pm_b1').style.display='none';document.getElementById('pm_f1').style.display=''">Show Answers from Above</button>
+<div id="pm_f1" style="display:none">
+Horizontal Velocity:
+<div style="text-align:center"><var>u</var> = <var>v</var> cos(<var>a</var>)</div>
+Vertical Velocity:
+<div style="text-align:center"><var>w</var> = <var>v</var> sin(<var>a</var>)</div>
+</div>
+</blockquote>
+</p>
+
+<p>
+Our ultimate goal is to find where the cannonball lands, that is, the <var>x</var> coordinate of the cannonball when its <var>y</var>
+coordinate is 0.
+</p>
+
+<p>
+Write a formula for that value of <var>x</var> in terms of <var>v</var>, <var>g</var> and <var>a</var>.
+<input type="text" id="t6"><button onclick="check('t6')">Check Answer</button><button onclick="hint('t6')">Hint</button><button onclick="show('t6')">Show Answer</button>
+<button onclick="sho('pm_w1')">Walkthrough</button>
+</p>
+
+<div id="pm_w1" style="display:none">
+There are many ways to solve this problem. It may help to fill out some of the boxes below corresponding to intermediate tasks.
+
+<ol>
+<li> Write a formula for <var>x(t)</var> in terms of <var>v</var>, <var>t</var> and <var>a</var>.
+<input type="text" id="t7"><button onclick="check('t7')">Check Answer</button><button onclick="hint('t7')">Hint</button><button onclick="show('t7')">Show Answer</button>
+<li> Write a formula for <var>y(t)</var> in terms of <var>v</var>, <var>g</var>, <var>t</var> and <var>a</var>.
+<input type="text" id="t8"><button onclick="check('t8')">Check Answer</button><button onclick="hint('t8')">Hint</button><button onclick="show('t8')">Show Answer</button>
+<li> Solve for the nonzero value of <var>t</var> where <var>y(t)</var>=0 in terms of <var>g</var> and <var>w</var>.
+<input type="text" id="t9"><button onclick="check('t9')">Check Answer</button><button onclick="hint('t9')">Hint</button><button onclick="show('t9')">Show Answer</button>
+<li> Solve for the nonzero value of <var>t</var> where <var>y(t)</var>=0 in terms of <var>g</var>, <var>v</var> and <var>a</var>.
+<input type="text" id="t10"><button onclick="check('t10')">Check Answer</button><button onclick="hint('t10')">Hint</button><button onclick="show('t10')">Show Answer</button>
+<li> Write a formula for <var>t</var> in terms of <var>x</var> and <var>u</var>.
+<input type="text" id="t11"><button onclick="check('t11')">Check Answer</button><button onclick="hint('t11')">Hint</button><button onclick="show('t11')">Show Answer</button>
+<li> Write a formula for <var>y</var> in terms of <var>x, g, w</var> and <var>u</var>.
+<input type="text" id="t12"><button onclick="check('t12')">Check Answer</button><button onclick="hint('t12')">Hint</button><button onclick="show('t12')">Show Answer</button>
+<li> Write a formula for <var>y</var> in terms of <var>x, g, v</var> and <var>a</var>.
+<input type="text" id="t13"><button onclick="check('t13')">Check Answer</button><button onclick="hint('t13')">Hint</button><button onclick="show('t13')">Show Answer</button>
+<li> What does the <a href="trigsum.html">trig sum</a> formula tell you that sin(<var>2a</var>) is equal to?
+<input type="text" id="t14"><button onclick="check('t14')">Check Answer</button><button onclick="hint('t14')">Hint</button><button onclick="show('t14')">Show Answer</button>
+</ol>
+</div>
+
+<p>
+If you haven't yet, use the double angle formula to simplify your answer:<br>
+Write a formula for the value of <var>x</var> when <var>y</var> = 0 in terms of <var>v</var>, <var>g</var> and <var>a</var>.
+<input type="text" id="t15"><button onclick="check('t15')">Check Answer</button><button onclick="hint('t15')">Hint</button><button onclick="show('t15')">Show Answer</button>
+</p>
+
+<h1>Sensitivity: A Specific Case</h1>
+
+<p>
+Now that we have a formula for the distance the cannonball travels in terms of its initial velocity (<var>v</var>), the angle it's launched at (<var>a</var>), and the acceleration of gravity (<var>g</var>), let's investigate the following question:
+</p>
+
+<blockquote class="question">
+How <i>sensitive</i> is where the cannonball lands to the angle we launch it at?
+<p>Alternately:</p>
+<ul>
+<li> How does a small change in launch angle affect landing position?
+<li> How does a small error in launch angle change where the cannonball lands?
+<li> If we wanted to change the landing position by a small amount, how much would we have to change the launch angle by?
+<li> How important is it to accurately measure the launch angle?
+<li> How accurately do we need to measure the launch angle to ensure that the cannonball lands in a certain range?
+</ul>
+<p>We can also ask:</p>
+<ul>
+<li> Does changing the velocity affect the sensitivity?
+<li> Does changing the angle affect the sensitivity?
+<ul>
+<li> Note that, playing around with the Parabolic Motion interactive, there are generally two angles that will
+hit a particular target location: one shallow (less than 45 degrees) and one steep (more than 45 degrees).
+Could we reduce the dependence on getting the launch angle accurate by choosing one over the other?
+</ul>
+</ul>
+</blockquote>
+
+<p>
+Let's start plugging in some concrete numbers and see if we can notice any patterns.
+To make the numbers work out nicely, let's stick with a nice simple initial velocity of 3 meters per second 
+(this is not realistic for cannonballs)
+and a gravitational acceleration of 10 meters per second squared 
+(the actual gravitational acceleration near the surface of the earth is more like 9.8 m/s<sup>2</sup>).
+</p>
+
+<p>
+Play around with the slider below for the launch angle and see how the landing position changes.
+Pay attention to how a small change in the launch angle affects the landing position.
+Are there certain angles where a small change in launch angle has a larger effect?
+</p>
+
+<canvas id="pm2_c" width=620 height=320 style="border:1px solid"></canvas><br>
+<table border=1 style="text-align:right">
+<tr> <td>Angle:</td><td><span id="pm2_s_a"></span> </td> <td> Landing Position: </td><td><span id="pm2_s_l" style="font-family:monospace"></span> </td></tr>
+<tr> <td>Base (degrees): </td><td><input type="range" min=0 max=90 value=45 step=.1 id="pm2_a_r" oninput="pm2_a_upd(event)" style="vertical-align:middle;width:20em">
+<input type="number" min=0 max=90 value=45 step=.01 id="pm2_a_n" oninput="pm2_a_upd(event)" style="width:4em"> </td>
+<td> Base (meters): </td><td><span id="pm2_s_bl" style="font-family:monospace"> </span></td></tr>
+<tr id="pm2_cr" style="display:none"><td>
+Change (degrees): </td><td><input type="range" min=-1 max=1 value=0 step=.1 id="pm2_e_r" oninput="pm2_e_upd(event)" style="vertical-align:middle;width:20em">
+<input type="number" min=-1 max=1 value=0 step=.01 id="pm2_e_n" oninput="pm2_e_upd(event)" style="width:4em">
+</td>
+<td> Change (meters): </td><td><span id="pm2_s_el" style="font-family:monospace"> </span></td></tr></table>
+
+Time (seconds): <input type="range" min=0 max=.6 value=0 step=.001 id="pm2_t_r" oninput="pm2_t_upd(event)" style="vertical-align:middle">
+<input type="number" value=0 id="pm2_t_n" oninput="pm2_t_upd(event)" style="width:4em"><br>
+Velocity (m/sec): <input type="range" min=0 max=5 value=3 step=.01 id="pm2_v_r" oninput="pm2_v_upd(event)" style="vertical-align:middle">
+<input type="number" value=3 id="pm2_v_n" oninput="pm2_v_upd(event)" style="width:4em">
+<input type="checkbox" id="pm2_ck_fv" oninput="pm2_v_upd({target:{value:3}})" checked> Lock Velocity to 3 m/s
+<br>
+<input type="checkbox" id="pm2_ck_sl" oninput="pm2_draw()"> Show Labels 
+<input type="checkbox" id="pm2_ck_st" oninput="pm2_draw()" checked> Show Trajectory
+<input type="checkbox" id="pm2_ck_sc" oninput="pm2_draw()" checked> Show Collision Point
+<input type="checkbox" id="pm2_ck_lc" oninput="pm2_lc(event)"> Show Change Row
+<p>
+It can be hard to see the patterns in the numbers above, so let's look at the data in another way. Check "Show Change Row" above
+and you'll be able to specify the launch angle in two parts: a base angle and then a change from that base angle.
+The launch angle will be the sum of the two, and then the table will let you compare the actual Landing Position to the
+landing position if the cannonball was launched at the base angle without the change (under Base (meters)).
+The third row presents the difference between the two (how much the landing position changes when you change the launch angle
+from its base value to the base plus change value).
+</p>
+
+<h1>Looking Closely at Change</h1>
+
+Launch Angle: <input type="range" min=0 max=90 value=45 id="lc_a_r" oninput="lc_a_upd(event)" style="vertical-align:middle">
+<input type="number" min=0 max=90 value=45 id="lc_a_n" oninput="lc_a_upd(event)" style="width:4em">
+<br>
+Step: <input type="number" value=.1 id="lc_e_n" oninput="lc_upd()">
+<br>
+Number of Steps: <input type="number" min=0 value=10 id="lc_c_n" oninput="lc_upd()">
+
+<div id="lc_tabl"></div>
+
+<p>Fill out the following table:</p>
+<div id="lca_tabl"></div>
+
+<h1>Approaching Change Algebraically</h1>
+
+<blockquote class="formula">
+Recall that the formula for the horizontal distance travelled by our cannonball is:
+<div style="text-align:center"><var>x</var> = <table style="vertical-align:40%;display:inline"><tr><td style="border-bottom:2px solid"><var>v</var><sup>2</sup></td></tr><tr><td><var>g</var></td></tr></table>sin(2<var>a</var>)</div>
+Where:
+<ul>
+<li><var>x</var> is the landing position (horizontal distance travelled) of the cannonball.
+<li><var>v</var> is the initial launch velocity of the cannonball (velocity coming out of the cannon).
+<li><var>g</var> is the acceleration of gravity.
+<li><var>a</var> is the launch angle.
+</ul>
+</blockquote>
+
+<blockquote class="caution">
+<p>In answering the problems below, <b>do not apply trigonometric identities unless told to do so</b>.
+<button onclick="sho('aca_sn1')">Sidenote</button>
+</p>
+
+<div id="aca_sn1" style="display:none">
+<p> The issue of checking whether your answer is correct to an algebraic problem like those below is a really interesting
+and difficult one. Many online homework systems check that your answer is correct by plugging in a handful of numbers. 
+If your answer and the answer on file agree at the test points, they probably represent algebraically equivalent answers.
+Conveniently, these systems will pretty much always manage to determine that a correct answer is correct, 
+and are unlikely to mark incorrect solutions correct. This leads to the interesting question of which points you should check and
+how many points you need to check.
+</p>
+
+<p>
+On the other hand, the problem of determining if two formulas are equivalent algebraically is impossible to do perfectly
+when trig functions are involved. There are a number of strange trig identities, and it's impossible to account for all of them.
+You can read more about this by researching <a href="https://en.wikipedia.org/wiki/Richardson%27s_theorem">Richardson's Theorem</a>.
+</p>
+</div>
+
+<p>
+Additionally, you will need to write squares of trigonometric values in your answers. The parser will interpret "sin(a)^2" as sin(<var>a</var><sup>2</sup>).
+You'll need to enter "sin^2(a)" or "(sin(a))^2" to get it to parse as (sin(<var>a</var>))<sup>2</sup>. Writing (sin(<var>a</var>))<sup>2</sup> as sin<sup>2</sup>(a)
+is definitely up there in terms of "bad choices of mathematical notation" but, alas, it is too popular a convention not to teach.
+</p>
+
+</blockquote>
+
+<ol>
+<li>
+<p> Plug in our given starting velocity <var>v</var> = 3 and gravitational acceleration <var>g</var> = 10 to find the relationship
+between launch angle and landing position for our specific case situation.</p>
+<input type="text" id="t16"><button onclick="check('t16')">Check Answer</button><button onclick="hint('t16')">Hint</button><button onclick="show('t16')">Show Answer</button>
+<li> 
+<p>Your answer above gives you the landing position if the launch angle is <var>a</var>. What if it is <var>a+h</var>?
+(We will imagine that <var>h</var> is some small nonzero value and investigate how this small change in launch angle affects the landing position.)</p>
+<input type="text" id="t17"><button onclick="check('t17')">Check Answer</button><button onclick="hint('t17')">Hint</button><button onclick="show('t17')">Show Answer</button>
+<li> 
+<p>Apply the <i>trig sum identity</i> (not the double angle formula) to write your answer above in terms of sin(2<var>a</var>), cos(2<var>a</var>), sin(2<var>h</var>), and cos(2<var>h</var>).</p>
+<input type="text" id="t18" style="width:20em"><button onclick="check('t18')">Check Answer</button><button onclick="hint('t18')">Hint</button><button onclick="show('t18')">Show Answer</button>
+<li>
+<p>We want to know how much our landing position has changed, so subtract your answer to question 1 from your answer to question 3.</p>
+<input type="text" id="t19" style="width:30em"><button onclick="check('t19')">Check Answer</button><button onclick="hint('t19')">Hint</button><button onclick="show('t19')">Show Answer</button>
+<li>
+<p>Combine like terms to divide your answer above into a multiple of sin(2<var>a</var>) and a multiple of cos(2<var>a</var>).</p>
+<span style="font-size:xx-large;vertical-align:sub">(</span><input type="text" id="t20a"><span style="font-size:xx-large;vertical-align:sub">)</span>sin(2<var>a</var>) + <span style="font-size:xx-large;vertical-align:sub">(</span><input type="text" id="t20b"><span style="font-size:xx-large;vertical-align:sub">)</span>cos(2<var>a</var>) <button onclick="check20()">Check Answer</button><button onclick="hint('t20')">Hint</button><button onclick="show('t20')">Show Answer</button>
+<li>
+<p>Use the double angle formula and the Pythagorean theorem to write the coefficient for sin(2<var>a</var>) above in terms of just sin<sup>2</sup>(<var>h</var>).</p>
+<input type="text" id="t21"><button onclick="check('t21')">Check Answer</button><button onclick="hint('t21')">Hint</button><button onclick="show('t21')">Show Answer</button>
+</ol>
+
+<p>
+Now, we'd like to know what happens to your answers to questions 5 and 6 when <var>h</var> is small. Use the plug-in-small-values-o-tron below
+to try to find a nice monomial approximation to your answers.
+</p>
+
+f(x) = <input type="text" id="svot_f" onchange="svot_upd()" value="sin(x)"> versus 
+<input type="text" id="svot_n_c" onchange="svot_upd()" style="width:5em" value=1> <select id="svot_n_p" onchange="svot_upd()"> <option value=1>x</option><option value=2>x²</option></select>
+
+<div id="svot_tabl">
+</div>
+
+<blockquote class="caution">
+<p>Plugging in small values to a function, like the small-value-o-tron does above, works well in this particular case, but can be very misleading in some situations.
+For instance, see what happens when you look at the function "cos(360/x)" through the plug-in-small-values-o-tron. 
+This may lead you to believe that cos(360/<var>x</var>) is 1 for small values of <var>x</var>, but this isn't true at all.
+Can you find a small value of <var>x</var> for which cos(360/<var>x</var>) isn't 1?
+</p>
+<p>
+Even worse, try looking at the function "sin(360/x)". Not only do we have the same problem as before, where we just happened to pick small values of <var>x</var> that
+lead to the same output, but due to rounding errors in the computation, we aren't even getting the right values shown on the table. What is sin(360/<var>x</var>) supposed to be
+for the values of <var>x</var> on the table?
+</p>
+<p>
+You can get a better understanding of the functions cos(360/x) and sin(360/x) by looking at the <a href="s1ox.html">graph of sin(1/x)</a>. How is this graph related
+to the graph of sin(360/<var>x</var>)? (Careful! The graph on the linked page is in radians, while everything on this page is in degrees.)
+</p>
+</blockquote>
+
+<p>
+Hopefully, playing with the small-values-o-tron has convinced you that we can find monomial approximations to your answers to questions 5 and 6 above that are really
+good for small values of <var>h</var>. But if we want to know what the exact coefficients of our monomials are and be sure our approximation works for more than
+just the points we plugged in above, we need to do some geometry to reason about <a href="trigineq.html?degrees">trigonometric inequalities</a>.
+</p>
+
+<h1>Putting it Together: Small Changes</h1>
+
+<blockquote class="formula">
+<p style="display:inline-table">
+Looking at the trigonometric inequalities interactive, we see that sin(<var>h</var>) is very close to 
+<table style="vertical-align:40%;display:inline;text-align:center"><tr><td style="border-bottom:2px solid">&pi;</td></tr><tr><td>180</td></tr></table><var>h</var>
+for small values of <var>h</var>. Plugging this into the answers to problems 5 and 6 above, we see that, if <var>f</var>(<var>x</var>) is the distance a cannonball
+goes when launched at an angle <var>x</var>:
+<div style="text-align:center">
+<table style="display:inline;text-align:left">
+<tr><td>
+<var>f</var>(<var>a</var>+<var>h</var>) - <var>f</var>(<var>a</var>)</td><td> &asymp; -1.8 
+<table style="vertical-align:40%;display:inline;text-align:center"><tr><td style="border-bottom:2px solid">&pi;<sup>2</sup></td></tr><tr><td>180<sup>2</sup></td></tr></table>
+<var>h</var><sup>2</sup> sin(2<var>a</var>)
++ 1.8
+<table style="vertical-align:40%;display:inline;text-align:center"><tr><td style="border-bottom:2px solid">&pi;</td></tr><tr><td>180</td></tr></table>
+<var>h</var> cos(2<var>a</var>)
+</td></tr>
+<tr><td></td><td>
+&asymp; -0.000548311 <var>h</var><sup>2</sup> sin(2<var>a</var>) + .0314159 <var>h</var> cos(2<var>a</var>)
+</td></tr></table>
+</div>
+</p>
+</blockquote>
+
+<p>
+This allows us to make sense of our discoveries in the Looking Closely at Change section.
+<var>f</var>(<var>a</var>+<var>h</var>) - <var>f</var>(<var>a</var>) is the change from one value of <var>f</var> to the next with a
+step of <var>h</var>, so this gives us the numbers we see in the "differences" column of the table.
+</p><p>
+When <var>h</var> is small, and cos(2<var>a</var>) isn't small, the first term of the sum is much smaller than the term on the right,
+so it only has a small effect on the differences. So the differences are very close to .0315159 <var>h</var> cos(2<var>a</var>).
+This is proportional to <var>h</var> (hence why dividing the step by 10 divided the differences by 10), and allows us to compute
+a specific value that these differences will all be very close to.
+</p>
+<p>
+When <var>h</var> is small, but cos(2<var>a</var>) is 0 (i.e. <var>a</var> = 45), the second term of the sum is 0, so the differences
+are very close to -.000548311 <var>h</var><sup>2</sup> sin(2<var>a</var>). This is proportional to <var>h</var><sup>2</sup>
+(hence why dividing the step by 10 divided the differences by 100), and is very tiny.
+</p>
+</body>
+</html>

@@ -1,0 +1,307 @@
+﻿<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<meta name=description content="">
+<title> Polar Graphing </title>
+<script src="math.min.js" type="text/javascript"></script>
+<script src="tgr.js"></script>
+<script src="underscore-min.js"></script>
+<script src="kas.js"></script>
+<script>
+
+var pointsshown = [];
+
+function boot() {
+	tgr_grapher("cgr",[],{trigxaxis:true,width:700,height:350,oymin:-2,oymax:2,ymin:-2,ymax:2,oxmin:0,oxmax:8,xmin:0,xmax:8,ctarg:"cc"});
+	updpolargraph();
+	bootselector();
+	}
+
+function polargrid(n) {
+	var ctx = document.getElementById("pgr").getContext("2d");
+	ctx.clearRect(0,0,500,500);
+	var i;
+	ctx.strokeStyle = "gray";
+	ctx.lineWidth = 1;
+	for (i = 1; i <= n; i++) {
+		ctx.beginPath();
+		ctx.arc(250,250,250*i/n,0,2*Math.PI);
+		ctx.stroke();
+		}
+	for (i = 0; i <= 24; i++) {
+		ctx.beginPath();
+		ctx.moveTo(250,250);
+		ctx.lineTo(250+360*Math.sin(2*Math.PI*i/24),250+360*Math.cos(2*Math.PI*i/24));
+		ctx.stroke();
+		}
+	}
+
+function mathjsfct(str) {
+	if (document.getElementById("chk_use_kas").checked) {
+		str = KAS.parse(str,{}).expr.normalize().print();
+		}
+	var f = math.compile(str);
+	var m = Number(document.getElementById("inm").value);
+	var n = Number(document.getElementById("inn").value);
+	var a = Number(document.getElementById("ina").value);
+	var b = Number(document.getElementById("inb").value);
+	var c = Number(document.getElementById("inc").value);
+	if (document.getElementById("chk_zero").checked) {
+		return(function(ooo){
+			var rval = f.eval({x:ooo,θ:ooo,t:ooo,theta:ooo,m:m,n:n,a:a,b:b,c:c});
+			if (math.typeof(rval) != "number") {rval = 0;}
+			return(rval);
+			});
+		}
+	return(function(ooo){
+		return(f.eval({x:ooo,θ:ooo,t:ooo,theta:ooo,m:m,n:n,a:a,b:b,c:c}));
+		});
+	}
+
+var currentfunction = function(x) {return;}
+
+function plotf() {
+	var str = document.getElementById("f").value;
+	var i,r;
+	var f = mathjsfct(str);
+	currentfunction = f;
+	tgr_update_grapher_objs("cgr",[{type:"plot", fct:f, linewidth:4, nojump:document.getElementById("chk_nojump").checked}]);
+	var pgr = Number(document.getElementById("maxr").value);
+	var minth = Number(document.getElementById("minth").value)*Math.PI;
+	var maxth = Number(document.getElementById("maxth").value)*Math.PI;
+	
+	document.getElementById("sweeperr").max = maxth;
+	document.getElementById("sweeperr").min = minth;
+
+	pointsshown = [];
+
+	updpolargraph();
+
+	}
+
+function typehandler() {
+	document.getElementById("f").value = document.getElementById("f").value.replace(/\u003F/gi,"θ");
+	}
+
+function updpolargraph() {
+	var str = document.getElementById("f").value;
+	var i,r0,r1;
+	var f = currentfunction;
+	var pgr = Number(document.getElementById("maxr").value);
+	var minth = Number(document.getElementById("minth").value)*Math.PI;
+	var maxth = Number(document.getElementById("maxth").value)*Math.PI;
+	
+	var ctx = document.getElementById("pgr").getContext("2d");
+	polargrid(pgr);
+	if (document.getElementById("chk_show_pgr").checked) {
+		ctx.lineWidth = 4;
+		ctx.strokeStyle = "black";
+		ctx.beginPath();
+		i = minth;
+		r0 = 250*f(i)/pgr;
+		ctx.moveTo(250+r0*Math.cos(i),250-r0*Math.sin(i));
+		for (i = minth; i <= maxth-.01; i += .01) {
+			r0 = 250*f(i)/pgr;
+			r1 = 250*f(i+.01)/pgr;
+			if (((r0 > 360 && r1 < 360) || (r0 < 360 && r1 > 360)) && document.getElementById("chk_nojump").checked) {
+				ctx.stroke();
+				ctx.beginPath();
+				ctx.moveTo(250+r1*Math.cos(i+.01),250-r1*Math.sin(i+.01));
+				}
+			//ctx.beginPath();
+			//ctx.moveTo(250+r0*Math.cos(i),250-r0*Math.sin(i));
+			ctx.lineTo(250+r1*Math.cos(i+.01),250-r1*Math.sin(i+.01));
+			//ctx.stroke();
+			}
+		ctx.stroke();
+		}
+	for (i = 0; i < pointsshown.length; i++) {
+		ctx.beginPath();
+		ctx.fillStyle=pointsshown[i][2];
+		ctx.arc(pointsshown[i][0],pointsshown[i][1],7,0,2*Math.PI);
+		ctx.fill();
+		}
+	if (document.getElementById("chk_showsweeper").checked) {
+		var x = Number(document.getElementById("sweeperr").value);
+		ctx.beginPath();
+		ctx.lineWidth=4;
+		ctx.strokeStyle = "#228833";
+		ctx.moveTo(250,250);
+		ctx.lineTo(250+360*Math.cos(x),250-360*Math.sin(x));
+		ctx.stroke();
+		ctx.beginPath();
+		var r = 250*f(x)/pgr;
+		ctx.arc(250+r*Math.cos(x),250-r*Math.sin(x),8,0,2*Math.PI);
+		ctx.fillStyle = "black";
+		ctx.fill();
+		ctx.beginPath();
+		ctx.arc(250+r*Math.cos(x),250-r*Math.sin(x),6,0,2*Math.PI);
+		ctx.fillStyle = "yellow";
+		ctx.fill();
+		}
+	}
+
+function ith() {
+	var str = document.getElementById("f").value;
+	var ss = document.getElementById("f").selectionStart;
+	var se = document.getElementById("f").selectionEnd;
+	document.getElementById("f").value = str.slice(0,ss) + "θ" + str.slice(se);
+	}
+
+var colorcycle = 0;
+
+var colorlist = ["#0077BB","#33BBEE","#009988","#EE7733","#CC3311","#EE3377","#BBBBBB"];
+
+function plugindraw(x) {
+	var str = document.getElementById("f").value;
+	var pgr = Number(document.getElementById("maxr").value);
+	var f = currentfunction;
+	tgr_add_to_grapher_objs("cgr",{type:"dot", x:x, y:f(x), color:colorlist[colorcycle % colorlist.length],r:7});
+	var ctx = document.getElementById("pgr").getContext("2d");
+	ctx.beginPath();
+	var r= 250*f(x)/pgr;
+	ctx.arc(250+r*Math.cos(x),250-r*Math.sin(x),7,0,2*Math.PI);
+	ctx.fillStyle = colorlist[colorcycle % colorlist.length];
+	pointsshown.push([250+r*Math.cos(x),250-r*Math.sin(x),colorlist[colorcycle % colorlist.length]]);
+	ctx.fill();
+	colorcycle++;
+	}
+
+function pluginpoint() {
+	var x = math.eval(document.getElementById("thi").value);
+	plugindraw(x);
+	}
+
+function pluginmultiples() {
+	var x = math.eval(document.getElementById("thi").value);
+	var i;
+	var minth = Number(document.getElementById("minth").value)*Math.PI;
+	var maxth = Number(document.getElementById("maxth").value)*Math.PI;
+	for (i = Math.ceil(minth/x)*x; i <= maxth + .001; i += x) {
+		plugindraw(i);
+		}
+	}
+
+function updsweeper() {
+	var str = document.getElementById("f").value;
+	var f = currentfunction;
+	var x = Number(document.getElementById("sweeperr").value);
+	if (document.getElementById("chk_showsweeper").checked) {
+		tgr_update_grapher_obj_by_id("cgr","sweeper",{type:"line",x:x,y:-Infinity,x2:x,y2:Infinity,linewidth:4,color:"#228833"});
+		tgr_update_grapher_obj_by_id("cgr","sweeperpoint",{type:"hole",x:x,y:f(x),r:7,incolor:"yellow"});
+		}
+	else {
+		tgr_update_grapher_obj_by_id("cgr","sweeper",{type:"none"});
+		tgr_update_grapher_obj_by_id("cgr","sweeperpoint",{type:"none"});
+		}
+	updpolargraph();
+	}
+
+var curves = [
+	["Rose","a*cos(n*θ)"],
+	["Rose","a*sin(n*θ)"],
+	["Lemniscate","sqrt(cos(2θ))"],
+	["Limaçon","a+b*cos(θ)"],
+	["Equiangular Spiral", "e^(a*θ)"],
+	["Spiral of Archimedes", "a*θ"],
+	["Lituus", "θ^(-1/2)"],
+	["Cardioid", "2a*(1+cos(θ))"],
+	["Cochleoid", "sin(θ)/θ"],
+	["Conics", "a*b/(1-b*cos(θ))"],
+	["Modified Rose", "a+b*sin(n*θ)"],
+	["Line","a*sec(θ+b)"],
+	["Line","a*csc(θ+b)"],
+	["Cayley's Sextic", "4a*(cos(θ/3))^3"],
+	["Cissoid of Diocles","2a*tan(θ)*sin(θ)"],
+	["Conchoid","a+b*sec(θ)"],
+	["Conchoid of de Sluze","b^2/a * cos(θ) - a*sec(θ)"],
+	["Double Folium","4a*cos(θ)*(sin(θ))^2"],
+	["Fermat's Spiral", "sqrt(θ)"],
+	["Folium","-b*cos(θ)+4a*cos(θ)*(sin(θ))^2"],
+	["Freeth's Nephroid","a*(1+2sin(θ/2))"],
+	["Hyperbolic Spiral","a/θ"],
+	["Kampyle of Eudoxus","b^2/(a*(cos(θ))^2)"],
+	["Kappa Curve","a*cot(θ)"],
+	["Quadratrix of Hippias", "2*a*θ/(pi*sin(θ))"],
+	["Right Strophoid", "a*cos(2θ)/cos(θ)"],
+	["Trifolium","a*cos(θ)*(4 (sin(θ))^2 -1)"],
+	["Trisectrix of Maclaurin","2a*sin(3θ)/sin(2θ)"],
+	["Gear","a+1/b * tanh(b*sin(n*t))"],
+	["Square", "abs(sec(θ))+abs(csc(θ))-abs(abs(sec(θ))-abs(csc(θ)))"],
+	];
+
+function clearpoints() {
+	pointsshown = [];
+	updpolargraph();
+	}
+
+function bootselector() {
+	var i;
+	var str = "<select oninput='selector(event)'>";
+	str += "<option></option>"
+	for (i = 0; i < curves.length; i++) {
+		str += "<option value='"+curves[i][1]+"'>"+curves[i][1]+" ("+curves[i][0]+")</option>";
+		}
+	str += "</select>";
+	document.getElementById("selector").innerHTML = str;
+	}
+
+function selector(e) {
+	if (document.getElementById("f").value != e.target.value) {
+		document.getElementById("f").value = e.target.value;
+		plotf();
+		}
+	}
+
+function zoom(i) {
+	document.getElementById("maxr").value = Number(document.getElementById("maxr").value)+i;
+	if (document.getElementById("maxr").value <= 0) {document.getElementById("maxr").value = 0;}
+	plotf();
+	}
+
+</script>
+</head>
+<body onload="boot()">
+<table><tr><td style="vertical-align:top"><div id="cgr"></div>
+
+<table><tr><td><div id="cc"></div></td><td style="vertical-align:top">
+
+Max r: <input type="number" id="maxr" style="width:3em" oninput="plotf()" value=3> <button onclick="zoom(-1)">+</button> <button onclick="zoom(1)">-</button><br>
+Min &theta;: <input type="number" id="minth" style="width:3em" oninput="plotf()" value=0> &pi; <br>
+Max &theta;: <input type="number" id="maxth" style="width:3em" oninput="plotf()" value=2> &pi; <br>
+
+</td></tr></table>
+
+r(&theta;) = <input type="text" id="f" onchange="plotf()" oninput="typehandler()" 
+title="Special variables:x, t, or θ are treated as identical. Type ? to insert a θ. m, n represent integer variables, a, b, c real variables, which can be adjusted below. Use 'pi' for π.">
+
+<span id="selector"></span>
+
+<input type="checkbox" id="chk_show_pgr" onchange="updpolargraph()" checked title="Show graph in polar graph window (hide to just show plugged in points)"> Show
+<br>
+
+m: <input type="number" value=1 id="inm" style="width:3em" oninput="plotf()">
+n: <input type="number" value=1 id="inn" style="width:3em" oninput="plotf()">
+a: <input type="number" value=1 step=.1 id="ina" style="width:3em" oninput="plotf()">
+b: <input type="number" value=1 step=.1 id="inb" style="width:3em" oninput="plotf()">
+c: <input type="number" value=1 step=.1 id="inc" style="width:3em" oninput="plotf()">
+<br>
+
+<input type="text" id="thi"> <button onclick="pluginpoint()">Plug in Point</button> <button onclick="pluginmultiples()">Plug in Multiples</button> 
+<button onclick="clearpoints()">Clear Plugged in Points</button><br>
+
+Sweeper: <input type="range" id="sweeperr" min=0 max=6.28 step="any" style="vertical-align:middle" oninput="updsweeper()"> <input type="checkbox" id="chk_showsweeper" oninput="updsweeper()"> Show
+<br>
+
+Technical Fixes:
+<input type="checkbox" id="chk_zero" checked onchange="plotf()" title="Makes function output zero when undefined. Fixes lemniscate drawing."> Undefined to Zero
+<input type="checkbox" id="chk_nojump" checked onchange="plotf()" title="Eliminates extra lines causes by sharp jump in function value from one sample point to the next."> No Jump
+<input type="checkbox" id="chk_use_kas" checked title="Use Khan Academy's parser before passing to math.js' parser. This does a better job of parsing in general, but uses both parsers. Unchecking may fix parser errors."> Use KAS
+
+
+</td><td style="vertical-align:top"><canvas id="pgr" width=500 height=500 style="border:1px solid"></canvas></td></tr></table>
+</body>
+</html>

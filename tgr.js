@@ -1,4 +1,4 @@
-/*Graphing library:
+﻿/*Graphing library:
 
 
 The curve contains:
@@ -21,7 +21,8 @@ plotdata //Structure containing data for how the graph should look
 	showaxes
 	showgrid
 	dragging
-	labelaxes
+	labelaxes //numbers on both axes
+	trigxaxis
 	ctarg //target div for controls
 
 grapher_obj.type //string one of the following:
@@ -52,6 +53,11 @@ grapher_obj.y //for "hole", "dot", "line"
 grapher_obj.x2 //for "line"
 grapher_obj.y2 //for "line"
 grapher_obj.color //for "plot", "par", "rect", "hole", "dot", "line"
+grapher_obj.linewidth //for plot
+grapher_obj.id //for tgr_update_grapher_obj_by_id
+grapher_obj.r //for "hole", "dot"
+grapher_obj.incolor //for "hole"
+grapher_obj.nojump //for "plot". If function moves from above view window to below view window in a single step, don't draw that line. May behave oddly with hinting
 
 function trk_grapher_mwheel(id, event)
 function trk_grapher_mdown(id, event)
@@ -67,7 +73,10 @@ var tgr_default_grapher_obj = {
 	xmin: -Infinity,
 	xmax: Infinity,
 	hints: [],
-	color: "black"
+	color: "black",
+	linewidth: 1,
+	r:5,
+	incolor: "white",
 	}
 
 var tgr_default_plotdata = {
@@ -138,6 +147,135 @@ function tgr_sci(a,n) {//TODO: add scientific notation
 	return(a*Math.pow(10,n));
 	}
 
+function tgr_gcd(a,b) {
+	a = Math.abs(a);
+	b = Math.abs(b);
+	while (a != b) {
+		if (a > b) { a -= b; }
+		else {b -= a;}
+		}
+	return(a);
+	}
+
+function tgr_pifrac(ctx,pt,p,q) { //draws p*pi/q (mathed) on ctx at absolute coordinates pt.
+	if (p == 0) {
+		ctx.strokeStyle = "white";
+		ctx.lineWidth = 7;
+		ctx.fillStyle = "black";
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+		ctx.font = "16 px sans-serif";
+		ctx.strokeText("0",pt[0],pt[1]);
+		ctx.fillText("0",pt[0],pt[1]);
+		}
+	else if (Math.abs(p) % q == 0) {
+		ctx.strokeStyle = "white";
+		ctx.lineWidth = 7;
+		ctx.fillStyle = "black";
+		ctx.textAlign = "left";
+		ctx.textBaseline = "middle";
+		ctx.font = "16px serif";
+		var piw = ctx.measureText("\u03C0").width;
+		ctx.font = "16px sans-serif";
+		var txt = (p/q);
+		if (txt == 1) {txt = "";}
+		if (txt == -1) {txt = "-";}
+		var w = ctx.measureText(txt).width + 1.2*piw;
+		ctx.strokeText(txt,pt[0]-w/2,pt[1]);
+		ctx.textAlign = "right";
+		ctx.font = "16px serif";
+		ctx.strokeText("\u03C0",pt[0]+w/2,pt[1]);
+		ctx.textAlign = "left";
+		ctx.font = "16px sans-serif";
+		ctx.fillText(txt,pt[0]-w/2,pt[1]);
+		ctx.textAlign = "right";
+		ctx.font = "16px serif";
+		ctx.fillText("\u03C0",pt[0]+w/2,pt[1]);
+		}
+	else {
+		var fracn,fracd,tgcd;
+		tgcd = tgr_gcd(p,q);
+		fracn = p/tgcd;
+		fracd = q/tgcd;
+		if (fracn == 1) {fracn = "";}
+		if (fracn == -1) {fracn = "-";}
+		ctx.font = "12px serif";
+		var piw = ctx.measureText("\u03C0").width;
+		ctx.font = "12px sans-serif";
+		var numeratorwidth = ctx.measureText(fracn).width + 1.2*piw;
+		var denominatorwidth = ctx.measureText(fracd).width;
+		var fracwidth = Math.max(numeratorwidth,denominatorwidth);
+		ctx.font = "16px sans-serif";
+
+		ctx.fillStyle = "white";
+		ctx.fillRect(pt[0]-fracwidth/2,pt[1] - (12+2),fracwidth, 2*12+1); //that 12 is from 12px font
+		
+		ctx.fillStyle = "black";
+
+		ctx.textBaseline = "top";
+		ctx.textAlign = "center";
+		ctx.font = "12px serif";
+		ctx.fillText(fracd,pt[0],pt[1]+1);
+
+		ctx.textBaseline = "bottom";
+		ctx.textAlign = "left";
+		ctx.fillText(fracn,pt[0]-numeratorwidth/2,pt[1]-1);
+
+		ctx.font = "16px serif";
+		ctx.textAlign = "right";
+		ctx.fillText("\u03C0",pt[0]+numeratorwidth/2,pt[1]-1);
+		
+		ctx.lineWidth = 2;
+		ctx.strokeStyle = "black";
+		ctx.beginPath();
+		ctx.moveTo(pt[0]-fracwidth/2,pt[1]-1);
+		ctx.lineTo(pt[0]+fracwidth/2,pt[1]-1);
+		ctx.stroke();
+		
+		}
+	}
+
+function tgr_labeltrigxaxis(ctx,pd) {
+	//function tgr_pifrac(ctx,pt,p,q) { //draws p*pi/q (mathed) on ctx at absolute coordinates pt.
+	var denom;
+	var i;
+	var k = (pd.xmax-pd.xmin)*500/pd.width;
+	if (k > 20) {
+		var n = Math.floor(-.7+Math.log10(k));
+		var lowb = Math.ceil(pd.xmin/(Math.pow(10,n)*Math.PI));
+		var upb = Math.floor(pd.xmax/(Math.pow(10,n)*Math.PI));
+		var lud = upb-lowb;
+		for (i = 0; i <= lud; i++) {
+			ctx.beginPath();
+			ctx.strokeStyle = "gray";
+			ctx.lineWidth = 2;
+			ctx.moveTo(...tgr_tocanv([(i+lowb)*Math.pow(10,n)*Math.PI,Infinity],pd));
+			ctx.lineTo(...tgr_tocanv([(i+lowb)*Math.pow(10,n)*Math.PI,-Infinity],pd));
+			ctx.stroke();
+			tgr_pifrac(ctx,tgr_tocanv([(i+lowb)*Math.pow(10,n)*Math.PI,"fakezero"],pd),(i+lowb)*Math.pow(10,n),1);
+			}
+		}
+	else {
+		if (k > 8) {denom = 2;}
+		else if (k > 5) {denom = 6;}
+		else {denom = 12;}
+		var step = Math.PI/denom;
+		var lowb = Math.ceil(pd.xmin/step);
+		var upb = Math.floor(pd.xmax/step);
+		var lud = upb-lowb;
+		for (i = 0; i <= lud; i++) {
+			ctx.beginPath();
+			ctx.strokeStyle = "gray";
+			ctx.lineWidth = 2;
+			if (Math.abs(i+lowb) % denom == 0) {ctx.strokeStyle = "black";}
+			ctx.moveTo(...tgr_tocanv([(i+lowb)*step,Infinity],pd));
+			ctx.lineTo(...tgr_tocanv([(i+lowb)*step,-Infinity],pd));
+			ctx.stroke();
+			tgr_pifrac(ctx,tgr_tocanv([(i+lowb)*step,"fakezero"],pd),(i+lowb),denom);
+			}
+		}
+	}
+
 function tgr_draw_graph(id) {
 	var pd = tgr_graph_array[id].plotdata;
 	var ctx = document.getElementById("tgr_canv_"+id).getContext("2d");
@@ -146,17 +284,23 @@ function tgr_draw_graph(id) {
 	ctx.fillRect(0,0,pd.width,pd.height);
 	var i;
 	if (pd.showgrid) {
-		var decx = Math.pow(10, Math.floor(-.3+ Math.log10(pd.xmax-pd.xmin)));
-		var lb = Math.ceil(pd.xmin/decx)*decx;
-		for (i = 0; i <= 30 && i*decx + lb <= pd.xmax; i++) {
-		//for (i = Math.ceil(pd.xmin/decx)*decx; i < pd.xmax; i += decx) {
-			ctx.strokeStyle = "gray";
-			ctx.lineWidth = 1;
-			ctx.beginPath();
-			ctx.moveTo(...tgr_tocanv([lb+i*decx,Infinity],pd));
-			ctx.lineTo(...tgr_tocanv([lb+i*decx,-Infinity],pd));
-			ctx.stroke();
+		if (pd.trigxaxis && (pd.xmax-pd.xmin)*500/pd.width > 1) {
 			}
+		else {
+			var decx = Math.pow(10, Math.floor(-.3+ Math.log10(pd.xmax-pd.xmin)));
+			var lb = Math.ceil(pd.xmin/decx)*decx;
+			for (i = 0; i <= 30 && i*decx + lb <= pd.xmax; i++) {
+			//for (i = Math.ceil(pd.xmin/decx)*decx; i < pd.xmax; i += decx) {
+				ctx.strokeStyle = "gray";
+				ctx.lineWidth = 1;
+				ctx.beginPath();
+				ctx.moveTo(...tgr_tocanv([lb+i*decx,Infinity],pd));
+				ctx.lineTo(...tgr_tocanv([lb+i*decx,-Infinity],pd));
+				ctx.stroke();
+				}
+			}
+		}
+	if (pd.showgrid) {
 		var decy = Math.pow(10, Math.floor(-.3+Math.log10(pd.ymax-pd.ymin)));
 		lb = Math.ceil(pd.ymin/decy)*decy;
 		for (i = 0; i <= 30 && i*decy + lb <= pd.ymax; i++) {
@@ -188,17 +332,28 @@ function tgr_draw_graph(id) {
 		ctx.textAlign = "center";
 		ctx.textBaseline = "middle";
 		ctx.font = pd.labelaxesfontsize + "px sans-serif";
-		var n = Math.floor(-.3+Math.log10(pd.xmax-pd.xmin));
-		var lowb = Math.ceil(pd.xmin/Math.pow(10,n));
-		var upb = Math.floor(pd.xmax/Math.pow(10,n));
-		var lud = upb-lowb;
-		var w;
-		for (i = 0; i <= lud; i++) {
-			ctx.beginPath();
-			ctx.strokeText(tgr_sci((i+lowb),n), ...tgr_tocanv([(i+lowb)*Math.pow(10,n),"fakezero"],pd));
-			ctx.fillText(tgr_sci((i+lowb),n), ...tgr_tocanv([(i+lowb)*Math.pow(10,n),"fakezero"],pd));
+		if (pd.trigxaxis && (pd.xmax-pd.xmin)*500/pd.width > 1) {
+			tgr_labeltrigxaxis(ctx,pd);
 			}
-		var n = Math.floor(-.3+Math.log10(pd.ymax-pd.ymin));
+		else {
+			var n = Math.floor(-.3+Math.log10((pd.xmax-pd.xmin)*500/pd.width));
+			var lowb = Math.ceil(pd.xmin/Math.pow(10,n));
+			var upb = Math.floor(pd.xmax/Math.pow(10,n));
+			var lud = upb-lowb;
+			for (i = 0; i <= lud; i++) {
+				ctx.beginPath();
+				ctx.strokeText(tgr_sci((i+lowb),n), ...tgr_tocanv([(i+lowb)*Math.pow(10,n),"fakezero"],pd));
+				ctx.fillText(tgr_sci((i+lowb),n), ...tgr_tocanv([(i+lowb)*Math.pow(10,n),"fakezero"],pd));
+				}
+			}
+		var w;
+		ctx.strokeStyle = "white";
+		ctx.lineWidth = 7;
+		ctx.fillStyle = "black";
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+		ctx.font = pd.labelaxesfontsize + "px sans-serif";
+		var n = Math.floor(-.4+Math.log10((pd.ymax-pd.ymin)*500/pd.height));
 		var lowb = Math.ceil(pd.ymin/Math.pow(10,n));
 		var upb = Math.floor(pd.ymax/Math.pow(10,n));
 		var lud = upb-lowb;
@@ -231,6 +386,12 @@ function tgr_plug(f,pd) {
 	else {return(f);}
 	}
 
+function tgr_detect_jump(pt1,pt2,pd) {
+	if ((pt1[1] > pd.height) && (pt2[1] < 0)) {return(true);}
+	if ((pt1[1] < 0) && (pt2[1] > pd.height)) {return(true);}
+	return(false);
+	}
+
 function tgr_plot(grapher_obj, ctx, pd) {
 	var i,j;
 	if (grapher_obj.type == "plot") {
@@ -249,7 +410,7 @@ function tgr_plot(grapher_obj, ctx, pd) {
 		var dx = (xmax-xmin)/pd.numpts;
 		ctx.beginPath();
 		ctx.strokeStyle = grapher_obj.color;
-		ctx.lineWidth = 1;
+		ctx.lineWidth = grapher_obj.linewidth;
 		var x = 0;
 		for (i = 0; i < pd.numpts; i++) {
 			var x1 = xmin + i*(xmax-xmin)/pd.numpts;
@@ -259,6 +420,10 @@ function tgr_plot(grapher_obj, ctx, pd) {
 			while (minhintindex < hints.length && hints[minhintindex][0] < x2) {
 				ctx.lineTo(...tgr_tocanv([hints[minhintindex][0],hints[minhintindex][1]],pd));
 				minhintindex++;
+				}
+			if (grapher_obj.nojump && tgr_detect_jump(tgr_tocanv([x1,f(x1)],pd),tgr_tocanv([x2,f(x2)],pd),pd)) {
+				ctx.stroke();
+				ctx.beginPath();
 				}
 			ctx.lineTo(...tgr_tocanv([x2,f(x2)],pd));
 			ctx.stroke();
@@ -314,12 +479,12 @@ function tgr_plot(grapher_obj, ctx, pd) {
 		pointx = tgr_plug(grapher_obj.x,pd);
 		pointy = tgr_plug(grapher_obj.y,pd);
 		ctx.beginPath();
-		ctx.arc(...tgr_tocanv([pointx,pointy],pd), 6, 0, 2*Math.PI);
+		ctx.arc(...tgr_tocanv([pointx,pointy],pd), grapher_obj.r+1, 0, 2*Math.PI);
 		ctx.fillStyle=grapher_obj.color;
 		ctx.fill();
 		ctx.beginPath();
-		ctx.arc(...tgr_tocanv([pointx,pointy],pd), 4, 0, 2*Math.PI);
-		ctx.fillStyle="white";
+		ctx.arc(...tgr_tocanv([pointx,pointy],pd), grapher_obj.r-1, 0, 2*Math.PI);
+		ctx.fillStyle=grapher_obj.incolor;
 		ctx.fill();
 		}
 	if (grapher_obj.type == "dot") {
@@ -327,7 +492,7 @@ function tgr_plot(grapher_obj, ctx, pd) {
 		pointx = tgr_plug(grapher_obj.x,pd);
 		pointy = tgr_plug(grapher_obj.y,pd);
 		ctx.beginPath();
-		ctx.arc(...tgr_tocanv([pointx,pointy],pd), 5, 0, 2*Math.PI);
+		ctx.arc(...tgr_tocanv([pointx,pointy],pd), grapher_obj.r, 0, 2*Math.PI);
 		ctx.fillStyle=grapher_obj.color;
 		ctx.fill();
 		}
@@ -339,7 +504,7 @@ function tgr_plot(grapher_obj, ctx, pd) {
 		ly2 = tgr_plug(grapher_obj.y2,pd);
 		ctx.beginPath();
 		ctx.strokeStyle = grapher_obj.color;
-		ctx.lineWidth = 2;
+		ctx.lineWidth = grapher_obj.linewidth;
 		ctx.moveTo(...tgr_tocanv([lx1,ly1],pd));
 		ctx.lineTo(...tgr_tocanv([lx2,ly2],pd));
 		ctx.stroke();
@@ -418,6 +583,25 @@ function tgr_update_grapher_objs(id,grapher_objs) {
 	for (i = 0; i < grapher_objs.length; i++) {
 		tgr_graph_array[id].grapher_objs[i] = Object.assign({},tgr_default_grapher_obj,grapher_objs[i]);
 		}
+	tgr_draw_graph(id);
+	}
+
+function tgr_add_to_grapher_objs(id,grapher_obj) {
+	tgr_graph_array[id].grapher_objs.push(Object.assign({},tgr_default_grapher_obj,grapher_obj));
+	tgr_draw_graph(id);
+	}
+
+function tgr_update_grapher_obj_by_id(id,goid,grapher_obj) {//note: if no grapher_obj of id has id=goid, creates a new grapher_obj by that name, if several have goid, replaces the first
+	var i;
+	for (i = 0; i < tgr_graph_array[id].grapher_objs.length; i++) {
+		if (tgr_graph_array[id].grapher_objs[i].id == goid) {
+			tgr_graph_array[id].grapher_objs[i] = Object.assign({},tgr_default_grapher_obj,grapher_obj,{id:goid});
+			tgr_draw_graph(id);
+			return;
+			}
+		}
+	//didn't find a grapher_obj with id=goid
+	tgr_graph_array[id].grapher_objs.push(Object.assign({},tgr_default_grapher_obj,grapher_obj,{id:goid}));
 	tgr_draw_graph(id);
 	}
 
@@ -574,13 +758,13 @@ function tgr_string(id, grapher_objs, plotdata) {
 	cstr = "<canvas id='tgr_canv_"+id+"' width="+plotdata.width+" height="+plotdata.height+" style='border:1px solid'";
 	cstr += " onwheel='tgr_wheel("+'"'+id+'"'+",event)' onmousedown='tgr_mdown("+'"'+id+'"'+",event)' onmousemove='tgr_mmove("+'"'+id+'"'+",event)' onmouseup='tgr_mup("+'"'+id+'"'+",event)' onmouseleave='tgr_mup("+'"'+id+'"'+",event)'></canvas>";
 	gstr += "<table> <tr> <td>";
-	gstr += "Min x: <input type='number' id='tgr_plotminx_"+id+"' oninput='tgr_evt("+'"'+id+'"'+",event)' value=-5 style='width:4em'>";
+	gstr += "Min x: <input type='number' id='tgr_plotminx_"+id+"' oninput='tgr_evt("+'"'+id+'"'+",event)' value="+plotdata.xmin+" style='width:4em'>";
 	gstr += "</td><td>"
-	gstr += "Max x: <input type='number' id='tgr_plotmaxx_"+id+"' oninput='tgr_evt("+'"'+id+'"'+",event)' value=5 style='width:4em'>";
+	gstr += "Max x: <input type='number' id='tgr_plotmaxx_"+id+"' oninput='tgr_evt("+'"'+id+'"'+",event)' value="+plotdata.xmax+" style='width:4em'>";
 	gstr += "</td></tr><tr><td>";
-	gstr += "Min y: <input type='number' id='tgr_plotminy_"+id+"' oninput='tgr_evt("+'"'+id+'"'+",event)' value=-5 style='width:4em'>";
+	gstr += "Min y: <input type='number' id='tgr_plotminy_"+id+"' oninput='tgr_evt("+'"'+id+'"'+",event)' value="+plotdata.ymin+" style='width:4em'>";
 	gstr += "</td><td>"
-	gstr += "Max x: <input type='number' id='tgr_plotmaxy_"+id+"' oninput='tgr_evt("+'"'+id+'"'+",event)' value=5 style='width:4em'>";
+	gstr += "Max y: <input type='number' id='tgr_plotmaxy_"+id+"' oninput='tgr_evt("+'"'+id+'"'+",event)' value="+plotdata.ymax+" style='width:4em'>";
 	gstr += "</td></tr></table>";
 	gstr += tgr_zoom_button(id,1,0,0);
 	gstr += tgr_zoom_button(id,1,1,0);

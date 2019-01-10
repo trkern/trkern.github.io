@@ -1,0 +1,1131 @@
+﻿<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<meta name=description content="Vroom vroom!">
+<title> Acceleration </title>
+<script src="underscore-min.js"></script>
+<script src="kas.js"></script>
+<script src="math.min.js"></script>
+<script src="katex.min.js"></script>
+<script>
+
+var answers = {
+	t1: [["(v-w)/t"],"The acceleration of an object is is the change in velocity of the object divided by the time over which that change happened."],
+	t2: [["at+w"],"Start by multiplying both sides of the equation by t"],
+	t3: [["(x-y)/t"],"The change in position is x-y"],
+	t4: [["vt+y"],"Start by multiplying both sides of the equation by t"],
+	t5: [["22"],"You need to figure out which velocity is larger: the object's starting velocity or its ending velocity."],
+	t6: [["88"],"Just multiply your answer above by 4."],
+	t7: [["10"],"You need to figure out which velocity is larger: the object's starting velocity or its ending velocity."],
+	t8: [["40"],"Just multiply your answer above by 4."],
+	t9: [["6"],"Starting from 1 subdivision, keep increasing the number of subdivisions until the upper and lower bound have the same tens digit."],
+	t10: [["3"],"25 subdivisions suffices to answer this question."],
+	t11: [["64"],"Use the 'abbreviate' obtion to keep the table a readable length."],
+	t12: [["4/n"],"Check with the tables in the previous section to see if you can see a pattern."],
+	t13: [["4/n * (i-1)"], "The ith time interval begins after (i-1) time intervals have elapsed."],
+	t14: [["4/n * i"], "Check with the tables in the previous section to see if you can see a pattern."],
+	t15: [["4/n * (i-1) * 3 + 10"], "Plug the time into the formula for velocity with constant acceleration. Be careful of your parentheses!"],
+	t16: [["4/n * i * 3 + 10"], "Plug the time into the formula for velocity with constant acceleration. Be careful of your parentheses!"],
+	t17: [["4/n * (4/n * i * 3 + 10)"],"Be careful of your parentheses!"],
+	t18: [["4/n * (4/n * (i-1) * 3 + 10)"],"Be careful of your parentheses!"],
+	t19: [["48/(n^2) * i + 40/n"],"Distribute!"],
+	t20: [["48/(n^2) * i + 40/n - 48/(n^2)"],"Distribute!"],
+	t21: [["48/n^2 * (n*(n+1)/2) + 40"],"Factor out a common factor"],
+	t22: [["48/n^2 * (n*(n+1)/2) + 40 - 48/n"],"Factor out a common factor"],
+	t23: [["t/n"],"If you plug in t=4, you should get your answer to the specific version of this question above."],
+	t24: [["t/n * (i-1)"], "The ith time interval begins after (i-1) time intervals have elapsed."],
+	t25: [["t/n * i"], "The ith time interval begins after i time intervals have elapsed."],
+	t26: [["t/n * (i-1) * a + w"], "Plug the time into the formula for velocity with constant acceleration (v = at+w). Be careful of your parentheses!"],
+	t27: [["t/n * i * a + w"], "Plug the time into the formula for velocity with constant acceleration (v = at+w). Be careful of your parentheses!"],
+	t28: [["t/n * (t/n * i * a + w)"],"Be careful of your parentheses!"],
+	t29: [["t/n * (t/n * (i-1) * a + w)"],"Be careful of your parentheses!"],
+	t30: [["a*t^2/n^2 * i + w*t/n"],"Distribute!"],
+	t31: [["a*t^2/n^2 * i + w*t/n - a*t^2/n^2"],"Distribute!"],
+	t32: [["a*t^2/2 + t*w + a*t^2/2 * 1/n)"],"Factor out a common factor"],
+	t33: [["a*t^2/2 + t*w - a*t^2/2 * 1/n"],"Factor out a common factor"],
+	t34: [["a*t^2/2 + t*w + a*t^2/2 * 1/n"],"Distribute!"],
+	t35: [["a*t^2/2 + t*w - a*t^2/2 * 1/n"],"Distribute!"],
+	t36: [["t^2/2"],"Plug in b=0 and w=0"],
+	t37: [["t/n"],"You've already answered this question"],
+	t38: [["t/n * (i-1)"],"You've already answered this question"],
+	t39: [["t/n * i"],"You've already answered this question"],
+	t40: [["(t/n * (i-1))^2/2"],"Be careful with your parentheses"],
+	t41: [["(t/n * i)^2/2"],"Plug in the time the ith interval ends into your formula for velocity"],
+	t42: [["t/n * (t/n * i)^2/2"], "Note that you should use the velocity at the end of the ith time interval"],
+	t43: [["t/n * (t/n * (i-1))^2/2"], "Note that you should use the velocity at the beginning of the ith time interval"],
+	t44: [["t^3/(2*n^3) * i^2"], "Enter 0 if the term doesn't appear in your polynomial"],
+	t45: [["t^3/(2*n^3) * i^2 - t^3/n^3 * i + t^3/(2*n^3)"], "Expand out the (i-1)^2 term"],
+	t46: [["t^3/(2*n^3) * (2n^3+3n^2+n)/6"], "Be careful of your parentheses!"],
+	t47: [["t^3/(2*n^3) * (2n^3+3n^2+n)/6 - t^3/n^3 * (n^2+n)/2 + t^3/(2n^3) * n"], "Be careful of your parentheses!"],
+	t48: [["t^3/6"],"Write your answers in the form A+B/n+C/n^2, and note that the latter two approach 0."],
+	};
+
+function bootquestion(id) {
+	id = id.slice(1);
+	var str = '<input type="text" id="'+id+'">';
+	str += "<button onclick=\"check('"+id+"')\">Check Answer</button>";
+	str += "<button onclick=\"hint('"+id+"')\">Hint</button>";
+	str += "<button onclick=\"show('"+id+"')\">Show Answer</button>";
+	document.getElementById("q"+id).innerHTML = str;
+	}
+
+function bootquestions() {
+	var l = document.getElementsByClassName("q");
+	var k = l.length;
+	var i;
+	for (i = 0; i < k; i++) {
+		bootquestion(l[i].id);
+		}
+	}
+
+function mathyequal(a,b) {
+	try {
+		return(KAS.compare(KAS.parse(a).expr,KAS.parse(b).expr).equal);
+		}
+	catch {
+		return(false);
+		}
+	}
+
+function check(id) {
+	var ans = document.getElementById(id).value;
+
+	var i;
+	var c = false;
+	for (i = 0; i < answers[id][0].length; i++) {
+		if (mathyequal(answers[id][0][i],ans)) {
+			alert("Correct!");
+			return;
+			}
+		}
+	alert("Try Again!");
+	}
+
+var danswers = {
+	t19: ["48/(n^2)", "40/n - 48/(n^2)"],
+	t20: ["48/(n^2)", "40/n"],
+	t30: ["a*t^2/n^2", "w*t/n"],
+	t31: ["a*t^2/n^2", "w*t/n - a*t^2/n^2"],
+	t34: ["a*t^2/2 + t*w", "a*t^2/2"],
+	t35: ["a*t^2/2 + t*w", "-a*t^2/2"],
+	}
+
+var tanswers = {
+	t44: ["t^3/(2*n^3)","0","0"],
+	t45: ["t^3/(2*n^3)", "-t^3/n^3", "t^3/(2*n^3)"],
+	}
+
+function checkd(id) {
+	var ansa = document.getElementById(id+"a").value;
+	var ansb = document.getElementById(id+"b").value;
+
+	if (mathyequal(danswers[id][0],ansa) && mathyequal(danswers[id][1],ansb)) {
+		alert("Correct!");
+		return;
+		}
+
+	alert("Try Again!");
+	}
+
+function checkt(id) {
+	var ansa = document.getElementById(id+"a").value;
+	var ansb = document.getElementById(id+"b").value;
+	var ansc = document.getElementById(id+"c").value;
+	if (mathyequal(tanswers[id][0],ansa) && mathyequal(tanswers[id][1],ansb) && mathyequal(tanswers[id][2],ansc)) {
+		alert("Correct!");
+		return;
+		}
+
+	alert("Try Again!");
+	}
+
+function hint(id) {
+	alert(answers[id][1]);
+	}
+
+function show(id) {
+	alert("Possible Answers:\n" + answers[id][0].join("\n"));
+	}
+
+function bootkatex() {
+	var l = document.getElementsByClassName("k");
+	var k = l.length;
+	var i;
+	for (i = 0; i < k; i++) {
+		katex.render(l[i].title,l[i],{});
+		}
+	}
+
+function tabl1evt(inp,ans) {
+	if (inp.value == "") {
+		inp.className = "";
+		}
+	else if (inp.value == ans) {
+		inp.className = "good";
+		}
+	else {
+		inp.className = "bad";
+		}
+	}
+
+function boottabl1() {
+	var str = "<table border=1>"
+	str += "<tr>";
+	var i,j;
+	str += "<td></td>";
+	var ans = [[13,16,19,22],[13,16,19,22],[13,29,48,70],[10,13,16,19],[10,13,16,19],[10,23,39,58]];
+	var ith = ["1st","2nd","3rd","4th"];
+	for (i = 0; i < 4; i++) {
+		str += "<td> During the " + ith[i] + "<br>unit of time:</td>";
+		}
+	str += "</tr>";
+	var rows = ["Maximum Velocity:","Upper Bound on Distance Travelled:","Upper Bound on Position at End","Minimum Velocity","Lower Bound on Distance Travelled","Lower Bound on Position at End"];
+	for (j = 0; j < rows.length; j++) {
+		str += "<tr><td>" + rows[j] + "</td>";
+		for (i = 0; i < 4; i++) {
+			str += "<td><input type='number' style='width:4em' onchange=\"tabl1evt(this,"+ans[j][i]+")\"><span></span></td>";
+			}
+		str += "</tr>";
+		}
+	str += "</table>";
+	document.getElementById("tabl1").innerHTML = str;
+	}
+
+function nu(n) {
+	return(n.toFixed(10));
+	}
+
+function upd_tabl2() {
+	var n = Number(document.getElementById("tabl2_n").value);
+	var str = "<table border=1><tr><td></td><td>Starting Velocity</td><td>Lower Bound on<br>Distance Travelled</td><td>Lower Bound on<br> Position</td>";
+	str += "<td>Ending Velocity</td><td>Upper Bound on<br> Distance Travelled</td><td>Upper Bound on<br> Position</td></tr>";
+	var k = document.getElementById("tabl2_chk_abbr").checked;
+	var i;
+	var uppersum = 0;
+	var lowersum = 0;
+	for (i = 0; i < n; i++) {
+		if (k && i > 2 && i < n-3) {
+			if (i == 3) { str += "<tr><td colspan=7 style='text-align:center'>...</td></tr>";}
+			lowersum += (4/n * (10+3*(4*i/n)));
+			uppersum += (4/n*(10+3*(4*(i+1)/n)));
+			}
+		else {
+			str += "<tr> <td> From <var>t</var> = ";
+			str += nu(4*i/n);
+			str += " to ";
+			str += nu(4*(i+1)/n);
+			str += "</td><td>";
+			str += nu(10+3*(4*i/n));
+			str += "</td><td>";
+			str += nu(4/n * (10+3*(4*i/n)));
+			str += "</td><td>";
+			lowersum += (4/n * (10+3*(4*i/n)));
+			str += nu(lowersum);
+			str += "</td><td>";
+			str += nu(10+3*(4*(i+1)/n));
+			str += "</td><td>";
+			str += nu(4/n*(10+3*(4*(i+1)/n)));
+			str += "</td><td>";
+			uppersum += (4/n*(10+3*(4*(i+1)/n)));
+			str += nu(uppersum);
+			str += "</td></tr>";
+			}
+		}
+	document.getElementById("tabl2").innerHTML = str;
+	}
+
+function boottime() {
+	var i,s;
+	s = 0;
+	var t0 = performance.now();
+	for (i = 0; i < 1000000; i++) {
+		s += (4/1000000 * (10+3*(4*i/1000000)));
+		}
+	var t1 = performance.now();
+	document.getElementById("time1").innerHTML = (t1-t0).toFixed(2);
+	document.getElementById("time2").innerHTML = ((t1-t0)*.2778).toFixed(2);
+	}
+
+function pinfloater() {
+	if (document.getElementById("floater").style.position == "sticky") {
+		document.getElementById("floater").style.position = "relative";
+		document.getElementById("floaterbutt").innerHTML = "pin";
+		}
+	else {
+		document.getElementById("floater").style.position = "sticky";
+		document.getElementById("floaterbutt").innerHTML = "unpin";
+		}
+	}
+
+function mathjsplugin(str,vr,vl) {
+	var rstr = math.parse(str).transform(function (n, p, q) {
+		if (n.isSymbolNode && n.name == vr) {
+			return(math.parse(vl));
+			}
+		else {
+			return(n);
+			}
+		}).toString();
+	return(rstr);
+	}
+
+function summy(f) { //input is input string, output is html of tex.
+	var str = "";
+	str += "\\colorbox{#CCDDAA}{$"+KAS.parse(mathjsplugin(f,"i",1)).expr.tex() + "$}";
+	str += " + ";
+	str += "\\colorbox{#CCDDAA}{$"+KAS.parse(mathjsplugin(f,"i",2)).expr.tex() + "$}";
+	str += " + ";
+	str += "\\colorbox{#CCDDAA}{$"+KAS.parse(mathjsplugin(f,"i",3)).expr.tex() + "$}";
+	str += " + \\cdots + ";
+	str += "\\colorbox{#CCDDAA}{$"+KAS.parse(mathjsplugin(f,"i","n-2")).expr.tex() + "$}";
+	str += " + ";
+	str += "\\colorbox{#CCDDAA}{$"+KAS.parse(mathjsplugin(f,"i","n-1")).expr.tex() + "$}";
+	str += " + ";
+	str += "\\colorbox{#CCDDAA}{$"+KAS.parse(mathjsplugin(f,"i","n")).expr.tex() + "$}";
+	return (katex.renderToString(str));
+	}
+
+function updq17copier() {
+	var a17 = document.getElementById("t17").value;
+	var str = "Upper Sum = " + summy(a17);//katex.renderToString("\\sum\\limits_{i = 1}^n" + KAS.parse(a17).expr.tex());
+	document.getElementById("q17copier").innerHTML = str;
+	}
+
+function updq18copier() {
+	var a18 = document.getElementById("t18").value;
+	var str = "Lower Sum = " + summy(a18);//katex.renderToString("\\sum\\limits_{i = 1}^n" + KAS.parse(a18).expr.tex());
+	document.getElementById("q18copier").innerHTML = str;	
+	}
+
+/*function summy2topline(f,g,i,n) {
+	var str = "<span style='background-color:#DDDDDD;display:inline-table'> <span id='q19ctop" + i + "a'>";
+	str += katex.renderToString("\\colorbox{#77AADD}{$"+KAS.parse(mathjsplugin(f,"i",n)).expr.tex() + "\\cdot "+n+"$}");
+	str += "</span>" + katex.renderToString("+") + "<span id='q19ctop" + i + "b'>";
+	str += katex.renderToString("\\colorbox{#EE8866}{$"+KAS.parse(mathjsplugin(g,"i",n)).expr.tex() + "$}");
+	str += "</span></span>";
+	return(str);
+	}
+
+function summy2helper2(f,i,n) {
+	var str = "<span style='background-color:";
+	}
+
+function summy2(f,g) {
+	var str = "";
+	str += summy2topline(f,g,1,"1");
+	str += katex.renderToString(" + ");
+	str += summy2topline(f,g,2,"2");
+	str += katex.renderToString(" + ");
+	str += summy2topline(f,g,3,"3");
+	str += katex.renderToString(" + \\cdots + ");
+	str += summy2topline(f,g,1,"(n-2)");
+	str += katex.renderToString(" + ");
+	str += summy2topline(f,g,1,"(n-1)");
+	str += katex.renderToString(" + ");
+	str += summy2topline(f,g,1,"n");
+	return(str);
+	}*/
+
+function summy2(f,g) {
+	var texg = KAS.parse(g).expr.tex();
+	var str = "";
+	var ls = [1,2,3,"(n-2)","(n-1)","n"];
+	var i;
+	for (i = 0; i < ls.length; i++) {
+		if (i == 3) {str += " + \\cdots + ";}
+		else if (i != 0) {str += " + ";}
+		str += "\\colorbox{#DDDDDD}{$";
+		str += "\\colorbox{#77AADD}{$"
+		str += math.parse("("+f+")*"+ls[i]).toTex({parenthesis:"auto"});
+		str += "$}";
+		str += " + ";
+		str += "\\colorbox{#EE8866}{$"
+		str += texg;
+		str += "$}";
+		str += "$}";	
+		}
+	return(katex.renderToString(str));
+	}
+
+function summy3(f,g) {
+	var texg = KAS.parse(g).expr.tex();
+	var str = "";
+	var ls = [1,2,3,"(n-2)","(n-1)","n"];
+	var i;
+	for (i = 0; i < ls.length; i++) {
+		if (i == 3) {str += " + \\cdots + ";}
+		else if (i != 0) {str += " + ";}
+		str += "\\colorbox{#77AADD}{$"
+		str += math.parse("("+f+")*"+ls[i]).toTex({parenthesis:"auto"});
+		str += "$}";
+		}
+	str += " + \\underbrace{";
+	for (i = 0; i < ls.length; i++) {
+		if (i == 3) {str += " + \\cdots + ";}
+		else if (i != 0) {str += " + ";}
+		str += "\\colorbox{#EE8866}{$"
+		str += texg;
+		str += "$}";
+		}
+	str += "}_{n \\text{ times }}";
+	return(katex.renderToString(str));
+	}
+
+function summy4(f,g) { //currently unused
+	var texf = KAS.parse(f).expr.tex();
+	var texg = KAS.parse(g).expr.tex();
+	var str = "";
+	var ls = [1,2,3,"(n-2)","(n-1)","n"];
+	var i;
+	str += math.parse("("+f+")*(1+2+3)").toTex({parenthesis:"auto"}).slice(0,-18);
+	str += "\\bigg(";
+	for (i = 0; i < ls.length; i++) {
+		if (i == 3) {str += " + \\cdots + ";}
+		else if (i != 0) {str += " + ";}
+		str += ls[i];
+		}
+	str += "\\bigg)";
+	return(katex.renderToString(str));
+	}
+
+function summy5(a,b,c) {
+	var texa = KAS.parse(a).expr.tex();
+	var texb = KAS.parse(b).expr.tex();
+	var texc = KAS.parse(c).expr.tex();
+	var str = "\\begin{alignedat}{3}";
+	var ls = [1,2,3,"(n-2)","(n-1)","n"];
+	var i;
+	for (i = 0; i < ls.length; i++) {
+		if (i == 3) {
+			str += "&&&\\vdots&&\\\\";
+			}
+		str += "&\\colorbox{#EEDD88}{$" + texa + "$}\\cdot ";
+		str += ls[i] + "^2 &+";
+		str += "&\\colorbox{#77AADD}{$" + texb + "$}\\cdot ";
+		str += ls[i] + "&+";
+		str += "&\\colorbox{#EE8866}{$" + texc + "$}";
+		if (i != ls.length-1) {
+			str += "+\\\\";
+			}
+		}
+	str += "\\end{alignedat}";
+	return(katex.renderToString(str));
+	}
+
+function summy6(a,b,c) {
+	var texa = KAS.parse(a).expr.tex();
+	var texb = KAS.parse(b).expr.tex();
+	var texc = KAS.parse(c).expr.tex();
+	var str = "\\begin{alignedat}{7}";
+	var ls = [1,2,3,"(n-2)","(n-1)","n"];
+	var i;
+	var str2 = "1^2+2^2+3^2+\\cdots+(n-2)^2+(n-1)^2+n^2";
+	var str1 = "1+2+3+\\cdots +(n-2)+(n-1)+n";
+	var str0 = "\\underbrace{1+1+1+\\cdots +1+1+1}_{n \\text{ times}}";
+	str += "\\colorbox{#EEDD88}{$" + texa + "$}\\cdot &\\bigg(" + str2 + "\\bigg)\\\\";
+	str += "\\colorbox{#77AADD}{$" + texb + "$}\\cdot &\\bigg(" + str1 + "\\bigg)\\\\";
+	str += "\\colorbox{#EE8866}{$" + texc + "$}\\cdot &\\bigg(" + str0 + "\\bigg)";
+	str += "\\end{alignedat}";
+	return(katex.renderToString(str));
+	}
+
+function updq19copier() {
+	try {
+	var a19a = document.getElementById("t19a").value;
+	var a19b = document.getElementById("t19b").value;
+	var str = "Upper Sum = " + summy2(a19a,a19b) + "<br>";
+	str += "Upper Sum = " + summy3(a19a,a19b) + "<br>";
+	document.getElementById("q19copier").innerHTML = str;
+	} catch {}
+	}
+
+function updq20copier() {
+	try {
+	var a20a = document.getElementById("t20a").value;
+	var a20b = document.getElementById("t20b").value;
+	var str = "Lower Sum = " + summy2(a20a,a20b) + "<br>";
+	str += "Lower Sum = " + summy3(a20a,a20b) + "<br>";
+	document.getElementById("q20copier").innerHTML = str;
+	} catch {}
+	}
+
+function updq30copier() {
+	try {
+	var aa = document.getElementById("t30a").value;
+	var ab = document.getElementById("t30b").value;
+	var str = "Upper Sum = " + summy2(aa,ab) + "<br>";
+	str += "Upper Sum = " + summy3(aa,ab) + "<br>";
+	document.getElementById("q30copier").innerHTML = str;
+	} catch {}
+	}
+
+function updq31copier() {
+	try {
+	var aa = document.getElementById("t31a").value;
+	var ab = document.getElementById("t31b").value;
+	var str = "Lower Sum = " + summy2(aa,ab) + "<br>";
+	str += "Lower Sum = " + summy3(aa,ab) + "<br>";
+	document.getElementById("q31copier").innerHTML = str;
+	} catch {}
+	}
+
+function updq44copier() {
+	var aa = document.getElementById("t44a").value;
+	var ab = document.getElementById("t44b").value;
+	var ac = document.getElementById("t44c").value;
+	var str = "Upper Sum = <br>" + summy5(aa,ab,ac) + "<br>";
+	str += "Upper Sum = <br>" + summy6(aa,ab,ac);
+	document.getElementById("q44copier").innerHTML = str;
+	}
+
+function updq45copier() {
+	var aa = document.getElementById("t45a").value;
+	var ab = document.getElementById("t45b").value;
+	var ac = document.getElementById("t45c").value;
+	var str = "Lower Sum = <br>" + summy5(aa,ab,ac) + "<br>";
+	str += "Lower Sum = <br>" + summy6(aa,ab,ac);
+	document.getElementById("q45copier").innerHTML = str;
+	}
+
+function bootq1718copier() {
+	document.getElementById("t17").addEventListener('input',updq17copier);
+	document.getElementById("t18").addEventListener('input',updq18copier);
+	updq17copier();
+	updq18copier();
+	document.getElementById("t19a").addEventListener('input',updq19copier);
+	document.getElementById("t19b").addEventListener('input',updq19copier);
+	document.getElementById("t20a").addEventListener('input',updq20copier);
+	document.getElementById("t20b").addEventListener('input',updq20copier);
+	updq19copier();
+	updq20copier();
+	document.getElementById("t30a").addEventListener('input',updq30copier);
+	document.getElementById("t30b").addEventListener('input',updq30copier);
+	document.getElementById("t31a").addEventListener('input',updq31copier);
+	document.getElementById("t31b").addEventListener('input',updq31copier);
+	updq30copier();
+	updq31copier();
+	document.getElementById("t44a").addEventListener('input',updq44copier);
+	document.getElementById("t44b").addEventListener('input',updq44copier);
+	document.getElementById("t44c").addEventListener('input',updq44copier);
+	document.getElementById("t45a").addEventListener('input',updq45copier);
+	document.getElementById("t45b").addEventListener('input',updq45copier);
+	document.getElementById("t45c").addEventListener('input',updq45copier);
+	updq44copier();
+	updq45copier();
+	}
+
+function sho(id) {
+	document.getElementById(id).style.display="";
+	}
+
+function boot() {
+	sho("goon1");
+	sho("goon2");
+	bootkatex();
+	bootquestions();
+	boottabl1();
+	upd_tabl2();
+	boottime();
+	bootq1718copier();
+	}
+
+</script>
+<style>
+blockquote {
+	background-color: #CCDDAA;
+	padding: 20px;
+	border-left: 3px solid #266435;
+	}
+blockquote.caution {
+	background-color: #EEEEBB;
+	padding: 20px;
+	border-left: 3px solid yellow;
+	}
+blockquote.formula {
+	background-color: #DDDDDD;
+	padding: 20px;
+	border: 1px solid black;
+	border-left: 3px solid black;
+	}
+.question:before {
+	color: #225522;
+	content: 'Q: ';
+	font-size:xx-large;
+	line-height:0em;
+	}
+h1 {
+	font-family: sans-serif;
+	}
+.spacer {
+	height:20em;
+	margin-bottom:-21em;"
+	}
+.bad {
+	background-color:#FFCCCC;
+	}
+.bad+span:after {
+	content:"\2717";
+	}
+.good {
+	background-color:#BBCCEE;
+	}
+.good+span:after {
+	content:"\2713";
+	}
+</style>
+<link rel="stylesheet" href="katex.min.css">
+</head>
+<body onload="boot();">
+<h1 style="text-align:center;font-size:3em">Acceleration and the Case of the Mysterious &frac12;</h1>
+
+<blockquote class="formula">
+If an object undergoes constant acceleration <var>a</var>, then its position as a function of time is:
+<div style="text-align:center" class="k" title="x(t) = \frac12 at^2 + wt + y"></div>
+Where:
+<ul>
+<li> <var>w</var> is the velocity at time <var>t</var> = 0. 
+<li> <var>y</var> is the position at time <var>t</var> = 0.
+</ul>
+Some sources will write these variables as <var>v</var><sub>0</sub> and <var>x</var><sub>0</sub> respectively.
+</blockquote>
+
+<p>
+In this interactive, we will explore where that &frac12; comes from.
+</p>
+
+<h1>Acceleration</h1>
+<p>
+Acceleration is the rate of change in velocity of an object. Let's assume our object is just moving along the <var>x</var>-axis, with positive positions, 
+velocities, and accelerations corresponding to the right and negative positions, velocities, and accelerations corresponding to the left.
+We choose to focus on movement back and forth along a line (or you might want to think about movement along a straight road or a vertical axis)
+so that we don't have to worry about extraneous dimensions or coordinates and can focus just on acceleration. 
+Luckily when we do want to boost things up to two or three dimensions, we can usually just focus on what's happening in one dimension at a time.
+</p>
+
+<p>
+What it means for acceleration to be the rate of change in velocity of an object is that if an object has a constant acceleration <var>a</var>, 
+then <var>a</var> is the change in velocity of the object divided by the time over which that change happened.
+</p>
+
+<p> Write a formula for acceleration in terms of:
+<ul>
+<li> <var>w</var>, the initial velocity,
+<li> <var>v</var>, the velocity at time <var>t</var>,
+<li> <var>t</var>, the time between when the velocity was <var>w</var> and <var>v</var>.
+</ul>
+<var>a</var> = <span id="qt1" class="q"></span>
+</p>
+
+<p> Solve the equation above for <var>v</var> in terms of <var>a</var>, <var>w</var>, and <var>t</var>.
+This formula gives us the velocity after <var>t</var> units of time at a constant acceleration of <var>a</var>.<br>
+<var>v</var> = <span id="qt2" class="q"></span>
+</p>
+
+<h1>Constant Velocity</h1>
+
+<p>Velocity, on the other hand, is the rate of change in position of an object. In particular, if that object has a constant velocity, its velocity
+is the change in position divided by the time over which that change happened.
+</p>
+
+<p> Write a formula for velocity in terms of:
+<ul>
+<li> <var>y</var>, the initial position,
+<li> <var>x</var>, the position at time <var>t</var>,
+<li> <var>t</var>, the time between when the position was <var>y</var> and <var>x</var>.
+</ul>
+<var>v</var> = <span id="qt3" class="q"></span>
+</body>
+
+<p> Solve the equation above for <var>x</var> in terms of <var>y</var>, <var>v</var>, and <var>t</var>.
+This formula gives us the position after <var>t</var> units of time at a constant velocity of <var>v</var>.<br>
+<var>x</var> = <span id="qt4" class="q"></span>
+</p>
+
+<blockquote class="caution">
+<p>One might assume that we can combine our equations for <var>x</var> (above) and <var>v</var> (in the previous section). Solving them together, we get the equation
+<span class="k" title="x = vt+y = (at+w)t + y = at^2 + wt + y"></span> Hence, why the &frac12; in the actual formula is mysterious.
+</p>
+<p>
+It's worth exploring what went wrong here, because it's a common mathematical error. In this situation, we combined two formulas together without looking carefully
+at their <b>prerequisites</b>. Our formula for <var>x</var> only works if the object has constant velocity, but our formula for <var>v</var> tells us that the velocity
+depends on time (assuming nonzero acceleration). 
+</p>
+<p>
+If you want to go home early, you can reason to yourself that if the initial velocity is <var>w</var> and the velocity at time <var>t</var> is <var>at+w</var>,
+and having a constant acceleration means evenly varying between the two, then it's not unreasonable that the position will be the average of the position if the
+velocity was constantly <var>w</var> and the position if the velocity was constantly <var>at+w</var>. This gives you the correct formula for position at the
+top of the page.
+</p>
+<p>
+However, one would be right to remain skeptical, after all, <a href="https://en.wikipedia.org/wiki/Harmonic_mean#Average_speed">unexpected things</a> happen in the
+case of velocity. So stick around if you're interested in a more convincing argument that our formula at the top of the page is correct, and to learn a technique
+for dealing with non-constant velocities in general.
+</p>
+</blockquote>
+
+<p>
+We can still make good use of our constant velocity formula, with the following fairly intuitive fact:
+</p>
+
+<blockquote class="formula">
+<p>
+If the velocity of an object over a period of time is always <i>less than or equal to</i> <var>v</var>, then the object's position is <i>less than
+or equal to</i> <var>vt+y</var>, where <var>t</var> is the time elapsed and <var>y</var> is the initial position.
+</p><p>
+If the velocity of an object over a period of time is always <i>greater than or equal to</i> <var>v</var>, then the object's position is <i>greater than
+or equal to</i> <var>vt+y</var>, where <var>t</var> is the time elapsed and <var>y</var> is the initial position.
+</p>
+</blockquote>
+
+<p>
+In other words, if you have a maximum velocity you can't or shouldn't exceed, the farthest you can travel is if you travelled constantly at that velocity.
+If you have a minimum velocity (either a limit to how fast you can go in the negative direction, or a mimimum speed you must always exceed in the positive direction),
+travelling constantly at that velocity will leave you as far as possible in the negative direction.
+</p>
+
+<p>
+For instance, some toll roads will keep track of when you enter the road and when you exit the road and the distance between where you got on and got off.
+The maximum distance you can travel over a period of time while obeying the speed limit is if you travel constantly at the speed limit. If you travelled further,
+you must have been speeding at some point, so you get a ticket.
+</p>
+
+
+<div>
+
+<div id="floater" style="z-index:1;position:sticky;top:0px;float:right;background-color:white;border:1px solid;display:inline-block;padding-right:30px">
+<button id="floaterbutt" style="position:absolute;top:0px;right:0px" onclick=pinfloater();>unpin</button>
+<ul>
+<li> Initial position: <var>y</var> = 0,
+<li> Initial velocity: <var>w</var> = 10,
+<li> Constant acceleration: <var>a</var> = 3,
+<li> Total time elapsed: <var>t</var> = 4.
+<li> Constant acceleration, so: <br>velocity at time <var>t</var> is <var>at+y</var>.
+</ul>
+</div>
+
+<h1>Bounding: A Specific Case</h1>
+
+<p>
+Let's plug in some specific values to get started:
+</p>
+
+<p>
+Our goal is to figure out the position of the object after those 4 units of time have elapsed. We will avoid giving specific units, but you can imagine
+that everything is measured in appropriate combinations of meters and seconds if you like.
+</p>
+
+<p>
+What is the object's maximum velocity during the time interval?
+<div id="qt5" class="q"></div>
+</p>
+
+<p>
+Multiply your answer above by the time elapsed to get an upper bound on the object's position (a position you know that the object to the left of).
+<div id="qt6" class="q"></div>
+</p>
+
+<p>
+What is the object's minimum velocity during the time interval?
+<div id="qt7" class="q"></div>
+</p>
+
+<p>
+Multiply your answer above by the time elapsed to get a lower bound on the object's position (a position you know that the object to the right of).
+<div id="qt8" class="q"></div>
+</p>
+
+<p>
+Out goal is to find out exactly where this object winds up. These bounds are terrible! But they're a start! How can we improve them?
+It's worth thinking about this question for a while, so feel free to take a moment, think carefully about what's happening with our original object
+compared to an object going constantly the maximum velocity and an object going constantly the minimum velocity.
+<button onclick="alert('During the first unit of time, the object going constantly the maximum velocity is going much faster than the original object. How can we account for this somehow?')">Hint</button>
+<button onclick="sho('goon1');sho('goon2');">Continue</button>
+</p>
+
+<div class="spacer"></div>
+<div id="goon1" style="display:none">
+
+<h1>Subdivision: Improving our Bounds</h1>
+
+<p>
+Our bounds are far apart because the maximum velocity and minimum velocity of our object are so far apart from each other.
+If we divide our time interval up into smaller parts, we can get a smaller gap out of each part. Can this help us improve our bounds?
+</p>
+
+<p>
+Fill out the following table. Note that you can compute an upper/lower bound on position at the end of a time interval by 
+adding up the upper/lower bounds on the distance travelled for that and all previous time intervals.
+</p>
+
+<div id="tabl1"></div>
+
+<p>
+That's an improvement, sure, but it's still not great. But we now have an idea how we're going to improve our upper and lower bounds. 
+Perhaps more subdivisions will improve our bounds further?
+</p>
+
+Number of Subdivisions: <input type="number" style="width:3em" id="tabl2_n" oninput="upd_tabl2()" value=5>
+<input type="checkbox" id="tabl2_chk_abbr" oninput="upd_tabl2()"> Abbreviate
+<div id="tabl2"></div>
+
+<p>
+Regardless of how good these upper and lower bounds are, they are definite upper and lower bounds, in the sense that the true answer is definitely between them.
+Although without any extra reasoning, you're not sure exactly where in between them the answer is.
+After how many subdivisions are you absolutely sure of the <i>tens</i> digit of the answer? <div id="qt9" class="q"></div>
+</p>
+
+<p>
+Eventually, you can narrow down the answer to having one of two possible ones digits. What is the smaller of those two ones digits?
+<div id="qt10" class="q"></div>
+</p>
+
+<p>
+As you increase the number of subdivisions, the upper and lower bounds seem to narrow in on a single value. What is that value? 
+<div id="qt11" class="q"></div>
+</p>
+
+<p>
+Seeing our upper and lower bounds converge to the same, nice, round number is pretty convincing that this is the answer we're looking for.
+But, we're only absolutely certain that the true answer falls between the best upper and lower bound we calculated, not that it is that exact value in the middle.
+Of course, if you're an engineer, maybe having good enough upper and lower bounds is good enough to get your desired decimal precision.
+</p>
+
+<p>
+But we would like our technique to give us an answer we are completely certain of, even for other problems where the answer might not be a nice round number.
+And, if our answer has a nice formula, we would like to know that too. For instance, if our answer were 3 + 4 &pi;, we would want to know that instead of just knowing
+that it was between 15.56637061435917295 and 15.56637061435917296.
+</p>
+
+<h1>Large Sums: Getting a Formula</h1>
+
+<p>
+To find our upper and lower bounds on total distance travelled, we need to add up our lower and upper bounds for distance travelled over each subdivision.
+For lots of subdivisions, this requires adding up a large number of terms!
+</p>
+
+<p>
+If we have a nice formula for each term, a computer is perfectly happy to add up millions, and sometimes even billions or trillions of numbers. But at some point,
+even the best computers of the age won't be able to add up all our upper and lower bounds on distances travelled. It takes roughly <span id="time1"></span> milliseconds
+to compute the sum for a million subdivisions on your computer. At that rate it would take roughly <span id="time2"></span> hours to compute the sum for a trillion subdivisions,
+although it would actually take many times longer since you would need to use higher precision arithmetic. 
+If we're going to add up quadrillions of numbers or more, we need to use math!
+</p>
+
+<p>
+As a bonus, if we can get a nice formula for our upper and lower bounds in terms of the number of partitions, we can figure out what number
+they're getting closer and closer to!
+</p>
+
+<p>
+But, to get started, we need formulas! If we divide our 4 unit time interval up into <var>n</var> equal pieces, how long is each interval?
+<div id="qt12" class="q"></div>
+</p>
+
+<p>
+When does the <var>i</var><sup>th</sup> time interval start? Most mathematicians will start counting at zero, but let's let the first interval be when <var>i</var> = 1. <br>
+<var>t</var> = <span id="qt13" class="q"></span>
+</p>
+
+<p>
+When does the <var>i</var><sup>th</sup> time interval end?<br>
+<var>t</var> = <span id="qt14" class="q"></span>
+</p>
+
+<p>
+What is the object's velocity at the start of the <var>i</var><sup>th</sup> time inteval?<br>
+<var>v</var> = <span id="qt15" class="q"></span>
+</p>
+
+<p>
+What is the object's velocity at the end of the <var>i</var><sup>th</sup> time inteval?<br>
+<var>v</var> = <span id="qt16" class="q"></span>
+</p>
+
+<p>
+Multiply the upper bound on the object's velocity by the length of the time interval to find an upper bound on the distance travelled during the <var>i</var><sup>th</sup> time interval:<br>
+<span id="qt17" class="q"></span>
+</p>
+
+<p>
+Multiply the lower bound on the object's velocity by the length of the time interval to find a lower bound on the distance travelled during the <var>i</var><sup>th</sup> time interval:<br>
+<span id="qt18" class="q"></span>
+</p>
+
+<p>Now we just need to add up these values for <var>i</var> varying from 1 to <var>n</var>. 
+Assuming your answers to the above questions are correct, these sums are:
+</p>
+
+<div id="q17copier" style="text-align:center"></div>
+<div id="q18copier" style="text-align:center"></div>
+
+<p>
+These may seem intimidating, but we can make our problem easier by using some basic properties of sums:
+</p>
+
+<p>
+Write your upper bound on the distance travelled during the <var>i</var><sup>th</sup> time interval as a term (possibly involving <var>n</var>) times <var>i</var> plus a term (possibly involving <var>n</var>).<br>
+<span style="font-size:xx-large;vertical-align:sub">(</span><input type="text" id="t19a"><span style="font-size:xx-large;vertical-align:sub">)</span><var>i</var> + <span style="font-size:xx-large;vertical-align:sub">(</span><input type="text" id="t19b"><span style="font-size:xx-large;vertical-align:sub">)</span> <button onclick="checkd('t19')">Check Answer</button><button onclick="hint('t19')">Hint</button><button onclick="show('t19')">Show Answer</button>
+</p>
+
+<p>
+Write your lower bound on the distance travelled during the <var>i</var><sup>th</sup> time interval as a term (possibly involving <var>n</var>) times <var>i</var> plus a term (possibly involving <var>n</var>).<br>
+<span style="font-size:xx-large;vertical-align:sub">(</span><input type="text" id="t20a"><span style="font-size:xx-large;vertical-align:sub">)</span><var>i</var> + <span style="font-size:xx-large;vertical-align:sub">(</span><input type="text" id="t20b"><span style="font-size:xx-large;vertical-align:sub">)</span> <button onclick="checkd('t20')">Check Answer</button><button onclick="hint('t20')">Hint</button><button onclick="show('t20')">Show Answer</button>
+</p>
+
+<div id="q19copier" style="text-align:center"></div>
+<div id="q20copier" style="text-align:center"></div>
+
+<p>
+Use the fact that: <span class="k" title="1+2+3+\cdots+(n-2)+(n-1)+n = \frac{n(n+1)}{2}"></span> to rewrite your upper bound without the elipses.<br>
+Upper sum = <span id="qt21" class="q"></span>
+</p>
+
+<p>
+Use the fact that: <span class="k" title="1+2+3+\cdots+(n-2)+(n-1)+n = \frac{n(n+1)}{2}"></span> to rewrite your lower bound without the elipses.<br>
+Lower sum = <span id="qt22" class="q"></span>
+</p>
+
+<p> Simplify your upper bound:<br>
+Upper sum = <input type="number" style="width:4em" onchange="tabl1evt(this,64)"><span></span> + <input type="number" style="width:4em" onchange="tabl1evt(this,24)"> <span class="k" title="\cdot \frac1n"></span>
+</p>
+
+<p> Simplify your lower bound:<br>
+Lower sum = <input type="number" style="width:4em" onchange="tabl1evt(this,64)"><span></span> + <input type="number" style="width:4em" onchange="tabl1evt(this,-24)"> <span class="k" title="\cdot \frac1n"></span>
+</p>
+
+<p>
+As you can see, just doing a bit of clever algebra (and knowing a formula for the sum of the numbers from 1 to <var>n</var>), we can get an exact formula
+for the sum of our upper and lower bounds, and there's only one number that's between our bounds for every <var>n</var>: the true distance travelled by our object
+over 4 time units.
+</p>
+
+<p>
+This technique requires a bit of work, but it's very flexible and definite.
+</p>
+
+</div>
+</div>
+<div id="goon2" style="display:none">
+
+<h1>Constant Acceleration: The General Case</h1>
+
+For the following questions, let:
+<ul>
+<li> <Var>y</var> be the initial position of the object.
+<li> <var>w</var> be the initial velocity of the object.
+<li> <var>a</var> be the constant acceleration of the object. Assume <var>a</var> is positive. Reflect later on the case where <var>a</var> is negative.
+<li> <var>t</var> be the time we're trying to calculate the position of the object at.
+</ul>
+
+<p>
+If we divide the <var>t</var> unit time interval (from time 0 to time <var>t</var>) up into <var>n</var> equal pieces, how long is each interval?<br>
+<span id="qt23" class="q"></span>
+</p>
+
+<p>
+When does the <var>i</var><sup>th</sup> time interval start? <br>
+<var>t</var> = <span id="qt24" class="q"></span>
+</p>
+
+<p>
+When does the <var>i</var><sup>th</sup> time interval end?<br>
+<var>t</var> = <span id="qt25" class="q"></span>
+</p>
+
+<p>
+What is the object's velocity at the start of the <var>i</var><sup>th</sup> time inteval?<br>
+<var>v</var> = <span id="qt26" class="q"></span>
+</p>
+
+<p>
+What is the object's velocity at the end of the <var>i</var><sup>th</sup> time inteval?<br>
+<var>v</var> = <span id="qt27" class="q"></span>
+</p>
+
+<p>
+Multiply the upper bound on the object's velocity by the length of the time interval to find an upper bound on the distance travelled during the <var>i</var><sup>th</sup> time interval:<br>
+<span id="qt28" class="q"></span>
+</p>
+
+<p>
+Multiply the lower bound on the object's velocity by the length of the time interval to find a lower bound on the distance travelled during the <var>i</var><sup>th</sup> time interval:<br>
+<span id="qt29" class="q"></span>
+</p>
+
+<p>
+Write your upper bound on the distance travelled during the <var>i</var><sup>th</sup> time interval as a term (possibly involving <var>n</var>) times <var>i</var> plus a term (possibly involving <var>n</var>).<br>
+<span style="font-size:xx-large;vertical-align:sub">(</span><input type="text" id="t30a"><span style="font-size:xx-large;vertical-align:sub">)</span><var>i</var> + <span style="font-size:xx-large;vertical-align:sub">(</span><input type="text" id="t30b"><span style="font-size:xx-large;vertical-align:sub">)</span> <button onclick="checkd('t30')">Check Answer</button><button onclick="hint('t30')">Hint</button><button onclick="show('t30')">Show Answer</button>
+</p>
+
+<p>
+Write your lower bound on the distance travelled during the <var>i</var><sup>th</sup> time interval as a term (possibly involving <var>n</var>) times <var>i</var> plus a term (possibly involving <var>n</var>).<br>
+<span style="font-size:xx-large;vertical-align:sub">(</span><input type="text" id="t31a"><span style="font-size:xx-large;vertical-align:sub">)</span><var>i</var> + <span style="font-size:xx-large;vertical-align:sub">(</span><input type="text" id="t31b"><span style="font-size:xx-large;vertical-align:sub">)</span> <button onclick="checkd('t31')">Check Answer</button><button onclick="hint('t31')">Hint</button><button onclick="show('t31')">Show Answer</button>
+</p>
+
+<div id="q30copier" style="text-align:center"></div>
+<div id="q31copier" style="text-align:center"></div>
+
+<p>
+Use the fact that: <span class="k" title="1+2+3+\cdots+(n-2)+(n-1)+n = \frac{n(n+1)}{2}"></span> to rewrite your upper bound without the elipses.<br>
+Upper sum = <span id="qt32" class="q"></span>
+</p>
+
+<p>
+Use the fact that: <span class="k" title="1+2+3+\cdots+(n-2)+(n-1)+n = \frac{n(n+1)}{2}"></span> to rewrite your lower bound without the elipses.<br>
+Lower sum = <span id="qt33" class="q"></span>
+</p>
+
+<p>
+Simplify your upper bound enough to write it as a sum of a term not involving <var>n</var> plus a term not involving <var>n</var> times <span class="k" title="\frac1n"></span>:<br>
+Upper sum = <span style="font-size:xx-large;vertical-align:sub">(</span><input type="text" id="t34a"><span style="font-size:xx-large;vertical-align:sub">)</span> + <span style="font-size:xx-large;vertical-align:sub">(</span><input type="text" id="t34b"><span style="font-size:xx-large;vertical-align:sub">)</span> <span class="k" title="\frac1n"></span> <button onclick="checkd('t34')">Check Answer</button><button onclick="hint('t34')">Hint</button><button onclick="show('t34')">Show Answer</button>
+</p>
+
+<p>
+Simplify your lower bound enough to write it as a sum of a term not involving <var>n</var> plus a term not involving <var>n</var> times <span class="k" title="\frac1n"></span>:<br>
+Lower sum = <span style="font-size:xx-large;vertical-align:sub">(</span><input type="text" id="t35a"><span style="font-size:xx-large;vertical-align:sub">)</span> + <span style="font-size:xx-large;vertical-align:sub">(</span><input type="text" id="t35b"><span style="font-size:xx-large;vertical-align:sub">)</span> <span class="k" title="\frac1n"></span> <button onclick="checkd('t35')">Check Answer</button><button onclick="hint('t35')">Hint</button><button onclick="show('t35')">Show Answer</button>
+</p>
+
+<p>
+Note that these are bounds on the <i>distance travelled</i>. Notice that again as <var>n</var> gets larger and larger, these bounds get closer and closer
+and there's still only one value that falls between our bounds. Add <var>y</var> (the starting position), and you have the general formula at the top of the page!
+</p>
+
+<h1>Going Further: Constant Jerk</h1>
+
+<p>
+Imagine you're in a car going at a constant velocity. This is not such an unpleasant experience, 
+because inertia keeps your body moving at the speed and in the directionof the car. In the idealized version of this situation, you don't need to apply any force
+to keep yourself stable within the car.
+</p>
+
+<p>
+Now imagine you're in a car accelerating constantly. The car applies force to you to accelerate you, and you need to push back to remain stable within the car.
+</p>
+
+<p>
+Now imagine you're in a car whose acceleration is changing significantly over a short period of time. In order to remain stable, you need to quickly change the forces
+you're applying. The faster your acceleration changes or the more it changes, the more jerk you experience. As such, physicists refer to the rate of change in your
+acceleration as jerk.
+</p>
+
+<p>
+Vi Hart has an excellent <a href="https://www.youtube.com/watch?v=LkLBVMgsSHQ">video</a> on the experience of jerk in a car.
+</p>
+
+<p>
+We have a sequence:
+</p>
+<div style="text-align:center">Position &rarr; Velocity &rarr; Acceleration &rarr; Jerk (<a href="https://en.wikipedia.org/wiki/Snap,_Crackle_and_Pop#Physics">&rarr; Snap &rarr; Crackle &rarr; Pop &rarr; ...</a>)</div>
+<p>
+Where each term is the rate of change of the term before it.
+</p>
+
+<p>
+Since each one of these is related to the next in the same way, we can apply the same argument we did above 
+(replacing position by velocity, velocity by acceleration, and acceleration by jerk) to find that:
+</p>
+
+<blockquote class="formula">
+If an object undergoes constant jerk <var>j</var>, then its velocity as a function of time is:
+<div style="text-align:center" class="k" title="v(t) = \frac12 jt^2 + bt + w"></div>
+Where:
+<ul>
+<li> <var>b</var> is the acceleration at time <var>t</var> = 0.
+<li> <var>w</var> is the velocity at time <var>t</var> = 0. 
+</ul>
+Some sources will write these variables as <var>a</var><sub>0</sub> and <var>v</var><sub>0</sub> respectively.
+</blockquote>
+
+<p>
+So we know the object's velocity at any time, but what is its position? 
+Let's apply our same technique of dividing up a time interval into pieces, and considering the maximum and minimum velocity on each of
+those intervals.
+</p>
+
+<h1>Jerk Start</h1>
+
+<p>
+To keep our math simple, let's assume that the initial position, velocity, and acceleration of our object are all 0, and it is
+experiencing a constant jerk of 1 unit for <var>t</var> units of time. We won't do the fully general case in this interactive, 
+but if you're willing to deal with a bunch of variables and are very careful, you'll know enough to work out the fully general 
+case for yourself.
+</p>
+
+<p>
+For our specific case, what is our object's velocity as a function of time?<br>
+<var>v</var>(<var>t</var>) = <span id="qt36" class="q"></span>
+</p>
+
+<p>
+If we divide the <var>t</var> unit time interval (from time 0 to time <var>t</var>) up into <var>n</var> equal pieces, how long is each interval?<br>
+<span id="qt37" class="q"></span>
+</p>
+
+<p>
+When does the <var>i</var><sup>th</sup> time interval start? <br>
+<var>t</var> = <span id="qt38" class="q"></span>
+</p>
+
+<p>
+When does the <var>i</var><sup>th</sup> time interval end?<br>
+<var>t</var> = <span id="qt39" class="q"></span>
+</p>
+
+<p>
+What is the object's velocity at the start of the <var>i</var><sup>th</sup> time inteval?<br>
+<var>v</var> = <span id="qt40" class="q"></span>
+</p>
+
+<p>
+What is the object's velocity at the end of the <var>i</var><sup>th</sup> time inteval?<br>
+<var>v</var> = <span id="qt41" class="q"></span>
+</p>
+
+<p>
+Multiply the end velocity of the <var>i</var><sup>th</sup> time interval by the length of the time interval to 
+get an upper bound on the distance travelled during the <var>i</var><sup>th</sup> time interval.<br>
+<span id="qt42" class="q"></span>
+</p>
+
+<p>
+Multiply the start velocity of the <var>i</var><sup>th</sup> time interval by the length of the time interval to 
+get a lower bound on the distance travelled during the <var>i</var><sup>th</sup> time interval.<br>
+<span id="qt43" class="q"></span>
+</p>
+
+<p>
+Expand your upper bound as a polynomial in <var>i</var> whose coefficients may involve <var>n</var> and <var>t</var>.<br>
+<span style="font-size:xx-large;vertical-align:sub">(</span><input type="text" id="t44a"><span style="font-size:xx-large;vertical-align:sub">)</span><var>i</var><sup>2</sup> + <span style="font-size:xx-large;vertical-align:sub">(</span><input type="text" id="t44b"><span style="font-size:xx-large;vertical-align:sub">)</span><var>i</var> + <span style="font-size:xx-large;vertical-align:sub">(</span><input type="text" id="t44c"><span style="font-size:xx-large;vertical-align:sub">)</span> <button onclick="checkt('t44')">Check Answer</button><button onclick="hint('t44')">Hint</button><button onclick="show('t44')">Show Answer</button>
+</p>
+
+<p>
+Expand your lower bound as a polynomial in <var>i</var> whose coefficients may involve <var>n</var> and <var>t</var>.<br>
+<span style="font-size:xx-large;vertical-align:sub">(</span><input type="text" id="t45a"><span style="font-size:xx-large;vertical-align:sub">)</span><var>i</var><sup>2</sup> + <span style="font-size:xx-large;vertical-align:sub">(</span><input type="text" id="t45b"><span style="font-size:xx-large;vertical-align:sub">)</span><var>i</var> + <span style="font-size:xx-large;vertical-align:sub">(</span><input type="text" id="t45c"><span style="font-size:xx-large;vertical-align:sub">)</span> <button onclick="checkt('t45')">Check Answer</button><button onclick="hint('t45')">Hint</button><button onclick="show('t45')">Show Answer</button>
+</p>
+
+<div id="q44copier" style="text-align:center"></div>
+<div id="q45copier" style="text-align:center"></div>
+
+<p>
+Given that: <div style="text-align:center" class="k" title="1^2+2^2+3^2+\cdots+(n-2)^2+(n-1)^2+n^2 = \frac{2n^3+3n^2+n}{6}"></div> And: 
+<div style="text-align:center" class="k" title="1+2+3+\cdots +(n-2)+(n-1)+n = \frac{n^2+n)}{2},"></div>
+Rewrite the upper sum without elipses:<br>
+<span id="q46" class="q"></span>
+</p>
+
+<p>
+Similarly, rewrite the lower sum without elipses:<br>
+<span id="q47" class="q"></span>
+</p>
+
+<p>
+What do these sums get closer and closer to as <var>n</var> gets larger and larger?<br>
+<span id="q48" class="q"></span>
+</p>
+
+</div>
+
+</html>

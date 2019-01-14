@@ -1,0 +1,67 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="lion.png">
+<link rel="image_src" href="lion.png">
+<meta name=description content="Meow!">
+<title>An Interactive Simulation of the Mathematical Theory of Big Game Hunting</title>
+<script>
+//Page icon based on https://commons.wikimedia.org/wiki/File:Bengal_Cat.jpg
+var lion;
+var hist;
+function random_box_muller() {
+	var u = 0;
+	var v = 0;
+	while (u == 0) {u = Math.random();}
+	while (v == 0) {v = Math.random();}
+	return(Math.sqrt(-2 * Math.log(u)) * Math.cos(2*Math.PI*v));
+	}
+function reset_lion() {
+	lion = 10*random_box_muller();
+	hist = "";
+	document.getElementById("history").innerHTML = "";
+	}
+function use_detector() {
+	var n = Number(document.getElementById("detector").value);
+	if (isNaN(n)) {alert("Please Enter a Number in Decimal Form!"); return;}
+	if (n < lion) {
+		hist += "<tr><td>" + n + "</td><td>to the Right</td></tr>";
+		}
+	if (n > lion) {
+		hist += "<tr><td>" + n + "</td><td>to the Left</td></tr>";
+		}
+	if (n == lion) {
+		hist += "<tr><td>" + n + "</td><td>Here!</td></tr>";
+		}
+	document.getElementById("history").innerHTML = "<table border=1><tr><td>Detector<br>Location</td><td>Lion is:</td></tr>" + hist + "</table>";
+	}
+</script>
+</head>
+<body onload="reset_lion()" style="background-color:#EEEEBB">
+<h1 style="text-align:center;font-size:3em">An Interactive Simulation of the Mathematical Theory of Big Game Hunting</h1>
+
+<p>
+In the grand tradition of mathematicians <a href="https://en.wikipedia.org/wiki/Ralph_P._Boas_Jr.#The_hunting_of_big_game">contributing to the mathematical theory of big game hunting</a>,
+you too can now experience (in simulation, so that no lions are hurt) the thrill of attempting to catch a lion in the Sahara Desert.
+</p>
+<p>
+Let us assume for a moment that the Sahara Desert is actually the Real Number Line, and that you are equipped with a detector that will tell you if the lion is
+to your left or to your right. (Do not worry about the safety of attempting to use the detector at the precise location of the lion, or the lion moving from one location to another,
+as we have acquired a particularly tame simulated lion for this experiment). Your job is to locate the lion as best as you can:
+</p>
+<input type="text" id="detector" onchange="use_detector()"><button onclick="use_detector()">Use Detector</button>
+<div id="history"></div>
+<button onclick="reset_lion()">Relocate Lion</button>
+<p>
+<b>To use:</b> Enter a number in the box to use the lion detector at a particular location. A table entry will appear telling you whether the lion
+is located to your right (i.e. at a larger number) or to your left (i.e. at a smaller number).
+</p>
+<div style="text-align:center">
+<figure>
+<img src="lion.jpg" title="Public Domain image from https://commons.wikimedia.org/wiki/File:Young_cat.jpg">
+<figcaption>A Fearsome Lion in its Natural Territory</figcaption>
+</figure>
+</div>
+</body>
+</html>

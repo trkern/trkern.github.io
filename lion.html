@@ -27,10 +27,10 @@ function use_detector() {
 	var n = Number(document.getElementById("detector").value);
 	if (isNaN(n)) {alert("Please Enter a Number in Decimal Form!"); return;}
 	if (n < lion) {
-		hist = "<tr><td>" + n + "</td><td>to the Right</td></tr>" + hist;
+		hist = "<tr><td>" + n + "</td><td>to the Right (+)</td></tr>" + hist;
 		}
 	if (n > lion) {
-		hist = "<tr><td>" + n + "</td><td>to the Left</td></tr>" + hist;
+		hist = "<tr><td>" + n + "</td><td>to the Left (-)</td></tr>" + hist;
 		}
 	if (n == lion) {
 		hist = "<tr><td>" + n + "</td><td>Here!</td></tr>" + hist;

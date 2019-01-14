@@ -6,6 +6,7 @@
 <link rel="image_src" href="lion.png">
 <meta name=description content="Meow!">
 <title>An Interactive Simulation of the Mathematical Theory of Big Game Hunting</title>
+<script src="math.min.js"></script>
 <script>
 //Page icon based on https://commons.wikimedia.org/wiki/File:Bengal_Cat.jpg
 var lion;
@@ -36,9 +37,18 @@ function use_detector() {
 		}
 	document.getElementById("history").innerHTML = "<table border=1><tr><td>Detector<br>Location</td><td>Lion is:</td></tr>" + hist + "</table>";
 	}
+function use_sqrt() {
+	try {
+		var n = math.bignumber(document.getElementById("sqrtdetector").value);
+		document.getElementById("square").innerHTML = math.pow(n,2);
+		}
+	catch {
+		alert("Please Enter a Number in Decimal Form!");
+		}
+	}
 </script>
 </head>
-<body onload="reset_lion()" style="background-color:#EEEEBB">
+<body onload="reset_lion();math.config({number:'BigNumber',precision:64});" style="background-color:#EEEEBB">
 <h1 style="text-align:center;font-size:3em">An Interactive Simulation of the Mathematical Theory of Big Game Hunting</h1>
 
 <p>
@@ -61,6 +71,19 @@ is located to your right (i.e. at a larger number) or to your left (i.e. at a sm
 <figure>
 <img src="lion.jpg" title="Public Domain image from https://commons.wikimedia.org/wiki/File:Young_cat.jpg">
 <figcaption>A Fearsome Lion in its Natural Territory</figcaption>
+</figure>
+</div>
+<h1>A Less Practical Application: Locating the Square Root of Two</h1>
+<p>
+We can apply a similar technique to calculate the decimal digits of the square root of two. Enter a positive number in the box below,
+and the interactive will display its square. If the square is larger than two, then your number is larger than the square root of two.
+If the square is smaller than two, then your number is smaller than the square root of two.
+</p>
+<input style="text" id="sqrtdetector" onchange="use_sqrt()"><button onclick="use_sqrt()">Square!</button><div id="square"></div>
+<div style="text-align:center">
+<figure>
+<img src="sqrt2.png" title="Public Domain image from https://en.wikipedia.org/wiki/File:Dedekind_cut-_square_root_of_two.png">
+<figcaption>A Fearsome Surd in its Natural Territory</figcaption>
 </figure>
 </div>
 </body>

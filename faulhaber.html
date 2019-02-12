@@ -1,0 +1,1093 @@
+﻿<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="sigma.png">
+<link rel="image_src" href="faulhaber.png">
+<meta name=description content="">
+<title> Faulhaber's Formula </title>
+<script src="underscore-min.js"></script>
+<script src="kas.js"></script>
+<script src="katex.min.js"></script>
+<script src="three.js"></script>
+<script src="OrbitControls.js"></script>
+<script src="QuickHull.js"></script>
+<script src="ConvexGeometry.js"></script>
+<script>
+
+function bootkatex() {
+	var l = document.getElementsByClassName("k");
+	var k = l.length;
+	var i;
+	for (i = 0; i < k; i++) {
+		katex.render(l[i].title,l[i],{});
+		}
+	}
+
+function draw_tri() {
+	var ctx = document.getElementById("tri").getContext("2d");
+	ctx.clearRect(0,0,400,400);
+	var i;
+	var e;
+	var hov = 0;
+	var n = Number(document.getElementById("tri_n").value);
+	var s = 400/(n+1);
+	for (i = 1; i <= 3; i++) {
+		e = document.getElementById("tri_r"+i);
+		if (e.matches(":hover")) {
+			hov = i;
+			e.style.backgroundColor = "#EEDD88";
+			}
+		else {
+			e.style.backgroundColor = "white";
+			}
+		}
+	ctx.fillStyle = "#EEDD88";
+	ctx.lineWidth = 2;
+
+
+	ctx.beginPath();
+	ctx.moveTo(0,0);
+	for (i = 0; i <= n; i++) {
+		ctx.lineTo(i*s,i*s);
+		ctx.lineTo(i*s,(i+1)*s);
+		}
+	ctx.lineTo((n+1)*s,(n+1)*s);
+	ctx.lineTo(0,0);
+
+	if (hov == 1 || hov == 3) {
+		ctx.fill();
+		}
+	if (document.getElementById("tri_chk_1").checked) {
+		ctx.stroke();
+		}
+
+	ctx.beginPath();
+	for (i = 0; i <= n; i++) {
+		for (j = 0; j < i; j++) {
+			ctx.rect(j*s,i*s,s,s);
+			}
+		}
+	if (hov == 2 || hov == 3) {
+		ctx.fill();
+		}
+	if (document.getElementById("tri_chk_2").checked) {
+		ctx.stroke();
+		}
+
+	}
+
+var cube_list = [[0,0,0],[1,0,0],[1,0,1],[0,0,1],[0,1,0],[1,1,0],[1,1,1],[0,1,1]];
+var wedge_x_list = [[0,0,0],[0,0,1],[1,0,0],[1,0,1],[0,1,0],[0,1,1]];
+var wedge_xz_list = [[0,0,0],[0,0,1],[1,0,0],[1,0,1],[0,1,0]];
+var wedge_z_list = [[0,0,0],[0,0,1],[1,0,0],[1,0,1],[0,1,0],[1,1,0]];
+var musket_x_list = [[0,0,0],[0,0,1],[0,1,0],[0,1,1],[1,1,1]];
+var musket_y_list = [[0,0,0],[0,0,1],[1,0,0],[1,0,1],[1,1,1]];
+var musket_z_list = [[0,0,0],[1,0,0],[0,1,0],[1,1,0],[1,1,1]];
+
+var pyr_colors = {
+	indigo: "#332288",
+	cyan: "#88CCEE",
+	teal: "#44AA99",
+	green: "#117733",
+	olive: "#999933",
+	sand: "#DDCC77",
+	rose: "#CC6677",
+	wine: "#882255",
+	purple: "#AA4499",
+	};
+
+var pyr_animation_frame;
+var musket_animation_frame;
+
+function add_cubey(a,b,c,lst,scene,colr,layr) {//adds unit cube at a,b,c on layer layr.
+	var material = new THREE.MeshBasicMaterial({color:colr});
+	var i;
+	var p = new THREE.Vector3(a,b,c);
+	var l = [];
+	for (i = 0; i < lst.length; i++) {
+		l.push(new THREE.Vector3(...lst[i]).add(p));
+		}
+	var geometry = new THREE.ConvexBufferGeometry(l);
+	var cube = new THREE.Mesh(geometry,material);
+	var edges = new THREE.EdgesGeometry(geometry);
+	var line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({color:"black"}));
+	cube.layers.set(layr);
+	line.layers.set(layr);
+	scene.add(line);
+	scene.add(cube);
+	}
+
+var pyr_nu = false;
+var mini_pyr_nu = true;
+var mini_wedge1_nu = true;
+var mini_wedge2_nu = true;
+var musket_nu = false;
+var pyr_cs;
+
+var pyr_camera;
+var pyr_scene;
+
+function boot_pyr() {
+	if (pyr_animation_frame) {
+		cancelAnimationFrame(pyr_animation_frame);
+		}
+	pyr_nu = true;
+	pyr_scene = new THREE.Scene();
+	var e = document.getElementById("pyr");
+	var n = Number(document.getElementById("pyr_n").value);
+	
+	pyr_scene.background = new THREE.Color("white");
+	if (!pyr_camera) {
+		//var camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+		pyr_camera = new THREE.OrthographicCamera(-9,9,9,-9,-200,200);
+		pyr_camera.layers.enable(1);
+		pyr_camera.position.z = 5;
+		pyr_camera.position.x = 3;
+		pyr_camera.position.y = 2;
+		pyr_camera.lookAt(0,0,0);
+		}
+	var renderer = new THREE.WebGLRenderer({canvas:e,antialias:true});
+	var controls = new THREE.OrbitControls(pyr_camera, renderer.domElement);
+	controls.addEventListener("change",function(){pyr_nu=true;});
+	controls.enableKeys = false;
+	var cx = (n/2);
+	var cy = (n/2);
+	var cz = (n/2);
+	var i,j,k;
+	for (i = 0; i < n; i++) {
+		for (j = 0; j < n-i; j++) {
+			for (k = 0; k < n-i; k++) {
+				add_cubey(j-cx,i-cy,k-cz,cube_list,pyr_scene,pyr_colors[i%2?"cyan":"teal"],1);
+				}
+			}
+		}
+	for (i = 0; i < n; i++) {
+		for (j = 0; j < n-i; j++) {
+			add_cubey(j-cx,i-cy,n-i-cz,wedge_z_list,pyr_scene,pyr_colors["rose"],2);
+			}
+		}
+	for (i = 0; i < n; i++) {
+		for (j = 0; j < n-i; j++) {
+			add_cubey(n-i-cx,i-cy,j-cz,wedge_x_list,pyr_scene,pyr_colors["sand"],3);
+			}
+		}
+	for (i = 0; i <= n; i++) {
+		add_cubey(n-i-cx,i-cy,n-i-cz,wedge_xz_list,pyr_scene,pyr_colors["green"],4);
+		}
+
+	var geometry = new THREE.Geometry();
+	geometry.vertices.push(new THREE.Vector3(-n,-n,0),new THREE.Vector3(n,-n,0),new THREE.Vector3(n,n,0),new THREE.Vector3(-n,n,0));
+	geometry.faces.push(new THREE.Face3(0,1,2),new THREE.Face3(0,2,3));
+	
+	pyr_cs = new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({color:new THREE.Color("black"),side:THREE.DoubleSide,transparent:true,opacity:.5}));
+	pyr_cs.layers.set(5);
+	pyr_scene.add(pyr_cs);
+
+	var animate = function () {
+		pyr_animation_frame = requestAnimationFrame( animate );
+		if (pyr_nu) {
+			pyr_nu = false;
+			renderer.render( pyr_scene, pyr_camera );
+			}
+		};
+
+	animate();
+	}
+
+function pyr_tog(i) {
+	pyr_nu = true;
+	pyr_camera.layers.toggle(i);
+	if (threecrossbool) {
+		threecrossupd();
+		}
+	}
+
+function boot_mini_pyr() {
+	var scene = new THREE.Scene();
+	var camera = new THREE.OrthographicCamera(-1,1,1,-1,-200,200);
+	var renderer = new THREE.WebGLRenderer({canvas:document.getElementById("mini_pyr"),antialias:true});
+	var controls = new THREE.OrbitControls(camera, renderer.domElement);
+	controls.addEventListener("change", function(){mini_pyr_nu=true;});
+	controls.enableKeys = false;
+	scene.background = new THREE.Color("white");
+	add_cubey(-.5,-.5,-.5,wedge_xz_list,scene,pyr_colors["green"]);
+
+	camera.position.z = 5;
+	camera.position.x = 3;
+	camera.position.y = 2;
+	camera.lookAt(0,0,0);
+
+
+	var animate = function () {
+		requestAnimationFrame(animate);
+		if (mini_pyr_nu) {
+			mini_pyr_nu = false;
+			renderer.render(scene, camera);
+			}
+		};
+
+	animate();
+	}
+
+function boot_mini_wedge1() {
+	var scene = new THREE.Scene();
+	var camera = new THREE.OrthographicCamera(-1,1,1,-1,-200,200);
+	var renderer = new THREE.WebGLRenderer({canvas:document.getElementById("mini_wedge1"),antialias:true});
+	var controls = new THREE.OrbitControls(camera, renderer.domElement);
+	controls.addEventListener("change", function(){mini_wedge1_nu=true;});
+	controls.enableKeys = false;
+	scene.background = new THREE.Color("white");
+	add_cubey(-.5,-.5,-.5,wedge_z_list,scene,pyr_colors["rose"]);
+
+	camera.position.z = 5;
+	camera.position.x = 3;
+	camera.position.y = 2;
+	camera.lookAt(0,0,0);
+
+
+	var animate = function () {
+		requestAnimationFrame(animate);
+		if (mini_wedge1_nu) {
+			mini_wedge1_nu = false;
+			renderer.render(scene, camera);
+			}
+		};
+
+	animate();
+	}
+
+function boot_mini_wedge2() {
+	var scene = new THREE.Scene();
+	var camera = new THREE.OrthographicCamera(-1,1,1,-1,-200,200);
+	var renderer = new THREE.WebGLRenderer({canvas:document.getElementById("mini_wedge2"),antialias:true});
+	var controls = new THREE.OrbitControls(camera, renderer.domElement);
+	controls.addEventListener("change", function(){mini_wedge2_nu=true;});
+	controls.enableKeys = false;
+	scene.background = new THREE.Color("white");
+	add_cubey(-.5,-.5,-.5,wedge_x_list,scene,pyr_colors["sand"]);
+
+	camera.position.z = 5;
+	camera.position.x = 3;
+	camera.position.y = 2;
+	camera.lookAt(0,0,0);
+
+
+	var animate = function () {
+		requestAnimationFrame(animate);
+		if (mini_wedge2_nu) {
+			mini_wedge2_nu = false;
+			renderer.render(scene, camera);
+			}
+		};
+
+	animate();
+	}
+
+var musket_camera;
+
+function boot_musket() {
+	if (musket_animation_frame) {
+		cancelAnimationFrame(musket_animation_frame);
+		}
+	musket_nu = true;
+	var scene = new THREE.Scene();
+	if (!musket_camera) {
+		musket_camera = new THREE.OrthographicCamera(-1,1,1,-1,-200,200);
+		musket_camera.position.z = 5;
+		musket_camera.position.x = 3;
+		musket_camera.position.y = 2;
+		musket_camera.lookAt(0,0,0);
+		musket_camera.layers.enable(1);
+		musket_camera.layers.enable(2);
+		musket_camera.layers.enable(3);
+		}
+
+	var renderer = new THREE.WebGLRenderer({canvas:document.getElementById("musket"),antialias:true});
+	var controls = new THREE.OrbitControls(musket_camera, renderer.domElement);
+	controls.addEventListener("change", function(){musket_nu=true;});
+	controls.enableKeys = false;
+	scene.background = new THREE.Color("white");
+	add_cubey(-.5,-.5,-.5,musket_x_list,scene,pyr_colors["rose"],1);
+	add_cubey(-.5,-.5,-.5,musket_y_list,scene,pyr_colors["indigo"],2);
+	add_cubey(-.5,-.5,-.5,musket_z_list,scene,pyr_colors["green"],3);
+
+	var animate = function () {
+		musket_animation_frame = requestAnimationFrame(animate);
+		if (musket_nu) {
+			musket_nu = false;
+			renderer.render(scene, musket_camera);
+			}
+		};
+
+	animate();
+	}
+
+function musket_tog(i) {
+	musket_nu = true;
+	musket_camera.layers.toggle(i);
+	}
+
+function four_tog(i) {
+	cubes_nu = true;
+	slice_nu = true;
+	cubes_camera.layers.toggle(i);
+	slice_camera.layers.toggle(i);
+	}
+
+var cubes_nu = false;
+var cubes_array = [];
+var cubes_wires_array = [];
+var cubes_camera;
+
+function boot_cubes() {
+	var scene = new THREE.Scene();
+	var geometry,geo2;
+	var i,j,k,l;
+	cubes_camera = new THREE.OrthographicCamera(-8,8,8,-8,-200,200);
+	cubes_camera.position.z = 5;
+	cubes_camera.position.x = 3;
+	cubes_camera.position.y = 2;
+	cubes_camera.lookAt(0,0,0);
+	cubes_camera.layers.enable(1);
+
+	var renderer = new THREE.WebGLRenderer({canvas:document.getElementById("cubes"),antialias:true});
+	var controls = new THREE.OrbitControls(cubes_camera, renderer.domElement);
+	controls.addEventListener("change", function(){cubes_nu=true;});
+	controls.enableKeys = false;
+	scene.background = new THREE.Color("white");
+	scene.add(axis_magic(8,"x","y","z"));
+
+
+	for (i = 0; i < 6; i++) {
+		cubes_array[i] = [];
+		cubes_wires_array[i] = [];
+		for (j = 0; j < 6; j++) {
+			cubes_array[i][j] = [];
+			cubes_wires_array[i][j] = [];
+			for (k = 0; k < 6; k++) {
+				geometry = new THREE.Geometry();
+				geo2 = new THREE.Geometry();
+				for (l = 0; l < cube_list.length; l++) {
+					geometry.vertices.push(new THREE.Vector3(i+cube_list[l][0],j+cube_list[l][1],k+cube_list[l][2]));
+					}
+				for (l = 0; l < facelist.length; l++) {
+					geometry.faces.push(new THREE.Face3(...facelist[l]));
+					}
+				for (l = 0; l < edgelist.length; l++) {
+					geo2.vertices.push(geometry.vertices[edgelist[l]]);
+					}
+				cubes_array[i][j][k] = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({color:new THREE.Color("green")}));
+				cubes_wires_array[i][j][k] = new THREE.Line(geo2, new THREE.LineBasicMaterial({color:"black"}));
+				scene.add(cubes_array[i][j][k]);
+				scene.add(cubes_wires_array[i][j][k]);
+				}
+			}
+		}
+	var animate = function () {
+		requestAnimationFrame(animate);
+		if (cubes_nu) {
+			cubes_nu = false;
+			renderer.render(scene, cubes_camera);
+			}
+		};
+
+	animate();
+
+	cubes_upd(3);
+	cubes_nu = true;
+	}
+
+function cubes_upd(t) {
+	var i, j, k;
+	var l;
+	var tlist = [];
+	var x,y,z;
+	var tcvac;
+	for (i = 0; i < 6; i++) {
+		for (j = 0; j < 6; j++) {
+			for (k = 0; k < 6; k++) {
+				tcvac = cube_vertices_and_color(i,j,k,t);
+				for (l = 0; l < 8; l++) {
+					cubes_array[i][j][k].geometry.vertices[l].copy(tcvac[0][l]);
+					}
+				cubes_array[i][j][k].material.color = tcvac[1];
+				for (l = 0; l < edgelist.length; l++) {
+					cubes_wires_array[i][j][k].geometry.vertices[l].copy(tcvac[0][edgelist[l]]);
+					}
+				cubes_array[i][j][k].geometry.verticesNeedUpdate = true;
+				cubes_wires_array[i][j][k].geometry.verticesNeedUpdate = true;
+				cubes_array[i][j][k].layers.set(tcvac[2]);
+				cubes_wires_array[i][j][k].layers.set(tcvac[2]);
+				}
+			}
+		}
+	}
+
+function all_cubes_upd(e) {
+	var w = Number(e.target.value);
+	cubes_upd(w);
+	cubes_nu = true;
+	}
+
+function all_slice_upd(e) {
+	var y = Number(e.target.value);
+	slice_upd(y);
+	slice_nu = true;
+	}
+
+var facelist = [
+	[0,4,1],
+	[5,1,4],
+	[1,3,0],
+	[1,2,3],
+	[4,0,7],
+	[7,0,3],
+	[7,3,2],
+	[6,7,2],
+	[5,4,7],
+	[5,7,6],
+	[5,6,1],
+	[1,6,2]
+	];
+
+var edgelist = [0,1,2,3,0,4,5,1,5,6,2,6,7,3,7,4];
+
+function cvac_helper(i,t) {
+	if (i+1 < t) {return(i+1);}
+	if (i < t) {return(t);}
+	return(0);
+	}
+
+function ch2(i,t) {
+	if (i+1 < t) {return(0);}
+	if (i < t) {return(1);}
+	return(10);
+	}
+
+
+var colorarray = ["cyan","indigo","green","olive","sand","rose","wine","purple","teal"];
+
+function cube_vertices_and_color(i,j,k,t) {
+	t = 6-t;
+	var x = cvac_helper(i,t);
+	var y = cvac_helper(j,t);
+	var z = cvac_helper(k,t);
+	if (cvac_helper(i,t) * cvac_helper(j,t) * cvac_helper(k,t) == 0) {
+		return([[
+		new THREE.Vector3(0,0,0),
+		new THREE.Vector3(0,0,0),
+		new THREE.Vector3(0,0,0),
+		new THREE.Vector3(0,0,0),
+		new THREE.Vector3(0,0,0),
+		new THREE.Vector3(0,0,0),
+		new THREE.Vector3(0,0,0),
+		new THREE.Vector3(0,0,0),
+		],new THREE.Color(pyr_colors["green"])]);
+		}
+	var chh2 = ch2(i,t) + 2 * ch2(j,t) + 4 * ch2(k,t);
+	var c;
+	if (chh2 > 8) {c = "green"; chh2=-1;}
+	else if (chh2 == 0) {c = (Math.ceil(t)%2)?"teal":"cyan";}
+	else {c = colorarray[chh2];}
+	return([[
+		new THREE.Vector3(6-i,6-j,6-k),
+		new THREE.Vector3(6-x,6-j,6-k),
+		new THREE.Vector3(6-x,6-j,6-z),
+		new THREE.Vector3(6-i,6-j,6-z),
+		new THREE.Vector3(6-i,6-y,6-k),
+		new THREE.Vector3(6-x,6-y,6-k),
+		new THREE.Vector3(6-x,6-y,6-z),
+		new THREE.Vector3(6-i,6-y,6-z)
+		],new THREE.Color(pyr_colors[c]),chh2+1]);
+	}
+
+var slice_nu = false;
+var slice_array = [];
+var slice_wires_array = [];
+var slice_camera;
+
+function boot_slice() {
+	var scene = new THREE.Scene();
+	var geometry,geo2;
+	var i,j,k,l;
+	slice_camera = new THREE.OrthographicCamera(-8,8,8,-8,-200,200);
+	slice_camera.position.z = -5;
+	slice_camera.position.x = -3;
+	slice_camera.position.y = 2;
+	slice_camera.lookAt(0,0,0);
+	slice_camera.layers.enable(1);
+
+	var renderer = new THREE.WebGLRenderer({canvas:document.getElementById("slice"),antialias:true});
+	var controls = new THREE.OrbitControls(slice_camera, renderer.domElement);
+	controls.addEventListener("change", function(){slice_nu=true;});
+	controls.enableKeys = false;
+	scene.background = new THREE.Color("white");
+	scene.add(axis_magic(8,"x","w","z"));
+
+	for (i = 0; i < 6; i++) {
+		slice_array[i] = [];
+		slice_wires_array[i] = [];
+		for (j = 0; j < 6; j++) {
+			slice_array[i][j] = [];
+			slice_wires_array[i][j] = [];
+			for (k = 0; k < 6; k++) {
+				geometry = new THREE.Geometry();
+				geo2 = new THREE.Geometry();
+				for (l = 0; l < cube_list.length; l++) {
+					geometry.vertices.push(new THREE.Vector3(j+cube_list[l][0],i+cube_list[l][1],k+cube_list[l][2]));
+					}
+				for (l = 0; l < facelist.length; l++) {
+					geometry.faces.push(new THREE.Face3(...facelist[l]));
+					}
+				for (l = 0; l < edgelist.length; l++) {
+					geo2.vertices.push(geometry.vertices[edgelist[l]]);
+					}
+				slice_array[i][j][k] = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({color:new THREE.Color("green")}));
+				slice_wires_array[i][j][k] = new THREE.Line(geo2, new THREE.LineBasicMaterial({color:"black"}));
+				scene.add(slice_array[i][j][k]);
+				scene.add(slice_wires_array[i][j][k]);
+				}
+			}
+		}
+	var animate = function () {
+		requestAnimationFrame(animate);
+		if (slice_nu) {
+			slice_nu = false;
+			renderer.render(scene, slice_camera);
+			}
+		};
+
+	animate();
+
+	slice_upd(3);
+	slice_nu = true;
+	}
+
+function slice_upd(t) {
+	var i, j, k;
+	var l;
+	var tlist = [];
+	var x,y,z;
+	var tcvac;
+	for (i = 0; i < 6; i++) {
+		for (j = 0; j < 6; j++) {
+			for (k = 0; k < 6; k++) {
+				tcvac = slice_vertices_and_color(i,j,k,t);
+				for (l = 0; l < 8; l++) {
+					slice_array[i][j][k].geometry.vertices[l].copy(tcvac[0][l]);
+					}
+				slice_array[i][j][k].material.color = tcvac[1];
+				for (l = 0; l < edgelist.length; l++) {
+					slice_wires_array[i][j][k].geometry.vertices[l].copy(tcvac[0][edgelist[l]]);
+					}
+				slice_array[i][j][k].geometry.verticesNeedUpdate = true;
+				slice_wires_array[i][j][k].geometry.verticesNeedUpdate = true;
+				slice_array[i][j][k].layers.set(tcvac[2]);
+				slice_wires_array[i][j][k].layers.set(tcvac[2]);
+				}
+			}
+		}
+	}
+
+function slice_vertices_and_color(i,j,k,t) {
+	var x,y,z;
+	if (j >= 6-t || i > 5-j || k > 5-j || t == 6) {
+		return([[
+			new THREE.Vector3(0,0,0),
+			new THREE.Vector3(0,0,0),
+			new THREE.Vector3(0,0,0),
+			new THREE.Vector3(0,0,0),
+			new THREE.Vector3(0,0,0),
+			new THREE.Vector3(0,0,0),
+			new THREE.Vector3(0,0,0),
+			new THREE.Vector3(0,0,0),
+			],new THREE.Color(pyr_colors["green"]),0]);
+		}
+	y = Math.min(6-t,j+1);
+	x = Math.min(i+1,6-y);
+	z = Math.min(k+1,6-y);
+	var c = 0;
+	if (6-t < j+1) {
+		c += 2;
+		}
+	if (i+1 > 6-y) {
+		c += 1;
+		}
+	if (k+1 > 6-y) {
+		c += 4;
+		}
+	var colr = pyr_colors[colorarray[c]];
+	if (c == 0 && j%2) {colr = pyr_colors[colorarray[8]]; c = 0;}
+	return([[
+		new THREE.Vector3(6-i,j,6-k),
+		new THREE.Vector3(6-(i+1),j,6-k),
+		new THREE.Vector3(6-(i+1),j,6-(k+1)),
+		new THREE.Vector3(6-i,j,6-(k+1)),
+		new THREE.Vector3(6-i,y,6-k),
+		new THREE.Vector3(6-x,y,6-k),
+		new THREE.Vector3(6-x,y,6-z),
+		new THREE.Vector3(6-i,y,6-z)
+		],new THREE.Color(colr),c+1]);
+	}
+
+var threecrossbool = false;
+
+function threecrossbutt() {
+	threecrossbool = true;
+	document.getElementById("threecrosscell").style.display = "";
+	document.getElementById("threecrosscell").scrollIntoView();
+	threecrossupd();
+	}
+
+function threecrossupd() {
+	var k = document.getElementById("threecrosssel").value;
+	var t = Number(document.getElementById("threecrossrange").value);
+	var n = Number(document.getElementById("pyr_n").value);
+	document.getElementById("threecrossrange").min = -n/2;
+	document.getElementById("threecrossrange").max = n/2+1;
+
+	if (k == "x") {
+		pyr_cs.geometry.vertices[0].copy(new THREE.Vector3(t,-n,-n));
+		pyr_cs.geometry.vertices[1].copy(new THREE.Vector3(t,-n,n));
+		pyr_cs.geometry.vertices[2].copy(new THREE.Vector3(t,n,n));
+		pyr_cs.geometry.vertices[3].copy(new THREE.Vector3(t,n,-n));
+		}
+	if (k == "y") {
+		pyr_cs.geometry.vertices[0].copy(new THREE.Vector3(-n,t,-n));
+		pyr_cs.geometry.vertices[1].copy(new THREE.Vector3(n,t,-n));
+		pyr_cs.geometry.vertices[2].copy(new THREE.Vector3(n,t,n));
+		pyr_cs.geometry.vertices[3].copy(new THREE.Vector3(-n,t,n));
+		}
+	if (k == "z") {
+		pyr_cs.geometry.vertices[0].copy(new THREE.Vector3(-n,-n,t));
+		pyr_cs.geometry.vertices[1].copy(new THREE.Vector3(n,-n,t));
+		pyr_cs.geometry.vertices[2].copy(new THREE.Vector3(n,n,t));
+		pyr_cs.geometry.vertices[3].copy(new THREE.Vector3(-n,n,t));
+		}
+
+	pyr_cs.geometry.verticesNeedUpdate = true;
+	pyr_nu = true;
+
+	var ctx = document.getElementById("threecross").getContext("2d");
+	ctx.clearRect(0,0,300,300);
+
+	var i,j;
+	var w = t + n/2;
+	if (w%1 == 0) {w += .001;}
+
+	if (k == "x" || k == "z") {
+		ctx.strokeStyle = "black";
+		if (document.getElementById("pyr_chk_1").checked) {
+			for (i = Math.ceil(w); i <= n; i++) {
+				ctx.fillStyle = (i%2)?pyr_colors["teal"]:pyr_colors["cyan"];
+				for (j = 0; j < i; j++) {
+					ctx.beginPath();
+					ctx.rect(300*j/(n+1),300*i/(n+1),300/(n+1),300/(n+1));
+					ctx.fill();
+					ctx.stroke();
+					}
+				}
+			}
+		if ((document.getElementById("pyr_chk_2").checked && k == "x") || (document.getElementById("pyr_chk_3").checked && k == "z")) {
+			ctx.fillStyle = (k == "x")?pyr_colors["rose"]:pyr_colors["sand"];
+			for (i = Math.max(Math.ceil(w),1); i <= n; i++) {
+				ctx.beginPath();
+				ctx.moveTo(300*i/(n+1),300*i/(n+1));
+				ctx.lineTo(300*(i+1)/(n+1),300*(i+1)/(n+1));
+				ctx.lineTo(300*i/(n+1),300*(i+1)/(n+1));
+				ctx.closePath();
+				ctx.fill();
+				ctx.stroke();
+				}
+			}
+		if ((document.getElementById("pyr_chk_2").checked && k == "z") || (document.getElementById("pyr_chk_3").checked && k == "x")) {
+			ctx.fillStyle = (k == "x")?pyr_colors["sand"]:pyr_colors["rose"];
+			for (i = 0; i < Math.floor(w); i++) {
+				ctx.beginPath();
+				ctx.rect(300*i/(n+1),300*w/(n+1),300/(n+1),(1-w%1)*300/(n+1));
+				ctx.fill();
+				ctx.stroke();
+				}
+			}
+		if (document.getElementById("pyr_chk_4").checked) {
+			ctx.fillStyle = pyr_colors["green"];
+			ctx.beginPath();
+			ctx.moveTo(300*Math.floor(w)/(n+1),300*w/(n+1));
+			ctx.lineTo(300*w/(n+1),300*w/(n+1));
+			ctx.lineTo(300*Math.ceil(w)/(n+1),300*Math.ceil(w)/(n+1));
+			ctx.lineTo(300*Math.floor(w)/(n+1),300*Math.ceil(w)/(n+1));
+			ctx.closePath();
+			ctx.fill();
+			ctx.stroke();
+			}
+		}
+	if (k == "y") {
+		if (document.getElementById("pyr_chk_1").checked) {
+			ctx.fillStyle = (Math.floor(w)%2)?pyr_colors["cyan"]:pyr_colors["teal"];
+			for (i = 0; i < n-Math.floor(w); i++) {
+				for (j = 0; j < n-Math.floor(w); j++) {
+					ctx.beginPath();
+					ctx.rect(300*i/(n+1),300*j/(n+1),300/(n+1),300/(n+1));
+					ctx.fill();
+					ctx.stroke();
+					}
+				}
+			}
+		if (document.getElementById("pyr_chk_2").checked) {
+			ctx.fillStyle = pyr_colors["rose"];
+			for (i = 0; i < n-Math.floor(w); i++) {
+				ctx.beginPath();
+				ctx.rect(300*i/(n+1),300*(n-Math.floor(w))/(n+1),300/(n+1),300*(1-(w%1))/(n+1));
+				ctx.fill();
+				ctx.stroke();
+				}
+			}
+		if (document.getElementById("pyr_chk_3").checked) {
+			ctx.fillStyle = pyr_colors["sand"];
+			for (i = 0; i < n-Math.floor(w); i++) {
+				ctx.beginPath();
+				ctx.rect(300*(n-Math.floor(w))/(n+1),300*i/(n+1),300*(1-(w%1))/(n+1),300/(n+1));
+				ctx.fill();
+				ctx.stroke();
+				}
+			}
+		if (document.getElementById("pyr_chk_4").checked) {
+			ctx.fillStyle = pyr_colors["green"];
+			ctx.beginPath();
+			ctx.rect(300*(n-Math.floor(w))/(n+1),300*(n-Math.floor(w))/(n+1),300*(1-(w%1))/(n+1),300*(1-(w%1))/(n+1));
+			ctx.fill();
+			ctx.stroke();
+			}
+		}
+	}
+
+function text_magic(txt,x,y,z) {
+	var canvas = document.createElement("canvas");
+	canvas.width=64;
+	canvas.height=64;
+	var ctx = canvas.getContext("2d");
+	ctx.textBaseline="middle";
+	ctx.textAlign="center";
+	ctx.fillStyle="black";
+	ctx.font = "64px sans-serif";
+	ctx.fillText(txt,32,32);
+	var texture = new THREE.CanvasTexture(canvas);
+	texture.minFilter = THREE.LinearMipMapNearestFilter;
+	texture.needsUpdate = true;
+	var spriteMaterial = new THREE.SpriteMaterial( { map: texture, color: "black" } );
+	var sprite = new THREE.Sprite( spriteMaterial );
+	sprite.position.set(x,y,z);
+	return(sprite);
+	}
+
+function axis_magic(lg,xl,yl,zl) {
+	var axis = new THREE.Group();
+	var e1 = text_magic(xl,lg,0,0);
+	var e2 = text_magic(yl,0,lg,0);
+	var e3 = text_magic(zl,0,0,lg);
+	var m1 = new THREE.LineBasicMaterial({color:"red"});
+	var m2 = new THREE.LineBasicMaterial({color:"green"});
+	var m3 = new THREE.LineBasicMaterial({color:"blue"});
+	var g1 = new THREE.Geometry();
+	var g2 = new THREE.Geometry();
+	var g3 = new THREE.Geometry();
+	g1.vertices.push(new THREE.Vector3(0,0,0),new THREE.Vector3(lg,0,0));
+	g2.vertices.push(new THREE.Vector3(0,0,0),new THREE.Vector3(0,lg,0));
+	g3.vertices.push(new THREE.Vector3(0,0,0),new THREE.Vector3(0,0,lg));
+	var l1 = new THREE.Line(g1,m1);
+	var l2 = new THREE.Line(g2,m2);
+	var l3 = new THREE.Line(g3,m3);
+	e1.layers.set(31);
+	e2.layers.set(31);
+	e3.layers.set(31);
+	l1.layers.set(31);
+	l2.layers.set(31);
+	l3.layers.set(31);
+	axis.add(e1);
+	axis.add(e2);
+	axis.add(e3);
+	axis.add(l1);
+	axis.add(l2);
+	axis.add(l3);
+	return(axis);
+	}
+
+function boot() {
+	bootkatex();
+	draw_tri();
+	boot_pyr();
+	boot_musket();
+	boot_cubes();
+	boot_slice();
+	boot_mini_wedge2();
+	boot_mini_wedge1();
+	boot_mini_pyr();
+	}
+
+</script>
+<link rel="stylesheet" href="katex.min.css">
+</head>
+<body onload="boot()">
+<h1 style="text-align:center;font-size:3em">Faulhaber's Formula</h1>
+<p>
+It's fairly natural upon encountering the formulas:
+</p>
+<div class="k" title="\sum\limits_{k=1}^n k = \frac{n(n+1)}{2},"></div>
+<div class="k" title="\sum\limits_{k=1}^n k^2 = \frac{n(n+1)(2n+1)}{6},"></div>
+<p>And, possibly:</p>
+<div class="k" title="\sum\limits_{k=1}^n k^3 = \frac{n^2(n+1)^2}{4},"></div>
+<p>
+To wonder what pattern is going on here. Formulas for the sums of higher powers, some historical information, and insight into
+what patterns hold can be found on <a href="https://en.wikipedia.org/wiki/Faulhaber%27s_formula#Examples">Wikipedia</a>.
+</p>
+<p>
+This interactive will focus on a geometric way of deriving these formulas that will involve reasoning in higher dimensions.
+</p>
+
+<h1>Triangle Numbers</h1>
+<p>
+A common technique for demonstrating the formula for <span class="k" title="\sum\limits_{k=1}^n k"></span> is to draw a staircase, as below,
+and then try to compute its area. If each square has area 1, computing the area is the same as adding up the number of squares.
+Counting by rows gives us that the area is the sum of 1, 2, 3, ..., n.
+</p>
+<p>
+Adding in some small triangles gives us a large triangle, allowing us to solve for the area of the staircase. 
+Check the other "show" checkbox below to see these smaller triangles.
+</p>
+<table><tr><td>
+<canvas id="tri" width=400 height=400 style="border:1px solid"></canvas>
+</td><td valign="top">
+
+n: <input type="number" min=0 value=10 id="tri_n" onchange="draw_tri()" style="width:3em">
+
+<table>
+<tr id="tri_r1" onmouseover="draw_tri()" onmouseleave="draw_tri()">
+<td></td><td>
+(n+1) * Area of small triangle
+</td><td rowspan=4 style="background-color:black"></td><td>
+<span class="k" title="\frac{n+1}{2}"></span>
+</td><td>
+<input type="checkbox" id="tri_chk_1" onchange="draw_tri()"> Show
+</td></tr>
+<tr id="tri_r2" onmouseover="draw_tri()" onmouseleave="draw_tri()">
+<td>+</td><td>
+Area of staircase
+</td><td>
+<span class="k" title="\sum\limits_{k=1}^n k"></span>
+</td><td>
+<input type="checkbox" id="tri_chk_2" onchange="draw_tri()" checked> Show
+</td></tr>
+<tr><td colspan=5 style="background-color:black"></td></tr>
+<tr id="tri_r3" onmouseover="draw_tri()" onmouseleave="draw_tri()">
+<td>=</td><td>
+Area of large triangle
+</td><td>
+<span class="k" title="\frac{(n+1)^2}{2}"></span>
+</td><td>
+</td></tr></table>
+
+</td></tr></table>
+
+
+<h1>Pyramidal Numbers</h1>
+
+<p>
+Similarly, we can demonstrate the formula for <span class="k" title="\sum\limits_{k=1}^n k^2"></span>
+By drawing a step pyramid: a three dimensional object made of layers. On the top layer is one cube, on the next layer down is
+a 2 by 2 square of cubes, on the next layer is a 3 by 3 square of cubes, and so on. These squares of cubes are usually lined up at a corner, as shown below.
+</p>
+
+<p>
+Just as before, the problem of finding the sum of the first n squares can be viewed as a geometric problem, in this case computing the volume of the step pyramid.
+And, just as before, we add on pieces to make a large, smooth shape whose volume we know:
+</p>
+
+<table><tr><td>
+<canvas id="pyr" width=400 height=400 style="border:1px solid"></canvas>
+</td><td valign="top">
+
+n: <input type="number" id="pyr_n" value=5 min=0 onchange="boot_pyr();if(threecrossbool){threecrossupd();}" style="width:3em"> <br>
+
+<table>
+<tr><td></td><td>
+Volume of step pyramid
+</td><td rowspan=6 style="background-color:black"></td><td>
+<span class="k" title="\sum\limits_{k=1}^n k^2"></span>
+</td><td>
+<input type="checkbox" id="pyr_chk_1" onchange="pyr_tog(1)" checked> Show
+</td></tr><tr><td>+</td><td>
+<span class="k" title="\sum\limits_{k=1}^n k \cdot"></span> volume of <canvas id="mini_wedge1" width=30 height=30 style="border:1px solid;vertical-align:middle"></canvas>
+</td><td>
+<span class="k" title="\frac{n(n+1)}2 \cdot \frac12"></span>
+</td><td>
+<input type="checkbox" id="pyr_chk_2" onchange="pyr_tog(2)"> Show
+</td></tr><tr><td>+</td><td>
+<span class="k" title="\sum\limits_{k=1}^n k \cdot"></span> volume of
+<canvas id="mini_wedge2" width=30 height=30 style="border:1px solid;vertical-align:middle"></canvas>
+</td><td>
+<span class="k" title="\frac{n(n+1)}2 \cdot \frac12"></span>
+</td><td>
+<input type="checkbox" id="pyr_chk_3" onchange="pyr_tog(3)"> Show
+</td></tr><tr><td>+</td><td>
+(n+1)* volume of <canvas id="mini_pyr" width=30 height=30 style="border:1px solid;vertical-align:middle"></canvas>
+</td><td>
+<span class="k" title="(n+1) \cdot \frac13"></span>
+</td><td>
+<input type="checkbox" id="pyr_chk_4" onchange="pyr_tog(4)"> Show
+</td></tr>
+<tr><td colspan=5 style="background-color:black"></td></tr>
+<tr><td>=</td><td>
+Volume of large pyramid
+</td><td>
+<span class="k" title="\frac{(n+1)^3}3"></span>
+</td></tr>
+</table>
+
+</td><td id="threecrosscell" style="display:none">
+Cross Sections:<input type="checkbox" id="threecrosschk" onchange="threecrossupd();pyr_tog(5)">
+<select id="threecrosssel" onchange="threecrossupd()">
+<option value="x">x</option>
+<option value="y">y</option>
+<option value="z">z</option>
+</select>
+<input type="range" id="threecrossrange" onchange="threecrossupd()" min=0 max=5 value=0 step="any"><br>
+<canvas id="threecross" width=300 height=300 style="border:1px solid"></canvas>
+
+
+
+</td></tr></table>
+
+<h1>Volume of a Pyramid</h1>
+<p>
+Of course our reasoning above requires us to know the formula for the volume of our small and large pyramids. We could very easily show three of them fitting together to form a cube:<br>
+<canvas id="musket" width=100 height=100 style="border:1px solid; vertical-align:middle"></canvas>
+<input type="checkbox" id="musket_chk_1" onchange="musket_tog(1)" checked> 
+<input type="checkbox" id="musket_chk_2" onchange="musket_tog(2)" checked>
+<input type="checkbox" id="musket_chk_3" onchange="musket_tog(3)" checked>,
+and thus each one is one-third the volume of the corresponding cube.
+</p>
+<p>
+If we examine these pieces more carefully, we notice that they consist exactly of those points whose z-coordinates are less than their x- and y- coordinates,
+where the bottom square is chosen to be on the xy-plane. By symmetry, this region is congruent to the region whose x-coordinates are least, and the region whose
+y-coordinates are least. This covers all possible points in the cube -- after all, one of their coordinates must be least -- excluding the meager cases of ties.
+Indeed, the three pieces in our diagram are the regions described above, and ties correspond to faces where they meet.
+</p>
+
+<h1>Going Down a Dimension</h1>
+<p>
+When looking into patterns, mathematicians often try to consider trivial cases to see if they can yield insights into a general pattern.
+For instance, what should a sum of zero terms be? Or what should zero factorial be? In this case, the sum of zeroth powers will give us 
+another data point for trying to find a pattern:</p>
+<div class="k" title="\sum\limits_{k=1}^n k^0 = n"></div>
+
+<p>
+One might even try to consider the sum of negative powers, but <a href="https://en.wikipedia.org/wiki/Harmonic_number">that way</a>
+<a href="https://en.wikipedia.org/wiki/Basel_problem">is more trouble</a> <a href="https://en.wikipedia.org/wiki/Riemann_zeta_function">than it's worth</a>.
+</p>
+
+<h1>Going Up a Dimension</h1>
+<p>
+Just as we were able to derive a formula for the sum of squares by drawing a pyramid with a square base,
+we are able to derive a formula for the sum of cubes by drawing a hyperpyramid with a cube for a base.
+Specifically, we will stack cubes "on top of" (displaced in the fourth dimension) each other to form a "step hyperpyramid".
+Then, we will add on pieces of small hypercubes to turn our step hyperpyramid into a flat hyperpyramid, whose hypervolume we know.
+We can then work out the hypervolume of the step hyperpyramid by subtracting the hypervolume of the pieces we added.
+</p>
+
+<p>
+There's just one problem: it's really hard to visualize a hyperpyramid! How could we possibly attempt such a feat? By looking at cross-sections!
+</p>
+
+<p>
+Each point in four dimensional space has four coordinates, which we will call x, y, z, and w. If we fix a particular value of w, we can draw points at the
+(x,y,z) coordinates of those points in our shape with that particular value of w.
+</p>
+
+<p>
+Cross sections can also be useful in visualizing three dimensional objects, since your screen is only two dimensional. 
+<button onclick="threecrossbutt()">Click Here</button> to unlock a cross section visualizer for the sum of squares visualizer above.
+</p>
+
+<canvas id="cubes" width=400 height=400 style="border:1px solid"></canvas>
+<canvas id="slice" width=400 height=400 style="border:1px solid"></canvas><br>
+
+w: <input type="range" min=0 max=6 step="any" oninput="all_cubes_upd(event);document.getElementById('wcs').innerHTML=Number(this.value).toFixed(2)" style="vertical-align:middle"><span id="wcs">3</span>
+y: <input type="range" min=.001 max=6 step="any" oninput="all_slice_upd(event);document.getElementById('ycs').innerHTML=Number(this.value).toFixed(2)" style="vertical-align:middle"><span id="ycs">3</span>
+<input type="checkbox" id="four_chk_31" onchange="four_tog(31)"> Show Axes
+
+<table border=1>
+<tr><td>Volume of step hyperpyramid <input type="checkbox" id="four_chk_0" checked onchange="four_tog(1)"></td>
+<td>
+<span class="k" title="\sum\limits_{k=1}^n k^2 \cdot"></span>Volume of <input type="checkbox" id="four_chk_2" onchange="four_tog(2)"><br>
+<span class="k" title="+\sum\limits_{k=1}^n k^2 \cdot"></span>Volume of <input type="checkbox" id="four_chk_3" onchange="four_tog(3)"><br>
+<span class="k" title="+\sum\limits_{k=1}^n k^2 \cdot"></span>Volume of <input type="checkbox" id="four_chk_5" onchange="four_tog(5)"><br>
+</td>
+<td><span class="k" title="\sum\limits_{k=1}^n k \cdot"></span>Volume of <input type="checkbox" id="four_chk_4" onchange="four_tog(4)"><br>
+<span class="k" title="+\sum\limits_{k=1}^n k \cdot"></span>Volume of <input type="checkbox" id="four_chk_6" onchange="four_tog(6)"><br>
+<span class="k" title="+\sum\limits_{k=1}^n k \cdot"></span>Volume of <input type="checkbox" id="four_chk_7" onchange="four_tog(7)"><br>
+</td>
+<td><span class="k" title="(n+1) \cdot"></span>Volume of <input type="checkbox" id="four_chk_8" onchange="four_tog(8)"></td>
+</tr>
+<tr><td><span class="k" title="\sum\limits_{k=1}^n k^3"></td>
+<td><span class="k" title="3 \cdot \frac{n(n+1)(2n+1)}{6}\cdot\frac12"></td>
+<td><span class="k" title="3 \cdot \frac{n(n+1)}{2}\cdot\frac13"></td>
+<td><span class="k" title="(n+1) \cdot \frac14"></td>
+</tr>
+</table>
+
+<p>
+If we add up all the pieces above, we get <span class="k" title="\frac{(n+1)^4}{4}"></span>, the hypervolume of the whole smooth hyperpyramid, and so by subtracting, we can get the desired formula <span class="k" title="\sum\limits_{k=1}^n k^3 = \frac{n^2(n+1)^2}{4}"></span>.
+</p>
+
+<h1>Generalizing to Higher Dimensions</h1>
+<p>
+If we want to talk about shapes in four dimensions or higher, the best way to do so is really by talking about coordinates of points. Suppose we're interested in computing <span class="k" title="\sum\limits_{k=1}^n k^d"></span> for some d &geq; 1. To compute this, we'll construct a hyperpyramid in d+1 dimensions. We will denote points in this space by vectors and use index notation such that: <span class="k" title="\vec{x} = [x_1,x_2,\ldots,x_d,x_{d+1}]"></span>.
+</p>
+<p>
+We will call our hyperpyramid P and it will consist of those points whose coordinates are all between 0 and n+1 whose last coordinate is least. If the following makes sense to you:
+<div class="k" style="text-align:center" title="P = \{\vec{x} | \forall i: 0 \leq x_i \leq x_{d+1} \leq n+1 \}"></div>
+</p>
+<p>
+Our hyperpyramid P falls within the hypercube (which we'll call C) of those points whose coordinates are all between 0 and n+1, and is one d+1st the hypervolume of C. After all, the volume of P/the volume of C is the probability that a random point in C will wind up in P, and the probability that a randomly selected point has its last coordinate smallest is one in the number of coordinates. So the hypervolume of P is given by:
+<div class="k" style="text-align:center" title="\text{HVol}(P) = \frac{(n+1)^{d+1}}{d+1}"></div>
+</p>
+<p>
+On the other hand, we can calculate the volume of P by splitting C up into an <span class="k" title="(n+1)\times \cdots \times (n+1)"></span> grid of unit hypercubes. In effect, this means looking at the integer parts of the coordinates: all the points in each unit hypercube share all the same integer parts of their coordinates. For each unit hypercube, we'll talk about its <i>far bottom corner</i>, which is obtained by rounding all of the coordinates except the last up to an integer, and rounding the last coordinate (indexed by d+1) down to an integer.
+</p>
+<p>
+For each unit hypercube, we can ask how much of that unit hypercube is in P. The corners of the unit hypercube containing a point are given by rounding up or down each of the coordinates of that point. Most likely to be contained in P is the far bottom corner, after all, rounding all the coordinates but the last up and then rounding the last coordinate down is most likely to make the last coordinate smallest. Similarly, the corner least likely to be contained in P is given by rounding all but the last coordinates down and then rounding the last coordinate up.
+</p>
+<p>
+For each unit hypercube (call it u) let A<sub>u</sub> be the set of coordinate indicies i &leq; d such that x<sub>i</sub> rounded down is more than x<sub>d+1</sub> rounded up. In this case, for any point in u, x<sub>d+1</sub> is going to be less than x<sub>i</sub> (as desired for points in P), so we will call these coordinate indices <i>safe</i>.
+</p>
+<p>
+Similarly, let B<sub>u</sub> be the set of coordinate indices i &leq; d such that x<sub>i</sub> and x<sub>d+1</sub> have the same integer parts. In this case, for some points in u, x<sub>d+1</sub> is going to be less than x<sub>i</sub> and others won't. We'll call these coordinate indicies <i>boundary</i>.
+</p>
+<p>
+Note that for each hypercube that intersects P, all of its coordinate indices are safe or boundary: none can have points where x<sub>i</sub> rounded up be less than x<sub>d+1</sub> rounded down, because then x<sub>d+1</sub> would be more than x<sub>i</sub>. We will write b(u) to mean the number of boundary indices of u.
+</p>
+<p>
+We now write another formula for the hypervolume of P:
+</p>
+<div class="k" style="text-align:center" title="\begin{aligned}\text{HVol}(P) =& \sum\limits_u \text{HVol}(u \cap P)\\=& \sum\limits_{j = 0}^d \sum\limits_{b(u) = j} \text{HVol}(u \cap P)\end{aligned}"></div>
+<p>
+For a particular unit hypercube u with b(u) = j, what is the hypervolume of the portion of u in P? Since the hypervolume of u is 1, it's the probability that a randomly selected point in u is in P. When picking the coordinates of a point x in u randomly, it doesn't matter what we pick for the safe coefficients. The boundary coefficients are picked from between m and m+1 for some integer m, as is x<sub>d+1</sub>. The probability that x<sub>d+1</sub> is the smallest is 1 in the number of numbers we picked, or <span class="k" title="\frac{1}{b(u)+1}"></span>. This lets us rewrite our formula for the hypervolume of P:
+</p>
+<div class="k" style="text-align:center" title="\begin{aligned}\text{HVol}(P) =& \sum\limits_{j=0}^d \sum\limits_{b(u)=j} \frac{1}{b(u)+1}\\=& \sum\limits_{j=0}^d \frac{\#\{u | b(u)=j\}}{j+1}\end{aligned}"></div>
+<p>
+So now we need to determine how many unit hypercubes in P have b(u) = j. There are <span class="k" title="\binom{d}{j}"></span> ways of selecting which indices are boundary indices. Once we choose which coordinates are boundary, the integer parts of their values (the important part of determining which unit hypercube) are determined. We now ask how many ways there are of choosing the remaining safe coordinates. If x<sub>d+1</sub> is between m and m+1 (for m ranging from 0 to n), then there are m different possible integer parts for the safe coordinates. Since we need to pick d-j values from this collection, there are m<sup>d-j</sup> ways (with 0<sup>0</sup> being, as per combinatoricists, 1). So the total number of unit hypercubes with b(u)=j is <span class="k" title="\binom{j}{d} \sum\limits_{m=0}^n m^{d-j}"></span>. This lets us rewrite our formula for the hypervolume of P:
+</p>
+<div class="k" style="text-align:center" title="\begin{aligned}\text{HVol}(P) =& \sum\limits_{j=0}^d \binom{d}{j} \frac{1}{j+1} \sum\limits_{m=0}^n m^{d-j}\end{aligned}"></div>
+Since our two formulas for the hypervolume of P are the same:
+<div class="k" style="text-align:center" title="\frac{(n+1)^{d+1}}{d+1} = \sum\limits_{j=0}^d \binom{d}{j} \frac{1}{j+1} \sum\limits_{m=0}^n m^{d-j}"></div>
+If one is uncomfortable with the combinatoricist's 0<sup>0</sup>, we can rewrite:
+<div class="k" style="text-align:center" title="\sum\limits_{m=0}^n m^{d-j} = \begin{cases}n+1 & j=d\\ \sum\limits_{m=1}^n m^{d-j} & j\neq d\end{cases}"></div>
+So:
+<div class="k" style="text-align:center" title="\begin{aligned}\frac{(n+1)^{d+1}}{d+1} =& \frac{n+1}{d+1} + \sum\limits_{j=0}^{d-1} \binom{d}{j} \frac{1}{j+1} \sum\limits_{m=1}^n m^{d-j} \\=& \frac{n+1}{d+1} + \sum\limits_{k=1}^d \binom{d}{k} \frac{1}{d-k+1} \sum_{m=1}^n m^k \end{aligned}"></div>
+<p>
+Where the second line is obtained via the replacement k=d-j. Finally, we can solve for the sum of powers of d in terms of sums of lower powers:
+</p>
+<div class="k" style="text-align:center" title="\sum\limits_{m=1}^n m^d = \frac{(n+1)^{d+1}}{d+1} - \frac{n+1}{d+1} - \sum\limits_{k=1}^{d-1} \binom{d}{k} \frac{1}{d-k+1} \sum\limits_{m=1}^n m^k"></div>
+</body>
+</html>

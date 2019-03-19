@@ -1,0 +1,472 @@
+﻿<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="lagrange.png">
+<meta name=description content="An Interactive about Overfitting">
+<title> Lagrange Polynomials </title>
+<script src="tgr.js"></script>
+<script src="math.min.js"></script>
+<script src="katex.min.js"></script>
+<script src="underscore-min.js"></script>
+<script src="kas.js"></script>
+<script>
+
+function mathjsfct(str) {
+	var f = math.compile(str);
+	return(function(ooo){return(f.eval({x:ooo}));});
+	}
+
+function lagbasis(pairlist,j) {
+	var n = [1];
+	var d = 1;
+	var i;
+	for (i = 0; i < pairlist.length; i++) {
+		if (i != j) {
+			n = mulpl(n,[-pairlist[i][0],1]);
+			d *= pairlist[j][0]-pairlist[i][0];
+			}
+		}
+	return(mulpl([1/d],n));
+	}
+
+function lagpoly(pairlist) {
+	var rval = [];
+	var i;
+	for (i = 0; i < pairlist.length; i++) {
+		rval = addpl(rval,mulpl([pairlist[i][1]],lagbasis(pairlist,i)));
+		}
+	return(rval);
+	}
+
+function addpl(pl1,pl2) {
+	var n = Math.max(pl1.length,pl2.length);
+	var i;
+	var rl = [];
+	for (i = 0; i < n; i++) {
+		rl.push(0);
+		}
+	for (i = 0; i < pl1.length; i++) {
+		rl[i] += pl1[i];
+		}
+	for (i = 0; i < pl2.length; i++) {
+		rl[i] += pl2[i];
+		}
+	return(rl);
+	}
+
+function mulpl(pl1,pl2) {
+	var n = pl1.length+pl2.length-1;
+	var rl = [];
+	var i,j;
+	for (i = 0; i < n; i++) {
+		rl.push(0);
+		}
+	for (i = 0; i < pl1.length; i++) {
+		for (j = 0; j < pl2.length; j++) {
+			rl[i+j] += pl1[i]*pl2[j];
+			}
+		}
+	return(rl);
+	}
+
+function plugpl(pl1,xi) {
+	var xp = 1;
+	var i;
+	var rv = 0;
+	for (i = 0; i < pl1.length; i++) {
+		rv += xp*pl1[i];
+		xp *= xi;
+		}
+	return(rv);
+	}
+
+var s = lagpoly([[0,1.2],[1,2],[3,0],[4,1]]);
+
+var gpairlist = [];
+
+function changev(e,xory,i) {
+	gpairlist[i][xory] = Number(e.target.value);
+	upd();
+	}
+
+function smallestnewx() {
+	var r = 0;
+	var l = [];
+	var i;
+	for (i = 0; i < gpairlist.length; i++) {
+		l.push(gpairlist[i][0]);
+		}
+	while(l.indexOf(r) != -1) {r++;}
+	return(r);
+	}
+
+function makeentrygrid() {
+	var n = Number(document.getElementById("npts").value);
+	var i,j;
+	var str = "<table border=1><tr><td>x</td>";
+	for (i = 0; i < n; i++) {
+		str += "<td><input type='number' step=.01";
+		if (!(i in gpairlist)) {
+			gpairlist[i] = [smallestnewx(),0];
+			}
+		str += " value="+gpairlist[i][0];
+		str += " oninput='changev(event,0,"+i+")'></td>";
+		}
+	str += "</tr><tr><td>y</td>";
+	for (i = 0; i < n; i++) {
+		str += "<td><input type='number' step=.01";
+		str += " value="+gpairlist[i][1];
+		str += " oninput='changev(event,1,"+i+")'></td>";
+		}
+	str += "</tr></table>";
+	document.getElementById("egrid").innerHTML = str;
+	upd();
+	}
+
+function plusify(x) {
+	if (x >= 0) {
+		return("+" + x.toFixed(4));
+		}
+	return(x.toFixed(4));
+	}
+
+function n2l(x) {
+	return(String.fromCharCode(97 + x));
+	}
+
+function n2c(x) {
+	return(String.fromCharCode(65 + x));
+	}
+
+function upd() {
+	var i;
+	var pl = lagpoly(gpairlist);
+	var l = [{type:"plot", fct:ff(pl)}];
+	for (i = 0; i < gpairlist.length; i++) {
+		if(document.getElementById("chk_drawpoints").checked) {
+			l.push({type:"dot", x:gpairlist[i][0], y:gpairlist[i][1]});
+			}
+		if(document.getElementById("chk_labelpoints").checked) {
+			l.push({type:"label", x:gpairlist[i][0], y:gpairlist[i][1], label:"", labeloffsety:-10});
+			}
+		}
+	tgr_update_grapher_objs("gr",l);
+	var str = "<table><tr>";
+	for (i = pl.length-1; i >= 0; i--) {
+		str += "<td>" + plusify(pl[i]) + "x<sup>"+i+"</sup></td>";
+		}
+	str += "</tr></table>";
+	document.getElementById("form").innerHTML = str;
+	str = "";
+	var j;
+	str += "<table border=1><tr><td>x</td>";
+	for (i = 0; i < gpairlist.length; i++) {
+		str += "<td>"+gpairlist[i][0]+"</td>";
+		}
+	str += "</tr><tr><td>y</td>";
+	for (i = 0; i < gpairlist.length; i++) {
+		str += "<td>"+gpairlist[i][1]+"</td>";
+		}
+	str += "</tr></table>";
+	/*for (i = 0; i < gpairlist.length; i++) {
+		if (gpairlist[i][1] == 0) {continue;}
+		str += "<p>Find a polynomial "+n2l(i)+"(x) with zeroes at x=";
+		for (j = 0; j < gpairlist.length; j++) {
+			if (i != j) {
+				str += gpairlist[j][0]+",";
+				}
+			}
+		str += " and not at x="+i+".";
+		str += "<br><input type='text' id='tia"+i+"' oninput='livekat(event,\"tiaa"+i+"\")'><span id='tiaa"+i+"'></span>";
+		str += "<button onclick='checka("+i+")'>Check</button></p>";
+		str += "<div id='plugina"+i+"'></div>";
+		str += "<p>Find a polynomial "+n2c(i)+"(x) with zeroes at x=";
+		for (j = 0; j < gpairlist.length; j++) {
+			if (i != j) {
+				str += gpairlist[j][0]+",";
+				}
+			}
+		str += " with "+n2c(i)+"("+i+")="+gpairlist[i][1]+".";
+		str += "<br><input type='text' id='tib"+i+"' oninput='livekat(event,\"tibb"+i+"\")'><span id='tibb"+i+"'></span>";
+		str += "<button onclick='checkb("+i+")'>Check</button></p>";
+		str += "<div id='pluginb"+i+"'></div>";
+		}*/
+	str += "<table border=1 style='table-layout:fixed;width:100%'>";
+	var anylines = false
+	for (i = 0; i < gpairlist.length; i++) {
+		if (gpairlist[i][1] == 0) {continue;}
+		anylines = true;
+		str += "<tr><td>";
+		str += "Find a polynomial "+n2l(i)+"(x) with zeroes at x=";
+		for (j = 0; j < gpairlist.length; j++) {
+			if (i != j) {
+				str += gpairlist[j][0]+",";
+				}
+			}
+		str += " and not at x="+i+".";
+		str += "<br><input type='text' id='tia"+i+"' oninput='livekat(event,\"tiaa"+i+"\")'><span id='tiaa"+i+"'></span>";
+		str += "<button onclick='checka("+i+")'>Check</button>";
+		str += "<div id='plugina"+i+"'></div>";
+		str += "</td><td>";
+		str += "Find a polynomial "+n2c(i)+"(x) with zeroes at x=";
+		for (j = 0; j < gpairlist.length; j++) {
+			if (i != j) {
+				str += gpairlist[j][0]+",";
+				}
+			}
+		str += " with "+n2c(i)+"("+i+")="+gpairlist[i][1]+".";
+		str += "<br><input type='text' id='tib"+i+"' oninput='livekat(event,\"tibb"+i+"\")'><span id='tibb"+i+"'></span>";
+		str += "<button onclick='checkb("+i+")'>Check</button>";
+		str += "<div id='pluginb"+i+"'></div>";
+		str += "</td></tr>";
+		}
+	if (anylines) {
+		str += "<tr><td>Add up the capital letter polynomials to get your Lagrange Polynomial:</td><td>";
+		str += "<input type='text' id='tic' oninput='livekat(event,\"ticc\")'><span id='ticc'></span>";
+		str += "<button onclick='checkc()'>Check</button>";
+		str += "<div id='pluginc'></div>";
+		str += "</td></tr>";
+		}
+	str += "</table>";
+	document.getElementById("myo").innerHTML = str;
+	}
+
+function livekat(e,targid) {
+	try{
+	var str = e.target.value;
+	var rstr = "";
+	var kp;
+	if (str != "") {//math.parse(e.target.value).toTex()
+		kp = KAS.parse(e.target.value).expr;
+		rstr += kp.tex();
+		if (!(kp.isSimplified())) {
+			rstr += "=" + KAS.parse(kp.simplify().print()).expr.tex();
+			}
+		}
+	katex.render(rstr,document.getElementById(targid));
+	}
+	catch(err) {
+		}
+	}
+
+function ispoly(str) {
+	try {
+		var p = math.rationalize(str);
+		if (p.op != "/") {return(true);}
+		if (p.op == "/" && p.args[1].type == "ConstantNode") {return(true);}
+		return(false);
+		}
+	catch(e) {
+		return(false);
+		}
+	}
+
+function checka(j) {
+	var str = "";
+	var i;
+	var pstr = KAS.parse(document.getElementById("tia"+j).value).expr.print();
+	var pf = mathjsfct(pstr);
+	if (!ispoly(pstr)) {
+		str += "<span class='bad'>Warning: "+pstr+" does not appear to be a polynomial</span>";
+		}
+	str += "<table border=1><tr><td>x</td>";
+	for (i = 0; i < gpairlist.length; i++) {
+		str += "<td>" + gpairlist[i][0] + "</td>";
+		}
+	str += "</tr><tr><td>y</td>";
+	for (i = 0; i < gpairlist.length; i++) {
+		str += "<td ";
+		if (((i == j) && (pf(gpairlist[i][0]) != 0)) || ((i != j) && (pf(gpairlist[i][0]) == 0))) {
+			str += "class='good'";
+			}
+		else {
+			str += "class='bad'";
+			}
+		str += ">" + pf(gpairlist[i][0]) + "</td>";
+		}
+	str += "</tr></table>";
+	document.getElementById("plugina"+j).innerHTML = str;
+	}
+
+function checkb(j) {
+	var str = "";
+	var i;
+	var pstr = KAS.parse(document.getElementById("tib"+j).value).expr.print();
+	var pf = mathjsfct(pstr);
+	if (!ispoly(pstr)) {
+		str += "<span class='bad'>Warning: "+pstr+" does not appear to be a polynomial</span>";
+		}
+	str += "<table border=1><tr><td>x</td>";
+	for (i = 0; i < gpairlist.length; i++) {
+		str += "<td>" + gpairlist[i][0] + "</td>";
+		}
+	str += "</tr><tr><td>y</td>";
+	for (i = 0; i < gpairlist.length; i++) {
+		str += "<td ";
+		if (((i == j) && (pf(gpairlist[i][0]) == gpairlist[i][1])) || ((i != j) && (pf(gpairlist[i][0]) == 0))) {
+			str += "class='good'";
+			}
+		else {
+			str += "class='bad'";
+			}
+		str += ">" + pf(gpairlist[i][0]) + "</td>";
+		}
+	str += "</tr></table>";
+	document.getElementById("pluginb"+j).innerHTML = str;
+	}
+
+function checkc() {
+	var str = "";
+	var i;
+	var pstr = KAS.parse(document.getElementById("tic").value).expr.print();
+	var pf = mathjsfct(pstr);
+	if (!ispoly(pstr)) {
+		str += "<span class='bad'>Warning: "+pstr+" does not appear to be a polynomial</span>";
+		}
+	str += "<table border=1><tr><td>x</td>";
+	for (i = 0; i < gpairlist.length; i++) {
+		str += "<td>" + gpairlist[i][0] + "</td>";
+		}
+	str += "</tr><tr><td>y</td>";
+	for (i = 0; i < gpairlist.length; i++) {
+		str += "<td ";
+		if (pf(gpairlist[i][0]) == gpairlist[i][1]) {
+			str += "class='good'";
+			}
+		else {
+			str += "class='bad'";
+			}
+		str += ">" + pf(gpairlist[i][0]) + "</td>";
+		}
+	str += "</tr></table>";
+	document.getElementById("pluginc").innerHTML = str;
+	}
+
+function ff(pl) {
+	return(function(x){
+		return(plugpl(pl,x));
+		});
+	}
+
+function boot() {
+	tgr_grapher("gr",[], {labelpoints:true});
+	makeentrygrid();
+	}
+
+function loaddata(pl) {
+	document.getElementById("npts").value = pl.length;
+	gpairlist = pl;
+	makeentrygrid();
+	var i;
+	var minx = pl[0][0];
+	var maxx = pl[0][0];
+	var miny = pl[0][1];
+	var maxy = pl[0][1];
+	for (i = 1; i < pl.length; i++) {
+		minx = math.min(minx,pl[i][0]);
+		maxx = math.max(maxx,pl[i][0]);
+		miny = math.min(miny,pl[i][1]);
+		maxy = math.max(maxy,pl[i][1]);
+		}
+	var difx = maxx-minx;
+	var dify = maxy-miny;
+	maxx += difx/3;
+	minx -= difx/3;
+	maxy += dify/3;
+	miny -= dify/3;
+	tgr_update_plotdata("gr",{xmin:minx,xmax:maxx,ymin:miny,ymax:maxy});
+	}
+
+var djmarch19 = [[1,26026],[4,25819],[5,25806],[6,25673],[7,25473],[8,25450],[11,25650],[12,25554],[13,25702],[14,25709]]; //collected from direct google search
+var pbmarch19 = [[2,21],[6,23],[9,14],[13,14],[16,11]]; //from https://nylottery.ny.gov/powerball/past-winning-numbers
+var htmarch19 = [[1,36],[2,41],[3,43],[4,39],[5,32],[6,27],[7,33],[8,38],[9,47],[10,44],[11,53],[12,43],[13,46],[14,57],[15,72],[16,59],[17,45],[18,42]]; //from https://www.wunderground.com/history/monthly/us/ny/new-york-city/KLGA/date/2019-3?cm_ven=localwx_history
+
+function ribet(mn,mx) {
+	return(Math.floor(Math.random()*(mx-mn+1))+mn);
+	}
+
+function loadht() {
+	var n = Number(document.getElementById("maxht").value);
+	loaddata(htmarch19.slice(0,n));
+	}
+
+function loadnp() {
+	var n = Number(document.getElementById("nnp").value);
+	var i;
+	var h = (n-1)/2;
+	var l = [];
+	for (i = 0; i < n; i++) {
+		l.push([i-h,(i-h)*(i-h)+.01*ribet(-10,10)]);
+		}
+	loaddata(l);
+	}
+
+function loadr() {
+	var n = Number(document.getElementById("nrp").value);
+	var i;
+	var l = [];
+	for (i = 0; i < n; i++) {
+		l.push([i,ribet(0,1000)]);
+		}
+	loaddata(l);
+	}
+
+function changen(e) {
+	gpairlist = gpairlist.slice(0,Number(e.target.value));
+	makeentrygrid();
+	}
+
+</script>
+<style>
+input[type=number]{
+	width: 4em;
+	}
+.bad {
+	background-color:#FFCCCC;
+	}
+.bad+span:after {
+	content:"\2717";
+	}
+.good {
+	background-color:#BBCCEE;
+	}
+.good+span:after {
+	content:"\2713";
+	}
+</style>
+<link rel="stylesheet" href="katex.min.css">
+</head>
+<body onload="boot();">
+<h1>Lagrange Polynomials</h1>
+<p>
+Remarkably, given a collection of points, it's possible to find a relatively small polynomial which passes through those points exactly.
+This polynomial model is pretty simple and a really good fit for our data (a perfect fit for our data!), which might lead us to believe that it's a good model,
+potentially useful for making predictions. In this interactive, we'll see that it is not.
+</p>
+<p>
+Pick a number of data points (n) and enter some data below. If you like, you can click on one of the buttons below to load a prefetched data set.
+</p>
+<button onclick="loaddata(djmarch19)">Dow Jones Industrial Average 3/1/19 to 3/14/19</button>
+<br><button onclick="loaddata(pbmarch19)">New York Lottery Powerball 3/2/19 to 3/16/19</button>
+<br><button onclick="loadht()">Daily High Temperatures (F) NYC</button> 3/1/19 to 3/<input type='number' min=2 max=18 id='maxht' value=6>/19
+<br><button onclick="loadnp()">Near-Parabola</button> with <input type='number' min=3 step=2 value=7 id='nnp'> points
+<br><button onclick="loadr()">Pseudo-random numbers 0-1000</button> with <input type='number' min=2 value=7 id='nrp'> points
+<br>
+n:<input type="number" min=0 id="npts" oninput="changen(event)" value=4>
+<div id="egrid"></div>
+<div id="form"></div>
+<div id="gr"></div>
+<input type="checkbox" id="chk_drawpoints" oninput="upd()" checked> Draw Points <br>
+<input type="checkbox" id="chk_labelpoints" oninput="upd()"> Label Points
+
+<h1>Make Your Own Lagrange Polynomial</h1>
+<p>
+Below, I'll walk you through the steps to figure out the lagrange polynomial fitting the data points entered above. It's suggested that you enter a really simple data set with at least three non-colinear integer points such as (0,1),(1,2),(2,4) <button onclick="loaddata([[0,1],[1,2],[2,4]])">Enter Above</button>.
+</p>
+
+<div id="myo"></div>
+
+</body>
+</html>

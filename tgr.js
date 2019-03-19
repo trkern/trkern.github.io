@@ -24,6 +24,7 @@ plotdata //Structure containing data for how the graph should look
 	labelaxes //numbers on both axes
 	trigxaxis
 	ctarg //target div for controls
+	labelpoints
 
 grapher_obj.type //string one of the following:
 	//"none" - does nothing, not sure why you'd need this
@@ -35,6 +36,7 @@ grapher_obj.type //string one of the following:
 	//"line"
 	//"vf" (vector field, still working on)
 	//"vec"
+	//"label"
 grapher_obj.fct //function being plotted (as a javascript function)
 grapher_obj.hints //some hints for the plot.
 	//A hint is: [ptx,pty,lc,rc]
@@ -48,21 +50,23 @@ grapher_obj.xmin //for "plot", "rect", may be a function of plotdata
 grapher_obj.xmax //for "plot", "rect", may be a function of plotdata
 grapher_obj.ymin //for "rect"
 grapher_obj.ymax //for "rect"
-grapher_obj.x //for "hole", "dot", "line"
-grapher_obj.y //for "hole", "dot", "line"
+grapher_obj.x //for "hole", "dot", "line", "label"
+grapher_obj.y //for "hole", "dot", "line", "label"
 grapher_obj.x2 //for "line"
 grapher_obj.y2 //for "line"
-grapher_obj.color //for "plot", "par", "rect", "hole", "dot", "line"
+grapher_obj.color //for "plot", "par", "rect", "hole", "dot", "line", "label"
 grapher_obj.linewidth //for plot
 grapher_obj.id //for tgr_update_grapher_obj_by_id
 grapher_obj.r //for "hole", "dot"
 grapher_obj.incolor //for "hole"
 grapher_obj.nojump //for "plot". If function moves from above view window to below view window in a single step, don't draw that line. May behave oddly with hinting
-
-function trk_grapher_mwheel(id, event)
-function trk_grapher_mdown(id, event)
-function trk_grapher_mmove(id, event)
-function trk_grapher_mup(id, event)*/
+grapher_obj.label //for "label" label at x,y. If "", defaults to (x,y). Requires plotdata.labelpoints
+grapher_obj.labeloffsetx //for "label"
+grapher_obj.labeloffsety //for "label"
+grapher_obj.textAlign //for "label"
+grapher_obj.textBaseline //for "label"
+grapher_obj.font //for "label"
+*/
 
 function dbg(x) {
 	document.getElementById("out").innerHTML = x;
@@ -532,6 +536,42 @@ function tgr_plot(grapher_obj, ctx, pd) {
 		ctx.lineTo(p2[0]+2*xx-yy,p2[1]+2*yy+xx);
 		ctx.stroke();
 		}
+	if (grapher_obj.type == "label" && pd.labelpoints) {
+		var pointx,pointy;
+		pointx = tgr_plug(grapher_obj.x,pd);
+		pointy = tgr_plug(grapher_obj.y,pd);
+		var str = grapher_obj.label;
+		if (str == "") {
+			str = "("+grapher_obj.x+","+grapher_obj.y+")";
+			}
+		if ("font" in grapher_obj) {
+			ctx.font = grapher_obj.font;
+			}
+		ctx.beginPath();
+		ctx.fillStyle = grapher_obj.color;
+		if ("textAlign" in grapher_obj) {
+			ctx.textAlign = grapher_obj.textAlign;
+			}
+		else {
+			ctx.textAlign = "center";
+			}
+		if ("textBaseline" in grapher_obj) {
+			ctx.textBaseline = grapher_obj.textBaseline;
+			}
+		else {
+			ctx.textBaseline = "middle";
+			}
+		var p = tgr_tocanv([pointx,pointy],pd);
+		var offx = 0;
+		var offy = 0;
+		if ("labeloffsetx" in grapher_obj) {
+			offx = grapher_obj.labeloffsetx;
+			}
+		if ("labeloffsety" in grapher_obj) {
+			offy = grapher_obj.labeloffsety;
+			}
+		ctx.fillText(str, p[0]+offx, p[1]+offy);
+		}
 	}
 
 function tgr_rect(ctx, x1,y1,x2,y2) {
@@ -602,6 +642,15 @@ function tgr_update_grapher_obj_by_id(id,goid,grapher_obj) {//note: if no graphe
 		}
 	//didn't find a grapher_obj with id=goid
 	tgr_graph_array[id].grapher_objs.push(Object.assign({},tgr_default_grapher_obj,grapher_obj,{id:goid}));
+	tgr_draw_graph(id);
+	}
+
+function tgr_update_plotdata(id,pd) { //pd may be partial
+	var i;
+	for (i in pd) {
+		tgr_graph_array[id].plotdata[i] = pd[i];
+		}
+	tgr_update_bound_boxes(id);
 	tgr_draw_graph(id);
 	}
 

@@ -55,7 +55,7 @@ grapher_obj.y //for "hole", "dot", "line", "label"
 grapher_obj.x2 //for "line"
 grapher_obj.y2 //for "line"
 grapher_obj.color //for "plot", "par", "rect", "hole", "dot", "line", "label"
-grapher_obj.linewidth //for plot
+grapher_obj.linewidth //for "plot", "line"
 grapher_obj.id //for tgr_update_grapher_obj_by_id
 grapher_obj.r //for "hole", "dot"
 grapher_obj.incolor //for "hole"
@@ -540,9 +540,12 @@ function tgr_plot(grapher_obj, ctx, pd) {
 		var pointx,pointy;
 		pointx = tgr_plug(grapher_obj.x,pd);
 		pointy = tgr_plug(grapher_obj.y,pd);
-		var str = grapher_obj.label;
-		if (str == "") {
-			str = "("+grapher_obj.x+","+grapher_obj.y+")";
+		var str;
+		if (!("label" in grapher_obj) || (grapher_obj.label == "")) {
+			str = "("+Number(grapher_obj.x.toFixed(2))+","+Number(grapher_obj.y.toFixed(2))+")";
+			}
+		else {
+			str = grapher_obj.label;
 			}
 		if ("font" in grapher_obj) {
 			ctx.font = grapher_obj.font;

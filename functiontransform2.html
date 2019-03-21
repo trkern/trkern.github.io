@@ -1,0 +1,486 @@
+﻿<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="transform.png">
+<meta name=description content="">
+<title> Transforming Functions </title>
+<script src="tgr.js"></script>
+<script src="math.min.js"></script>
+<script src="katex.min.js"></script>
+<script>
+var cat = [[-341, 289], [-333, 297], [-321, 307], [-315, 315], [-307, 325], [-311, 341], [-319, 371], [-273, 355], [-273, 371], [-255, 363], [-241, 353], [-231, 339], [-227, 333], [-209, 327], [-197, 313], [-185, 301], [-171, 289], [-157, 267], [-147, 251], [-129, 231], [-115, 209], [-99, 199], [-75, 191], [-51, 181], [-39, 179], [-25, 173], [-3, 167], [17, 159], [37, 147], [53, 139], [67, 129], [81, 117], [89, 105], [99, 91], [109, 79], [119, 61], [131, 45], [137, 21], [139, -1], [137, -31], [135, -63], [133, -89], [125, -115], [119, -139], [119, -155], [135, -163], [149, -163], [171, -161], [187, -159], [203, -155], [223, -155], [247, -157], [267, -161], [291, -175], [307, -183], [323, -193], [333, -207], [345, -223], [355, -237], [367, -247], [385, -261], [395, -269], [407, -255], [417, -263], [413, -279], [401, -301], [389, -309], [371, -307], [353, -297], [341, -273], [331, -253], [315, -227], [299, -211], [289, -203], [263, -195], [221, -187], [161, -199], [131, -211], [103, -217], [59, -235], [29, -245], [-5, -245], [-33, -251], [-53, -247], [-125, -239], [-167, -245], [-241, -247], [-249, -233], [-247, -215], [-219, -207], [-217, -67], [-217, -59], [-225, -37], [-239, -7], [-255, 19], [-271, 41], [-281, 69], [-281, 87], [-279, 115], [-275, 139], [-281, 161], [-287, 181], [-317, 183], [-329, 179], [-351, 203], [-363, 229], [-343, 267], [-341, 289]];
+//traced from https://commons.wikimedia.org/wiki/File:Bengal_Cat.jpg The original uploader was Gabel at English Wikipedia. [Public domain]
+
+function ribet(mn,mx) {
+	return(Math.floor(Math.random()*(mx-mn+1))+mn);
+	}
+
+function tograph(x,mn,mx) {
+	var m = -500/(mn-mx);
+	var b = 500*mn/(mn-mx);
+	return(m*x+b);
+	}
+
+var funlist = [
+	{n:"x", f:"x"},
+	{n:"x²", f:"x^2"},
+	{n:"x³", f:"x^3"},
+	{n:"x⁴", f:"x^4"},
+	{n:"√x", f:"sqrt(x)", p:[[0,0],[1,1],[4,2]]},
+	{n:"∛x", f:"cbrt(x)", p:[[0,0],[1,1],[8,2],[-1,-1],[-8,-2]]},
+	{n:"|x|", f:"abs(x)"},
+	{n:"1/x", f:"1/x", p:[[1,1],[2,.5],[.5,2],[-1,-1],[-2,-.5],[-.5,-2]]},
+	{n:"sin(x)", f:"sin(x)", p:[[0,0],[1.57,1],[3.14,0],[4.71,-1],[6.28,0]]},
+	{n:"cos(x)", f:"cos(x)", p:[[0,1],[1.57,0],[3.14,-1],[4.71,0],[6.28,1]]},
+	{n:"√(1-x²)", f:"sqrt(1-x^2)", p:[[-1,0],[0,1],[1,0]]},
+	{n:"⌊x⌋", f:"floor(x)"},
+	{n:"⌈x⌉", f:"ceil(x)"},
+	{n:"log₂(x)", f:"log(x,2)", p:[[1,0],[.5,-1],[.25,-2],[2,1],[4,2]]},
+	{n:"2ˣ", f:"2^x"}
+	];
+
+var gvars = {a:1, b:1, c:0, d:0};
+
+function mathjsplugin(str,vr,vl) {
+	var rstr = math.parse(str).transform(function (n, p, q) {
+		if (n.isSymbolNode && n.name == vr) {
+			return(math.parse(vl));
+			}
+		else {
+			return(n);
+			}
+		}).toString();
+	return(rstr);
+	}
+
+function mathjsfct(str) {
+	var f = math.compile(str);
+	return(function(ooo){return(f.eval({x:ooo}));});
+	}
+
+function smartlinear(m,x,b) {
+	var rstr = "";
+	if (m == 0) {
+		}
+	else if (m == 1) {
+		rstr += x;
+		}
+	else if (m == -1) {
+		rstr += "-"+x;
+		}
+	else {
+		rstr += m + "*" + x;
+		}
+	if (b == 0) {
+		if (m == 0) {
+			rstr = "0";
+			}
+		}
+	else if (b < 0) {
+		rstr += b;
+		}
+	else {
+		rstr += "+" + b;
+		}
+	return(rstr);
+	}
+
+function updn(vn,e) {
+	gvars[vn] = Number(e.target.value);
+	document.getElementById(vn+"r").value = gvars[vn];
+	document.getElementById(vn+"i").value = gvars[vn];
+	updtf();
+	}
+
+function updp(e) {
+	if (e.target.value == "custom") {
+		document.getElementById("selectorcustom").style.display = "";
+		}
+	else {
+		document.getElementById("selectorcustom").style.display = "none";
+		}
+	updtf();
+	}
+
+function updsc() {
+	updtf();
+	}
+
+var colorlist = ["#000000","#EE7733","#0077BB","#33BBEE","#EE3377","#CC3311","#009988","#BBBBBB"];
+var pointorder = [0,1,2,-1,-2];
+
+function updtf() {
+	if (document.getElementById("chk_colorotron").checked) {
+		document.getElementById("ai").style.backgroundColor = colorotron(gvars.a)[0];
+		document.getElementById("ai").style.color = colorotron(gvars.a)[1];
+		document.getElementById("bi").style.backgroundColor = colorotron(gvars.b)[0];
+		document.getElementById("bi").style.color = colorotron(gvars.b)[1];
+		document.getElementById("ci").style.backgroundColor = colorotron(gvars.c)[0];
+		document.getElementById("ci").style.color = colorotron(gvars.c)[1];
+		document.getElementById("di").style.backgroundColor = colorotron(gvars.d)[0];
+		document.getElementById("di").style.color = colorotron(gvars.d)[1];
+		}
+	else {
+		document.getElementById("ai").style.backgroundColor = "white";
+		document.getElementById("ai").style.color = "black";
+		document.getElementById("bi").style.backgroundColor = "white";
+		document.getElementById("bi").style.color = "black";
+		document.getElementById("ci").style.backgroundColor = "white";
+		document.getElementById("ci").style.color = "black";
+		document.getElementById("di").style.backgroundColor = "white";
+		document.getElementById("di").style.color = "black";
+		}
+	var outs = smartlinear(gvars.a,"ooooo",gvars.d); //gvars.a+"*ooooo+"+gvars.d;
+	var ins = smartlinear(gvars.b,"x",gvars.c);//gvars.b+"*x+"+gvars.c;
+	var parf;
+	var i;
+	var k = 0;
+	var b = document.getElementById("sel").value;
+	if (b == "custom") {
+		b = false;
+		parf = document.getElementById("selectorcustom").value;
+		}
+	else {
+		parf = funlist[Number(b)].f;
+		}
+	var tstr = mathjsplugin(parf,"x","oooo");
+	var fstr = mathjsplugin(outs,"ooooo",mathjsplugin(tstr,"oooo",ins));
+	document.getElementById("kx").innerHTML = katex.renderToString("y=" + math.parse(fstr).toTex());
+	var f = mathjsfct(fstr);
+	var l = [];
+	if (document.getElementById("chk_originalgraph").checked) {
+		l.push({type:"plot", fct:mathjsfct(funlist[Number(b)].f), nojump:true, color:"#004488", linewidth:2});
+		}
+	l.push({type:"plot", fct:f, nojump:true});
+	var tx, ty;
+	if ((b != "custom") && ("p" in funlist[Number(b)])) {
+		for (i = 0; i < funlist[Number(b)].p.length; i++) {
+			tx = (funlist[Number(b)].p[i][0]-gvars.c)/gvars.b;
+			ty = gvars.a*funlist[Number(b)].p[i][1]+gvars.d;
+			if (document.getElementById("chk_drawpoints").checked) {
+				l.push({type:"dot", x:tx, y:ty, color:colorlist[k++]});
+				}
+			if (document.getElementById("chk_labelpoints").checked) {
+				l.push({type:"label", x:tx, y:ty, labeloffsety:-10});
+				}
+			}
+		}
+	else {
+		for (i = 0; i < 5; i++) {
+			tx = (pointorder[i]-gvars.c)/gvars.b;
+			ty = f(tx);
+			if (document.getElementById("chk_drawpoints").checked) {
+				l.push({type:"dot", x:tx, y:ty, color:colorlist[k++]});
+				}
+			if (document.getElementById("chk_labelpoints").checked) {
+				l.push({type:"label", x:tx, y:ty, labeloffsety:-10});
+				}
+			}
+		}
+	if (document.getElementById("chk_guidelines").checked) {
+		l.push({type:"line", x:-Infinity, y:gvars.d, x2:Infinity, y2:gvars.d, color:"#DDAA33", linewidth:2});
+		l.push({type:"line", x:(-gvars.c/gvars.b), y:-Infinity, x2:(-gvars.c/gvars.b), y2:Infinity, color:"#DDAA33", linewidth:2});
+		}
+	if (document.getElementById("chk_extragraph").checked) {
+		try {
+			l.push({type:"plot", fct:mathjsfct(document.getElementById("extragraph").value), nojump:true, color:"#BB5566", linewidth:2});
+			}
+		catch(e) {
+			}
+		}
+	tgr_update_grapher_objs("gr",l);
+	}
+
+function updtfpd() {
+	var pd = {
+		showgrid:document.getElementById("chk_showgrid").checked,
+		showaxes:document.getElementById("chk_showaxes").checked,
+		labelaxes:document.getElementById("chk_labelaxes").checked,
+		numpts:Number(document.getElementById("n_graphresolution").value)
+		}
+	tgr_update_plotdata("gr",pd);
+	}
+
+function drawcat() {
+	var catx = document.getElementById("cat").getContext("2d");
+	var i;
+	var xmn = -1000;
+	var xmx = 1000;
+	var ymn = -1000;
+	var ymx = 1000;
+	var hs = document.getElementById("h").value;
+	var vs = document.getElementById("v").value;
+	catx.beginPath();
+	catx.fillStyle = "#FFFFFF";
+	catx.fillRect(0,0,500,500);
+	catx.beginPath();
+	for (i = 0; i < cat.length; i++) {
+		catx.lineTo(tograph(hs*cat[i][0],xmn,xmx),500-tograph(vs*cat[i][1],ymn,ymx));
+		}
+	catx.fillStyle = "orange";
+	catx.fill();
+	catx.stroke();
+	document.getElementById("hs").innerHTML = hs;
+	document.getElementById("vs").innerHTML = vs;
+	}
+
+var gga, ggb, ggc, ggd, ggfun;
+var ggfunlist = ["x","x^2","abs(x)","x^3","x^4","sqrt(x)","cbrt(x)","sqrt(1-x^2)","floor(x)","sin(x)","2^x","log(x,2)","1/x"];
+
+function randomizegg() {
+	var lvl = document.getElementById("gglvl").value;
+	document.getElementById("showgg").innerHTML = "";
+	if (lvl == 0) {
+		gga = 1;
+		ggb = 1;
+		ggc = 0;
+		ggd = 0;
+		switch(ribet(0,3)) {
+			case 0: gga = math.pickRandom([-3,-2,-1,2,3]); break;
+			case 1: ggb = math.pickRandom([-3,-2,-1,2,3]); break;
+			case 2: ggc = math.pickRandom([-3,-2,-1,1,2,3]); break;
+			case 3: ggd = math.pickRandom([-3,-2,-1,1,2,3]); break;
+			}
+		ggfun = ggfunlist[ribet(0,2)];
+		}
+	if (lvl == 1 || lvl == 2) {
+		var x1 = ribet(-3,3);
+		var x2 = ribet(-3,3);
+		while(x2 == x1) {
+			x2 = ribet(-3,3);
+			}
+		var y1 = ribet(-3,3);
+		var y2 = ribet(-3,3);
+		while(y2 == y1) {
+			y2 = ribet(-3,3);
+			}
+		if (lvl == 1) {
+			x2 = x1 + 1;
+			do {y2 = y1 + ribet(-3,3);} while (y2 == y1 || y2 > 3 || y2 < -3);
+			}
+		gga = y2-y1;
+		ggb = 1/(x2-x1);
+		ggc = -ggb*x1;
+		ggd = y1;
+		if (lvl == 1) {
+			ggfun = ggfunlist[ribet(0,4)];
+			}
+		else {
+			ggfun = ggfunlist[ribet(0,6)];
+			}
+		}
+	if (lvl == 3) {
+		gga = ribet(-30,30)/10;
+		ggb = ribet(-30,30)/10;
+		ggc = ribet(-30,30)/10;
+		ggd = ribet(-30,30)/10;
+		ggfun = ggfunlist[ribet(0,12)];
+		}
+	updgg();
+	}
+
+function showgg() {
+	var outs = smartlinear(gga,"ooooo",ggd); //gga+"*ooooo+"+ggd;
+	var ins = smartlinear(ggb,"x",ggc); //ggb+"*x+"+ggc;
+	var i;
+	var k = 0;
+	var tstr = mathjsplugin(ggfun,"x","oooo");
+	var fstr = mathjsplugin(outs,"ooooo",mathjsplugin(tstr,"oooo",ins));
+	document.getElementById("showgg").innerHTML = fstr;
+	}
+
+function updgg() {
+	var outs = gga+"*ooooo+"+ggd;
+	var ins = ggb+"*x+"+ggc;
+	var i;
+	var k = 0;
+	var tstr = mathjsplugin(ggfun,"x","oooo");
+	var fstr = mathjsplugin(outs,"ooooo",mathjsplugin(tstr,"oooo",ins));
+	var l = [];
+	l.push({type:"plot", fct:mathjsfct(fstr), nojump:true});
+	try {
+		var f = mathjsfct(document.getElementById("guess").value);
+		l.push({type:"plot", fct:f, nojump:true, color:"#004488", linewidth:2});
+		}
+	catch(e) {
+		}
+	tgr_update_grapher_objs("grgg",l);
+	}
+/*
+-10->0
+-1->40
+0->100
+1->26
+10->0
+
+-10->100
+-1->40
+0->0
+1->26
+10->100
+*/
+function colorotron(x) {
+	var bc;
+	var fc;
+	if (1) {
+		if (x > 1) {
+			bc = "hsl(120,100%,"+(160+74*x)/9+"%)";
+			fc = "black";
+			}
+		else if (x >= 0) {
+			bc = "hsl(120,100%,"+(26*x)+"%)";
+			fc = "white";
+			}
+		else if (x >= -1) {
+			bc = "hsl(300,100%,"+(-40*x)+"%)";
+			fc = "white";
+			}
+		else {
+			bc = "hsl(300,100%,"+(100-20*x)/3+"%)";
+			fc = "black";
+			}
+		return([bc,fc]);
+		}
+	if (x > 1) {
+		bc = "hsl(120,100%,"+(260-26*x)/9+"%)";
+		fc = "white";
+		}
+	else if (x >= 0) {
+		bc = "hsl(120,100%,"+(100-74*x)+"%)";
+		fc = "black";
+		}
+	else if (x >= -1) {
+		bc = "hsl(300,100%,"+(100+60*x)+"%)";
+		fc = "black";
+		}
+	else {
+		bc = "hsl(300,100%,"+(400+40*x)/9+"%)";
+		fc = "white";
+		}
+	return ([bc,fc]);
+	}
+
+function bootselector() {
+	var i;
+	var str = "<select oninput='updp(event)' id='sel'>";
+	for (i = 0; i < funlist.length; i++) {
+		str += "<option value="+i;
+		if (i == 1) {
+			str += " selected";
+			}
+		str += ">"+funlist[i].f+ "</option>";
+		}
+	str += "<option value='custom'>Custom</option>";
+	str += "</select>";
+	document.getElementById("selector").innerHTML = str;
+	}
+
+function bootkatex() {
+	var l = document.getElementsByClassName("k");
+	var k = l.length;
+	var i;
+	for (i = 0; i < k; i++) {
+		katex.render(l[i].title,l[i],{});
+		}
+	}
+
+function boot() {
+	bootselector();
+	tgr_grapher("gr",[], {labelpoints:true, ctarg:"grcontrols"});
+	updtf();
+	drawcat();
+	bootkatex();
+	tgr_grapher("grgg",[]);
+	randomizegg();
+	}
+
+</script>
+<link rel="stylesheet" href="katex.min.css">
+</head>
+<body onload="boot()">
+<h1>Transforming Functions</h1>
+<p>In this interactive, you can play around with constants to transform functions and their graphs.
+In particular, for base function f, the interactive will show the graph of <span class="k" title="y=a\cdot f(bx+c)+d">y=a*f(bx+c)+d</span>.
+</p>
+<table> <tr><td><div id="gr"></div></td><td>
+Base Function: <span id="selector"></span> <input id="selectorcustom" onchange="updsc(event)" value="x^2" style="display:none">
+<table border=0>
+<tr>
+<td style="font-size:3em"> a: </td><td><input type='number' id="ai" oninput="updn('a',event)" value=1 step=.1 style="width:2em;font-size:3em"></td>
+<td> <input type="range" min=-10 max=10 value=1 step=.1 id="ar" oninput="updn('a',event)" style="width:40em"> </td>
+</tr>
+<tr>
+<td style="font-size:3em"> b: </td><td><input type='number' id="bi" oninput="updn('b',event)" value=1 step=.1 style="width:2em;font-size:3em"></td>
+<td> <input type="range" min=-10 max=10 value=1 step=.1 id="br" oninput="updn('b',event)" style="width:40em"> </td>
+</tr>
+<tr>
+<td style="font-size:3em"> c: </td><td><input type='number' id="ci" oninput="updn('c',event)" value=0 step=.1 style="width:2em;font-size:3em"></td>
+<td> <input type="range" min=-10 max=10 value=0 step=.1 id="cr" oninput="updn('c',event)" style="width:40em"> </td>
+</tr>
+<tr>
+<td style="font-size:3em"> d: </td><td><input type='number' id="di" oninput="updn('d',event)" value=0 step=.1 style="width:2em;font-size:3em"></td>
+<td> <input type="range" min=-10 max=10 value=0 step=.1 id="dr" oninput="updn('d',event)" style="width:40em"> </td>
+</tr>
+</table>
+
+Graph of: <span id="kx"></span><br>
+
+<input type="checkbox" id="chk_showgrid" checked onchange="updtfpd()"> Show Grid <br>
+<input type="checkbox" id="chk_showaxes" checked onchange="updtfpd()"> Show Axes <br>
+<input type="checkbox" id="chk_labelaxes" checked onchange="updtfpd()"> Label Axes <br>
+<input type="checkbox" id="chk_drawpoints" checked onchange="updtf()"> Draw Points <br>
+<input type="checkbox" id="chk_labelpoints" checked onchange="updtf()"> Label Points <br>
+<input type="checkbox" id="chk_originalgraph" onchange="updtf()"> Show Original Graph <br>
+<input type="checkbox" id="chk_extragraph" onchange="updtf()"> Show Graph of y=<input type="text" id="extragraph" oninput="updtf()"> for comparison <br>
+<input type="checkbox" id="chk_guidelines" onchange="updtf()"> Draw Guidelines <br>
+<input type="checkbox" id="chk_colorotron" onchange="updtf()"> Color Indicators (experimental) <br>
+Graph resolution: <input type="number" id="n_graphresolution" value=500 style="width:3em" oninput="updtfpd()" title="Number of points. Lower values are faster, larger values will smooth graph, reduce missing pieces of graph of sqrt(x)"><br>
+</td></tr></table>
+<div id="grcontrols"></div>
+
+<h1> Suggestions for Use </h1>
+<ol>
+<li> Play around with the various constants to try to get a sense of what they do. Be sure to change the base function to make sure your hypotheses hold for other base functions as well.
+Be sure to check your hypotheses with the semicircle (sqrt(1-x^2)) or trigonometric (sin(x) or cos(x)) functions.
+</li>
+<li> Try adjusting the second and third constants (inside the parentheses) at the same time. Does the graph stretch before shifting or after? Hint: it may help to check the "draw guidelines" checkbox.</li>
+<li> Try adjusting all of the constants, and checking "draw key points" and "label key points". Verify that the moved key point falls on the graph, by plugging it into the equation. What number did you wind up having to plug into the base function?</li>
+<li> Check "show original graph" and try to find different constants that give you the same graph, or nearly the same graph. Try this for various base functions. Once you find one, try simplifying the equation for the new graph. </li>
+</li>
+<li> Play around with the case where the base function is x. How does this relate to what we learned when studying lines? </li>
+<li> Try reducing the graph resolution. See if you can figure out how this function grapher works. </li>
+</ol>
+
+<h1>Stretch a Cat</h1>
+The cat below consists of a series of points connected by lines. The x and y coordinates of these points are multiplied by the constants you specify. <br>
+How are stretching, squashing, and mirroring related?
+<table border=0>
+<tr> <td> Horizontal: </td> <td> <input type="range" min="-10" max="10" value="1" step =.1 id="h" oninput="drawcat()" style="width:30em"> </td> <td> <p id="hs"> </p> </td></tr>
+<tr> <td> Vertical: </td> <td> <input type="range" min="-10" max="10" value="1" step =.1 id="v" oninput="drawcat()" style="width:30em"> </td> <td> <p id="vs"> </p></td></tr></table>
+<canvas id="cat" width = 500 height = 500 style="border:1px solid #c3c3c3;" title="Meow!"> </canvas>
+
+<h1>Guessing Game</h1>
+
+<p>
+The interactive below will give you the graph of a function and ask you to guess a formula for the graph. 
+You'll be able to compare your guess with the goal
+Note that there may be many solutions.
+</p>
+
+Complexity Level: <select id="gglvl">
+<option value=0 selected>Low</option>
+<option value=1>Medium</option>
+<option value=2>Reasonable</option>
+<option value=3>Complex</option>
+</select>
+<button onclick="randomizegg()">Randomize</button> <button onclick="showgg()">Show Possible Solution</button><span id="showgg"></span><br>
+Guess: y = <input type="text" id="guess" onchange="updgg()">
+
+<div id="grgg"></div>
+
+
+
+</body>
+</html>

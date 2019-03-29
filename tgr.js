@@ -93,6 +93,7 @@ var tgr_default_plotdata = {
 	dragging:false,
 	labelaxes:true,
 	labelaxesfontsize:16,
+	labelpoints:true,
 	};
 
 var tgr_graph_array = {};

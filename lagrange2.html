@@ -18,6 +18,174 @@ function mathjsfct(str) {
 	return(function(ooo){return(f.eval({x:ooo}));});
 	}
 
+function radd(r1,r2) {
+	return(rred([r1[0]*r2[1]+r1[1]*r2[0],r1[1]*r2[1]]));
+	}
+
+function rsub(r1,r2) {
+	return(rred([r1[0]*r2[1]-r1[1]*r2[0],r1[1]*r2[1]]));
+	}
+
+function rmul(r1,r2) {
+	return(rred([r1[0]*r2[0],r1[1]*r2[1]]));
+	}
+
+function rred(r1) {
+	var g = math.gcd(r1[0],r1[1]);
+	if (r1[1] > 0) {
+		return([r1[0]/g,r1[1]/g]);
+		}
+	return([math.round(-r1[0]/g),math.round(-r1[1]/g)]);
+	}
+
+function rneg(r1) {
+	return([-r1[0],r1[1]]);
+	}
+
+function rrec(r1) {
+	return([r1[1],r1[0]]);
+	}
+
+function num2r(n) {
+	return(rred([math.round(n*10000),10000]));
+	}
+
+function list2rlist(l) {
+	var rval = [];
+	var i;
+	for (i = 0; i < l.length; i++) {
+		rval.push([num2r(l[i][0]),num2r(l[i][1])]);
+		}
+	return(rval);
+	}
+
+function rlagbasis(rpairlist,j) {
+	var n = [[1,1]];
+	var d = [1,1];
+	var i;
+	for (i = 0; i < rpairlist.length; i++) {
+		if (i != j) {
+			n = rmulpl(n,[rneg(rpairlist[i][0]),[1,1]]);
+			d = rmul(d,rsub(rpairlist[j][0],rpairlist[i][0]));
+			}
+		}
+	return(rmulpl([rrec(d)],n));
+	}
+
+function rlagpoly(rpairlist) {
+	var rval = [];
+	var i;
+	for (i = 0; i < rpairlist.length; i++) {
+		rval = raddpl(rval,rmulpl([rpairlist[i][1]],rlagbasis(rpairlist,i)));
+		}
+	return(rval);
+	}
+
+function raddpl(pl1,pl2) {
+	var n = Math.max(pl1.length,pl2.length);
+	var i;
+	var rl = [];
+	for (i = 0; i < n; i++) {
+		rl.push([0,1]);
+		}
+	for (i = 0; i < pl1.length; i++) {
+		rl[i] = radd(rl[i],pl1[i]);
+		}
+	for (i = 0; i < pl2.length; i++) {
+		rl[i] = radd(rl[i],pl2[i]);
+		}
+	return(rl);
+	}
+
+function rmulpl(pl1,pl2) {
+	var n = pl1.length+pl2.length-1;
+	var rl = [];
+	var i,j;
+	for (i = 0; i < n; i++) {
+		rl.push([0,1]);
+		}
+	for (i = 0; i < pl1.length; i++) {
+		for (j = 0; j < pl2.length; j++) {
+			rl[i+j] = radd(rl[i+j],rmul(pl1[i],pl2[j]));
+			}
+		}
+	return(rl);
+	}
+
+function rplugpl(pl1,xi) {
+	var xp = [1,1];
+	var i;
+	var rv = [0,1];
+	for (i = 0; i < pl1.length; i++) {
+		rv = radd(rv,rmul(xp,pl1[i]));
+		xp = rmul(xp,xi);
+		}
+	return(rv);
+	}
+
+function htmlfrac(n,d) {
+	return("<table class='frac'><tr><td class='fracn'>"+n+"</td></tr><tr><td class='vinculum'></td></tr><tr><td class='fracd'>"+d+"</td></tr></table>");
+	}
+
+function r2html(r,force_plus) {
+	if (r[1] == 1) {
+		if (r[0] >= 0 && force_plus) {return("+"+r[0]);}
+		return(r[0]);
+		}
+	if (r[0] >= 0 && force_plus) {
+		return("+ " + htmlfrac(r[0],r[1]));
+		}
+	else if (r[0] >= 0 && !force_plus) {
+		return(htmlfrac(r[0],r[1]));
+		}
+	else {
+		return("&minus; " + htmlfrac(-r[0],r[1]));
+		}
+	}
+
+function rpoly2html(rpl) {
+	var i;
+	var str = "";
+	for (i = rpl.length-1; i >= 0; i--) {
+		str += r2html(rpl[i], i!=rpl.length-1);
+		if (i >= 2) {str += "x<sup>" + i + "</sup> ";}
+		if (i == 1) {str += "x ";}
+		}
+	return(str);
+	}
+
+function r2kx(r,force_plus) {
+	if (r[1] == 1) {
+		if (r[0] >= 0 && force_plus) {return("+"+r[0]);}
+		return(r[0]);
+		}
+	if (r[0] >= 0 && force_plus) {
+		return("+ \\frac{"+r[0]+"}{"+r[1]+"}");
+		}
+	else if (r[0] >= 0 && !force_plus) {
+		return("\\frac{"+r[0]+"}{"+r[1]+"}");
+		}
+	else {
+		return("-\\frac{"+(-r[0])+"}{"+r[1]+"}");
+		}
+	}
+
+function rpoly2kx(rpl) {
+	var i;
+	var str = "";
+	for (i = rpl.length-1; i >= 0; i--) {
+		str += r2kx(rpl[i], i!=rpl.length-1);
+		if (i >= 2) {str += "x^" + i;}
+		if (i == 1) {str += "x";}
+		}
+	return(str);
+	}
+
+function rgo() {
+	var rpl = rlagpoly(list2rlist(gpairlist));
+	document.getElementById("rform").innerHTML = rpoly2html(rpl);//katex.renderToString(rpoly2kx(rpl));
+	}
+
 function lagbasis(pairlist,j) {
 	var n = [1];
 	var d = 1;
@@ -107,7 +275,7 @@ function makeentrygrid() {
 	var i,j;
 	var str = "<table border=1><tr><td>x</td>";
 	for (i = 0; i < n; i++) {
-		str += "<td><input type='number' step=.01";
+		str += "<td><input type='number' step=.05";
 		if (!(i in gpairlist)) {
 			gpairlist[i] = [smallestnewx(),0];
 			}
@@ -116,7 +284,7 @@ function makeentrygrid() {
 		}
 	str += "</tr><tr><td>y</td>";
 	for (i = 0; i < n; i++) {
-		str += "<td><input type='number' step=.01";
+		str += "<td><input type='number' step=.05";
 		str += " value="+gpairlist[i][1];
 		str += " oninput='changev(event,1,"+i+")'></td>";
 		}
@@ -143,7 +311,7 @@ function n2c(x) {
 function upd() {
 	var i;
 	var pl = lagpoly(gpairlist);
-	var l = [{type:"plot", fct:ff(pl)}];
+	var l = [{type:"plot", fct:ff(pl), nojump:true}];
 	for (i = 0; i < gpairlist.length; i++) {
 		if(document.getElementById("chk_drawpoints").checked) {
 			l.push({type:"dot", x:gpairlist[i][0], y:gpairlist[i][1]});
@@ -159,6 +327,7 @@ function upd() {
 		}
 	str += "</tr></table>";
 	document.getElementById("form").innerHTML = str;
+	if (document.getElementById("chk_rshow").checked) {rgo();}
 	str = "";
 	var j;
 	str += "<table border=1><tr><td>x</td>";
@@ -408,7 +577,7 @@ function loadr() {
 	var i;
 	var l = [];
 	for (i = 0; i < n; i++) {
-		l.push([i,ribet(0,1000)]);
+		l.push([i,ribet(0,1000)/100]);
 		}
 	loaddata(l);
 	}
@@ -435,6 +604,25 @@ input[type=number]{
 .good+span:after {
 	content:"\2713";
 	}
+.vinculum {
+	height:.1px;
+	background-color:black;
+	}
+.frac {
+	display:inline-table;
+	vertical-align:middle;
+	border-collapse: collapse;
+	border-spacing: 0;
+	}
+.fracn {
+	font-size: small;
+	text-align: center;
+	padding: 0px;
+	}
+.fracd {
+	font-size: small;
+	text-align: center;
+	}
 </style>
 <link rel="stylesheet" href="katex.min.css">
 </head>
@@ -452,10 +640,12 @@ Pick a number of data points (n) and enter some data below. If you like, you can
 <br><button onclick="loaddata(pbmarch19)">New York Lottery Powerball 3/2/19 to 3/16/19</button>
 <br><button onclick="loadht()">Daily High Temperatures (F) NYC</button> 3/1/19 to 3/<input type='number' min=2 max=18 id='maxht' value=6>/19
 <br><button onclick="loadnp()">Near-Parabola</button> with <input type='number' min=3 step=2 value=7 id='nnp'> points
-<br><button onclick="loadr()">Pseudo-random numbers 0-1000</button> with <input type='number' min=2 value=7 id='nrp'> points
+<br><button onclick="loadr()">Pseudo-random numbers 0-10</button> with <input type='number' min=2 value=7 id='nrp'> points
 <br>
 n:<input type="number" min=0 id="npts" oninput="changen(event)" value=4>
 <div id="egrid"></div>
+<input type="checkbox" id="chk_rshow" oninput="document.getElementById('rform').innerHTML=''; upd()" checked> Show rational coefficients
+<div id="rform"></div>
 <div id="form"></div>
 <div id="gr"></div>
 <input type="checkbox" id="chk_drawpoints" oninput="upd()" checked> Draw Points <br>

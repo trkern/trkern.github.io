@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title> Yacas Test </title>
+<script src="yacas.js"></script>
+<script>
+/*var yacas_evaluate = Module.cwrap('yacas_evaluate', null, ['string']);
+var yacas_is_error = Module.cwrap('yacas_is_error', 'number', []);
+var yacas_result = Module.cwrap('yacas_result', 'string', []);
+var yacas_side_effects = Module.cwrap('yacas_side_effects', 'string', []);
+
+function do_yacas() {
+	var i = document.getElementById("yi").value;
+	yacas_evaluate(i);
+	document.getElementById("yo").innerHTML = yacas_result();
+	document.getElementById("ys").innerHTML = yacas_side_effects();
+	}*/
+</script>
+</head>
+<body>
+<input type="text" id="yi"> <button onclick="do_yacas()">Yacas</button><br>
+<div id="yo"></div>
+<div id="ys"></div>
+</body>
+</html>

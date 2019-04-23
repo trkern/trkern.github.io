@@ -5,12 +5,17 @@
 <script src = "OrbitControls.js"></script>
 <script>
 var scene,camera,renderer,controls;
-	
-function render() {
-	requestAnimationFrame( render );
-	renderer.render(scene, camera);
+
+var vector_list = [];
+var span_object;
+var aspan_object;
+var bspan_object;
+var pspan_object;
+
+function animate() {
+	requestAnimationFrame(animate);
 	controls.update();
-	};
+	}
 
 function boot() {
 	a = 0;
@@ -21,51 +26,415 @@ function boot() {
 	camera = new THREE.PerspectiveCamera(75,1,.1,1000);
 	renderer = new THREE.WebGLRenderer({canvas:document.getElementById("three")});
 	controls = new THREE.OrbitControls(camera, renderer.domElement);
+	controls.addEventListener("change", function() {renderer.render(scene,camera);});
 	renderer.setSize(1000,1000);
 	bootobjects();
-	Upd();
 	camera.position.x = 2;
 	camera.position.y = 2;
 	camera.position.z = 2;
 	camera.lookAt(0,0,0);
-	render();
+	Upd();
+	animate();
 	}
 
 function vec2vec(v) {
 	return(new THREE.Vector3(v[0],v[1],v[2]));
 	}
 
-function thickvector(p1,p2,col) {
+function thickvector(p1,p2) {
 	p3 = [(.05*p1[0]+.95*p2[0]),(.05*p1[1]+.95*p2[1]),(.05*p1[2]+.95*p2[2])];
-	thickline(p1,p3,col,.02);
-	thickarrow(p3,p2,col,.05);
+	var geo = new THREE.Geometry();
+	var tl = thickline(p1,p3,.02);
+	var ta = thickarrow(p3,p2,.05);
+	geo.merge(tl.geometry, tl.matrix);
+	geo.merge(ta.geometry, ta.matrix);
+	return(geo);
 	}
 
-function thickarrow(p1,p2,col,thk) {
+function thickarrow(p1,p2,thk) {
+	if (p1[0] == p2[0] && p1[1] == p2[1] && p1[2] == p2[2]) {
+		p1[0] += .001;
+		}
 	var dif = [p1[0]-p2[0],p1[1]-p2[1],p1[2]-p2[2]];
 	var mid = [(p1[0]+p2[0])/2,(p1[1]+p2[1])/2,(p1[2]+p2[2])/2];
 	var lg = vec2vec(dif).length();
-	if (lg < .01) {return;}
 	var cylgeo = new THREE.CylinderGeometry(thk,0,lg,8);
-	var cyl = new THREE.Mesh(cylgeo, new THREE.MeshBasicMaterial({color:col}));
+	var cyl = new THREE.Mesh(cylgeo);
 	var axis = new THREE.Vector3(0,1,0);
 	cyl.position.copy(vec2vec(mid));
 	cyl.quaternion.setFromUnitVectors(axis, vec2vec(dif).normalize());
-	scene.add(cyl);
+	cyl.updateMatrix();
+	return(cyl);
 	}
 
-function thickline(p1,p2,col,thk) {
+function thickline(p1,p2,thk) {
+	if (p1[0] == p2[0] && p1[1] == p2[1] && p1[2] == p2[2]) {
+		p1[0] += .001;
+		}
 	var dif = [p1[0]-p2[0],p1[1]-p2[1],p1[2]-p2[2]];
 	var mid = [(p1[0]+p2[0])/2,(p1[1]+p2[1])/2,(p1[2]+p2[2])/2];
 	var lg = vec2vec(dif).length();
-	if (lg < .01) {return;}
 	var cylgeo = new THREE.CylinderGeometry(thk,thk,lg,4);
-	var cyl = new THREE.Mesh(cylgeo, new THREE.MeshBasicMaterial({color:col}));
+	var cyl = new THREE.Mesh(cylgeo);
 	var axis = new THREE.Vector3(0,1,0);
 	cyl.position.copy(vec2vec(mid));
 	cyl.quaternion.setFromUnitVectors(axis, vec2vec(dif).normalize());
-	scene.add(cyl);
+	cyl.updateMatrix();
+	return(cyl);
 	}
+
+function updateobjects() {
+	vector_list[0].geometry.copy(thickvector([0,0,0],[u1,u2,u3]));
+	vector_list[1].geometry.copy(thickvector([0,0,0],[v1,v2,v3]));
+	vector_list[2].geometry.copy(thickvector([0,0,0],[w1,w2,w3]));
+	vector_list[3].geometry.copy(thickvector([0,0,0],[x1,x2,x3]));
+
+	var i;
+
+	for (i = 0; i <= 3; i++) {
+		vector_list[i].geometry.verticesNeedUpdate = true;
+		vector_list[i].geometry.elementsNeedUpdate = true;
+		}
+	
+	updatespan();
+	updateaspan();
+	updatebspan();
+	updatepspan();
+
+	if(document.getElementById("ssum").checked) {
+		vector_list[4].geometry.copy(thickvector([0,0,0],[a*u1,a*u2,a*u3]));
+		vector_list[5].geometry.copy(thickvector([a*u1,a*u2,a*u3],[a*u1+b*v1,a*u2+b*v2,a*u3+b*v3]));
+		vector_list[6].geometry.copy(thickvector([a*u1+b*v1,a*u2+b*v2,a*u3+b*v3],[a*u1+b*v1+c*w1,a*u2+b*v2+c*w2,a*u3+b*v3+c*w3]));
+		vector_list[4].visible = true;
+		vector_list[5].visible = true;
+		vector_list[6].visible = true;
+		for (i = 4; i <= 6; i++) {
+			vector_list[i].geometry.verticesNeedUpdate = true;
+			vector_list[i].geometry.elementsNeedUpdate = true;
+			}
+		}
+	else {
+		vector_list[4].visible = false;
+		vector_list[5].visible = false;
+		vector_list[6].visible = false;
+		}
+
+
+	}
+
+function updatespan() {
+	if (document.getElementById("lspan").checked) {
+		span_object.visible = true;
+		}
+	else {
+		span_object.visible = false;
+		return;
+		}
+	var spangeo = new THREE.Geometry();
+	var i;
+	for (i = 0; i < cubeverts.length; i++) {
+		spangeo.vertices.push(vec2vec(spanvert(i)));
+		}
+	for (i = 0; i < cubefaces.length; i++) {
+		spangeo.faces.push(new THREE.Face3(cubefaces[i][0],cubefaces[i][1],cubefaces[i][2]));
+		}
+	spangeo.computeFaceNormals();
+	spangeo.computeVertexNormals();
+	var tl;
+
+	for (i = 0; i < cubeedges.length; i++) {
+		tl = thickline(spanvert(cubeedges[i][0]),spanvert(cubeedges[i][1]),.01);
+		spangeo.merge(tl.geometry,tl.matrix);
+		}
+	for (i = 0; i < cubeverts.length; i++) {
+		var vg = new THREE.SphereGeometry(.05);
+		var vv = new THREE.Mesh(vg);
+		vv.position.copy(vec2vec(spanvert(i)));
+		vv.updateMatrix();
+		spangeo.merge(vv.geometry,vv.matrix);
+		}
+
+	span_object.geometry.copy(spangeo);
+	span_object.geometry.verticesNeedUpdate = true;
+	span_object.geometry.elementsNeedUpdate = true;
+
+	}
+
+function bootspan() {
+	var spangeo = new THREE.Geometry();
+	var i;
+	for (i = 0; i < cubeverts.length; i++) {
+		spangeo.vertices.push(vec2vec(spanvert(i)));
+		}
+	for (i = 0; i < cubefaces.length; i++) {
+		spangeo.faces.push(new THREE.Face3(cubefaces[i][0],cubefaces[i][1],cubefaces[i][2]));
+		}
+	spangeo.computeFaceNormals();
+	spangeo.computeVertexNormals();
+	var tl;
+
+	for (i = 0; i < cubeedges.length; i++) {
+		tl = thickline(spanvert(cubeedges[i][0]),spanvert(cubeedges[i][1]),.01);
+		spangeo.merge(tl.geometry,tl.matrix);
+		}
+	for (i = 0; i < cubeverts.length; i++) {
+		var vg = new THREE.SphereGeometry(.05);
+		var vv = new THREE.Mesh(vg);
+		vv.position.copy(vec2vec(spanvert(i)));
+		vv.updateMatrix();
+		spangeo.merge(vv.geometry,vv.matrix);
+		}
+
+	var spanmat = new THREE.MeshLambertMaterial({side:THREE.DoubleSide,transparent:true,opacity:.7,color:0xff8c00});
+	span_object = new THREE.Mesh(spangeo,spanmat);
+	span_object.visible = false;
+	scene.add(span_object);
+	}
+
+function updateaspan() {
+	if (document.getElementById("aspan").checked) {
+		aspan_object.visible = true;
+		}
+	else {
+		aspan_object.visible = false;
+		return;
+		}
+	var aspangeo = new THREE.Geometry();
+	var i;
+	for (i = 0; i < averts.length; i++) {
+		aspangeo.vertices.push(vec2vec(aspanvert(i)));
+		}
+	aspangeo.faces.push(new THREE.Face3(0,1,2));
+	aspangeo.computeFaceNormals();
+	aspangeo.computeVertexNormals();
+
+	var tl;
+
+	for (i = 0; i < aedges.length; i++) {
+		tl = thickline(aspanvert(aedges[i][0]),aspanvert(aedges[i][1]),.01);
+		aspangeo.merge(tl.geometry,tl.matrix);
+		}
+	
+	for (i = 0; i < averts.length; i++) {
+		var vg = new THREE.SphereGeometry(.05);
+		var vv = new THREE.Mesh(vg);
+		vv.position.copy(vec2vec(aspanvert(i)));
+		vv.updateMatrix();
+		aspangeo.merge(vv.geometry,vv.matrix);
+		}
+
+	aspan_object.geometry.copy(aspangeo);
+	aspan_object.geometry.verticesNeedUpdate = true;
+	aspan_object.geometry.elementsNeedUpdate = true;
+	}
+
+function bootaspan() {
+	var aspangeo = new THREE.Geometry();
+	var i;
+	for (i = 0; i < averts.length; i++) {
+		aspangeo.vertices.push(vec2vec(aspanvert(i)));
+		}
+	aspangeo.faces.push(new THREE.Face3(0,1,2));
+	aspangeo.computeFaceNormals();
+	aspangeo.computeVertexNormals();
+
+	var tl;
+
+	for (i = 0; i < aedges.length; i++) {
+		tl = thickline(aspanvert(aedges[i][0]),aspanvert(aedges[i][1]),.01);
+		aspangeo.merge(tl.geometry,tl.matrix);
+		}
+	
+	for (i = 0; i < averts.length; i++) {
+		var vg = new THREE.SphereGeometry(.05);
+		var vv = new THREE.Mesh(vg);
+		vv.position.copy(vec2vec(aspanvert(i)));
+		vv.updateMatrix();
+		aspangeo.merge(vv.geometry,vv.matrix);
+		}
+
+	var aspanmat = new THREE.MeshLambertMaterial({side:THREE.DoubleSide,transparent:true,opacity:.7,color:0xee82ee});
+	aspan_object = new THREE.Mesh(aspangeo,aspanmat);
+	aspan_object.visible = false;
+	scene.add(aspan_object);
+
+	}
+
+function updatebspan() {
+	if (document.getElementById("bspan").checked) {
+		bspan_object.visible = true;
+		}
+	else {
+		bspan_object.visible = false;
+		return;
+		}
+	var bspangeo = new THREE.Geometry();
+	var i;
+	for (i = 0; i < bverts.length; i++) {
+		bspangeo.vertices.push(vec2vec(bspanvert(i)));
+		}
+	for (i = 0; i < bfaces.length; i++) {
+		bspangeo.faces.push(new THREE.Face3(bfaces[i][0],bfaces[i][1],bfaces[i][2]));
+		}
+	bspangeo.computeFaceNormals();
+	bspangeo.computeVertexNormals();
+	var tl;
+
+	for (i = 0; i < bedges.length; i++) {
+		tl = thickline(bspanvert(bedges[i][0]),bspanvert(bedges[i][1]),.01);
+		bspangeo.merge(tl.geometry,tl.matrix);
+		}
+	
+	for (i = 0; i < bverts.length; i++) {
+		var vg = new THREE.SphereGeometry(.05);
+		var vv = new THREE.Mesh(vg);
+		vv.position.copy(vec2vec(bspanvert(i)));
+		vv.updateMatrix();
+		bspangeo.merge(vv.geometry,vv.matrix);
+		}
+
+	bspan_object.geometry.copy(bspangeo);
+	bspan_object.geometry.verticesNeedUpdate = true;
+	bspan_object.geometry.elementsNeedUpdate = true;
+	}
+
+function bootbspan() {
+	var bspangeo = new THREE.Geometry();
+	var i;
+	for (i = 0; i < bverts.length; i++) {
+		bspangeo.vertices.push(vec2vec(bspanvert(i)));
+		}
+	for (i = 0; i < bfaces.length; i++) {
+		bspangeo.faces.push(new THREE.Face3(bfaces[i][0],bfaces[i][1],bfaces[i][2]));
+		}
+	bspangeo.computeFaceNormals();
+	bspangeo.computeVertexNormals();
+	var tl;
+
+	for (i = 0; i < bedges.length; i++) {
+		tl = thickline(bspanvert(bedges[i][0]),bspanvert(bedges[i][1]),.01);
+		bspangeo.merge(tl.geometry,tl.matrix);
+		}
+	
+	for (i = 0; i < bverts.length; i++) {
+		var vg = new THREE.SphereGeometry(.05);
+		var vv = new THREE.Mesh(vg);
+		vv.position.copy(vec2vec(bspanvert(i)));
+		vv.updateMatrix();
+		bspangeo.merge(vv.geometry,vv.matrix);
+		}
+
+	var bspanmat = new THREE.MeshLambertMaterial({side:THREE.DoubleSide,transparent:true,opacity:.7,color:0x339966});
+	bspan_object = new THREE.Mesh(bspangeo,bspanmat);
+	bspan_object.visible = false;
+	scene.add(bspan_object);
+	}
+
+function updatepspan() {
+	if (document.getElementById("pspan").checked) {
+		pspan_object.visible = true;
+		}
+	else {
+		pspan_object.visible = false;
+		return;
+		}
+	var pspangeo = new THREE.Geometry();
+	pspangeo.vertices.push(vec2vec([0,0,0]));
+	pspangeo.vertices.push(vec2vec([u1,u2,u3]));
+	pspangeo.vertices.push(vec2vec([u1+v1,u2+v2,u3+v3]));
+	pspangeo.vertices.push(vec2vec([v1,v2,v3]));
+	pspangeo.faces.push(new THREE.Face3(0,1,2));
+	pspangeo.faces.push(new THREE.Face3(0,3,2));
+	pspangeo.computeFaceNormals();
+	pspangeo.computeVertexNormals();
+	var pspanmat = new THREE.MeshLambertMaterial({side:THREE.DoubleSide,transparent:true,opacity:.7,color:0x003300});
+	pspan_object.geometry.copy(pspangeo);
+	pspan_object.geometry.verticesNeedUpdate = true;
+	pspan_object.geometry.elementsNeedUpdate = true;
+	}
+
+
+function bootpspan() {
+	var pspangeo = new THREE.Geometry();
+	pspangeo.vertices.push(vec2vec([0,0,0]));
+	pspangeo.vertices.push(vec2vec([u1,u2,u3]));
+	pspangeo.vertices.push(vec2vec([u1+v1,u2+v2,u3+v3]));
+	pspangeo.vertices.push(vec2vec([v1,v2,v3]));
+	pspangeo.faces.push(new THREE.Face3(0,1,2));
+	pspangeo.faces.push(new THREE.Face3(0,3,2));
+	pspangeo.computeFaceNormals();
+	pspangeo.computeVertexNormals();
+	var pspanmat = new THREE.MeshLambertMaterial({side:THREE.DoubleSide,transparent:true,opacity:.7,color:0x003300});
+	pspan_object = new THREE.Mesh(pspangeo,pspanmat);
+	pspan_object.visible = false;
+	scene.add(pspan_object);
+	}
+
+function bootobjects() {
+	scene.add(new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 1, 0x00ffff));
+	scene.add(new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), 1, 0xff00ff));
+	scene.add(new THREE.ArrowHelper(new THREE.Vector3(0,0,1), new THREE.Vector3(0,0,0), 1, 0xffff00));
+	var gridXZ = new THREE.GridHelper(6,6,"gray","gray");
+	gridXZ.position.set(0,0,0);
+	scene.add(gridXZ);
+
+	var gridXY = new THREE.GridHelper(6,6,"gray","gray");
+	gridXY.position.set(0,0,0);
+	gridXY.rotation.x = Math.PI/2;
+	scene.add(gridXY);
+
+	var gridYZ = new THREE.GridHelper(6,6,"gray","gray");
+	gridYZ.position.set(0,0,0);
+	gridYZ.rotation.z = Math.PI/2;
+	scene.add(gridYZ);
+
+	var g0, g1, g2, g3, g4, g5, g6;
+
+	/*if(document.getElementById("ssum").checked) {*/
+		g4 = thickvector([0,0,0],[a*u1,a*u2,a*u3]);
+		g5 = thickvector([a*u1,a*u2,a*u3],[a*u1+b*v1,a*u2+b*v2,a*u3+b*v3]);
+		g6 = thickvector([a*u1+b*v1,a*u2+b*v2,a*u3+b*v3],[a*u1+b*v1+c*w1,a*u2+b*v2+c*w2,a*u3+b*v3+c*w3]);
+	
+	vector_list[4] = new THREE.Mesh(g4, new THREE.MeshBasicMaterial({color:"#505050"}));
+	vector_list[5] = new THREE.Mesh(g5, new THREE.MeshBasicMaterial({color:"#505050"}));
+	vector_list[6] = new THREE.Mesh(g6, new THREE.MeshBasicMaterial({color:"#505050"}));
+	vector_list[4].visible = false;
+	vector_list[5].visible = false;
+	vector_list[6].visible = false;
+	scene.add(vector_list[4]);
+	scene.add(vector_list[5]);
+	scene.add(vector_list[6]);
+
+	g0 = thickvector([0,0,0],[u1,u2,u3]);
+	g1 = thickvector([0,0,0],[v1,v2,v3]);
+	g2 = thickvector([0,0,0],[w1,w2,w3]);
+	g3 = thickvector([0,0,0],[x1,x2,x3]);
+
+	vector_list[0] = new THREE.Mesh(g0, new THREE.MeshBasicMaterial({color:"#ff0000"}));
+	vector_list[1] = new THREE.Mesh(g1, new THREE.MeshBasicMaterial({color:"#00ff00"}));
+	vector_list[2] = new THREE.Mesh(g2, new THREE.MeshBasicMaterial({color:"#0000ff"}));
+	vector_list[3] = new THREE.Mesh(g3, new THREE.MeshBasicMaterial({color:"#000000"}));
+
+	scene.add(vector_list[0]);
+	scene.add(vector_list[1]);
+	scene.add(vector_list[2]);
+	scene.add(vector_list[3]);
+
+	var dl;
+	var pts = [[0,1,0],[0,-1,0],[1,0,0],[-1,0,0],[0,0,1],[0,0,-1]];
+	for (i = 0; i < 6; i++) {
+		dl = new THREE.DirectionalLight(0xffffff,.5);
+		dl.position.set(pts[i][0],pts[i][1],pts[i][2]);
+		scene.add(dl);
+		}
+
+	bootspan();
+	bootaspan();
+	bootbspan();
+	bootpspan();
+	}
+
+
 
 var a, b, c, u1, u2, u3, v1, v2, v3, w1, w2, w3, x1, x2, x3;
 
@@ -237,13 +606,7 @@ function Upd() {
 	getvars();
 	updui();
 	updateobjects();
-	}
-
-function updateobjects() {
-	doDispose(scene);
-	scene = new THREE.Scene();
-	scene.background = new THREE.Color("white");
-	bootobjects();
+	renderer.render(scene,camera);
 	}
 
 var cubeverts = [[-1,-1,-1],[1,-1,-1],[-1,1,-1],[-1,-1,1],[1,1,-1],[1,-1,1],[-1,1,1],[1,1,1]];
@@ -286,175 +649,6 @@ function bspanvert(i) {
 	return([r1,r2,r3]);
 	}
 
-function bootspan() {
-	if (!document.getElementById("lspan").checked) {return;}
-	var spangeo = new THREE.Geometry();
-	var i;
-	for (i = 0; i < cubeverts.length; i++) {
-		spangeo.vertices.push(vec2vec(spanvert(i)));
-		}
-	for (i = 0; i < cubefaces.length; i++) {
-		spangeo.faces.push(new THREE.Face3(cubefaces[i][0],cubefaces[i][1],cubefaces[i][2]));
-		}
-	spangeo.computeFaceNormals();
-	spangeo.computeVertexNormals();
-	var spanmat = new THREE.MeshLambertMaterial({side:THREE.DoubleSide,transparent:true,opacity:.7,color:0xff8c00});
-	var span = new THREE.Mesh(spangeo,spanmat);
-	scene.add(span);
-
-	for (i = 0; i < cubeedges.length; i++) {
-		thickline(spanvert(cubeedges[i][0]),spanvert(cubeedges[i][1]),0xff8c00,.01);
-		}
-	for (i = 0; i < cubeverts.length; i++) {
-		var vg = new THREE.SphereGeometry(.05);
-		var vv = new THREE.Mesh(vg,spanmat);
-		vv.position.copy(vec2vec(spanvert(i)));
-		scene.add(vv);
-		}
-
-	}
-
-function bootaspan() {
-	if (!document.getElementById("aspan").checked) {return;}
-	var aspangeo = new THREE.Geometry();
-	var i;
-	for (i = 0; i < averts.length; i++) {
-		aspangeo.vertices.push(vec2vec(aspanvert(i)));
-		}
-	aspangeo.faces.push(new THREE.Face3(0,1,2));
-	aspangeo.computeFaceNormals();
-	aspangeo.computeVertexNormals();
-	var aspanmat = new THREE.MeshLambertMaterial({side:THREE.DoubleSide,transparent:true,opacity:.7,color:0xee82ee});
-	var aspan = new THREE.Mesh(aspangeo,aspanmat);
-	scene.add(aspan);
-
-	for (i = 0; i < aedges.length; i++) {
-		thickline(aspanvert(aedges[i][0]),aspanvert(aedges[i][1]),0xee82ee,.01);
-		}
-	
-	for (i = 0; i < averts.length; i++) {
-		var vg = new THREE.SphereGeometry(.05);
-		var vv = new THREE.Mesh(vg,aspanmat);
-		vv.position.copy(vec2vec(aspanvert(i)));
-		scene.add(vv);
-		}
-	}
-
-function bootbspan() {
-	if (!document.getElementById("bspan").checked) {return;}
-	var bspangeo = new THREE.Geometry();
-	var i;
-	for (i = 0; i < bverts.length; i++) {
-		bspangeo.vertices.push(vec2vec(bspanvert(i)));
-		}
-	for (i = 0; i < bfaces.length; i++) {
-		bspangeo.faces.push(new THREE.Face3(bfaces[i][0],bfaces[i][1],bfaces[i][2]));
-		}
-	bspangeo.computeFaceNormals();
-	bspangeo.computeVertexNormals();
-	var bspanmat = new THREE.MeshLambertMaterial({side:THREE.DoubleSide,transparent:true,opacity:.7,color:0x339966});
-	var bspan = new THREE.Mesh(bspangeo,bspanmat);
-	scene.add(bspan);
-
-	for (i = 0; i < bedges.length; i++) {
-		thickline(bspanvert(bedges[i][0]),bspanvert(bedges[i][1]),0x339966,.01);
-		}
-	
-	for (i = 0; i < bverts.length; i++) {
-		var vg = new THREE.SphereGeometry(.05);
-		var vv = new THREE.Mesh(vg,bspanmat);
-		vv.position.copy(vec2vec(bspanvert(i)));
-		scene.add(vv);
-		}
-	}
-
-function bootpspan() {
-	if (!document.getElementById("pspan").checked) {return;}
-	var pspangeo = new THREE.Geometry();
-	pspangeo.vertices.push(vec2vec([0,0,0]));
-	pspangeo.vertices.push(vec2vec([u1,u2,u3]));
-	pspangeo.vertices.push(vec2vec([u1+v1,u2+v2,u3+v3]));
-	pspangeo.vertices.push(vec2vec([v1,v2,v3]));
-	pspangeo.faces.push(new THREE.Face3(0,1,2));
-	pspangeo.faces.push(new THREE.Face3(0,3,2));
-	pspangeo.computeFaceNormals();
-	pspangeo.computeVertexNormals();
-	var pspanmat = new THREE.MeshLambertMaterial({side:THREE.DoubleSide,transparent:true,opacity:.7,color:0x003300});
-	var pspan = new THREE.Mesh(pspangeo,pspanmat);
-	scene.add(pspan);
-	}
-
-function bootobjects() {
-	scene.add(new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 1, 0x00ffff));
-	scene.add(new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), 1, 0xff00ff));
-	scene.add(new THREE.ArrowHelper(new THREE.Vector3(0,0,1), new THREE.Vector3(0,0,0), 1, 0xffff00));
-	var gridXZ = new THREE.GridHelper(6,6,"gray","gray");
-	gridXZ.position.set(0,0,0);
-	scene.add(gridXZ);
-
-	var gridXY = new THREE.GridHelper(6,6,"gray","gray");
-	gridXY.position.set(0,0,0);
-	gridXY.rotation.x = Math.PI/2;
-	scene.add(gridXY);
-
-	var gridYZ = new THREE.GridHelper(6,6,"gray","gray");
-	gridYZ.position.set(0,0,0);
-	gridYZ.rotation.z = Math.PI/2;
-	scene.add(gridYZ);
-
-	if(document.getElementById("ssum").checked) {
-		thickvector([0,0,0],[a*u1,a*u2,a*u3],0x505050);
-		thickvector([a*u1,a*u2,a*u3],[a*u1+b*v1,a*u2+b*v2,a*u3+b*v3],0x505050);
-		thickvector([a*u1+b*v1,a*u2+b*v2,a*u3+b*v3],[a*u1+b*v1+c*w1,a*u2+b*v2+c*w2,a*u3+b*v3+c*w3],0x505050);
-		}
-
-	thickvector([0,0,0],[u1,u2,u3],0xff0000);
-	thickvector([0,0,0],[v1,v2,v3],0x00ff00);
-	thickvector([0,0,0],[w1,w2,w3],0x0000ff);
-
-	thickvector([0,0,0],[x1,x2,x3],"black");
-
-	var dl;
-	var pts = [[0,1,0],[0,-1,0],[1,0,0],[-1,0,0],[0,0,1],[0,0,-1]];
-	for (i = 0; i < 6; i++) {
-		dl = new THREE.DirectionalLight(0xffffff,.5);
-		dl.position.set(pts[i][0],pts[i][1],pts[i][2]);
-		scene.add(dl);
-		}
-
-	bootspan();
-	bootaspan();
-	bootbspan();
-	bootpspan();
-	}
-
-function doDispose(obj) //from stackexchange
-{
-    if (obj !== null)
-    {
-        for (var i = 0; i < obj.children.length; i++)
-        {
-            doDispose(obj.children[i]);
-        }
-        if (obj.geometry)
-        {
-            obj.geometry.dispose();
-            obj.geometry = undefined;
-        }
-        if (obj.material)
-        {
-            if (obj.material.map)
-            {
-                obj.material.map.dispose();
-                obj.material.map = undefined;
-            }
-            obj.material.dispose();
-            obj.material = undefined;
-        }
-    }
-    obj = undefined;
-}
-
 function AR() {
 	if (document.getElementById("archk").checked) {
 		controls.autoRotate = true;
@@ -481,7 +675,7 @@ function cross() {
 <tr> <td> <b style="color:#ff0000">u</b> = </td><td>
 <table border = 0>
 <tr> <td rowspan=3 style="border-left:1px solid; border-top:1px solid; border-bottom:1px solid"> </td>
-<td> <input type ="number" id="u1" value="0" oninput="Upd()" style="width: 3em"> </td>
+<td> <input type ="number" id="u1" value="1" oninput="Upd()" style="width: 3em"> </td>
 <td rowspan=3 style="border-right:1px solid; border-top:1px solid; border-bottom:1px solid"> </td> </tr> 
 <tr> 
 <td> <input type ="number" id="u2" value="0" oninput="Upd()" style="width: 3em"> </td>
@@ -494,7 +688,7 @@ function cross() {
 <td> <input type ="number" id="v1" value="0" oninput="Upd()" style="width: 3em"> </td>
 <td rowspan=3 style="border-right:1px solid; border-top:1px solid; border-bottom:1px solid"> </td> </tr> 
 <tr> 
-<td> <input type ="number" id="v2" value="0" oninput="Upd()" style="width: 3em"> </td>
+<td> <input type ="number" id="v2" value="1" oninput="Upd()" style="width: 3em"> </td>
 </tr> <tr>
 <td> <input type ="number" id="v3" value="0" oninput="Upd()" style="width: 3em"> </td>
 </tr>
@@ -506,7 +700,7 @@ function cross() {
 <tr> 
 <td> <input type ="number" id="w2" value="0" oninput="Upd()" style="width: 3em"> </td>
 </tr> <tr>
-<td> <input type ="number" id="w3" value="0" oninput="Upd()" style="width: 3em"> </td>
+<td> <input type ="number" id="w3" value="1" oninput="Upd()" style="width: 3em"> </td>
 </tr>
 </table> </td> </tr> </table> <table border = 0> <tr> <td> <b> x </b> = a <b style="color:#ff0000">u</b> + b <b style="color:#00ff00">v</b> + c <b style="color:#0000ff">w</b> = </td> <td>
 <table border = 0>

@@ -174,19 +174,19 @@ function dqb2c() {
 This interactive will let you enter two functions f and g (or pick them from the dropdown menu), and attempt to compose them. In the first row, we replace g(x) by its definition first, then plug the result into f.
 In the second row, we plug g(x) into f first, then replace it by the definition for g(x).
 In the last column, we attempt to simplify the result, with mixed success. <br>
-f(x) = <input type="text" id="f" value="x" onChange="Upd()"> <span id="fsel"> </span> <br>
-g(x) = <input type="text" id="g" value="x" onChange="Upd()"> <span id="gsel"> </span> <br>
+f(x) = <input type="text" id="f" value="x" oninput="Upd()"> <span id="fsel"> </span> <br>
+g(x) = <input type="text" id="g" value="x" oninput="Upd()"> <span id="gsel"> </span> <br>
 <table border=1>
 <tr> <td> <div id="fg"></div> </td> <td> <div id="fgs"> </div> </td> <td> = </td> <td> <div id="fsgs"> </div> </td> <td> = </td> <td> <div id="simp"> </div> </td> </tr>
 <tr> <td> <div id="fg2"> </td> <td> <div id="fsg"> </div> </td> <td> = </td> <td> <div id="fsgs2"> </div> </td> <td> = </td> <td> <div id="simp2"> </div> </td> </tr>
 </table>
 <h1> Plugging in </h1>
 This interactive will let you enter a function f (or pick from the dropdown menu) and a number/expression, and will plug the number/expression into the function. <br>
-f(x) = <input type="text" id="f2" value="x^2" onChange="Upd()"> <span id="fsel2"> </span> <br>
-f(<input type="text" id="in" value = "x+1" onChange="Upd()" style="width:3em">) = <span id="fin"> </span> = <span id="fins"> </span>
+f(x) = <input type="text" id="f2" value="x^2" oninput="Upd()"> <span id="fsel2"> </span> <br>
+f(<input type="text" id="in" value = "x+1" oninput="Upd()" style="width:3em">) = <span id="fin"> </span> = <span id="fins"> </span>
 <h1> Difference Quotients </h1>
 This interactive will let you enter a function f (or pick from the dropdown menu), and will evaluate the difference quotient. Click the buttons to switch back and forth between equivalent expressions.<br>
-f(x) = <input type="text" id="f3" value="x^2" onChange="Upd()"> <span id="fsel3"> </span> <br>
+f(x) = <input type="text" id="f3" value="x^2" oninput="Upd()"> <span id="fsel3"> </span> <br>
 <table border=0> <tr> <td> <span id="dq"> </span> = </td> <td> <table border = 0> <tr> <td style="border-bottom: solid 1px black"> <button id="dqb1" onclick="dqb1c()"> </button> - <button id="dqb2" onclick="dqb2c()"> </td> </tr> <tr> <td style="text-align:center"> <i> h </i> </td> </tr> </table> </td> <td> = <span id="dqe1"> </span> = <span id="dqe2"></span> </td></tr> </table>
 </body>
 </html>

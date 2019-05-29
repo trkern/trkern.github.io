@@ -1,0 +1,140 @@
+﻿<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<meta name=description content="">
+<title> KaTeX Quadratic Root Entry</title>
+<script src="math.min.js"></script>
+<script src="katex.min.js"></script>
+<script>
+
+function text_expand(id) {
+	var str = document.getElementById(id).value;
+	if (str == "" && document.getElementById(id).placeholder) {str = document.getElementById(id).placeholder;}
+	if (KAS.parse(str).parsed && str != "") {
+		document.getElementById(id).style.backgroundColor = "";
+		}
+	else {
+		document.getElementById(id).style.backgroundColor = "#EEEEBB";
+		}
+	document.getElementById("expander").style.font = getComputedStyle(document.getElementById(id)).font;
+	document.getElementById("expander").innerText = str;
+	document.getElementById(id).style.width = (document.getElementById("expander").getBoundingClientRect().width+2) + "px";
+	}
+
+/*
+A roottemplate is a pentuple of bools. true if the number is present, false if the number is not present.
+(a + b sqrt(c)i)/d -> [a,b,c,d,i]
+*/
+
+var greektexl = ["\\LARGE\\alpha\\normalsize","\\LARGE\\beta\\normalsize","\\LARGE\\gamma\\normalsize","\\Large\\delta\\normalsize"];
+var greekl = ["α", "β", "γ", "δ"];
+var alphal = ["a","b","c","d"];
+
+function rt_to_html(rt,m,id) { //m = 0: letters, m = 1: inputs
+	var kx = "";
+	var i;
+	var l = [];
+	for (i = 0; i < 4; i++) {
+		if (m == 0) {l.push(alphal[i]);}
+		if (m == 1) {l.push(greektexl[i]);}
+		}
+	if (rt[0]) {kx += l[0];}
+	if (rt[0] && (rt[1]||rt[2]||rt[4])) {kx += "+";}
+	if (rt[1]) {kx += l[1];}
+	if (rt[2]) {kx += "\\sqrt{"+l[2]+"}";}
+	if (rt[4]) {kx += " i";}
+	if (kx == "" && rt[3]) {kx = "1"};
+	if (rt[3]) {kx = "\\frac{"+kx+"}{"+l[3]+"}";}
+	if (m == 0) {
+		return(katex.renderToString(kx));
+		}
+	if (m == 1) {
+		var str = katex.renderToString(kx);
+		for (i = 0; i < 4; i++) {
+			str = str.replace(greekl[i],alphal[i]);
+			str = str.replace(greekl[i],"<input type='text' id='"+id+"_"+i+"' oninput='text_expand(event.target.id)' style='width:1em;pointer-events:auto' placeholder='1'>");
+			}
+		return("<span class='pointereventsnone'>" + str + "</span>");
+		}
+	}
+
+function rt_to_string(rt) {
+	var str = "";
+	if (rt[0]) {str += "a";}
+	if (rt[0] && (rt[1]||rt[2]||rt[4])) {str += "+";}
+	if (rt[1]) {str += "b";}
+	if (rt[1] && rt[2]) {str += "*";}
+	if (rt[2]) {str += "sqrt(c)";}
+	if (rt[4]) {str += "i";}
+	if (str == "" && rt[3]) {str = "1"};
+	if (rt[3] && rt[0] && (rt[1]||rt[2]||rt[4])) {str = "("+str+")";}
+	if (rt[3]) {str = str + "/d";}
+	return(str);
+	}
+
+function root_entry_string(id,allow_complex,allow_roots) {
+	var str = "";
+	var a,b,c,d,i;
+	str += "<table border=1 style='display:inline-table;vertical-align:middle'><tr><td>";
+	str += "<select id='root_entry_sel_"+id+"' oninput='root_entry_update(\""+id+"\")'>";
+	for (a = 0; a <= 1; a++) {
+		for (b = 0; b <= 1; b++) {
+			for (c = 0; c <= allow_roots; c++) {
+				for (d = 0; d <= 1; d++) {
+					for (i = 0; i <= allow_complex; i++) {
+						if (!a && !b && !c && !d && !i) {continue;}
+						if (a && !c && !i) {continue;} //note: a can only be on if c,or i is on.
+						str += "<option value='"+[a,b,c,d,i].toString()+"'"
+						if (a && b && c && d && !i) {str += " selected";}
+						str += ">"+rt_to_string([a,b,c,d,i]) + "</option>";
+						}
+					}
+				}
+			}
+		}
+	str += "</select><br>";
+	str += "<span id='root_entry_"+id+"'>";
+	str += rt_to_html([1,1,1,1,0],1,"root_entry_"+id+"__");
+	str += "</span>";
+	str += "</td></tr></table>";
+	return(str);
+	}
+
+function root_entry_update(id) {
+	var l = document.getElementById("root_entry_sel_"+id).value;
+	l = l.split(",");
+	l = l.map(Number);
+	document.getElementById("root_entry_"+id).innerHTML = rt_to_html(l,1,"root_entry_"+id+"__");
+	}
+
+function root_entry_get(id) {
+	var rt = document.getElementById("root_entry_sel_"+id).value;
+	rt = rt.split(",");
+	rt = rt.map(Number);
+	var vll = [];
+	for (i = 0; i < 4; i++) {
+		if (document.getElementById("root_entry_"+id+"___"+i)) {
+			vll[i] = Number(document.getElementById("root_entry_"+id+"___"+i).value);
+			}
+		else {
+			vll[i] = 0;
+			}
+		}
+	return(math.eval(rt_to_string(rt),{a:vll[0],b:vll[1],c:vll[2],d:vll[3]}));
+	}
+
+function boot() {
+	document.getElementById("root_entry").innerHTML = root_entry_string("id",true,true);
+	}
+
+</script>
+<link rel="stylesheet" href="katex.min.css">
+</head>
+<body>
+<span id="expander" style="visibility:hidden; position:fixed"></span>
+<span id="root_entry"></span>
+</body>
+</html>

@@ -13,12 +13,6 @@
 function text_expand(id) {
 	var str = document.getElementById(id).value;
 	if (str == "" && document.getElementById(id).placeholder) {str = document.getElementById(id).placeholder;}
-	if (KAS.parse(str).parsed && str != "") {
-		document.getElementById(id).style.backgroundColor = "";
-		}
-	else {
-		document.getElementById(id).style.backgroundColor = "#EEEEBB";
-		}
 	document.getElementById("expander").style.font = getComputedStyle(document.getElementById(id)).font;
 	document.getElementById("expander").innerText = str;
 	document.getElementById(id).style.width = (document.getElementById("expander").getBoundingClientRect().width+2) + "px";
@@ -133,7 +127,7 @@ function boot() {
 </script>
 <link rel="stylesheet" href="katex.min.css">
 </head>
-<body>
+<body onload="boot()">
 <span id="expander" style="visibility:hidden; position:fixed"></span>
 <span id="root_entry"></span>
 </body>

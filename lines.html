@@ -1,0 +1,537 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<meta name=description content="A'Fine Interactive">
+<title> Lines Practice </title>
+<script src="math.min.js"></script>
+<script src="tgr.js"></script>
+<script>
+
+function ribet(mn,mx) {
+	return(Math.floor(Math.random()*(mx-mn+1))+mn);
+	}
+
+function tex_number(n,force_plus,squash_ones) {
+	if (n == 1 && squash_ones) {
+		if (force_plus) {return("+");}
+		return("");
+		}
+	if (n == -1 && squash_ones) {
+		return("-");
+		}
+	if (force_plus && n >= 0) {return("+"+n);}
+	return(n);
+	}
+
+function tex_si(m,b) {
+	return(tex_number(m,false,true) + "x" + tex_number(b,true,false));
+	}
+
+function tex_s(a,b,c) {
+	return(tex_number(a,false,true) + "x" + tex_number(b,true,true) + "y =" + c);
+	}
+
+function tex_ps(m,yn,xn) {
+	return("y" + tex_number(-yn,true,false) + "=" + tex_number(m,false, true) + "(x"+ tex_number(-xn,true,false) + ")");
+	}
+
+function req(a,b) {//checks if a,b are equal (possibly strings representing rational numbers)
+	try {return(math.equal(math.eval(a),math.eval(b)));}
+	catch(e) {console.log(e); return(false);}
+	}
+
+function fpni(a,b,c,d) { //gives the point [a/b,c/d], but yields "I" and "N" as appropriate
+	if (a == 0 && b == 0) {return("I");}
+	else if (b == 0) {return("N");}
+	if (c == 0 && d == 0) {return("I");}
+	else if (d == 0) {return("N");}
+	return([a+"/"+b,c+"/"+d]);
+	}
+
+var min_widths = {coord:50,m:20,b:20};
+
+function text_expand(id) {
+	var min = 0;
+	if (document.getElementById(id).className in min_widths) {
+		min = min_widths[document.getElementById(id).className];
+		}
+	var str = document.getElementById(id).value;
+	if (str == "" && document.getElementById(id).placeholder) {str = document.getElementById(id).placeholder;}
+	document.getElementById("expander").style.font = getComputedStyle(document.getElementById(id)).font;
+	document.getElementById("expander").innerText = str;
+	var w = Math.max(min,(document.getElementById("expander").getBoundingClientRect().width+2));
+	document.getElementById(id).style.width =  w + "px";
+	}
+
+function parsepair(str) {
+	str = str.replace("(","").replace(")","").replace(" ","");
+	return(str.split(","));
+	}
+
+function generate_problem() {
+	document.getElementById("entry").innerHTML = "";
+	document.getElementById("solution").innerHTML = "";
+	var l = [];
+	var i;
+	for (i = 0; i < 14; i++) {
+		if (document.getElementById("chk_problem_"+i).checked) {l.push(i);}
+		}
+	if (l.length == 0) {
+		document.getElementById("problem").innerHTML = "Please pick at least one type of problem.";
+		return;
+		}
+	g_questions = {};
+	var k = math.pickRandom(l);
+	if (k == 0) {make_find_intercepts();}
+	else if (k == 1) {make_find_intercepts_s();}
+	else if (k == 2) {make_ps_to_si();}
+	else if (k == 3) {make_s_to_si();}
+	else if (k == 4) {make_pns_to_si();}
+	else if (k == 5) {make_perp_si();}
+	else if (k == 6) {make_par_si();}
+	else if (k == 7) {make_perp_s();}
+	else if (k == 8) {make_par_s();}
+	else if (k == 9) {make_pts_to_si();}
+	else if (k == 10) {make_gr_to_si();}
+	else if (k == 11) {make_int_si();}
+	else if (k == 12) {make_int_si_s();}
+	else if (k == 13) {make_int_s();}
+	}
+
+var g_questions; //list of objects with .id, .label, .answer, .type
+//.types: "pt"
+
+function ptinp(e,id) {
+	text_expand(e.target.id);
+	document.getElementById(id).checked = true;
+	}
+
+function pointinput(qu) {
+	var str = qu.label + "<input type='radio' id='chk_P_"+qu.id+"' name='"+qu.id+"' checked>";
+	str += "<span style='font-size:x-large'>(</span><input type='text' id='x_"+qu.id+"' class='coord' oninput='ptinp(event,\"chk_P_"+qu.id+"\")'>";
+	str += "<span style='font-size:x-large'>,</span><input type='text' id='y_"+qu.id+"' class='coord' oninput='ptinp(event,\"chk_P_"+qu.id+"\")'>";
+	str += "<span style='font-size:x-large'>)</span>";
+	str += "<input type='radio' id='chk_N_"+qu.id+"' name='"+qu.id+"'>None<input type='radio' id='chk_I_"+qu.id+"' name='"+qu.id+"'>Infinitely Many<br>";
+	return(str);
+	}
+
+function siinput(qu) {
+	var str = qu.label + "<input type='radio' id='chk_S_"+qu.id+"' name='"+qu.id+"' checked>y=";
+	str += "<input type='text' id='m_"+qu.id+"' class='m' oninput='ptinp(event,\"chk_S_"+qu.id+"\")' placeholder='m'>x+";
+	str += "<input type='text' id='b_"+qu.id+"' class='b' oninput='ptinp(event,\"chk_S_"+qu.id+"\")' placeholder='b'> &nbsp;";
+	str += "<input type='radio' id='chk_V_"+qu.id+"' name='"+qu.id+"'>x = <input type='text' id='x_"+qu.id+"' class='b' oninput='ptinp(event,\"chk_V_"+qu.id+"\")'><br>";
+	return(str);
+	}
+
+function check_point(qu) {
+	if (qu.answer == "N") {//check no points
+		return(document.getElementById("chk_N_"+qu.id).checked);
+		}
+	if (qu.answer == "I") {//check infinitely many points
+		return(document.getElementById("chk_I_"+qu.id).checked);
+		}
+	var pr = [document.getElementById("x_"+qu.id).value,document.getElementById("y_"+qu.id).value];
+	return(document.getElementById("chk_P_"+qu.id).checked && req(pr[0],qu.answer[0]) && req(pr[1],qu.answer[1]));
+	}
+
+function check_si(qu) {
+	if (qu.answer.length == 2) {
+		return(document.getElementById("chk_S_"+qu.id).checked && req(document.getElementById("m_"+qu.id).value,qu.answer[0]) && req(document.getElementById("b_"+qu.id).value,qu.answer[1]));
+		}
+	if (qu.answer.length == 1) {
+		return(document.getElementById("chk_V_"+qu.id).checked && req(document.getElementById("x_"+qu.id).value,qu.answer[0]));
+		}
+	}
+
+function show_point(qu) {
+	if (qu.answer == "N") {return("None (no points)");}
+	if (qu.answer == "I") {return("Infinitely Many");}
+	return("("+math.simplify(qu.answer[0]).toString()+","+math.simplify(qu.answer[1]).toString()+")");
+	}
+
+function show_si(qu) {
+	if (qu.answer.length == 2) {
+		return("y = " + tex_si(math.simplify(qu.answer[0]).toString(),math.simplify(qu.answer[1]).toString()));
+		}
+	if (qu.answer.length == 1) {
+		return("x = " + math.simplify(qu.answer[0]).toString());
+		}
+	}
+
+function make_problem() {
+	var str = "";
+	var i;
+	for (i = 0; i < g_questions.length; i++) {
+		if (g_questions[i].type == "pt") {
+			str += pointinput(g_questions[i]);
+			}
+		if (g_questions[i].type == "si") {
+			str += siinput(g_questions[i]);
+			}
+		}
+	str += "<button onclick='check()'>Check Answer</button>";
+	str += "<button onclick='show()'>Show Answer</button>";
+	document.getElementById("entry").innerHTML = str;
+	}
+
+function check() {
+	var str = "";
+	var i;
+	var k;
+	for (i = 0; i < g_questions.length; i++) {
+		k = false;
+		if (g_questions[i].type == "pt") {
+			k = check_point(g_questions[i]);
+			}
+		else if (g_questions[i].type == "si") {
+			k = check_si(g_questions[i]);
+			}
+		if (k) {str += g_questions[i].label + "Correct!<br>";}
+		else {str += g_questions[i].label + "Try Again!<br>";}
+		}
+	document.getElementById("solution").innerHTML = str;
+	}
+
+function show() {
+	var str = "";
+	var i;
+	for (i = 0; i < g_questions.length; i++) {
+		str += g_questions[i].label;
+		if (g_questions[i].type == "pt") {
+			str += show_point(g_questions[i]);
+			}
+		else if (g_questions[i].type == "si") {
+			str += show_si(g_questions[i]);
+			}
+		str += "<br>";
+		}
+	document.getElementById("solution").innerHTML = str;
+	}
+
+function make_find_intercepts() {
+	var m = ribet(-10,10);
+	var b = ribet(-10,10);
+	var str = "Find the x- and y- intercepts of the line given by y = " + tex_si(m,b) + ".";
+	document.getElementById("problem").innerHTML = str;
+	var xi = {id:"xi", label:"x-intercept: ", type:"pt", answer:fpni(-b,m,0,1)};
+	var yi = {id:"yi", label:"y-intercept: ", type:"pt", answer:[0,b]};
+	g_questions = [xi,yi];
+	make_problem();
+	}
+function make_find_intercepts_s() {
+	var a = ribet(-10,10);
+	var b = ribet(-10,10);
+	var c = ribet(-10,10);
+	var str = "Find the x- and y- intercepts of the line given by " + tex_s(a,b,c) + ".";
+	document.getElementById("problem").innerHTML = str;
+	var xi = {id:"xi", label:"x-intercept: ", type:"pt", answer:fpni(c,a,0,1)};
+	var yi = {id:"yi", label:"y-intercept: ", type:"pt", answer:fpni(0,1,c,b)};
+	g_questions = [xi,yi];
+	make_problem();
+	}
+function make_ps_to_si() {
+	var m = ribet(-10,10);
+	var yn = ribet(-10,10);
+	var xn = ribet(-10,10);
+	var str = "Rewrite the equation for the line " + tex_ps(m,yn,xn) + " in slope-intercept form.";
+	document.getElementById("problem").innerHTML = str;
+	var l = {id:"l", label:"", type:"si", answer:[m,-m*xn+yn]};
+	g_questions = [l];
+	make_problem();
+	}
+function make_s_to_si() {
+	var a,b,c, ans;
+	do {
+		a = ribet(-10,10);
+		b = ribet(-10,10);
+		c = ribet(-10,10);
+		} while (a == 0 && b == 0);
+	if (b == 0) {
+		ans = [c+"/"+a];
+		}
+	else {
+		ans = [-a+"/"+b,c+"/"+b];
+		}
+	var str = "Rewrite the equation for the line " + tex_s(a,b,c) + " in slope-intercept form.";
+	document.getElementById("problem").innerHTML = str;
+	g_questions = [{id:"l",label:"", type:"si", answer:ans}];
+	make_problem();
+	}
+
+function make_pns_to_si() {
+	var xn = ribet(-10,10);
+	var yn = ribet(-10,10);
+	var m = ribet(-10,10);
+	if (ribet(0,1)) {
+		var str = "Write the equation for the line passing through the point ("+xn+","+yn+") with slope "+m+".";
+		}
+	else {
+		var str = "Write the equation for the line with slope "+m+" passing through the point ("+xn+","+yn+").";
+		}
+	document.getElementById("problem").innerHTML = str;
+	g_questions = [{id:"l",label:"", type:"si", answer:[m,-m*xn+yn]}];
+	make_problem();
+	}
+
+function make_perp_si() {
+	var m = ribet(-10,10);
+	var b = ribet(-10,10);
+	var xn = ribet(-10,10);
+	var yn = ribet(-10,10);
+	var ans;
+	if (ribet(0,1)) {
+		var str = "Write the equation for the line passing through the point ("+xn+","+yn+") perpendicular to the line " + tex_si(m,b) + ".";
+		}
+	else {
+		var str = "Write the equation for the line perpendicular to the line " + tex_si(m,b) + " passing through the point ("+xn+","+yn+").";
+		}
+	document.getElementById("problem").innerHTML = str;
+	if (m == 0) {
+		ans = [xn];
+		}
+	else {
+		ans = [-1+"/"+m,(m*yn-xn)+"/"+m];
+		}
+	g_questions = [{id:"l",label:"", type:"si", answer:ans}];
+	make_problem();
+	}
+
+function make_par_si() {
+	var m = ribet(-10,10);
+	var b = ribet(-10,10);
+	var xn = ribet(-10,10);
+	var yn = ribet(-10,10);
+	var ans;
+	if (ribet(0,1)) {
+		var str = "Write the equation for the line passing through the point ("+xn+","+yn+") parallel to the line " + tex_si(m,b) + ".";
+		}
+	else {
+		var str = "Write the equation for the line parallel to the line " + tex_si(m,b) + " passing through the point ("+xn+","+yn+").";
+		}
+	document.getElementById("problem").innerHTML = str;
+	ans = [-1+"/"+m,yn-m*xn];
+	g_questions = [{id:"l",label:"", type:"si", answer:ans}];
+	make_problem();
+	}
+
+function make_perp_s() {
+	var a,b,c, ans;
+	do {
+		a = ribet(-10,10);
+		b = ribet(-10,10);
+		c = ribet(-10,10);
+		} while (a == 0 && b == 0);
+	var xn = ribet(-10,10);
+	var yn = ribet(-10,10);
+	if (ribet(0,1)) {
+		var str = "Write the equation for the line passing through the point ("+xn+","+yn+") perpendicular to the line " + tex_s(a,b,c) + ".";
+		}
+	else {
+		var str = "Write the equation for the line perpendicular to the line " + tex_s(a,b,c) + " passing through the point ("+xn+","+yn+").";
+		}
+	if (a == 0) {
+		ans = [xn];
+		}
+	else {
+		ans = [b+"/"+a,(yn*a-b*xn)+"/"+a];
+		}
+	document.getElementById("problem").innerHTML = str;
+	g_questions = [{id:"l",label:"", type:"si", answer:ans}];
+	make_problem();
+	}
+
+function make_par_s() {
+	var a,b,c, ans;
+	do {
+		a = ribet(-10,10);
+		b = ribet(-10,10);
+		c = ribet(-10,10);
+		} while (a == 0 && b == 0);
+	var xn = ribet(-10,10);
+	var yn = ribet(-10,10);
+	if (ribet(0,1)) {
+		var str = "Write the equation for the line passing through the point ("+xn+","+yn+") parallel to the line " + tex_s(a,b,c) + ".";
+		}
+	else {
+		var str = "Write the equation for the line parallel to the line " + tex_s(a,b,c) + " passing through the point ("+xn+","+yn+").";
+		}
+	if (b == 0) {
+		ans = [xn];
+		}
+	else {
+		ans = [-a+"/"+b,(yn*b+a*xn)+"/"+b];
+		}
+	document.getElementById("problem").innerHTML = str;
+	g_questions = [{id:"l",label:"", type:"si", answer:ans}];
+	make_problem();
+	}
+
+function make_pts_to_si() {
+	var ans;
+	do {
+		var x0 = ribet(-10,10);
+		var y0 = ribet(-10,10);
+		var x1 = ribet(-10,10);
+		var y1 = ribet(-10,10);
+		} while (x0 == x1 && y0 == y1);
+	var str = "Write the equation for the line passing through the points ("+x0+","+y0+") and ("+x1+","+y1+").";
+	if (x0 == x1) {
+		ans = [x0];
+		}
+	else {
+		ans = [(y0-y1)+"/"+(x0-x1),(-y0*x1+y1*x0)+"/"+(x0-x1)];
+		}
+	document.getElementById("problem").innerHTML = str;
+	g_questions = [{id:"l",label:"", type:"si", answer:ans}];
+	make_problem();
+	}
+function make_gr_to_si() {
+	var ans, gob;
+	do {
+		var x0 = ribet(-4,4);
+		var y0 = ribet(-4,4);
+		var x1 = ribet(-4,4);
+		var y1 = ribet(-4,4);
+		} while (x0 == x1 && y0 == y1);
+	if (x0 == x1) {
+		ans = [x0];
+		gob = {type:"vline",x:x0,linewidth:4};
+		}
+	else {
+		var m = (y0-y1)/(x0-x1);
+		var b = (-y0*x1+y1*x0)/(x0-x1);
+		ans = [(y0-y1)+"/"+(x0-x1),(-y0*x1+y1*x0)+"/"+(x0-x1)];
+		gob = {type:"plot", fct:function(x){return(m*x+b);}, linewidth:4};
+		}
+	var str = "Write the equation for the line shown below:<br>";
+	str += tgr_grapher_string("gr0", [gob]);
+	document.getElementById("problem").innerHTML = str;
+	g_questions = [{id:"l",label:"", type:"si", answer:ans}];
+	make_problem();
+	}
+function make_int_si() {
+	var m1 = ribet(-10,10);
+	var m2 = ribet(-10,10);
+	var b1 = ribet(-10,10);
+	var b2 = ribet(-10,10);
+	var str = "Find the intersection of the lines y=" + tex_si(m1,b1) + " and y=" + tex_si(m2,b2) + ".";
+	document.getElementById("problem").innerHTML = str;
+	g_questions = [{id:"int", label:"Intersection Point: ", type:"pt", answer:fpni(b2-b1,m1-m2,m1*b2-b1*m2,m1-m2)}];
+	make_problem();
+	}
+function make_int_si_s() {
+	var m1 = ribet(-10,10);
+	var b1 = ribet(-10,10);
+	var a2 = ribet(-10,10);
+	var b2 = ribet(-10,10);
+	var c2 = ribet(-10,10);
+	if (ribet(0,1)) {
+		var str = "Find the intersection of the lines y=" + tex_si(m1,b1) + " and " + tex_s(a2,b2,c2) + ".";
+		}
+	else {
+		var str = "Find the intersection of the lines " + tex_s(a2,b2,c2) + " and y=" + tex_si(m1,b1) + ".";
+		}
+	document.getElementById("problem").innerHTML = str;
+	g_questions = [{id:"int", label:"Intersection Point: ", type:"pt", answer:fpni(c2-b1*b2,a2+b2*m1,m1*c2+b1*a2,a2+b2*m1)}];
+	make_problem();
+	}
+function make_int_s() {
+	var a1 = ribet(-10,10);
+	var a2 = ribet(-10,10);
+	var b1 = ribet(-10,10);
+	var b2 = ribet(-10,10);
+	var c1 = ribet(-10,10);
+	var c2 = ribet(-10,10);
+	var str = "Find the intersection of the lines " + tex_s(a1,b1,c1) + " and " + tex_s(a2,b2,c2) + ".";
+	document.getElementById("problem").innerHTML = str;
+	g_questions = [{id:"int", label:"Intersection Point: ", type:"pt", answer:fpni(b2*c1-b1*c2,b2*a1-b1*a2,a2*c1-a1*c2,a2*b1-a1*b2)}];
+	make_problem();
+	}
+
+var svgplus = "<svg width=20 height=18><polyline points='4,7 10,13 16,7' style='fill:none;stroke:black;stroke-width:2'></polyline></svg>";
+var svgminus = "<svg width=20 height=18><polyline points='4,13 10,7 16,13' style='fill:none;stroke:black;stroke-width:2'></polyline></svg>";
+
+function maxminimize() {
+	if (document.getElementById("choices").style.height == "") {
+		document.getElementById("choices").style.height = "3em";
+		document.getElementById("maxminimize").innerHTML = svgplus;
+		}
+	else {
+		document.getElementById("choices").style.height = "";
+		document.getElementById("maxminimize").innerHTML = svgminus;
+		}
+	}
+
+function checkna(b) {
+	var i;
+	for (i = 0; i < 14; i++) {
+		document.getElementById("chk_problem_"+i).checked = b;
+		}
+	}
+
+function boot() {
+	maxminimize();
+	}
+
+</script>
+<style>
+.coord {
+	width: 50px;
+	}
+.m,.b {
+	width: 20px;
+	}
+button {
+	background:#bbbbbb;
+	}
+.maxmin {
+	position:absolute;
+	top:0px;
+	right:0px;
+	padding:0px;
+	background:#bbbbbb;
+	}
+.maxmin:hover, button:hover {
+	border:2px solid;
+	}
+.box {
+	border:1px solid;
+	box-shadow:3px 3px gray;
+	margin:5px;
+	}
+.box:empty {
+	border:none;
+	}
+</style>
+</head>
+<body onload="boot()">
+<span id="expander" style="visibility:hidden; position:fixed"></span>
+<div id="choices" class="box" style="height:3em; width:40em; overflow-y:auto; position:relative;">
+<button onclick="maxminimize()" id="maxminimize" class="maxmin">
+</button>
+<input type="checkbox" id="chk_problem_0" checked> Find x- and y- intercepts given slope-intercept form <br>
+<input type="checkbox" id="chk_problem_1" checked> Find x- and y- intercepts given standard form <br>
+<input type="checkbox" id="chk_problem_2" checked> Convert point-slope form to slope-intercept <br>
+<input type="checkbox" id="chk_problem_3" checked> Convert "standard" form to slope-intercept <br>
+<input type="checkbox" id="chk_problem_4" checked> Convert point and slope to slope-intercept <br>
+<input type="checkbox" id="chk_problem_5" checked> Find a line perpendicular to y=mx+b passing through a point <br>
+<input type="checkbox" id="chk_problem_6" checked> Find a line parallel to y=mx+b passing through a point <br>
+<input type="checkbox" id="chk_problem_7" checked> Find a line perpendicular to ax+by=c passing through a point <br>
+<input type="checkbox" id="chk_problem_8" checked> Find a line parallel to ax+by=c passing through a point <br>
+<input type="checkbox" id="chk_problem_9" checked> Find a line passing through two points <br>
+<input type="checkbox" id="chk_problem_10" checked> Find the equation of a line given the graph <br>
+<input type="checkbox" id="chk_problem_11" checked> Find the intersection of two lines in slope-intercept form <br>
+<input type="checkbox" id="chk_problem_12" checked> Find the intersection of two lines in slope-intercept and "standard" forms <br>
+<input type="checkbox" id="chk_problem_13" checked> Find the intersection of two lines in "standard" form <br>
+<button onclick="checkna(0)">Check None</button>
+<button onclick="checkna(1)">Check All</button>
+</div>
+<button onclick="generate_problem()" style="margin-left:10px">Generate Problem</button>
+<div id="problem" class="box"></div>
+<div id="entry" class="box"></div>
+<div id="solution" class="box"></div>
+</body>
+</html>

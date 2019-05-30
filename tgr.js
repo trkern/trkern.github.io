@@ -33,10 +33,12 @@ grapher_obj.type //string one of the following:
 	//"rect"
 	//"hole" 
 	//"dot"
+	//"sqdot"
 	//"line"
 	//"vf" (vector field, still working on)
 	//"vec"
 	//"label"
+	//"vline" (vertical line)
 grapher_obj.fct //function being plotted (as a javascript function)
 grapher_obj.hints //some hints for the plot.
 	//A hint is: [ptx,pty,lc,rc]
@@ -50,12 +52,12 @@ grapher_obj.xmin //for "plot", "rect", may be a function of plotdata
 grapher_obj.xmax //for "plot", "rect", may be a function of plotdata
 grapher_obj.ymin //for "rect"
 grapher_obj.ymax //for "rect"
-grapher_obj.x //for "hole", "dot", "line", "label"
+grapher_obj.x //for "hole", "dot", "line", "label", "vline"
 grapher_obj.y //for "hole", "dot", "line", "label"
 grapher_obj.x2 //for "line"
 grapher_obj.y2 //for "line"
 grapher_obj.color //for "plot", "par", "rect", "hole", "dot", "line", "label"
-grapher_obj.linewidth //for "plot", "line"
+grapher_obj.linewidth //for "plot", "line", "vline"
 grapher_obj.id //for tgr_update_grapher_obj_by_id
 grapher_obj.r //for "hole", "dot"
 grapher_obj.incolor //for "hole"
@@ -501,6 +503,23 @@ function tgr_plot(grapher_obj, ctx, pd) {
 		ctx.fillStyle=grapher_obj.color;
 		ctx.fill();
 		}
+	if (grapher_obj.type == "sqdot") {
+		var pointx,pointy;
+		pointx = tgr_plug(grapher_obj.x,pd);
+		pointy = tgr_plug(grapher_obj.y,pd);
+		ctx.beginPath();
+		var canvx, canvy;
+		canvx = tgr_tocanv([pointx,pointy],pd)[0];
+		canvy = tgr_tocanv([pointx,pointy],pd)[1];
+		var r = grapher_obj.r;
+		ctx.moveTo(canvx+r,canvy+r);
+		ctx.lineTo(canvx+r,canvy-r);
+		ctx.lineTo(canvx-r,canvy-r);
+		ctx.lineTo(canvx-r,canvy+r);
+		ctx.closePath();
+		ctx.fillStyle=grapher_obj.color;
+		ctx.fill();
+		}
 	if (grapher_obj.type == "line") {
 		var lx1, lx2, ly1, ly2;
 		lx1 = tgr_plug(grapher_obj.x,pd);
@@ -576,6 +595,15 @@ function tgr_plot(grapher_obj, ctx, pd) {
 			}
 		ctx.fillText(str, p[0]+offx, p[1]+offy);
 		}
+	if (grapher_obj.type == "vline") {
+		var linex = tgr_plug(grapher_obj.x,pd);
+		ctx.beginPath();
+		ctx.strokeStyle = grapher_obj.color;
+		ctx.lineWidth = grapher_obj.linewidth;
+		ctx.moveTo(...tgr_tocanv([linex,-Infinity],pd));
+		ctx.lineTo(...tgr_tocanv([linex,Infinity],pd));
+		ctx.stroke();
+		}
 	}
 
 function tgr_rect(ctx, x1,y1,x2,y2) {
@@ -620,6 +648,24 @@ function tgr_grapher(id, grapher_objs, plotdata) {
 		}
 	tgr_graph_array[id].plotdata = Object.assign({},plotdata);
 	tgr_draw_graph(id);
+	}
+
+function tgr_grapher_string(id, grapher_objs, plotdata) { //doesn't support ctarg, obviously.
+	var blanksvg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3Crect width='100%25' height='100%25' fill='white' /%3E%3C/svg%3E";
+	plotdata = plotdata || {};
+	plotdata = Object.assign({},tgr_default_plotdata,plotdata);
+	var ts = tgr_string(id, grapher_objs, plotdata);
+	tgr_graph_array[id] = {grapher_objs:{}, plotdata:{}};
+	var i;
+	tgr_graph_array[id].grapher_objs = [];
+	for (i = 0; i < grapher_objs.length; i++) {
+		tgr_graph_array[id].grapher_objs[i] = Object.assign({},tgr_default_grapher_obj,grapher_objs[i]);
+		}
+	tgr_graph_array[id].plotdata = Object.assign({},plotdata);
+	var str = "<span id='"+id+"'>"+ts[0] + ts[1]+"</span>";
+	//setTimeout(function(){tgr_draw_graph(id);},10);
+	str += "<img src=\""+blanksvg+"\" onload='tgr_draw_graph(\""+id+"\")'>";
+	return(str);
 	}
 
 function tgr_update_grapher_objs(id,grapher_objs) {

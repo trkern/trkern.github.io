@@ -68,6 +68,7 @@ grapher_obj.labeloffsety //for "label"
 grapher_obj.textAlign //for "label"
 grapher_obj.textBaseline //for "label"
 grapher_obj.font //for "label"
+grapher_obj.blend //not fully implemented, access to globalCompositeOperation
 */
 
 function dbg(x) {
@@ -401,6 +402,9 @@ function tgr_detect_jump(pt1,pt2,pd) {
 
 function tgr_plot(grapher_obj, ctx, pd) {
 	var i,j;
+	if ("blend" in grapher_obj) {
+		ctx.globalCompositeOperation = grapher_obj.blend;
+		}
 	if (grapher_obj.type == "plot") {
 		var xmax, xmin;
 		var minhintindex = 0;
@@ -603,6 +607,9 @@ function tgr_plot(grapher_obj, ctx, pd) {
 		ctx.moveTo(...tgr_tocanv([linex,-Infinity],pd));
 		ctx.lineTo(...tgr_tocanv([linex,Infinity],pd));
 		ctx.stroke();
+		}
+	if ("blend" in grapher_obj) {
+		ctx.globalCompositeOperation = "source-over";
 		}
 	}
 

@@ -1,0 +1,108 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<meta name=description content="">
+<title> Approximation Tables </title>
+<script src="math.min.js"></script>
+<script src="katex.min.js"></script>
+<script>
+math.config({number:"BigNumber",precision:100});
+
+function decimalize(x,i) {
+	var s = math.format(x,{notation:"fixed"});
+	var xl = s.length;
+	var dl = s.indexOf(".");
+	var j;
+	for (j = 0; j < i-xl+dl+1; j++) {
+		s += "0";
+		}
+	return(s);
+	}
+
+function common_prefix_length(s1,s2) {
+	var i;
+	for (i = 0; i < Math.min(s1.length,s2.length); i++) {
+		if (s1[i] != s2[i]) {return(i);}
+		}
+	return(i);
+	}
+
+function common_prefix_magic(s1,s2) {
+	var k = common_prefix_length(s1,s2);
+	return("<span class='hi'>" + s1.slice(0,k) + "</span>" + s1.slice(k) + "</td><td>" + "<span class='hi'>" + s2.slice(0,k) + "</span>" + s2.slice(k));
+	}
+
+function populate_table() {
+	var fstr = document.getElementById("f").value;
+	var xstr = document.getElementById("x").value;
+	var i;
+	var l,u,fl,fu;
+	var x = math.eval(xstr);
+	var numrows = Number(document.getElementById("n").value);
+	var str = "<table border=1><tr><td>Lower</td><td>Upper</td><td>f(Lower)</td><td>f(Upper)</td><td>f(Upper)-f(Lower)</td></tr>";
+	for (i = 1; i < numrows; i++) {
+		var ttti = math.pow(10,math.bignumber(i));
+		var tttmi = math.pow(10,math.bignumber(-i));
+		l = math.subtract(math.multiply(tttmi,math.ceil(math.multiply(ttti,x))),tttmi);
+		u = math.add(math.multiply(tttmi,math.floor(math.multiply(ttti,x))),tttmi);
+		//l = math.multiply(math.pow(10,math.bignumber(-i)),math.floor(math.multiply(math.pow(10,math.bignumber(i)),x)));
+		//u = math.multiply(math.pow(10,math.bignumber(-i)),math.ceil(math.multiply(math.pow(10,math.bignumber(i)),x)));
+		str += "<tr><td>";
+		str += decimalize(l,i);
+		str += "</td><td>";
+		str += decimalize(u,i);
+		str += "</td><td>";
+/*		str += math.eval(fstr,{x:l});
+		str += "</td><td>";
+		str += math.eval(fstr,{x:u});*/
+		fl = math.eval(fstr,{x:l});
+		fu = math.eval(fstr,{x:u});
+		str += common_prefix_magic(math.format(fl,{notation:"fixed"}).toString(),math.format(fu,{notation:"fixed"}).toString());
+		str += "</td><td>";
+		str += math.format(math.subtract(fu,fl),{notation:"fixed"});
+		str += "</td></tr>";
+		}
+	str += "</table>";
+	document.getElementById("tabl").innerHTML = str;
+	document.getElementById("perma").innerHTML = make_permalink();
+	}
+
+function make_permalink() {
+	var str = document.URL.split("?")[0] + "?" + document.getElementById("f").value + "&" + document.getElementById("x").value + "&" + document.getElementById("n").value;
+	str = "<a href='"+str+"'>"+str+"</a>";
+	return(str);
+	}
+
+function boot() {
+	var str = document.URL;
+	if (str.indexOf("?") != -1) {
+		str = str.slice(str.indexOf("?")+1);
+		str = decodeURI(str);
+		var l = str.split("&");
+		document.getElementById("f").value = l[0];
+		document.getElementById("x").value = l[1];
+		document.getElementById("n").value = l[2];
+		}
+	populate_table();
+	}
+
+</script>
+<link rel="stylesheet" href="katex.min.css">
+<style>
+.hi {
+	background-color:#77AADD
+	}
+</style>
+</head>
+<body onload="boot()">
+f:<input type='text' id='f' value='x^2' onchange='populate_table()'>
+x:<input type='text' id='x' value='pi' onchange='populate_table()'>
+n:<input type="number" id='n' value=30 min=0 oninput='populate_table()'>
+<button onclick='populate_table()'>Go!</button>
+<div id='tabl'></div>
+<div id='perma'></div>
+</body>
+</html>

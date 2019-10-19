@@ -25,6 +25,7 @@ plotdata //Structure containing data for how the graph should look
 	trigxaxis
 	ctarg //target div for controls
 	labelpoints
+	no_y
 
 grapher_obj.type //string one of the following:
 	//"none" - does nothing, not sure why you'd need this
@@ -97,6 +98,7 @@ var tgr_default_plotdata = {
 	labelaxes:true,
 	labelaxesfontsize:16,
 	labelpoints:true,
+	no_y:false
 	};
 
 var tgr_graph_array = {};
@@ -308,7 +310,7 @@ function tgr_draw_graph(id) {
 				}
 			}
 		}
-	if (pd.showgrid) {
+	if (pd.showgrid && !pd.no_y) {
 		var decy = Math.pow(10, Math.floor(-.3+Math.log10(pd.ymax-pd.ymin)));
 		lb = Math.ceil(pd.ymin/decy)*decy;
 		for (i = 0; i <= 30 && i*decy + lb <= pd.ymax; i++) {
@@ -324,10 +326,12 @@ function tgr_draw_graph(id) {
 	if (pd.showaxes) {
 		ctx.strokeStyle = "black";
 		ctx.lineWidth = 2;
-		ctx.beginPath();
-		ctx.moveTo(...tgr_tocanv([0,Infinity],pd));
-		ctx.lineTo(...tgr_tocanv([0,-Infinity],pd));
-		ctx.stroke();
+		if (!pd.no_y) {
+			ctx.beginPath();
+			ctx.moveTo(...tgr_tocanv([0,Infinity],pd));
+			ctx.lineTo(...tgr_tocanv([0,-Infinity],pd));
+			ctx.stroke();
+			}
 		ctx.beginPath();
 		ctx.moveTo(...tgr_tocanv([Infinity,0],pd));
 		ctx.lineTo(...tgr_tocanv([-Infinity,0],pd));
@@ -355,21 +359,23 @@ function tgr_draw_graph(id) {
 				}
 			}
 		var w;
-		ctx.strokeStyle = "white";
-		ctx.lineWidth = 7;
-		ctx.fillStyle = "black";
-		ctx.textAlign = "center";
-		ctx.textBaseline = "middle";
-		ctx.font = pd.labelaxesfontsize + "px sans-serif";
-		var n = Math.floor(-.4+Math.log10((pd.ymax-pd.ymin)*500/pd.height));
-		var lowb = Math.ceil(pd.ymin/Math.pow(10,n));
-		var upb = Math.floor(pd.ymax/Math.pow(10,n));
-		var lud = upb-lowb;
-		for (i = 0; i <= lud; i++) {
-			ctx.beginPath();
-			w = ctx.measureText(tgr_sci((i+lowb),n)).width;
-			ctx.strokeText(tgr_sci((i+lowb),n), ...tgr_tocanv([["fakezero",w/2],(i+lowb)*Math.pow(10,n)],pd));
-			ctx.fillText(tgr_sci((i+lowb),n), ...tgr_tocanv([["fakezero",w/2],(i+lowb)*Math.pow(10,n)],pd));
+		if (!pd.no_y) {
+			ctx.strokeStyle = "white";
+			ctx.lineWidth = 7;
+			ctx.fillStyle = "black";
+			ctx.textAlign = "center";
+			ctx.textBaseline = "middle";
+			ctx.font = pd.labelaxesfontsize + "px sans-serif";
+			var n = Math.floor(-.4+Math.log10((pd.ymax-pd.ymin)*500/pd.height));
+			var lowb = Math.ceil(pd.ymin/Math.pow(10,n));
+			var upb = Math.floor(pd.ymax/Math.pow(10,n));
+			var lud = upb-lowb;
+			for (i = 0; i <= lud; i++) {
+				ctx.beginPath();
+				w = ctx.measureText(tgr_sci((i+lowb),n)).width;
+				ctx.strokeText(tgr_sci((i+lowb),n), ...tgr_tocanv([["fakezero",w/2],(i+lowb)*Math.pow(10,n)],pd));
+				ctx.fillText(tgr_sci((i+lowb),n), ...tgr_tocanv([["fakezero",w/2],(i+lowb)*Math.pow(10,n)],pd));
+				}
 			}
 		}
 	for (i = 0; i < tgr_graph_array[id].grapher_objs.length; i++) {
@@ -721,8 +727,10 @@ function tgr_update_bound_boxes(id) {
 function tgr_evt(id,e) {
 	tgr_graph_array[id].plotdata.xmin = document.getElementById("tgr_plotminx_"+id).value;
 	tgr_graph_array[id].plotdata.xmax = document.getElementById("tgr_plotmaxx_"+id).value;
-	tgr_graph_array[id].plotdata.ymin = document.getElementById("tgr_plotminy_"+id).value;
-	tgr_graph_array[id].plotdata.ymax = document.getElementById("tgr_plotmaxy_"+id).value;
+	if (!tgr_graph_array[id].plotdata.no_y) {
+		tgr_graph_array[id].plotdata.ymin = document.getElementById("tgr_plotminy_"+id).value;
+		tgr_graph_array[id].plotdata.ymax = document.getElementById("tgr_plotmaxy_"+id).value;
+		}
 	tgr_draw_graph(id);
 	}
 
@@ -742,6 +750,10 @@ function tgr_wheel(id,e) {
 	pd.xmin = inx + m*(pd.xmin-inx);
 	pd.ymax = iny + m*(pd.ymax-iny);
 	pd.ymin = iny + m*(pd.ymin-iny);
+	if (pd.no_y) {
+		pd.ymin = pd.oymin;
+		pd.ymax = pd.oymax;
+		}
 	tgr_graph_array[id].plotdata = pd;
 	tgr_update_bound_boxes(id);
 	tgr_draw_graph(id);
@@ -760,8 +772,10 @@ function tgr_mmove(id,e) {
 		var delt = tgr_delta_fromcanv([e.movementX,e.movementY],pd);
 		pd.xmax -= delt[0];
 		pd.xmin -= delt[0];
-		pd.ymax += delt[1];
-		pd.ymin += delt[1];
+		if (! pd.no_y) {
+			pd.ymax += delt[1];
+			pd.ymin += delt[1];
+			}
 		tgr_update_bound_boxes(id);
 		tgr_draw_graph(id);
 		}
@@ -798,6 +812,10 @@ function tgr_zoom(st,id) {
 		var oymax = pd.ymax;
 		pd.ymin = 1.5*oymin-.5*oymax;
 		pd.ymax = 1.5*oymax-.5*oymin;
+		}
+	if (pd.no_y) {
+		pd.ymin = pd.oymin;
+		pd.ymax = pd.oymax;
 		}
 	tgr_update_bound_boxes(id);
 	tgr_draw_graph(id);
@@ -867,17 +885,23 @@ function tgr_string(id, grapher_objs, plotdata) {
 	gstr += "Min x: <input type='number' id='tgr_plotminx_"+id+"' oninput='tgr_evt("+'"'+id+'"'+",event)' value="+plotdata.xmin+" style='width:4em'>";
 	gstr += "</td><td>"
 	gstr += "Max x: <input type='number' id='tgr_plotmaxx_"+id+"' oninput='tgr_evt("+'"'+id+'"'+",event)' value="+plotdata.xmax+" style='width:4em'>";
-	gstr += "</td></tr><tr><td>";
+	gstr += "</td></tr><tr";
+	if (plotdata.no_y) {gstr += " style='display:none'";}
+	gstr += "><td>";
 	gstr += "Min y: <input type='number' id='tgr_plotminy_"+id+"' oninput='tgr_evt("+'"'+id+'"'+",event)' value="+plotdata.ymin+" style='width:4em'>";
 	gstr += "</td><td>"
 	gstr += "Max y: <input type='number' id='tgr_plotmaxy_"+id+"' oninput='tgr_evt("+'"'+id+'"'+",event)' value="+plotdata.ymax+" style='width:4em'>";
 	gstr += "</td></tr></table>";
 	gstr += tgr_zoom_button(id,1,0,0);
-	gstr += tgr_zoom_button(id,1,1,0);
-	gstr += tgr_zoom_button(id,1,0,1);
+	if (!plotdata.no_y) {
+		gstr += tgr_zoom_button(id,1,1,0);
+		gstr += tgr_zoom_button(id,1,0,1);
+	}
 	gstr += tgr_zoom_button(id,0,0,0);
-	gstr += tgr_zoom_button(id,0,1,0);
-	gstr += tgr_zoom_button(id,0,0,1);
+	if (!plotdata.no_y) {
+		gstr += tgr_zoom_button(id,0,1,0);
+		gstr += tgr_zoom_button(id,0,0,1);
+	}
 	gstr += tgr_reset_button(id);
 	return([cstr,gstr]);
 	}

@@ -1,0 +1,223 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<meta name=description content="">
+<title> Interval Notation </title>
+<script src="tgr.js"></script>
+<script src="katex.min.js"></script>
+<script>
+
+var g_y = 2;
+
+var template = [[0,2,3,1]] //0 = "(", 1 = "]";
+
+function valid_ipse(i) {
+	if (i[0] && i[3] && i[1]==i[2]) {return(true);} //ehhh
+	return(i[1] < i[2]);
+	}
+
+function overlap(i,j) {
+	if (within(i[1],j) || within(i[2],j) || within(j[1],i) || within(j[2],i)) {return(true);}
+	}
+
+function within(x,i) {
+	if (i[0] && x == i[1]) {return(true);}
+	if (i[1] < x && x < i[2]) {return(true);}
+	if (i[3] && x == i[2]) {return(true);}
+	return(false);
+	}
+
+function parenswap(i,j) {
+	template[i][j] = 1-template[i][j];
+	update_n();
+	}
+
+function magic(s) {
+	if (s == "00") {return(Infinity);}
+	if (s == "-00") {return(-Infinity);}
+	return(Number(s));
+	}
+
+function update_interval(i,e) {
+	var lo = document.getElementById("low"+i).value;
+	var hi = document.getElementById("hi"+i).value;
+	if (lo >= hi) {
+		document.getElementById("low"+i).value = template[i][1];
+		document.getElementById("hi"+i).value = template[i][2];
+		return;
+		}
+	template[i][1] = document.getElementById("low"+i).value;
+	template[i][2] = document.getElementById("hi"+i).value;
+	update_gobjs();
+	}
+
+function update_n() {
+	var n = Number(document.getElementById("n").value);
+	var i;
+	for (i = 0; i < n; i++) {
+		if (! (i in template)) {
+			var mx = -Infinity;
+			for (i = 0; i < template.length; i++) {
+				if (template[i][2] > mx) {mx = template[i][2];}
+				}
+			template[i] = [0,Number(mx),Number(mx)+1,0];
+			}
+		}
+	var str = "";
+	for (i = 0; i < n; i++) {
+		if (i != 0) {str += " &cup; ";}
+		str += "<button onclick='parenswap("+i+","+0+")'>";
+		str += ["(","["][template[i][0]];
+		str += "</button>";
+		str += "<input type='number' id='low"+i+"' value='"+template[i][1]+"' onchange='update_interval("+i+", event)'>";
+		str += ",";
+		str += "<input type='number' id='hi"+i+"' value='"+template[i][2]+"' onchange='update_interval("+i+", event)'>";
+		str += "<button onclick='parenswap("+i+","+3+")'>";
+		str += [")","]"][template[i][3]];
+		str += "</button>";
+		}
+	document.getElementById("inputs").innerHTML = str;
+	update_gobjs();
+	}
+
+function kmagic(s) {
+	if (s == "00") {return("\\infty");}
+	if (s == "-00") {return("-\\infty");}
+	return(s);
+	}
+function tmagic(s) {
+	if (s == "00") {return("&infin;");}
+	if (s == "-00") {return("-&infin;");}
+	return(s);
+	}
+
+function ishole(x,ihat,k) {
+	var i;
+	for (i = 0; i < Number(document.getElementById("n").value); i++) {
+		if ((i != ihat) && within(x,template[i])) {
+			return(false);
+			}
+		if (i != ihat && k == 0 && template[ihat][0] == 1 && template[i][2] == x) {return(false);}
+		if (i != ihat && k == 3 && template[ihat][3] == 1 && template[i][1] == x) {return(false);}
+		}
+	return(true);
+	}
+
+function isin(x) {
+	var i;
+	for (i = 0; i < document.getElementById("n").value; i++) {
+		if (within(x,template[i])) {return(true);}
+		}
+	return(false);
+	}
+
+function update_gobjs() {
+	var n = Number(document.getElementById("n").value);
+	var showpointy = document.getElementById("showpointy").checked;
+	var pointy = Number(document.getElementById("pointy").value);
+	var i;
+	var gobjs = [{type:"line",x:-Infinity,y:g_y,x2:Infinity,y2:g_y,linewidth:2}];
+	for (i = 0; i < n; i++) {
+		var mn = magic(template[i][1]);
+		var mx = magic(template[i][2]);
+		gobjs.push({type:"line", x:mn, y:g_y, x2:mx, y2:g_y,linewidth:5,color:"blue"});
+		if (isFinite(mn) && ishole(mn,i,0)) {gobjs.push({type:["hole","dot"][template[i][0]],x:mn,y:g_y,color:"blue"})};
+		if (isFinite(mx) && ishole(mx,i,3)) {gobjs.push({type:["hole","dot"][template[i][3]],x:mx,y:g_y,color:"blue"})};
+		}
+	if (showpointy) {
+		gobjs.push({type:"line", x:pointy, y:-Infinity, x2:pointy, y2:Infinity, color:"green"});
+		}
+	tgr_update_grapher_objs("gr",gobjs);
+	var kstr = "";
+	for (i = 0; i < n; i++) {
+		if (i != 0) {
+			kstr += "\\cup";
+			}
+		kstr += ["\\bm{(}","\\bm{[}"][template[i][0]];
+		kstr += kmagic(template[i][1]);
+		kstr += ",";
+		kstr += kmagic(template[i][2]);
+		kstr += ["\\bm{)}","\\bm{]}"][template[i][3]];
+		}
+	document.getElementById("pre").innerHTML = katex.renderToString(kstr);
+	var kstr = "";
+	for (i = 0; i < n; i++) {
+		if (i != 0) {
+			kstr += " &cup; ";
+			}
+		kstr += ["(","["][template[i][0]];
+		kstr += tmagic(template[i][1]);
+		kstr += ",";
+		kstr += tmagic(template[i][2]);
+		kstr += [")","]"][template[i][3]];
+		}
+	document.getElementById("pre").innerHTML = kstr;
+
+	
+	if (showpointy) {
+		if (isin(pointy)) {
+			document.getElementById("pointyout").innerHTML = pointy + " <span class='good'>is</span> in your interval.";
+			}
+		else {
+			document.getElementById("pointyout").innerHTML = pointy + " <span class='bad'>is not</span> in your interval.";
+			}
+		}
+	else {
+		document.getElementById("pointyout").innerHTML = "";
+		}
+	
+	}
+
+function update_pointy_chk() {
+	if (document.getElementById("pointy").value == "") {
+		document.getElementById("pointy").value = 0;
+		}
+	update_gobjs();
+	}
+
+function update_pointy_n() {
+	document.getElementById("showpointy").checked = true;
+	update_gobjs();
+	}
+
+function boot() {
+	tgr_grapher("gr",[],{no_y:true,height:100,ymin:1,ymax:3,oymin:1,oymax:3});
+	update_n();
+	}
+
+</script>
+<link rel="stylesheet" href="katex.min.css">
+<style>
+@font-face {
+	font-family:"qu";
+	src:url("Questrial-Regular.ttf"); //see questrial.zip
+	}
+input[type=number] {
+	width:3em;
+	}
+body {
+	font-family: "qu", sans-serif;
+	font-size: large;
+	}
+.good {
+	background-color: #BBCCEE;
+	}
+.bad {
+	background-color: #FFCCCC;
+	}
+</style>
+</head>
+<body onload="boot()">
+Number of pieces: <input type="number" min=0 id="n" value="1" oninput="update_n()">
+<div id="inputs"></div>
+<div id="pre" style="font-size:x-large"></div>
+<div id="gr"></div>
+<div id="ctarg" style="display:none"></div>
+<input type="checkbox" id="showpointy" oninput="update_pointy_chk()"> Check if a point is in the set above:
+<input type="number" step=.1 oninput="update_pointy_n()" id="pointy">
+<div id="pointyout"> </div>
+</body>
+</html>

@@ -44,7 +44,7 @@ function magic(s) {
 function update_interval(i,e) {
 	var lo = document.getElementById("low"+i).value;
 	var hi = document.getElementById("hi"+i).value;
-	if (lo >= hi) {
+	if (magic(lo) >= magic(hi)) {
 		document.getElementById("low"+i).value = template[i][1];
 		document.getElementById("hi"+i).value = template[i][2];
 		return;
@@ -222,9 +222,7 @@ Number of pieces: <input type="number" min=0 id="n" value="1" oninput="update_n(
 <h1>Instructions</h1>
 <ul>
 <li> Press the buttons to switch the parentheses/brackets
-<li> Change the Number of pieces for more pieces (connected by union symbol). Note that your pieces should be separate, but the system should correctly 
-
-handle if they do overlap.
+<li> Change the Number of pieces for more pieces (connected by union symbol). Note that your pieces should be separate, but the system should correctly handle if they do overlap.
 <li> Enter -00 or 00 For negative infinity or infinity
 <li> Mouse wheel to zoom out
 <li> Click and drag to pan

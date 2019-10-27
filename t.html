@@ -374,6 +374,20 @@ function colorotron(x) {
 	return ([bc,fc]);
 	}
 
+function updshowb() {
+	var k = document.getElementById("chk_showb").checked;
+	if (k) {
+		document.getElementById("brow").style.display = "";
+		document.getElementById("funfun").innerHTML = katex.renderToString("y=a\\cdot f(bx+c)+d");
+		}
+	else {
+		document.getElementById("bi").value = 1;
+		updn("b",{target:document.getElementById("bi")});
+		document.getElementById("brow").style.display = "none";
+		document.getElementById("funfun").innerHTML = katex.renderToString("y=a\\cdot f(x+c)+d");		
+		}
+	}
+
 function bootselector() {
 	var i;
 	var str = "<select oninput='updp(event)' id='sel'>";
@@ -405,6 +419,7 @@ function boot() {
 	updtf();
 	drawcat();
 	bootkatex();
+	updshowb();
 	tgr_grapher("grgg",[]);
 	randomizegg();
 	}
@@ -415,7 +430,7 @@ function boot() {
 <body onload="boot()">
 <h1>Transforming Functions</h1>
 <p>In this interactive, you can play around with constants to transform functions and their graphs.
-In particular, for base function f, the interactive will show the graph of <span class="k" title="y=a\cdot f(bx+c)+d">y=a*f(bx+c)+d</span>.
+In particular, for base function f, the interactive will show the graph of <span id='funfun' class="k" title="y=a\cdot f(bx+c)+d">y=a*f(bx+c)+d</span>.
 </p>
 <table> <tr><td><div id="gr"></div></td><td>
 Base Function: <span id="selector"></span> <input id="selectorcustom" onchange="updsc(event)" value="x^2" style="display:none">
@@ -424,7 +439,7 @@ Base Function: <span id="selector"></span> <input id="selectorcustom" onchange="
 <td style="font-size:3em"> a: </td><td><input type='number' id="ai" oninput="updn('a',event)" value=1 step=.1 style="width:2em;font-size:3em"></td>
 <td> <input type="range" min=-10 max=10 value=1 step=.1 id="ar" oninput="updn('a',event)" style="width:40em"> </td>
 </tr>
-<tr>
+<tr id='brow'>
 <td style="font-size:3em"> b: </td><td><input type='number' id="bi" oninput="updn('b',event)" value=1 step=.1 style="width:2em;font-size:3em"></td>
 <td> <input type="range" min=-10 max=10 value=1 step=.1 id="br" oninput="updn('b',event)" style="width:40em"> </td>
 </tr>
@@ -440,6 +455,8 @@ Base Function: <span id="selector"></span> <input id="selectorcustom" onchange="
 
 Graph of: <span id="kx"></span><br>
 
+
+<input type="checkbox" id="chk_showb" onchange="updshowb()"> Show b <br>
 <input type="checkbox" id="chk_showgrid" checked onchange="updtfpd()"> Show Grid <br>
 <input type="checkbox" id="chk_showaxes" checked onchange="updtfpd()"> Show Axes <br>
 <input type="checkbox" id="chk_labelaxes" checked onchange="updtfpd()"> Label Axes <br>

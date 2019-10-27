@@ -40,6 +40,7 @@ grapher_obj.type //string one of the following:
 	//"vec"
 	//"label"
 	//"vline" (vertical line)
+	//"polyg" (polygon)
 grapher_obj.fct //function being plotted (as a javascript function)
 grapher_obj.hints //some hints for the plot.
 	//A hint is: [ptx,pty,lc,rc]
@@ -57,8 +58,8 @@ grapher_obj.x //for "hole", "dot", "line", "label", "vline"
 grapher_obj.y //for "hole", "dot", "line", "label"
 grapher_obj.x2 //for "line"
 grapher_obj.y2 //for "line"
-grapher_obj.color //for "plot", "par", "rect", "hole", "dot", "line", "label"
-grapher_obj.linewidth //for "plot", "line", "vline"
+grapher_obj.color //for "plot", "par", "rect", "hole", "dot", "line", "label", "polyg"
+grapher_obj.linewidth //for "plot", "line", "vline", "polyg"
 grapher_obj.id //for tgr_update_grapher_obj_by_id
 grapher_obj.r //for "hole", "dot"
 grapher_obj.incolor //for "hole"
@@ -70,6 +71,7 @@ grapher_obj.textAlign //for "label"
 grapher_obj.textBaseline //for "label"
 grapher_obj.font //for "label"
 grapher_obj.blend //not fully implemented, access to globalCompositeOperation
+grapher_obj.vlist //for "polyg". A list of 2-element lists.
 */
 
 function dbg(x) {
@@ -612,6 +614,20 @@ function tgr_plot(grapher_obj, ctx, pd) {
 		ctx.lineWidth = grapher_obj.linewidth;
 		ctx.moveTo(...tgr_tocanv([linex,-Infinity],pd));
 		ctx.lineTo(...tgr_tocanv([linex,Infinity],pd));
+		ctx.stroke();
+		}
+	if (grapher_obj.type == "polyg") {
+		ctx.beginPath();
+		ctx.strokeStyle = "black";
+		if (grapher_obj.color != "none") {ctx.fillStyle = grapher_obj.color;}
+		ctx.lineWidth = grapher_obj.linewidth;
+		
+		for (i = 0; i < grapher_obj.vlist.length; i++) {
+			if (i == 0) {ctx.moveTo(...tgr_tocanv(grapher_obj.vlist[i],pd));}
+			else {ctx.lineTo(...tgr_tocanv(grapher_obj.vlist[i],pd));}
+			}
+		ctx.closePath();
+		if (grapher_obj.color != "none") {ctx.fill();}
 		ctx.stroke();
 		}
 	if ("blend" in grapher_obj) {

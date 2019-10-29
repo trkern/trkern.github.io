@@ -388,6 +388,22 @@ function updshowb() {
 		}
 	}
 
+function resetsliders() {
+	document.getElementById("ai").value = 1;
+	updn("a",{target:document.getElementById("ai")});
+	document.getElementById("bi").value = 1;
+	updn("b",{target:document.getElementById("bi")});
+	document.getElementById("ci").value = 0;
+	updn("c",{target:document.getElementById("ci")});
+	document.getElementById("di").value = 0;
+	updn("d",{target:document.getElementById("di")});
+	}
+
+function resetall() {
+	document.getElementById("sel").value = 1;
+	resetsliders();
+	}
+
 function bootselector() {
 	var i;
 	var str = "<select oninput='updp(event)' id='sel'>";
@@ -434,6 +450,7 @@ In particular, for base function f, the interactive will show the graph of <span
 </p>
 <table> <tr><td><div id="gr"></div></td><td>
 Base Function: <span id="selector"></span> <input id="selectorcustom" onchange="updsc(event)" value="x^2" style="display:none">
+<button onclick="resetsliders()"> Reset Sliders </button> <button onclick="resetall()"> Reset All </button>
 <table border=0>
 <tr>
 <td style="font-size:3em"> a: </td><td><input type='number' id="ai" oninput="updn('a',event)" value=1 step=.1 style="width:2em;font-size:3em"></td>

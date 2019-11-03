@@ -1,0 +1,190 @@
+<html>
+<head>
+<script src="tgr_touch.js"></script>
+<script>
+
+function rxmin(pd) {
+	var dx = (pd.xmax-pd.xmin)/pd.numpts;
+	return(-Math.sqrt(dx/6.28));
+	}
+
+function rxmax(pd) {
+	var dx = (pd.xmax-pd.xmin)/pd.numpts;
+	return(Math.sqrt(dx/6.28));
+	}
+
+function pxmin(pd) {
+	var dx = (pd.xmax-pd.xmin)/pd.numpts;
+	return(Math.sqrt(20*dx/6.28));
+	}
+
+function pxmax(pd) {
+	var dx = (pd.xmax-pd.xmin)/pd.numpts;
+	return(-Math.sqrt(20*dx/6.28));
+	}
+
+function srx(x) {
+	return(Math.sin(1/x));
+	}
+
+function srxh(pd) {
+	var rval = [];
+	var xmin = pd.xmin;
+	var xmax = pd.xmax;
+	var rxmx = rxmax(pd);
+	var rxmn = rxmin(pd);
+	if (xmax < 0) {return([]);}
+	var i;
+	var imin = 1/(Math.PI*xmax);
+	var imax = Math.ceil(1/(Math.PI*Math.max(rxmx,xmin)));
+	for (i = imax; i > imin; i--) {
+		rval.push([1/(i*Math.PI+Math.PI/2),Math.pow(-1,i)]);
+		}
+	return(rval);
+	}
+
+function nsrxh(pd) {
+	var rval = [];
+	var xmin = pd.xmin;
+	var xmax = pd.xmax;
+	var rxmx = rxmax(pd);
+	var rxmn = rxmin(pd);
+	if (xmin > 0) {return([]);}
+	var i;
+	var imin = -Math.floor(1/(Math.PI*xmin));
+	var imax = -Math.floor(1/(Math.PI*Math.min(rxmn,xmax)));
+	console.log(imin,imax);
+	for (i = imin; i < imax; i++) {
+		console.log(i,1/(i*Math.PI+Math.PI/2));
+		rval.push([-1/(i*Math.PI+Math.PI/2),-Math.pow(-1,i)]);
+		}
+	console.log(rval);
+	return(rval);
+	}
+
+function test() {
+	tgr_grapher("gr",[{type:"plot", fct:tgr_fun("Math.sqrt(x-1)+1"), hints:[[1,1]]}],{trigxaxis:true,width:500,height:200,oymin:-2,oymax:2,ymin:-2,ymax:2});
+	tgr_grapher("gr2",[{type:"plot", fct:tgr_fun("Math.sqrt(x-1)+1")}]);
+	tgr_grapher("gr4",[{type:"plot", color:"red", fct:tgr_fun("Math.sin(1/x)"), hints:srxh}]);
+	//tgr_grapher("gr2",[{type:"par", fct:tgr_fun("[1/(Math.PI*x),Math.sin(Math.PI*x)]"), dt:.1, tmin:.1, tmax:100}]);
+	//tgr_grapher("gr3",[{type:"vf", fct:tgr_fun("[-x[1],x[0]]")}],{numpts:10});
+	tgr_grapher("gr3",[	{type:"rect", xmin:rxmin, ymin:-1, xmax:rxmax, ymax:1},
+				{type:"plot", fct:srx, xmin:rxmax, hints:srxh},
+				{type:"plot", fct:srx, xmax:rxmin, hints:nsrxh}
+			]); 
+	}
+
+function gcd(a,b) {
+	a = Math.abs(a);
+	b = Math.abs(b);
+	while (a != b) {
+		if (a > b) { a -= b; }
+		else {b -= a;}
+		}
+	return(a);
+	}
+
+function tt(p,q) {
+	var ctx = document.getElementById("trigtest").getContext("2d");
+		ctx.strokeStyle = "white";
+		ctx.lineWidth = 7;
+		ctx.fillStyle = "black";
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+		ctx.font = "16 px sans-serif";
+	ctx.fillStyle = "gray";
+	ctx.fillRect(0,0,100,100);
+	console.log(ctx.measureText("0000000000"));
+	tgr_pifrac(ctx,[20,70],p,q);
+	}
+
+/*function tgr_pifrac(ctx,pt,p,q) { //draws p*pi/q (mathed) on ctx at absolute coordinates pt.
+	if (p == 0) {
+		ctx.strokeStyle = "white";
+		ctx.lineWidth = 7;
+		ctx.fillStyle = "black";
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+		ctx.font = "16 px sans-serif";
+		ctx.strokeText("0",pt[0],pt[1]);
+		ctx.fillText("0",pt[0],pt[1]);
+		}
+	else if (Math.abs(p) % q == 0) {
+		ctx.strokeStyle = "white";
+		ctx.lineWidth = 7;
+		ctx.fillStyle = "black";
+		ctx.textAlign = "left";
+		ctx.textBaseline = "middle";
+		ctx.font = "16px serif";
+		var piw = ctx.measureText("\u03C0").width;
+		ctx.font = "16px sans-serif";
+		var txt = (p/q);
+		if (txt == 1) {txt = "";}
+		if (txt == -1) {txt = "-";}
+		var w = ctx.measureText(txt).width + 1.2*piw;
+		ctx.strokeText(txt,pt[0]-w/2,pt[1]);
+		ctx.textAlign = "right";
+		ctx.font = "16px serif";
+		ctx.strokeText("\u03C0",pt[0]+w/2,pt[1]);
+		ctx.textAlign = "left";
+		ctx.font = "16px sans-serif";
+		ctx.fillText(txt,pt[0]-w/2,pt[1]);
+		ctx.textAlign = "right";
+		ctx.font = "16px serif";
+		ctx.fillText("\u03C0",pt[0]+w/2,pt[1]);
+		}
+	else {
+		var fracn,fracd,tgcd;
+		tgcd = gcd(p,q);
+		fracn = p/tgcd;
+		fracd = q/tgcd;
+		if (fracn == 1) {fracn = "";}
+		if (fracn == -1) {fracn = "-";}
+		ctx.font = "12px serif";
+		var piw = ctx.measureText("\u03C0").width;
+		ctx.font = "12px sans-serif";
+		var numeratorwidth = ctx.measureText(fracn).width + 1.2*piw;
+		var denominatorwidth = ctx.measureText(fracd).width;
+		var fracwidth = Math.max(numeratorwidth,denominatorwidth);
+		ctx.font = "16px sans-serif";
+
+		ctx.fillStyle = "white";
+		ctx.fillRect(pt[0]-fracwidth/2,pt[1] - (12+2),fracwidth, 2*12+1); //that 12 is from 12px font
+		
+		ctx.fillStyle = "black";
+
+		ctx.textBaseline = "top";
+		ctx.textAlign = "center";
+		ctx.font = "12px serif";
+		ctx.fillText(fracd,pt[0],pt[1]+1);
+
+		ctx.textBaseline = "bottom";
+		ctx.textAlign = "left";
+		ctx.fillText(fracn,pt[0]-numeratorwidth/2,pt[1]-1);
+
+		ctx.font = "16px serif";
+		ctx.textAlign = "right";
+		ctx.fillText("\u03C0",pt[0]+numeratorwidth/2,pt[1]-1);
+		
+		ctx.lineWidth = 2;
+		ctx.strokeStyle = "black";
+		ctx.beginPath();
+		ctx.moveTo(pt[0]-fracwidth/2,pt[1]-1);
+		ctx.lineTo(pt[0]+fracwidth/2,pt[1]-1);
+		ctx.stroke();
+		
+		}
+	}*/
+
+</script>
+</head>
+<body>
+<canvas id="trigtest" width=100 height=100></canvas>
+<div id="out"> </div>
+<div id="gr"> </div>
+<div id="gr2"> </div>
+<div id="gr3"> </div>
+<div id="gr4"> </div>
+<button onclick="test()"> Test </button>
+</body>
+</html>

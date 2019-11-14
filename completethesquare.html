@@ -53,17 +53,26 @@ function newtarg(m) {
 		tk = ribet(-10,10);
 		tb = 2*ta*th;
 		tc = ta*th*th+tk;
+		document.getElementById("ia").step = 1;
+		document.getElementById("ih").step = 1;
+		document.getElementById("ik").step = 1;
 		}
 	if (m == 1) {
 		ta = 1-2*ribet(0,1);
 		th = .5*ribet(-10,10);
 		tb = 2*ta*th;
 		tc = ribet(-10,10);
+		document.getElementById("ia").step = 1;
+		document.getElementById("ih").step = .5;
+		document.getElementById("ik").step = .25;
 		}
 	if (m == 2) {
 		ta = alist[ribet(0,5)];
 		tb = ribet(-10,10);
 		tc = ribet(-10,10);
+		document.getElementById("ia").step = 1;
+		document.getElementById("ih").step = .5;
+		document.getElementById("ik").step = .25;
 		}
 	if (m == 3) {
 		ta = ribet(-50,50);
@@ -72,6 +81,19 @@ function newtarg(m) {
 		tb = 2*ta*th/100;
 		tc = (ta*th*th+100*tk)/1000;
 		ta = ta/10;
+		document.getElementById("ia").step = .1;
+		document.getElementById("ih").step = .01;
+		document.getElementById("ik").step = .001;
+		}
+	if (m == 4) {
+		ta = 1;
+		th = ribet(-100,100);
+		tk = ribet(-100,100);
+		tb = 2*ta*th;
+		tc = ta*th*th+tk;
+		document.getElementById("ia").step = 1;
+		document.getElementById("ih").step = 1;
+		document.getElementById("ik").step = 1;
 		}
 	document.getElementById("ta").innerHTML = magic(0,ta,NaN);
 	document.getElementById("tb").innerHTML = magic(1,tb,NaN);
@@ -82,6 +104,15 @@ function newtarg(m) {
 </script>
 </head>
 <body onload="newtarg(0);">
+<h1>Completing the Square</h1>
+<ul>
+<li>As you adjust the numbers in the template below, the interactive will automatically FOIL and combine like terms to give you the equivalent polynomial. 
+<li>Try to adjust the constants to get the polynomial to match the target polynomial.
+<li>As you adjust the constants, the graph below will change.
+<li>Press a "New Target" button to generate a new target polynomial.
+<li>Try to come up with a method of guessing what constants will match the target.
+</ul>
+
 <table>
 <tr><td></td><td colspan=3 style="text-align:right">
 <input type="number" value=1 style="width:3em" id="ia" oninput="upd()">(x+<input type="number" style="width:3em" value=3 step=.5 id="ih" oninput="upd()">)<sup>2</sup> + <input type="number" style="width:3em" value=0 step=.25 id="ik" oninput="upd()">
@@ -90,6 +121,7 @@ function newtarg(m) {
 <tr><td>Target:</td><td style="width:5em;text-align:right"><span id="ta"></span>x<sup>2</sup></td><td style="width:5em;text-align:right"><span id="tb"></span>x</td><td style="width:5em;text-align:right"><span id="tc"></span></td></tr></table>
 <button onclick="newtarg(0)">New Target (Easy)</button><br>
 <button onclick="newtarg(1)">New Target (Medium)</button><br>
+<button onclick="newtarg(4)">New Target (Large)</button><br>
 <button onclick="newtarg(2)">New Target (Hard)</button><br>
 <button onclick="newtarg(3)">New Target (Extreme)</button><br>
 Graph of <span id="os"></span>:<br>

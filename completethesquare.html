@@ -14,10 +14,16 @@ var ta = 0;
 var tb = 0;
 var tc = 0;
 
-function magic(p,x,t) {
+function magic(p,x,t,k) {
 	var colstr = x;
+	if (!k) {k = 1;}
+	if (x.toString().length > 7) {
+		//colstr = x.toFixed(k);
+		colstr = parseFloat(x.toFixed(5));
+		x = colstr;
+		}
 	if (x == t) {
-		colstr = "<font style='color:blue'>" + x + "</font>";
+		colstr = "<font style='color:blue'>" + colstr + "</font>";
 		}
 	if (x >= 0 && p) {return("+"+colstr);}
 	return(colstr);
@@ -28,9 +34,9 @@ function upd() {
 	var h = Number(document.getElementById("ih").value);
 	var k = Number(document.getElementById("ik").value);
 	
-	document.getElementById("oa").innerHTML = magic(0,a,ta);
-	document.getElementById("ob").innerHTML = magic(1,2*a*h,tb);
-	document.getElementById("oc").innerHTML = magic(1,a*h*h+k,tc);
+	document.getElementById("oa").innerHTML = magic(0,a,ta,1);
+	document.getElementById("ob").innerHTML = magic(1,2*a*h,tb,1);
+	document.getElementById("oc").innerHTML = magic(1,a*h*h+k,tc,3);
 
 	document.getElementById("os").innerHTML = magic(0,a,a) + "(x" + magic(1,h,h) + ")<sup>2</sup>" + magic(1,k,k);
 	
@@ -82,8 +88,8 @@ function newtarg(m) {
 		tc = (ta*th*th+100*tk)/1000;
 		ta = ta/10;
 		document.getElementById("ia").step = .1;
-		document.getElementById("ih").step = .01;
-		document.getElementById("ik").step = .001;
+		document.getElementById("ih").step = .1;
+		document.getElementById("ik").step = .1;
 		}
 	if (m == 4) {
 		ta = 1;

@@ -25,8 +25,11 @@ function fix() {
 	var a = document.getElementById("a1").value;
 	var b = document.getElementById("b1").value;
 	var t = "(" + a + ")^(" + b + ")";
-	document.getElementById("c1").value = KAS.parse(t).expr.simplify().print();
-	oni({target:document.getElementById("c1")});
+	if (a == "NaN" || b == "NaN") {
+		updateletter("c","NaN");
+		return;
+		}
+	updateletter("c",KAS.parse(t).expr.simplify().print());
 	}
 
 function trycompare(a,b,c) {
@@ -35,22 +38,49 @@ function trycompare(a,b,c) {
 		}
 	try {
 		var t = "(" + a + ")^(" + b + ")";
+		console.log(a,b,c,t);
 		if (KAS.compare(KAS.parse(c).expr,KAS.parse(t).expr).equal) {return(true);}
 		return(false);
 		}
 	catch(e) {
+		console.log(a,b,c,t);
 		return(false);
 		}
 	}
 
-function oni(e) {
-	var ltr = e.target.id[0];
-	var val = e.target.value;
+var lastlet = "";
+var nexttolastlet = "";
+
+function update_fix_vis() {
+	var a = document.getElementById("a1").value;
+	var b = document.getElementById("b1").value;
+	var c = document.getElementById("c1").value;
+
+	if (trycompare(a,b,c)) {
+		document.getElementById("fix").style.visibility = 'hidden';
+		}
+	else {
+		document.getElementById("fix").style.visibility = '';
+		}
+	}
+
+function update_lasttwo(ltr) {
+	if (ltr == lastlet) {return;}
+	if (ltr == nexttolastlet) {
+		nexttolastlet = lastlet;
+		lastlet = ltr;
+		return;
+		}
+	nexttolastlet = lastlet;
+	lastlet = ltr;
+	}
+
+function updateletter(ltr,val,targ) {
 	var i;
 	for (i = 1; i <= 4; i++) {
 		if (ltr + i == "b3") {continue;}
 		document.getElementById(ltr + i).value = val;
-		if (ltr + i == "a2" && e.target.id != "a2" && val == "10") {
+		if (ltr + i == "a2" && targ != "a2" && val == "10") {
 			document.getElementById(ltr + i).style.display = "none";
 			}
 		else {
@@ -58,15 +88,44 @@ function oni(e) {
 			}
 		text_expand(ltr + i);
 		}
+	update_fix_vis();
+	}
+
+function simp(k,b) {
+	var r = KAS.parse(k).expr.simplify({preciseFloats:b}).print();
+	return(r);
+	}
+
+function oni(e) {
+	var ltr = e.target.id[0];
+	var val = e.target.value;
+
+	updateletter(ltr,val,e.target.id);
+
 	var a = document.getElementById("a1").value;
 	var b = document.getElementById("b1").value;
 	var c = document.getElementById("c1").value;
-	if (trycompare(a,b,c)) {
-		document.getElementById("fix").style.visibility = 'hidden';
+
+	update_lasttwo(ltr);
+
+	var k = Number(document.getElementById("smartfill").value);
+
+	if (lastlet == "a" && nexttolastlet == "b" || lastlet == "b" && nexttolastlet == "a") {
+		if (k >= 0) {
+			updateletter("c",simp("("+a+")^("+b+")",k));
+			}
 		}
-	else {
-		document.getElementById("fix").style.visibility = '';
+	if (lastlet == "a" && nexttolastlet == "c" || lastlet == "c" && nexttolastlet == "a") {
+		if (k >= 0) {
+			updateletter("b",simp("log_("+a+")("+c+")",k));
+			}
 		}
+	if (lastlet == "b" && nexttolastlet == "c" || lastlet == "c" && nexttolastlet == "b") {
+		if (k >= 0) {
+			updateletter("a",simp("("+c+")^(1/("+b+"))",k));
+			}
+		}
+
 	}
 
 </script>
@@ -137,6 +196,17 @@ s-235,486,-235,486c-2.7,4.7,-9,7,-19,7c-6,0,-10,-1,-12,-3s-194,-422,-194,-422
 s-65,47,-65,47z M834 80H400000v40H845z'/></svg></span></span></span><span class="vlist-s">?</span></span><span class="vlist-r"><span class="vlist" style="height:0.20500000000000007em;"></span></span></span></span></span></span></span>
 
 = <input class='bigin a' oninput='oni(event)' id='a4'>
+
+<hr>
+
+<div style='font-size:20%'>Smart fill mode:
+<select id='smartfill'>
+<option value=1> Exact </option>
+<option value=0> Approximate </option>
+<option value=-1> Off </option>
+</select>
+Smart fill updates the third variable based on the previous two values you've entered.
+</div>
 
 <span id="expander" style="visibility:hidden; position:fixed"></span>
 </body>

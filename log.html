@@ -116,6 +116,9 @@ function isnumberstr(s) {
 function logmagic(a,c,k) {
 	a = simp(a,k);
 	c = simp(c,k);
+	if (a == "0" && c == "0") {
+		return("NaN");
+		}
 	var j;
 	if (isnumberstr(a) && isnumberstr(c)) {
 		if (k == 0) { return(Math.log(Number(a))/Math.log(Number(c))); }

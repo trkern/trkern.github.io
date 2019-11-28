@@ -1,0 +1,141 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<meta name=description content="Exponential and Logarithm Equivalences">
+<title> Logarithms </title>
+<script src="tgr.js"></script>
+<script src="underscore-min.js"></script>
+<script src="kas.js"></script>
+<script src="katex.min.js"></script>
+<script>
+function text_expand(id) {
+	var str = document.getElementById(id).value;
+	//if (str == "" && document.getElementById(id).placeholder) {str = document.getElementById(id).placeholder;}
+	if (str == "") {str = "0";}
+	document.getElementById("expander").style.font = getComputedStyle(document.getElementById(id)).font;
+	document.getElementById("expander").style.fontSize = getComputedStyle(document.getElementById(id)).fontSize;
+	document.getElementById("expander").innerText = str;
+	document.getElementById(id).style.width = (document.getElementById("expander").getBoundingClientRect().width+2) + "px";
+	}
+
+function fix() {
+	var a = document.getElementById("a1").value;
+	var b = document.getElementById("b1").value;
+	var t = "(" + a + ")^(" + b + ")";
+	document.getElementById("c1").value = KAS.parse(t).expr.simplify().print();
+	oni({target:document.getElementById("c1")});
+	}
+
+function trycompare(a,b,c) {
+	if (a == "" || b == "" || c == "") {
+		return(true);
+		}
+	try {
+		var t = "(" + a + ")^(" + b + ")";
+		if (KAS.compare(KAS.parse(c).expr,KAS.parse(t).expr).equal) {return(true);}
+		return(false);
+		}
+	catch(e) {
+		return(false);
+		}
+	}
+
+function oni(e) {
+	var ltr = e.target.id[0];
+	var val = e.target.value;
+	var i;
+	for (i = 1; i <= 4; i++) {
+		if (ltr + i == "b3") {continue;}
+		document.getElementById(ltr + i).value = val;
+		if (ltr + i == "a2" && e.target.id != "a2" && val == "10") {
+			document.getElementById(ltr + i).style.display = "none";
+			}
+		else {
+			document.getElementById(ltr + i).style.display = "";
+			}
+		text_expand(ltr + i);
+		}
+	var a = document.getElementById("a1").value;
+	var b = document.getElementById("b1").value;
+	var c = document.getElementById("c1").value;
+	if (trycompare(a,b,c)) {
+		document.getElementById("fix").style.visibility = 'hidden';
+		}
+	else {
+		document.getElementById("fix").style.visibility = '';
+		}
+	}
+
+</script>
+<link rel="stylesheet" href="katex.min.css">
+<style>
+.pointereventsnone {
+	pointer-events:none;
+	}
+.bigin {
+	font-size:80%;
+	}
+.supin {
+	font-size:50%;
+	position: relative;
+	bottom: .9em;
+	}
+.subin {
+	font-size:50%;
+	position:relative;
+	top: .5em;
+	}
+input {
+	pointer-events:auto;
+	width: 1ch;
+	}
+.a {
+	background-color: #44AA99;
+	}
+.b {
+	background-color: #DDCC77;
+	}
+.c {
+	background-color: #CC6677;
+	}
+</style>
+</head>
+<body style='font-size:500%'>
+<input class='bigin a' oninput='oni(event)' id='a1'> <input class='supin b' oninput='oni(event)' id='b1'> = <input class='bigin c' oninput='oni(event)' id='c1'>
+
+<button id='fix' onclick='fix()' style='visibility:hidden'>Equation doesn't appear to be true. Click to fix</button>
+
+<hr>
+
+<input class='bigin b' oninput='oni(event)' id='b2'> =
+
+log <input class='subin a' oninput='oni(event)' id='a2'> (<input class='bigin c' oninput='oni(event)' id='c2'>) = 
+<table border=0 style='font-size:60%; display:inline-table; vertical-align:middle'><tr><td style='border-bottom:solid 2px;text-align:center'>log(<input class='bigin c' oninput='oni(event)' id='c3'>)</td></tr>
+<tr><td style='text-align:center'>log(<input class='bigin a' oninput='oni(event)' id='a3'>)</td></tr></table>
+
+<hr>
+
+<span class="katex pointereventsnone"><span class="katex-mathml"><math><semantics><mrow><mroot><mrow><mi>b</mi></mrow><mrow><mi>a</mi></mrow></mroot></mrow><annotation encoding="application/x-tex">\sqrt[\alpha]{\beta}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height:0.835em;"></span><span class="strut bottom" style="height:1.04em;vertical-align:-0.20500000000000007em;"></span><span class="base"><span class="mord sqrt"><span class="root"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.5932799999999999em;"><span style="top:-2.878em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size6 size1 mtight"><span class="mord mtight"><span class="mord mathit mtight" style="margin-right:0.0037em;">
+
+<input class='supin b' oninput='oni(event)' id='b4'>
+
+</span></span></span></span></span></span></span></span><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.835em;"><span class="svg-align" style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord" style="padding-left:0.833em;"><span class="mord mathit" style="margin-right:0.05278em;">
+
+<input class='bigin c' oninput='oni(event)' id='c4'>
+
+</span></span></span><span style="top:-2.795em;"><span class="pstrut" style="height:3em;"></span><span class="hide-tail" style="min-width:0.853em;height:1.08em;"><svg width='400em' height='1.08em' viewBox='0 0 400000 1080' preserveAspectRatio='xMinYMin slice'><path d='M95,702c-2.7,0,-7.17,-2.7,-13.5,-8c-5.8,-5.3,-9.5,
+-10,-9.5,-14c0,-2,0.3,-3.3,1,-4c1.3,-2.7,23.83,-20.7,67.5,-54c44.2,-33.3,65.8,
+-50.3,66.5,-51c1.3,-1.3,3,-2,5,-2c4.7,0,8.7,3.3,12,10s173,378,173,378c0.7,0,
+35.3,-71,104,-213c68.7,-142,137.5,-285,206.5,-429c69,-144,104.5,-217.7,106.5,
+-221c5.3,-9.3,12,-14,20,-14H400000v40H845.2724s-225.272,467,-225.272,467
+s-235,486,-235,486c-2.7,4.7,-9,7,-19,7c-6,0,-10,-1,-12,-3s-194,-422,-194,-422
+s-65,47,-65,47z M834 80H400000v40H845z'/></svg></span></span></span><span class="vlist-s">?</span></span><span class="vlist-r"><span class="vlist" style="height:0.20500000000000007em;"></span></span></span></span></span></span></span>
+
+= <input class='bigin a' oninput='oni(event)' id='a4'>
+
+<span id="expander" style="visibility:hidden; position:fixed"></span>
+</body>
+</html>

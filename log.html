@@ -89,14 +89,16 @@ function updateletter(ltr,val,targ) {
 		document.getElementById(ltr + i).value = val;
 		if (ltr + i == "a2" && targ != "a2" && val == "10") {
 			document.getElementById(ltr + i).style.display = "none";
+			console.log("gone");
 			}
-		else {
+		else if (ltr+i =="a2") {
 			document.getElementById(ltr + i).style.display = "";
+			console.log("back");
 			}
 		if (ltr + i == "b4" && targ != "b4" && val == "2") {
 			document.getElementById(ltr + i).style.display = "none";
 			}
-		else {
+		else if (ltr+i == "b4") {
 			document.getElementById(ltr + i).style.display = "";
 			}
 		text_expand(ltr + i);
@@ -203,7 +205,7 @@ input {
 	}
 </style>
 </head>
-<body onload='oni({target:document.getElementById("a1")})'>
+<body onload='updateletter("a",10,"a1")'>
 <div>Enter numbers in the colored text boxes to see how we can rewrite the same equation in different ways.</div>
 
 <br>

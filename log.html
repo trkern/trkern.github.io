@@ -19,7 +19,7 @@ function text_expand(id) {
 	document.getElementById("expander").style.fontSize = getComputedStyle(document.getElementById(id)).fontSize;
 	document.getElementById("expander").innerText = str;
 	var x = document.getElementById("expander").getBoundingClientRect().width;
-	if (x > 300) {x = 300;}
+	if (x > 400) {x = 400;}
 	document.getElementById(id).style.width = (x+2) + "px";
 	}
 
@@ -57,7 +57,7 @@ function KAScompare(a,b) {
 		}
 	}
 
-var lastlet = "";
+var lastlet = "a";
 var nexttolastlet = "";
 
 function kasispos(a) {
@@ -150,13 +150,23 @@ function logmagic(a,c,k) {
 	if (isnumberstr(a) && isnumberstr(c)) {
 		if (k == 0) { return(Math.log(Number(c))/Math.log(Number(a))); }
 		var n, m;
-		for (n = -10; n <= 10; n++) {
+		var g = Math.log(Number(c))/Math.log(Number(a));
+		m = 0;
+		for (n = 1; n <= 20; n++) {
+			m += g;
+			if (Math.abs(m-Math.round(m)) < .00001) {
+				if (KAScompare("("+a+")^("+Math.round(m)+"/"+n+")",c)) {
+					return(simp(Math.round(m)+"/"+n,k));
+					}
+				}
+			}
+/*		for (n = -10; n <= 10; n++) {
 			for (m = 1; m <= 10; m++) {
 				if (KAScompare("("+a+")^("+n+"/"+m+")",c)) {
 					return(simp(n+"/"+m,k));
 					}
 				}
-			}
+			}*/
 		}
 	return(simp("log_("+a+")("+c+")",k));
 	}
@@ -285,7 +295,7 @@ Smart fill mode:
 </select>
 Smart fill updates the third variable based on the previous two values you've entered.
 <br>
-Note: you can type functions like <code>sqrt</code> and <code>log</code> into the textboxes, but may encounter strange behavior during the process of typing the functions in due to the way the parser works.
+Note: you can type functions like <code>sqrt</code> and <code>log</code> into the textboxes, but may encounter strange behavior during the process of typing the functions in due to the way the parser works. Please report bugs to trk43@cornell.edu.
 
 <div class="fd"> <span id="expander" style="visibility:hidden; position:fixed"></span> </div>
 

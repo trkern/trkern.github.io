@@ -58,6 +58,17 @@ function KAScompare(a,b) {
 var lastlet = "";
 var nexttolastlet = "";
 
+function kasispos(a) {
+	try {
+		return(KAS.parse(a).expr.simplify().isPositive());
+		}
+	catch(e) {return(false);}
+	}
+
+function kasisneg(a) {
+	return(kasispos("-("+a+")"));
+	}
+
 function update_fix_vis() {
 	var a = document.getElementById("a1").value;
 	var b = document.getElementById("b1").value;
@@ -69,6 +80,20 @@ function update_fix_vis() {
 	else {
 		document.getElementById("fix").style.visibility = '';
 		}
+
+	if (kasispos(a)) {
+		document.getElementById("poswarn").innerHTML = "";
+		}
+	else if (kasisneg(a)) {
+		document.getElementById("poswarn").innerHTML = "Warning: Negative base logarithms do not make sense.";
+		}
+	else if (KAScompare("0",a)) {
+		document.getElementById("poswarn").innerHTML = "Warning: log base 0 does not make sense.";
+		}
+	else {
+		document.getElementById("poswarn").innerHTML = "Warning: make sure the base, " + a + ", is positive!";
+		}
+
 	}
 
 function update_lasttwo(ltr) {
@@ -89,11 +114,9 @@ function updateletter(ltr,val,targ) {
 		document.getElementById(ltr + i).value = val;
 		if (ltr + i == "a2" && targ != "a2" && val == "10") {
 			document.getElementById(ltr + i).style.display = "none";
-			console.log("gone");
 			}
 		else if (ltr+i =="a2") {
 			document.getElementById(ltr + i).style.display = "";
-			console.log("back");
 			}
 		if (ltr + i == "b4" && targ != "b4" && val == "2") {
 			document.getElementById(ltr + i).style.display = "none";
@@ -214,6 +237,7 @@ input {
 <input class='bigin a' oninput='oni(event)' id='a1' value='10'> <input class='supin b' oninput='oni(event)' id='b1'> = <input class='bigin c' oninput='oni(event)' id='c1'>
 
 <button id='fix' onclick='fix()' style='visibility:hidden'>Equation doesn't appear to be true. Click to fix</button>
+<span id="poswarn" style='font-size:20%'></span>
 </div>
 
 <hr>

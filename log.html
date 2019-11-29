@@ -18,7 +18,9 @@ function text_expand(id) {
 	document.getElementById("expander").style.font = getComputedStyle(document.getElementById(id)).font;
 	document.getElementById("expander").style.fontSize = getComputedStyle(document.getElementById(id)).fontSize;
 	document.getElementById("expander").innerText = str;
-	document.getElementById(id).style.width = (document.getElementById("expander").getBoundingClientRect().width+2) + "px";
+	var x = document.getElementById("expander").getBoundingClientRect().width;
+	if (x > 300) {x = 300;}
+	document.getElementById(id).style.width = (x+2) + "px";
 	}
 
 function fix() {
@@ -146,7 +148,7 @@ function logmagic(a,c,k) {
 		}
 	var j;
 	if (isnumberstr(a) && isnumberstr(c)) {
-		if (k == 0) { return(Math.log(Number(a))/Math.log(Number(c))); }
+		if (k == 0) { return(Math.log(Number(c))/Math.log(Number(a))); }
 		var n, m;
 		for (n = -10; n <= 10; n++) {
 			for (m = 1; m <= 10; m++) {

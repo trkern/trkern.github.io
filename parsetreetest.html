@@ -1,0 +1,93 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<meta name=description content="Exponential and Logarithm Equivalences">
+<title> Logarithms </title>
+<script src="tgr.js"></script>
+<script src="underscore-min.js"></script>
+<script src="kas.js"></script>
+<script src="math.min.js"></script>
+<script src="katex.min.js"></script>
+<script src="treant/vendor/raphael.js"></script>
+<script src="treant/Treant.js"></script>
+<script>
+
+function kas_to_treant(k) {
+	if (!k || !(typeof k === "object") || !("args" in k)) {return(false);}
+	console.log(k);
+	var t = {
+		innerHTML: katex.renderToString(k.tex()),
+		children: []
+		}
+	var i,j,l;
+	j = k.args();
+	for (i = 0; i < j.length; i++) {
+		var l = kas_to_treant(j[i]);
+		if (l) {
+			t.children.push(l);
+			}
+		}
+	return(t);
+	}
+
+var cht = {
+	container: "#treetarg",
+	rootOrientation: "SOUTH",
+	connectors: {type:"straight"}
+	};
+
+function kas_do_everything() {
+	var s = document.getElementById("inp").value;
+	new Treant({
+		chart:cht,
+		nodeStructure: kas_to_treant(KAS.parse(s).expr)
+		});
+	}
+
+function mathjs_to_treant(k) {
+	if (!k || !(typeof k === "object") || !("args" in k)) {return(false);}
+	console.log(k);
+	var t = {
+		innerHTML: katex.renderToString(k.toTex()),
+		children: []
+		}
+	var i,j,l;
+	j = k.args;
+	for (i = 0; i < j.length; i++) {
+		var l = mathjs_to_treant(j[i]);
+		if (l) {
+			t.children.push(l);
+			}
+		}
+	return(t);
+	}
+
+function mathjs_do_everything() {
+	var s = document.getElementById("inp").value;
+	new Treant({
+		chart:cht,
+		nodeStructure: mathjs_to_treant(math.parse(s))
+		});
+	}
+
+</script>
+<style>
+.node {
+	border: 1px solid;
+	padding: 10px;
+	}
+</style>
+<link rel="stylesheet" href="katex.min.css">
+<link rel="stylesheet" href="treant/Treant.css" type="text/css"/>
+</head>
+<body>
+<div>
+Uses <a href="http://fperucic.github.io/treant-js/">treant.js</a> (<a href="https://github.com/fperucic/treant-js/blob/master/LICENSE">MIT License</a>) which in turn uses <a href="https://dmitrybaranovskiy.github.io/raphael/">raphael</a> (<a href="https://dmitrybaranovskiy.github.io/raphael/license.html"</a>MIT License</a>)
+</div>
+<input id="inp"> <button onclick="kas_do_everything()">KAS</button>
+<div id="treetarg"></div>
+</body>
+</html>

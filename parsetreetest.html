@@ -15,11 +15,19 @@
 <script src="treant/Treant.js"></script>
 <script>
 
+function boxify(k) {
+	var s = katex.renderToString(k.tex());
+	if (document.getElementById("chk_name").checked) {
+		return("<table><tr><td>"+k.name()+"</td></tr><tr><td>"+s+"</td></tr></table>");
+		}
+	return(s);
+	}
+
 function kas_to_treant(k) {
 	if (!k || !(typeof k === "object") || !("args" in k)) {return(false);}
 	console.log(k);
 	var t = {
-		innerHTML: katex.renderToString(k.tex()),
+		innerHTML: boxify(k), //katex.renderToString(k.tex()),
 		children: []
 		}
 	var i,j,l;
@@ -87,6 +95,7 @@ function mathjs_do_everything() {
 <div>
 Uses <a href="http://fperucic.github.io/treant-js/">treant.js</a> (<a href="https://github.com/fperucic/treant-js/blob/master/LICENSE">MIT License</a>) which in turn uses <a href="https://dmitrybaranovskiy.github.io/raphael/">raphael</a> (<a href="https://dmitrybaranovskiy.github.io/raphael/license.html"</a>MIT License</a>)
 </div>
+<input type='checkbox' id="chk_name"> Show Name <br>
 <input id="inp"> <button onclick="kas_do_everything()">KAS</button>
 <div id="treetarg"></div>
 </body>

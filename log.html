@@ -83,7 +83,10 @@ function update_fix_vis() {
 		document.getElementById("fix").style.visibility = '';
 		}
 
-	if (kasispos(a)) {
+	if (KAScompare("1",a)) {
+		document.getElementById("poswarn").innerHTML = "Warning: log base 1 does not make sense.";
+		}
+	else if (kasispos(a)) {
 		document.getElementById("poswarn").innerHTML = "";
 		}
 	else if (kasisneg(a)) {
@@ -93,7 +96,7 @@ function update_fix_vis() {
 		document.getElementById("poswarn").innerHTML = "Warning: log base 0 does not make sense.";
 		}
 	else {
-		document.getElementById("poswarn").innerHTML = "Warning: make sure the base, " + a + ", is positive!";
+		document.getElementById("poswarn").innerHTML = "Warning: make sure the base, " + a + ", is positive and not 1!";
 		}
 
 	}
@@ -144,6 +147,9 @@ function logmagic(a,c,k) {
 	a = simp(a,k);
 	c = simp(c,k);
 	if (a == "0" && c == "0") {
+		return("NaN");
+		}
+	if (a == "1") {
 		return("NaN");
 		}
 	var j;

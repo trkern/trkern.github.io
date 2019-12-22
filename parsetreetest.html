@@ -8,12 +8,34 @@
 <title> Parse Tree </title>
 <script src="tgr.js"></script>
 <script src="underscore-min.js"></script>
-<script src="kas.js"></script>
+<script src="mod_kas.js"></script>
 <script src="math.min.js"></script>
 <script src="katex.min.js"></script>
 <script src="treant/vendor/raphael.js"></script>
 <script src="treant/Treant.js"></script>
+<script src="jquery-3.3.1.min.js"></script>
 <script>
+
+function deepcopy(x) {
+	if (null == x || "object" != typeof x) { return(x);}
+	var i;
+	if (x instanceof Object) {
+		var o = new x.constructor();
+		for (i in x) {
+			o[i] = deepcopy(x[i]);
+			}
+		return(o);
+		}
+	if (x instanceof Array) {
+		o = [];
+		var l = o.length;
+		for (i = 0; i < l; i++) {
+			o[i] = deepcopy(x[i]);
+			}
+		}
+	console.log("DEEP COPY FAILED",x);
+	return(false);
+	}
 
 function boxify(k) {
 	var s = katex.renderToString(k.tex());
@@ -56,13 +78,15 @@ function kas_do_everything() {
 	}
 
 function mathjs_to_treant(k) {
-	if (!k || !(typeof k === "object") || !("args" in k)) {return(false);}
+	if (!k || !(typeof k === "object")) {return(false);}
+	if ("content" in k) {return(mathjs_to_treant(k.content));}
 	console.log(k);
 	var t = {
 		innerHTML: katex.renderToString(k.toTex()),
 		children: []
 		}
 	var i,j,l;
+	if (!("args" in k)) {return(t)};
 	j = k.args;
 	for (i = 0; i < j.length; i++) {
 		var l = mathjs_to_treant(j[i]);
@@ -79,6 +103,427 @@ function mathjs_do_everything() {
 		chart:cht,
 		nodeStructure: mathjs_to_treant(math.parse(s))
 		});
+	}
+
+function kfy(k) {
+	if (typeof k !== "object") {return(k);}
+	if ("hints" in k) {k.hints = {};}
+	var i;
+	for (i in k) {
+		kfy(k[i]);
+		}
+	return(k);
+	}
+
+function kfix(k) {
+	return(KAS.parse(k.print()).expr.tex());
+	}
+
+function show_kfy() {
+	document.getElementById("treetarg").innerHTML = katex.renderToString(kfix(kfy(KAS.parse(document.getElementById("inp").value).expr)));
+	}
+
+
+
+function frobtex(k) {
+	if (!k || !(typeof k === "object") || !("tex" in k)) {return(k);}
+	k.oldtex = k.tex;
+	k.tex = function() {return("\\boxed{"+k.oldtex()+"}");}
+	var i;
+/*	if ("terms" in k) {
+		for (i = 0; i < k.terms.length; i++) {
+			frobtex(k.terms[i]);
+			}
+		}
+	if ("base" in k) {
+		frobtex(k.base);
+		}
+	if ("exp" in k) {
+		frobtex(k.exp);
+		}*/
+	for (i in k.args()) {
+		frobtex(k.args()[i]);
+		}
+	return(k);
+	}
+
+function doallfrob(s) {
+	var k = KAS.parse(s).expr;
+	var j = deepcopy(k);
+	console.log(j);
+	console.log(k);
+	frobtex(j);
+	document.getElementById("treetarg").innerHTML = katex.renderToString(j.tex());
+	}
+
+//ttree has:
+//op (type: add,div,mul,neg,pow,sqrt,nrt,ln,log,log_,
+//sin,cos,tan,cot,sec,csc,arcsin,arccos,arctan,arccot,arcsec,arccsc,sinh,cosh,tanh,coth,sech,csch,abs, =, <, >, <>, <=, >=, func, var, const, int, float, error
+//subs (subexpression)
+//c (content; either a number or a string for variables, or function name)
+
+
+function ttree_needsexplicitmul(tt) {
+	if (tt.op == "mul") {return(ttree_needsexplicitmul(tt.subs[0]));}
+	if (tt.op == "pow") {return(ttree_needsexplicitmul(tt.subs[0]));}
+	if (tt.op == "neg") {return(true);}
+	if (tt.op == "int" || tt.op == "float") {return(true);}
+	return(false);
+	}
+
+function ttree_issubtract(tt) { //checks if tt starts with a minus sign
+	if (tt.op == "neg") {return(true);}
+	if (tt.op == "mul") {return(ttree_issubtract(tt.subs[0]));}
+	if (tt.op == "int" || tt.op == "float") {return(tt.c < 0);}
+	return(false);
+	}
+
+function ttree_needsparenpow(tt) {
+	if (tt.op == "int" && tt.c >= 0) {return(false);}
+	if (tt.op == "var") {return(false);}
+	return(true);
+	}
+
+function ttree_texineq(s) {
+	if (s == "<=") {return("\\leq ");}
+	if (s == ">=") {return("\\geq ");}
+	if (s == "<>") {return("\\neq ");}
+	return(s);
+	}
+
+function ttree_to_tex(tt) {
+	console.log(tt);
+	if (tt.op == "add") {
+		var t = "";
+		var i;
+		for (i = 0; i < tt.subs.length; i++) {
+			if (!t || ttree_issubtract(tt.subs[i])) {
+				t += ttree_to_tex(tt.subs[i]);
+				}
+			else {
+				t += "+" + ttree_to_tex(tt.subs[i]);
+				}
+			}
+		return(t);
+		}
+	if (tt.op == "div") {
+		return("\\frac{" + ttree_to_tex(tt.subs[0]) + "}{" + ttree_to_tex(tt.subs[1]) + "}");
+		}
+	if (tt.op == "mul") {
+		var t = "";
+		var i;
+		for (i = 0; i < tt.subs.length; i++) {
+			if (!t) {
+				t += ttree_to_tex(tt.subs[i]);
+				}
+			else if (tt.subs[i].op == "+") {
+				t += "\\left( " + ttree_to_tex(tt.subs[i]) + "\\right) ";
+				}
+			else if (ttree_needsexplicitmul(tt.subs[i])) {
+				t += " \\cdot " + ttree_to_tex(tt.subs[i]);
+				}
+			else {
+				t += ttree_to_tex(tt.subs[i]);
+				}
+			}
+		return(t);
+		}
+	if (tt.op == "neg") {
+		return("-" + ttree_to_tex(tt.subs[0]));
+		}
+	if (tt.op == "sqrt") {
+		return(" \\sqrt{" + ttree_to_tex(tt.subs[0]) + "}");
+		}
+	if (tt.op == "nrt") {
+		return(" \\sqrt[" + ttree_to_tex(tt.subs[0]) + "]{" + ttree_to_tex(tt.subs[1]) + "}");
+		}
+	if (tt.op == "pow") {
+		var s = ttree_to_tex(tt.subs[0]);
+		if (ttree_needsparenpow(tt.subs[0])) {
+			s = " \\left( " + s + " \\right) ";
+			}
+		return(s+"^{" + ttree_to_tex(tt.subs[1]) + "}");
+		}
+	if (["ln","log","sin","cos","tan","cot","sec","csc","arcsin","arccos","arctan","arccot","arcsec","arccsc","sinh","cosh","tanh","coth","sech","csch"].indexOf(tt.op) >= 0) {
+		return("\\"+tt.op+" \\left( "+ttree_to_tex(tt.subs[0])+" \\right) ");
+		}
+	if (tt.op == "log_") {
+		return("\\log_{"+ttree_to_tex(tt.subs[1])+"}("+ttree_to_tex(tt.subs[0])+")");
+		}
+	if (tt.op == "abs") {
+		return("\\left| " + ttree_to_tex(tt.subs[0]) + "\\right| ");
+		}
+	if (["=","<",">",">=","<=","<>"].indexOf(tt.op) >= 0) {
+		return(ttree_to_tex(tt.subs[0]) + ttree_texineq(tt.op) + ttree_to_tex(tt.subs[1]));
+		}
+	if (tt.op == "func") {
+		return(tt.c + " \\left( " + ttree_to_tex(tt.subs[0]) + " \\right) ");
+		}
+	if (tt.op == "var") {
+		return(tt.c);
+		}
+	if (tt.op == "const") {
+		if (tt.c == "pi") {return("\\pi");}
+		return(tt.c);
+		}
+	if (tt.op == "int" || tt.op == "float") {
+		return(tt.c.toString());
+		}
+	return("ERROR");
+	}
+
+function kas_to_ttree(k) {
+	var subs = [];
+	if (k.name() == "Add") {
+		var i;
+		for (i = 0; i < k.terms.length; i++) {
+			subs.push(kas_to_ttree(k.terms[i]));
+			}
+		return({op:"add",subs:subs});
+		}
+	if (k.name() == "Mul") {
+		var i;
+		if (k.terms.length == 2 && k.terms[1].isDivide()) {
+			var n = kas_to_ttree(k.terms[0]);
+			var d = kas_to_ttree(k.terms[1].asDivide());
+			return({op:"div",subs:[n,d]});
+			}
+		if (k.terms[0].name() == "Int" && k.terms[0].n == -1) {
+			var recurseval = {name: function() {return("Mul");}, terms:k.terms.slice(1)}
+			if (k.terms.length == 2) {
+				recurseval = k.terms[1];
+				}
+			return({op:"neg",subs:[kas_to_ttree(recurseval)]});
+			}
+		for (i = 0; i < k.terms.length; i++) {
+			subs.push(kas_to_ttree(k.terms[i]));
+			}
+		return({op:"mul",subs:subs});
+		}
+	if (k.name() == "Pow") {
+		var base = kas_to_ttree(k.base);
+		if (k.isRoot()) {
+			if (k.exp.d == 2) {
+				return({op:"sqrt",subs:[base]});
+				}
+			else {
+				return({op:"nrt",subs:[k.exp.d,base]});
+				}
+			}
+		return ({op:"pow", subs:[kas_to_ttree(k.base),kas_to_ttree(k.exp)]});
+		}
+	if (k.name() == "Log") {
+		if (k.isNatural()) {
+			return({op:"ln", subs:[kas_to_ttree(k.power)]});
+			}
+		else if (k.base.name() == "Int" && k.base.n == 10) {
+			return({op:"log", subs:[kas_to_ttree(k.power)]});
+			}
+		else {
+			return({op:"log_", subs:[kas_to_ttree(k.power),kas_to_ttree(k.base)]});
+			}
+		}
+	if (k.name() == "Trig") {
+		return({op:k.type, subs:[kas_to_ttree(k.arg)]});
+		}
+	if (k.name() == "Abs") {
+		return({op:"abs", subs:[kas_to_ttree(k.arg)]});
+		}
+	if (k.name() == "Eq") {
+		return({op:k.signs[k.type], subs:[kas_to_ttree(k.left), kas_to_ttree(k.right)]});
+		}
+	if (k.name() == "Func") {
+		return({op:"func", c:k.symbol, subs:[kas_to_ttree(k.arg)]});
+		}
+	if (k.name() == "Var") {
+		return({op:"var", c:k.symbol});
+		}
+	if (k.name() == "Const") {
+		return({op:"const", c:k.symbol});
+		}
+	if (k.name() == "Rational") {
+		console.log("tk_division_backdoor", tk_division_backdoor);
+		}
+	if (k.name() == "Int") {
+		return({op:"int", c:k.n});
+		}
+	if (k.name() == "Float") {
+		return({op:"float", c:k.n});
+		}
+	console.log("kas_to_ttree failed");
+	return({op:"error"});
+	}
+
+function myparse(str) {
+	return(kas_to_ttree(KAS.parse(str).expr));
+	}
+
+function ttree_to_treant(tt) {
+	s = "<table style='text-align:center'><tr><td>";
+	s += tt.op;
+	if ("c" in tt) {
+		s += ": "+tt.c;
+		}
+	s += "</td></tr><tr><td>";
+	s += katex.renderToString(ttree_to_tex(tt));
+	s += "</td></tr></table>";
+
+	var t = {
+		innerHTML: s,
+		children: []
+		}
+
+	var i;
+
+	if ("subs" in tt) {
+		for (i = 0; i < tt.subs.length; i++) {
+			t.children.push(ttree_to_treant(tt.subs[i]));
+			} 
+		}
+	return(t);
+	}
+
+function ttree_do_everything() {
+	var s = document.getElementById("inp").value;
+	new Treant({
+		chart:cht,
+		nodeStructure: ttree_to_treant(myparse(s))
+		});
+	}
+
+function mykastex(k) { //modified from the original kas.js
+	if (k.name() == "Add") {
+		var t = "";
+		var i;
+		for (i = 0; i < k.terms.length; i++) {
+			if (!t || k.terms[i].isSubtract()) {
+				t += mykastex(k.terms[i]);
+				}
+			else {
+				t += "+" + mykastex(k.terms[i]);
+				}
+			}
+		return(t);
+		}
+	if (k.name() == "Mul") {
+		var t = "";
+		var i;
+		if (k.terms.length == 2 && k.terms[1].isDivide()) {
+			var n = mykastex(k.terms[0]);
+			var d = mykastex(k.terms[1].asDivide());
+			return("\\frac{"+n+"}{"+d+"}");
+			}
+		var minusstart = true;
+		for (i = 0; i < k.terms.length; i++) {
+			if (minusstart && k.terms[i].name() == "Int" && k.terms[i].n == -1) {
+				t += "-";
+				}
+			else if (!t) {
+				minusstart = false;
+				t += mykastex(k.terms[i]);
+				}
+			else if (k.terms[i].needsExplicitMul()) {
+				minusstart = false;
+				t += " \\cdot " + mykastex(k.terms[i]);
+				}
+			else if (k.terms[i].name() == "Add") {
+				minusstart = false;
+				t += "(" + mykastex(k.terms[i]) + ")";
+				}
+			else {
+				minusstart = false;
+				t += mykastex(k.terms[i]);
+				}
+			}
+		return(t);
+		}
+	if (k.name() == "Pow") {
+		if (k.isRoot()) {
+			if (k.exp.d == 2) {
+				return("\\sqrt{"+mykastex(k.base)+"}");
+				}
+			else {
+				return("\\sqrt["+k.exp.d+"]{"+mykastex(k.base)+"}");
+				}
+			}
+		var btex = mykastex(k.base);
+		//if (k.base instanceof Seq || k.base instanceof Pow || (k.base instanceof Num && !k.base.isSimple()) || k.base instanceof Trig || k.base instanceof Log) {
+		if ((k.base.name() == "Int" && k.base.n >= 0) || k.base.name() == "Var") {
+			}
+		else {
+			btex = "(" + btex + ")";
+			}
+		return (btex + "^{" + mykastex(k.exp) + "}");
+		}
+	if (k.name() == "Log") {
+		if (k.isNatural()) {
+			return("\\ln("+mykastex(k.power)+")");
+			}
+		else if (k.base.name() == "Int" && k.base.n == 10) {
+			return("\\log("+mykastex(k.power)+")");
+			}
+		else {
+			return("\\log_{"+mykastex(k.base)+"}(" + mykastex(k.power) + ")");
+			}
+		}
+	if (k.name() == "Trig") {
+		return(k.functions[k.type].tex + "(" + mykastex(k.arg) + ")");
+		}
+	if (k.name() == "Abs") {
+		return("\\left|"+ mykastex(k.arg) + "\\right|");
+		}
+	if (k.name() == "Eq") {
+		return(mykastex(k.left) + k.signs[k.type] + mykastex(k.right));
+		}
+	if (k.name() == "Func") {
+		return(k.symbol + "(" + mykastex(k.arg) + ")");
+		}
+	if (k.name() == "Var") {
+		var sub = "";
+		if (k.subscript) {
+			sub = "_{" + mykastex(k.subscript) + "}";
+			}
+		var prefix = "";
+		if (k.symbol.length > 1) {
+			prefix = "\\"; //KAS supports multisymbol variable names? what is this, mathjs?
+			}
+		return(prefix + k.symbol + sub);
+		}
+	if (k.name() == "Const") {
+		if (k.symbol == "pi") {
+			return("\\pi");
+			}
+		else if (k.symbol == "e") {
+			return("e");
+			}
+		}
+	if (k.name() == "Rational") {
+		console.log("tk_division_backdoor", tk_division_backdoor);
+		return(k.tex());
+		}
+	if (k.name() == "Int") {
+		return(k.n.toString());
+		}
+	if (k.name() == "Float") {
+		return(k.n.toString());
+		}
+	console.log("mykastex failed, fallingback");
+	return(k.tex());
+	}
+
+function mykastex_do_everything() {
+	var s = document.getElementById("inp").value;
+	s = mykastex(KAS.parse(s).expr);
+	s = katex.renderToString(s);
+	document.getElementById("treetarg").innerHTML = s;
+	}
+
+function test_htmlid() {
+	document.getElementById("treetarg").innerHTML = katex.renderToString("\\htmlId{yoo}{\\frac{2}{3}}", {trust:true});
+	}
+
+function ttree_to_html(tt) {
+	
 	}
 
 </script>
@@ -98,6 +543,10 @@ Uses <a href="http://fperucic.github.io/treant-js/">treant.js</a> (<a href="http
 <input type='checkbox' id="chk_name"> Show Name <br>
 Type a math formula in the box below to see how KAS sees it:<br>
 <input id="inp"> <button onclick="kas_do_everything()">KAS</button>
+<button onclick="mathjs_do_everything()">Math.js</button>
+<button onclick="show_kfy()">K form</button>
+<button onclick="mykastex_do_everything()">mykastex</button>
+<button onclick="ttree_do_everything()">ttree</button>
 <div id="treetarg"></div>
 </body>
 </html>

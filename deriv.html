@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <link rel="icon" href="icon.png">
-<link rel="image_src" href="parsetree.png">
-<meta name=description content="Parse Trees!">
-<title> Parse Tree </title>
+<link rel="image_src" href="icon.png">
+<meta name=description content="Automated Symbolic Differentiator">
+<title> Symbolid Derivatives </title>
 <script src="tgr.js"></script>
 <script src="underscore-min.js"></script>
 <script src="mod_kas.js"></script>
@@ -180,6 +180,7 @@ function ttree_issubtract(tt) { //checks if tt starts with a minus sign
 function ttree_needsparenpow(tt) {
 	if (tt.op == "int" && tt.c >= 0) {return(false);}
 	if (tt.op == "var") {return(false);}
+	if (tt.op == "const") {return(false);}
 	return(true);
 	}
 
@@ -364,7 +365,78 @@ function quickderiv(tt,v) { //checksoptions
 	return(rval);
 	}
 
-function magic_derivative(tt,ix) { //assumes tt.op == "magic_derivative"
+function derivative_rule(tt) { //assumes tt.op == "magic_derivative"
+	if (tt.c[0] > 1) {
+		return("Multiple Derivative Rule");
+		}
+	var tt0 = tt.subs[0];
+	if (tt0.op == "add") {
+		return("Sum Rule");
+		}
+	if (tt0.op == "div") {
+		if (document.getElementById("chk_smartquot").checked) {
+			return("Rewrite Quotient");
+			}
+		return("Quotient Rule");
+		}
+	if (tt0.op == "mul") {
+		var i;
+		var k = 0;
+		for (i = 0; i < tt0.subs.length; i++) {
+			if (!isconst(tt0.subs[i])) {k++;}
+			}
+		if (k == 1) {
+			return("Constant Multiple Rule");
+			}
+		return("Product Rule");
+		}
+	if (tt0.op == "neg") {
+		return("Constant Multiple Rule");
+		}
+	if (tt0.op == "pow") {
+		var oldb = tt0.subs[0];
+		var oldp = tt0.subs[1];
+		if (isconst(oldp) && document.getElementById("chk_smartpow").checked) {
+			return("Power Rule");
+			}
+		if (isconst(oldb) && document.getElementById("chk_smartpow").checked) {
+			return("Exponent Rule");
+			}
+		if (document.getElementById("chk_smartexp").checked) {
+			return("Rewrite Exponent");
+			}
+		return("General Power Rule");
+		}
+	if (tt0.op in derivlookup) {
+		return("Derivative of " + tt0.op);
+		}
+	if (tt0.op == "nrt") {
+		return("Rewrite Root");
+		}
+	if (tt0.op == "log_") {
+		return("Change of Base");
+		}
+	if (tt0.op == "func") {
+		return("Chain Rule");
+		}
+	if (tt0.op == "=") {
+		return("Implicit Differentiation");
+		}
+	if (tt0.op == "var") {
+		return("Derivative of " + tt0.c);
+		}
+	if (tt0.op == "const" || tt0.op == "int" || tt0.op == "float") {
+		return("Constant Rule");
+		}
+	if (tt0.op == "force_paren") {
+		return(derivative_rule({op:"magic_derivative",c:tt.c,subs:[tt0.subs[0]]},ix.slice(1)));
+		}
+	if (tt0.op == "magic_derivative") {
+		return("Combining Multiple Derivatives");
+		}
+	}
+
+function magic_derivative(tt,ix) { //assumes tt(@ix).op == "magic_derivative"
 	if (ix.length != 0) {
 		var rval = {op:tt.op};
 		if ("c" in tt) {rval.c = tt.c};
@@ -490,11 +562,30 @@ function magic_derivative(tt,ix) { //assumes tt.op == "magic_derivative"
 			return(rval);
 			}
 		if (isconst(oldb) && document.getElementById("chk_smartpow").checked) {
+			if (oldb.op == "const" && oldb.c == "e") {
+				var rval = {op:"mul", subs:[
+					tt0,
+					quickderiv(oldp,tt.c[1])
+					]};
+				return(rval);
+				}
 			var rval = {op:"mul", subs:[
 				tt0,
 				{op:"ln", subs:[oldb]},
 				//{op:"magic_derivative",c:[1,tt.c[1]],subs:[oldp]}
 				quickderiv(oldp,tt.c[1])
+				]};
+			return(rval);
+			}
+		if (document.getElementById("chk_smartexp").checked) {
+			var rval = {op:"magic_derivative",c:[1,tt.c[1]],subs:[
+				{op:"pow",subs:[
+					{op:"const",c:"e"},
+					{op:"mul",subs:[
+						{op:"ln",subs:[oldb]},
+						oldp
+						]}
+					]}
 				]};
 			return(rval);
 			}
@@ -596,16 +687,32 @@ function deixify(s) {
 	return(rval);
 	}
 
-function dbutt(ixs) {
+function ttree_zoom_in(tt,ix) {
+	if (ix.length == 0) {return(tt);}
+	return(ttree_zoom_in(tt.subs[ix[0]],ix.slice(1)));
+	}
+
+var g_latex;
+
+function dbutt(ixs) { //returns true if something changed
 	var ix = deixify(ixs);
 	var tt = magic_derivative(g_deriv_tt,ix);
+	var rval = true;
+	if (ttree_to_tex(tt) == ttree_to_tex(g_deriv_tt)) {rval = false;}
+	var old_tt = g_deriv_tt;
 	g_deriv_tt = tt;
 	document.getElementById("htmltarg").innerHTML = ttree_to_html(tt,[]);
 	new Treant({
 		chart:cht,
 		nodeStructure: ttree_to_treant(tt)
-		});	
+		});
 	initializemouseover(tt);
+	if (rval) {
+		g_latex += "\n\\\\=&" + ttree_to_tex(g_deriv_tt) + "&&\\text{" + derivative_rule(ttree_zoom_in(old_tt,ix)) + "}";
+		var s = "\\begin{alignedat}{999}" + g_latex + "\\end{alignedat}"
+		document.getElementById("worktarg").innerHTML = katex.renderToString(s);
+		document.getElementById("latextarg").value = s;
+		}
 	}
 
 function nthletter(n) { //starts from a=0
@@ -627,10 +734,19 @@ function derivative_tooltip(tt,c) {
 		pp.subs = [];
 		for (i = 0; i < tt.subs[0].subs.length; i++) {
 			if (isconst(tt.subs[0].subs[i]) && (tt.subs[0].op == "pow") && (document.getElementById("chk_smartpow").checked)) {
-				pp.subs.push({op:"const",c:nthcap(i)});
+				if ((i == 0) && (tt.subs[0].subs[0].op == "const") && (tt.subs[0].subs[0].c == "e")) {
+					pp.subs.push({op:"const",c:"e"});
+					}
+				else {
+					pp.subs.push({op:"const",c:nthcap(i)});
+					}
 				}
 			else if (isconst(tt.subs[0].subs[i]) && (tt.subs[0].op == "mul") && document.getElementById("chk_smartcmul").checked) {
 				pp.subs.push({op:"const",c:nthcap(i)});
+				}
+			else if (tt.subs[0].subs[i].op == "var") {
+				pp.subs.push({op:"var",c:tt.subs[0].subs[i].c});
+				//TODO: keep track of "used variables". "d" is used from the get-go
 				}
 			else {
 				pp.subs.push({op:"var",c:nthletter(i)});
@@ -640,6 +756,7 @@ function derivative_tooltip(tt,c) {
 	var ppp = {op:"magic_derivative",c:c,subs:[pp]};
 	var ddd = magic_derivative(ppp,[]);
 	var s = katex.renderToString(ttree_to_tex(ppp) + " = " + ttree_to_tex(ddd));
+	s = derivative_rule(tt) + "<br>" + s;
 	return("<span class='tooltiptext'>"+s+"<span>");
 	}
 
@@ -884,7 +1001,7 @@ function myparse(str,opts) {
 function ttree_to_treant(tt,ix) {
 	if (ix) {} else {ix = []};
 	s = "<table style='text-align:center' id='tabl_"+ixify(ix)+"'><tr><td>";
-	if (document.getElementById("chk_name").checked) {
+	if (document.getElementById("chk_treename").checked) {
 		s += tt.op;
 		if ("c" in tt) {
 			s += ": "+tt.c;
@@ -945,6 +1062,7 @@ function ml(tt) {
 
 function mm(e,tt) {
 	var l = document.querySelectorAll(":hover");
+	if (!document.getElementById("chk_treehi").checked) {l = [];}
 	var i;
 	var il = indexlist(tt);
 	for (i = 0; i < il.length; i++) {
@@ -986,10 +1104,17 @@ function ttree_do_everything() {
 
 var g_deriv_tt = "NOPE";
 
+function getfuns() {
+	return(document.getElementById("inp_funnames").value.split(/[^A-Za-z]/));
+	}
+
 function deriv_ttree_do_everything() {
 	tk_division_backdoor = true;
+	var n = Number(document.getElementById("inp_n").value);
+	var x = document.getElementById("inp_x").value;
 	var s = document.getElementById("inp").value;
-	var tt = {op:"magic_derivative",c:[1,"x"],subs:[myparse(s,{functions:["f","g"]})]};
+	var fs = getfuns();
+	var tt = {op:"magic_derivative",c:[n,x],subs:[myparse(s,{functions:fs})]};
 	g_deriv_tt = tt;
 	document.getElementById("htmltarg").innerHTML = ttree_to_html(tt,[]);
 	new Treant({
@@ -997,6 +1122,7 @@ function deriv_ttree_do_everything() {
 		nodeStructure: ttree_to_treant(tt)
 		});	
 	initializemouseover(tt);
+	g_latex = "&" + ttree_to_tex(tt) + "&\\qquad&";
 	}
 
 function html_do_everything() {
@@ -1139,6 +1265,34 @@ function mykastex_do_everything() {
 	document.getElementById("treetarg").innerHTML = s;
 	}
 
+function upd_tree() {
+	if (document.getElementById("chk_treeshow").checked) {
+		document.getElementById("treetarg").style.display = "";
+		}
+	else {
+		document.getElementById("treetarg").style.display = "none";
+		}
+	if (document.getElementById("chk_latex").checked) {
+		document.getElementById("worktarg").style.display = "";
+		}
+	else {
+		document.getElementById("treetarg").style.display = "none";
+		}
+	if (document.getElementById("chk_latex_source").checked) {
+		document.getElementById("latextarg").style.display = "";
+		}
+	else {
+		document.getElementById("latextarg").style.display = "none";
+		}
+	var tt = g_deriv_tt;
+	document.getElementById("htmltarg").innerHTML = ttree_to_html(tt,[]);
+	new Treant({
+		chart:cht,
+		nodeStructure: ttree_to_treant(tt)
+		});	
+	initializemouseover(tt);
+	}
+
 /*
 <svg width="100%" height="100%" viewBox="0 0 18 14">
 <line x1="8.5" y1="0" x2="18" y2="0" stroke="black"/>
@@ -1243,36 +1397,52 @@ button .tooltiptext {
 button:hover .tooltiptext {
 	visibility:visible;
 	}
+blockquote.caution {
+	background-color: #EEEEBB;
+	padding: 20px;
+	border-left: 3px solid yellow;
+	}
 
 </style>
 <link rel="stylesheet" href="katex.min.css">
 <link rel="stylesheet" href="treant/Treant.css" type="text/css"/>
 </head>
 <body>
-<div>
-Uses <a href="http://fperucic.github.io/treant-js/">treant.js</a> (<a href="https://github.com/fperucic/treant-js/blob/master/LICENSE">MIT License</a>) which in turn uses <a href="https://dmitrybaranovskiy.github.io/raphael/">raphael</a> (<a href="https://dmitrybaranovskiy.github.io/raphael/license.html"</a>MIT License</a>)
-</div>
-Type a math formula in the box below to see how KAS sees it:<br>
-<input id="inp" value="xyz"> <button onclick="kas_do_everything()">KAS</button>
-<button onclick="mathjs_do_everything()">Math.js</button>
-<button onclick="show_kfy()">K form</button>
-<button onclick="mykastex_do_everything()">mykastex</button>
-<button onclick="ttree_do_everything()">ttree</button>
-<button onclick="html_do_everything()">html</button>
-<button onclick="deriv_ttree_do_everything()">deriv</button>
+
+Type a math formula in the box below and push "Compute Derivative":<br>
+<input id="inp" value="x^2+2x+1"><br>
+<table border=1><tr><td>
+Derivative Variable: <input id="inp_x" value="x" style="width:2em"><br>
+Number of times to compute derivative: <input type="number" min=1 id="inp_n" value=1 style="width:3em">
+</td></tr><tr><td>
+<button onclick="deriv_ttree_do_everything()">Compute Derivative</button>
+</td></tr></table>
 <div id="htmltarg" style='font-size:200%;user-select:none;'></div>
-<div id="treetarg"></div>
+<div id="treetarg" style='display:none'></div>
+<div id="worktarg"></div>
+<textarea id="latextarg" style='display:none'></textarea>
+
+<p>
+Push the derivative buttons to apply an appropriate rule. Hover over the derivative buttons to get a preview of the rule to be applied. Capital letters indicate constants. 
+</p>
+
+<blockquote class="caution">
+This interactive is a useful tool to develop an understanding of how derivatives work, particularly for problems that require multiple derivative rules. However, you should learn how to solve these problems on your own, without this interactive or a calculator.
+</blockquote>
 
 <input type="checkbox" id="chk_smartprod" checked> Break up long products to use binary product rule <br>
-<input type="checkbox" id="chk_smartquot" checked> Break up quotients to use product, power, and chain rules <br>
+<input type="checkbox" id="chk_smartquot" checked> Rewrite quotients to use product, power, and chain rules <br>
 <input type="checkbox" id="chk_smartsqrt" checked> Rewrite roots to use the power rule <br>
 <input type="checkbox" id="chk_smartpow" checked> Use simpler exponent and power rules when appropriate <br>
+<input type="checkbox" id="chk_smartexp" checked> Rewrite exponents in terms of ln and e<sup>x</sup> <br>
+<input type="checkbox" id="chk_smartcmul" checked> Use constant multiple rule when possible<br>
 <input type="checkbox" id="chk_smartvar"> Automatically handle derivatives of variables<br>
 <input type="checkbox" id="chk_smartconst"> Automatically handle derivatives of constants<br>
-<input type="checkbox" id="chk_smartcmul" checked> Use constant multiple rule when possible<br>
-<input type="checkbox" id="chk_treeshow" checked onchange="upd_tree()"> chk_treeshow Show tree<br>
-<input type="checkbox" id="chk_treename" onchange="upd_tree()"> chk_treename Show node names in tree<br>
-<input type="checkbox" id="chk_treehi" checked> chk_treehi Highlight hovered nodes in tree<br>
+<input type="checkbox" id="chk_treeshow" onchange="upd_tree()"> Show tree<br>
+<input type="checkbox" id="chk_treename" onchange="upd_tree()"> Show node names in tree (for debugging)<br>
+<input type="checkbox" id="chk_treehi"> Highlight hovered subexpressions<br>
+<input type="checkbox" id="chk_latex" checked onchange="upd_tree()"> Show latex<br>
+<input type="checkbox" id="chk_latex_source" onchange="upd_tree()"> Show latex source (for debugging)<br>
 Names of functions: <input id="inp_funnames" value="f,g"> <br>
 </body>
 </html>

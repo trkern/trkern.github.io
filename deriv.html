@@ -772,6 +772,9 @@ function derivative_tooltip(tt,c) {
 			else if (isconst(tt.subs[0].subs[i]) && (tt.subs[0].op == "mul") && document.getElementById("chk_smartcmul").checked) {
 				pp.subs.push({op:"const",c:nthcap(i)});
 				}
+			else if (isconst(tt.subs[0].subs[i]) && (tt.subs[0].op == "div") && (i == 1) && document.getElementById("chk_smartcmul").checked) {
+				pp.subs.push({op:"const",c:nthcap(i)});
+				}
 			else if (tt.subs[0].subs[i].op == "var") {
 				pp.subs.push({op:"var",c:tt.subs[0].subs[i].c});
 				//TODO: keep track of "used variables". "d" is used from the get-go

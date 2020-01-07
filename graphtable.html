@@ -1,0 +1,651 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<meta name=description content="Plugging in">
+<title> Functions, Graphs, and Tables </title>
+<script src="tgr.js"></script>
+<script src="katex.min.js"></script>
+<script src="treant/vendor/raphael.js"></script>
+<script src="treant/Treant.js"></script>
+<script>
+
+function ribet(mn,mx) {
+	return(Math.floor(Math.random()*(mx-mn+1))+mn);
+	}
+
+function relt(l) {
+	return(l[ribet(0,l.length-1)]);
+	}
+
+var g_funcs;
+var g_tt;
+var g_gort;
+
+function lb(tbl,xj,x) {
+	var xm;
+	var p = 1;
+	for (xm in tbl) {
+		if (xm != xj) {
+			p *= (x-xm)/(xj-xm);
+			}
+		}
+	return(p);
+	}
+
+function lagrunge(tbl) {
+	return(function(x) {
+		var s = 0;
+		for (xj in tbl) {
+			s += tbl[xj]*lb(tbl,xj,x);
+			}
+		return(s);
+		});
+	}
+
+function ttfuncs(tt) {
+	var rval = [];
+	var i;
+	if ("subs" in tt) {
+		for (i = 0; i < tt.subs.length; i++) {
+			rval = rval.concat(ttfuncs(tt.subs[i]));
+			}
+		}
+	if (tt.op == "func") {
+		rval.push(tt.c);
+		}
+	return(rval);
+	}
+
+function ry() {
+	var x = ribet(-4,3);
+	if (x == 0) {return(4);}
+	return(x);
+	}
+
+function makeg_funcs() {
+	var i,j;
+	var l = ttfuncs(g_tt);
+	g_funcs = {};
+	g_gort = {};
+	for (i = 0; i < l.length; i++) {
+		g_funcs[l[i]] = {};
+		for (j = 0; j <= 4; j++) {
+			g_funcs[l[i]][ribet(-4,4)] = ribet(-4,4);
+			}
+		g_gort[l[i]] = ribet(0,1);
+		}
+	}
+
+function func_tabl(tabl,v) {
+	var i;
+	var l = Object.keys(tabl);
+	l.sort(function(a,b){return(a-b)});
+	var s = "<table border=1>"
+	s += "<tr><td>x</td><td>"+v+"(x)</td></tr>";
+	for (i = 0; i < l.length; i++) {
+		s += "<tr><td id='tabl_"+ v + "_" + l[i] + "'>"+l[i]+"</td>";
+		s += "<td id='tably_" + v + "_" + l[i] + "'>"+tabl[l[i]]+"</td></tr>";
+		}
+	s += "</table>";
+	return(s);
+	}
+
+function func_graph(tabl,v) {
+	var gos = [{type:"plot",fct:lagrunge(tabl)}];
+	var s = "<table border=1><tr><td>Graph of " + v + ":</td></tr><tr><td>" + tgr_grapher_string("gr_"+v,gos,{width:300,height:300}) + "</td></tr></table>";
+	return(s);
+	}
+
+function drawfuncs() {
+	var s = "";
+	var i;
+	tgr_graph_array = {};
+	s = "<table><tr>";
+	for (i in g_funcs) {
+		s += "<td>";
+		if (g_gort[i]) {
+			s += func_graph(g_funcs[i],i);
+			}
+		else {
+			s += func_tabl(g_funcs[i],i);
+			}
+		s += "</td>";
+		}
+	s += "</tr></table>";
+	document.getElementById("funcs").innerHTML = s;
+	}
+
+function makeprob(cplx) {
+	if (cplx == 0) {
+		return({op:"int",c:ribet(-4,4)});
+		}
+	var l = ["f","g","h"];
+	if (document.getElementById("chk_sums").checked) {
+		l.push("+");
+		}
+	if (document.getElementById("chk_muls").checked) {
+		l.push("*");
+		}
+	var k = relt(l);
+	if (k == "+") {
+		var c = ribet(0,cplx-1);
+		return({op:"add",subs:[
+			makeprob(c),
+			makeprob(cplx-1-c)
+			]});
+		}
+	else if (k == "*") {
+		var c = ribet(0,cplx-1);
+		return({op:"mul",subs:[
+			makeprob(c),
+			makeprob(cplx-1-c)
+			]});
+		}
+	else {
+		return({op:"func",c:k,subs:[makeprob(cplx-1)]});
+		}
+	}
+
+function ixify(ix) {
+	var i;
+	var s = "ix";
+	for (i = 0; i < ix.length; i++) {
+		s += "_";
+		s += ix[i];
+		}
+	return(s);
+	}
+
+function ttree_needsexplicitmul(tt) {
+	if (tt.op == "mul") {return(ttree_needsexplicitmul(tt.subs[0]));}
+	if (tt.op == "pow") {return(ttree_needsexplicitmul(tt.subs[0]));}
+	if (tt.op == "neg") {return(true);}
+	if (tt.op == "int" || tt.op == "float") {return(true);}
+	return(false);
+	}
+
+function ttree_issubtract(tt) { //checks if tt starts with a minus sign
+	if (tt.op == "neg") {return(true);}
+	if (tt.op == "mul") {return(ttree_issubtract(tt.subs[0]));}
+	if (tt.op == "int" || tt.op == "float") {return(tt.c < 0);}
+	return(false);
+	}
+
+function ttree_needsparenpow(tt) {
+	if (tt.op == "int" && tt.c >= 0) {return(false);}
+	if (tt.op == "var") {return(false);}
+	if (tt.op == "const") {return(false);}
+	return(true);
+	}
+
+
+function ttree_eval(tt) {
+	if (tt.op == "add") {
+		var i;
+		var s = 0;
+		for (i = 0; i < tt.subs.length; i++) {
+			if (ttree_eval(tt.subs[i]) == "FAIL") {return("FAIL");}
+			s += ttree_eval(tt.subs[i]);
+			}
+		return(s);
+		}
+	if (tt.op == "mul") {
+		var i;
+		var s = 1;
+		for (i = 0; i < tt.subs.length; i++) {
+			if (ttree_eval(tt.subs[i]) == "FAIL") {return("FAIL");}
+			s *= ttree_eval(tt.subs[i]);
+			}
+		return(s);
+		}
+	if (tt.op == "int") {
+		return(tt.c);
+		}
+	if (tt.op == "func") {
+		if (ttree_eval(tt.subs[0]) in g_funcs[tt.c]) {
+			return(g_funcs[tt.c][ttree_eval(tt.subs[0])]);
+			}
+		else {
+			return("FAIL");
+			}
+		}
+	}
+
+
+function ttree_to_html(tt,ix,opts) {
+	var t = "";
+	var i;
+	if (ix) {} else {
+		ix = ["d"];
+		}
+	if (opts) {} else {opts = "";}
+
+	if (tt.op == "add") {
+		for (i = 0; i < tt.subs.length; i++) {
+			if (!t || ttree_issubtract(tt.subs[i])) {
+				t += ttree_to_html(tt.subs[i],ix.concat([i]));
+				}
+			else {
+				t += "+" + ttree_to_html(tt.subs[i],ix.concat([i]));
+				}
+			}
+		}
+	else if (tt.op == "mul") {
+		for (i = 0; i < tt.subs.length; i++) {
+			if (!t) {
+				t += ttree_to_html(tt.subs[i],ix.concat([i]));
+				}
+			else if (tt.subs[i].op == "add" || ttree_issubtract(tt.subs[i])) {
+				t += ttree_to_html(tt.subs[i],ix.concat([i]),"parens");
+				}
+			else if (ttree_needsexplicitmul(tt.subs[i])) {
+				t += " &middot " + ttree_to_html(tt.subs[i],ix.concat([i]));
+				}
+			else {
+				t += ttree_to_html(tt.subs[i],ix.concat([i]));
+				}
+			}
+		}
+	else if (tt.op == "neg") {
+		t = "-" + ttree_to_html(tt.subs[0],ix.concat([0]));
+		}
+	else if (tt.op == "func") {
+		t = tt.c + ttree_to_html(tt.subs[0],ix.concat([0]),"parens");
+		}
+	else if (tt.op == "var") {
+		t = tt.c;
+		}
+	else if (tt.op == "const") {
+		if (tt.c == "pi") {t = "&pi;";}
+		else {t = tt.c;}
+		}
+	else if (tt.op == "int" || tt.op == "float") {
+		t = tt.c.toString();
+		}
+	else if (tt.op == "force_paren") {
+		t = ttree_to_html(tt.subs[0],ix.concat([0]),"parens");
+		}
+
+	if (opts == "parens") {
+		return("(<span class='ttmath' id='"+ixify(ix)+"'>"+t+"</span>)");
+		}
+	else {
+		return("<span class='ttmath' id='"+ixify(ix)+"'>"+t+"</span>");
+		}
+
+	}
+
+
+function ttree_to_treant(tt,ix) {
+	if (ix) {} else {ix = []};
+	s = "<table style='text-align:center' id='tabl_"+ixify(ix)+"'><tr><td>";
+	if (document.getElementById("chk_treename").checked) {
+		s += tt.op;
+		if ("c" in tt) {
+			s += ": "+tt.c;
+			}
+		s += "</td></tr><tr><td>";
+		}
+	s += katex.renderToString(ttree_to_tex(tt),{strict:false,trust:true});
+	s += "</td></tr></table>";
+
+	var t = {
+		innerHTML: s,
+		children: []
+		}
+
+	var i;
+
+	if ("subs" in tt) {
+		for (i = 0; i < tt.subs.length; i++) {
+			t.children.push(ttree_to_treant(tt.subs[i],ix.concat([i])));
+			} 
+		}
+	return(t);
+	}
+
+
+function ttree_to_tex(tt,ix) {
+	if (ix) {
+		}
+	else {
+		ix = ["d"];
+		}
+
+
+	var t = "";
+	if (tt.op == "add") {
+		var i;
+		for (i = 0; i < tt.subs.length; i++) {
+			if (!t || ttree_issubtract(tt.subs[i])) {
+				t += ttree_to_tex(tt.subs[i],ix.concat([i]));
+				}
+			else {
+				t += "+" + ttree_to_tex(tt.subs[i],ix.concat([i]));
+				}
+			}
+		}
+	else if (tt.op == "mul") {
+		var i;
+		for (i = 0; i < tt.subs.length; i++) {
+			if (!t) {
+				t += ttree_to_tex(tt.subs[i],ix.concat([i]));
+				}
+			else if (tt.subs[i].op == "add" || ttree_issubtract(tt.subs[i])) {
+				t += "\\left( " + ttree_to_tex(tt.subs[i],ix.concat([i])) + "\\right) ";
+				}
+			else if (ttree_needsexplicitmul(tt.subs[i])) {
+				t += " \\cdot " + ttree_to_tex(tt.subs[i],ix.concat([i]));
+				}
+			else {
+				t += ttree_to_tex(tt.subs[i],ix.concat([i]));
+				}
+			}
+		}
+	else if (tt.op == "neg") {
+		t = "-" + ttree_to_tex(tt.subs[0],ix.concat([0]));
+		}
+	else if (tt.op == "func") {
+		t = tt.c + " \\left( " + ttree_to_tex(tt.subs[0],ix.concat([0])) + " \\right) ";
+		}
+	else if (tt.op == "var") {
+		t = tt.c;
+		}
+	else if (tt.op == "const") {
+		if (tt.c == "pi") {t = "\\pi";}
+		else {t = tt.c;}
+		}
+	else if (tt.op == "int" || tt.op == "float") {
+		t = tt.c.toString();
+		}
+
+
+	if (ix.length==0 || ix[0] != "d") {
+		return("\\htmlId{"+ixify(ix)+"}{"+t+"}");
+		}
+	else {
+		return(t);
+		}
+	}
+
+function indexlist(tt) {
+	var rval = [[]];
+	var i,j;
+	if ("subs" in tt) {
+		for (i = 0; i < tt.subs.length; i++) {
+			var t = indexlist(tt.subs[i]);
+			for (j = 0; j < t.length; j++) {
+				rval.push([i].concat(t[j]));
+				}
+			}
+		}
+	return(rval);
+	}
+
+var targid = "";
+
+function ml(tt) {
+	var i;
+	var il = indexlist(tt);
+	for (i = 0; i < il.length; i++) {
+		document.getElementById(ixify(il[i])).style.backgroundColor = "";
+		document.getElementById("tabl_"+ixify(il[i])).style.backgroundColor = "";
+		}
+	}
+
+function mm(e,tt) {
+	var l = document.querySelectorAll(":hover");
+	if (!document.getElementById("chk_treehi").checked) {l = [];}
+	var i;
+	var il = indexlist(tt);
+	for (i = 0; i < il.length; i++) {
+		document.getElementById(ixify(il[i])).style.backgroundColor = "";
+		}
+	var id = "";
+	for (i = 0; i < l.length; i++) {
+		if (l[i].id) {id = l[i].id;}
+		}
+	if (document.getElementById(id)) {
+		document.getElementById(id).style.backgroundColor = "#CCDDAA";
+		}
+	for (i = 0; i < il.length; i++) {
+		if (ixify(il[i]).startsWith(id)) {
+			document.getElementById("tabl_"+ixify(il[i])).style.backgroundColor="#CCDDAA";
+			}
+		}
+	}
+
+function initializemouseover(tt) {
+	document.getElementById("ix").addEventListener("mousemove",function(e) {mm(e,tt)});
+	document.getElementById("ix").addEventListener("mouseout",function(e) {ml(tt)});
+	var i;
+	var il = indexlist(tt);
+	}
+
+var cht = {
+	container: "#treetarg",
+	rootOrientation: "SOUTH",
+	connectors: {type:"straight"}
+	};
+
+function do_everything() {
+	var cplx = Number(document.getElementById("num_cplx").value);
+	var tt = makeprob(cplx);
+	g_tt = tt;
+	makeg_funcs();
+	if (ttfuncs(tt).length == 0) {do_everything();}
+	if (ttree_eval(tt) == "FAIL") {do_everything();}
+	drawfuncs();
+	document.getElementById("hinttarg").innerHTML = "";
+	upd_treeform();
+	document.getElementById("ans").value = "";
+	}
+
+function upd_treeform() {
+	var tt = g_tt;
+	document.getElementById("htmltarg").innerHTML = "Find: " + ttree_to_html(tt,[]);
+
+	if (document.getElementById("chk_treeshow").checked) {
+		document.getElementById("treetarg").style.display = "";
+	new Treant({
+		chart:cht,
+		nodeStructure: ttree_to_treant(tt)
+		});
+	initializemouseover(tt);
+		}
+	else {
+		document.getElementById("treetarg").style.display = "none";
+		}
+	}
+
+function colorify() {
+	var il = indexlist(g_tt);
+	var i;
+	var s;
+	for (i = 0; i < il.length; i++) {
+		s = "hsl("+360*i/il.length+",100%,72%)";
+		document.getElementById("tabl_"+ixify(il[i])).style.backgroundColor = s;
+		document.getElementById(ixify(il[i])).style.backgroundColor = s;
+		}
+	}
+
+function ttree_zoom_in(tt,ix) {
+	if (ix.length == 0) {return(tt);}
+	return(ttree_zoom_in(tt.subs[ix[0]],ix.slice(1)));
+	}
+
+function placetostart() {
+	var il = indexlist(g_tt);
+	var mlen = -1;
+	var ml = "NOPE";
+	var i;
+	for (i = 0; i < il.length; i++) {
+		if (["func","add","mul"].indexOf(ttree_zoom_in(g_tt,il[i]).op) > -1) {
+			if (il[i].length > mlen) {
+				mlen = il[i].length;
+				ml = il[i];
+				}
+			}
+		}
+	return(ml);
+	}
+
+function highlight(id) {
+	document.getElementById(id).classList.remove("hi");
+	window.requestAnimationFrame(function(t) {
+		window.requestAnimationFrame(function(t) {
+			document.getElementById(id).classList.add("hi");
+			})
+		});
+	}
+
+function hi(s) {
+	highlight(s);
+	highlight("tabl_"+s);
+	}
+
+function hix(f,x) {
+	if (("gr_" + f) in tgr_graph_array) {
+		tgr_add_to_grapher_objs("gr_"+f,{type:"vline", x:x, linewidth:3, color:"blue"});
+		}
+	if (document.getElementById("tabl_"+f+"_"+x)) {
+		highlight("tabl_"+f+"_"+x);
+		}
+	}
+
+function hiy(f,x,y) {
+	if (("gr_" + f) in tgr_graph_array) {
+		tgr_add_to_grapher_objs("gr_"+f,{type:"plot", fct:function(x){return(y);}, linewidth:3, color:"blue"});
+		}
+	if (document.getElementById("tably_"+f+"_"+x)) {
+		highlight("tably_"+f+"_"+x);
+		}
+	}
+
+function ttree_replace(tt1,ix,tt2) {
+	if (ix.length == 0) {return(tt2);}
+	var rval = {}; 
+	rval.op = tt1.op;
+	if ("c" in tt1) {rval.c = tt1.c}
+	rval.subs = [];
+	for (i = 0; i < tt1.subs.length; i++) {
+		if (i != ix[0]) {
+			rval.subs.push(tt1.subs[i]);
+			}
+		else {
+			rval.subs.push(ttree_replace(tt1.subs[i],ix.slice(1),tt2));
+			}
+		}
+	return(rval);
+	}
+
+function replac() {
+	var ix = placetostart();
+	var ttf = {op:"int",c:ttree_eval(ttree_zoom_in(g_tt,ix))};
+	g_tt = ttree_replace(g_tt,ix,ttf);
+	upd_treeform();
+	document.getElementById("hinttarg").innerHTML = "";
+	drawfuncs();
+	}
+
+function show_hint() {
+	var ix = placetostart();
+	if (ix == "NOPE") {
+		document.getElementById("hinttarg").innerHTML = "You're done!";
+		return;
+		}
+	var s;
+	s = "Let's figure out what ";
+	var z = ttree_zoom_in(g_tt,ix);
+	s += katex.renderToString(ttree_to_tex(z));
+	s += " <button onclick='hi(\"" + ixify(ix) + "\")'>highlight</button>";
+	s += " is. ";
+	if (z.op == "add" || z.op == "mul") {
+		s += "This is just " + ttree_eval(z) + ", so we can <i>replace</i> " + katex.renderToString(ttree_to_tex(z)) + " with " + ttree_eval(z);
+		s += " <button onclick='replac()'> Replace </button>";
+		}
+	else if (z.op == "func") {
+		var x = z.subs[0].c;
+		var y = g_funcs[z.c][x];
+		s += "To do this we need to figure out what value " + z.c + "(x) is when x is " + x + ".<br>";
+		s += "Let's start by finding when x = " + x + " on the ";
+		if (g_gort[z.c]) {s += "graph of " + z.c + ": ";}
+		else {s += "table for " + z.c + ": ";}
+		s += " <button onclick='hix(\"" + z.c + "\"," + x + ")'> Show x = " + x + "</button><br>";
+		s += "Then look at the corresponding value of " + z.c + "(x)";
+		if (g_gort[z.c]) {
+			s += " (i.e. y)";
+			}
+		s += ":";
+		s += " <button onclick='hiy(\"" + z.c + "\"," + x + "," + y + ")'> Show " + z.c + "(x) </button><br>";
+		s += "Finally, since we know " + z.c + "(x) = " + y + ", we can replace " + z.c + "(x) by " + y +",";
+		if (ix.length == 0) {
+			s += " to get our final answer.";
+			}
+		else {
+			s += " to simplify the problem down to ";
+			s += katex.renderToString(ttree_to_tex(ttree_replace(g_tt,ix,{op:"int",c:y})));
+			s += ":";
+			}
+		s += " <button onclick='replac()'> Replace </button>";
+		}
+	else {
+		s += "Something went horribly wrong";
+		}
+	document.getElementById("hinttarg").innerHTML = s;
+	}
+
+function check_ans() {
+	if (Number(document.getElementById("ans").value) == ttree_eval(g_tt)) {
+		alert("Correct!");
+		}
+	else {
+		alert("Please try again!");
+		}
+	}
+
+</script>
+<style>
+.ttmath {
+	display:inline-block;
+	margin: 2px;
+	}
+.node {
+	border: 1px solid;
+	padding: 10px;
+	}
+.hi {
+	animation: hii 3s;
+	background-color: #CCDDAA;
+	}
+@keyframes hii {
+	from {background-color: red}
+	50% {background-color: blue}
+	to {background-color: #CCDDAA}
+	}
+</style>
+<link rel="stylesheet" href="katex.min.css">
+<link rel="stylesheet" href="treant/Treant.css" type="text/css"/>
+</head>
+<body onload="">
+<button onclick="do_everything()">Create Problem</button> Complexity: <input type="number" id="num_cplx" min=1 value=1 style='width:2em'> <br>
+<div id="funcs"></div>
+<div id="htmltarg" style='font-size:200%;user-select:none;'></div>
+Type your answer here: <input id="ans" style='width:4em'> 
+<button onclick="check_ans()">Check Answer</button>
+<button onclick="show_hint()" title="Try working from the inside out">Hint</button>
+<div id="hinttarg"></div>
+<hr>
+<input type="checkbox" id="chk_sums" checked> Allow sums <br>
+<input type="checkbox" id="chk_muls" checked> Allow multiplication <br>
+<input type="checkbox" id="chk_treehi" onchange="upd_treeform()"> Highlight subexpressions <br>
+<input type="checkbox" id="chk_treeshow" onchange="upd_treeform()"> Show tree <br>
+<input type="checkbox" id="chk_treename" onchange="upd_treeform()"> Show names on tree (for debugging) <br>
+<button onclick="colorify()">Colorify</button> (for debugging);
+
+<div id="treetarg"></div>
+</body>
+</html>

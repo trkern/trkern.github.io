@@ -289,6 +289,7 @@ function tgr_labeltrigxaxis(ctx,pd) {
 	}
 
 function tgr_draw_graph(id) {
+	try {
 	var pd = tgr_graph_array[id].plotdata;
 	var ctx = document.getElementById("tgr_canv_"+id).getContext("2d");
 	ctx.beginPath();
@@ -386,6 +387,7 @@ function tgr_draw_graph(id) {
 	if ("on_redraw" in pd) {
 		pd.on_redraw();
 		}
+	} catch(e) {}
 	}
 
 function tgr_fun(jstr) {

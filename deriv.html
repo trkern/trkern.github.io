@@ -227,7 +227,7 @@ function ttree_to_tex(tt,ix) {
 			if (!t) {
 				t += ttree_to_tex(tt.subs[i],ix.concat([i]));
 				}
-			else if (tt.subs[i].op == "add") {
+			else if (tt.subs[i].op == "add" || ttree_issubtract(tt.subs[i])) {
 				t += "\\left( " + ttree_to_tex(tt.subs[i],ix.concat([i])) + "\\right) ";
 				}
 			else if (ttree_needsexplicitmul(tt.subs[i])) {
@@ -851,7 +851,7 @@ function ttree_to_html(tt,ix,opts) {
 			if (!t) {
 				t += ttree_to_html(tt.subs[i],ix.concat([i]));
 				}
-			else if (tt.subs[i].op == "add") {
+			else if (tt.subs[i].op == "add" || ttree_issubtract(tt.subs[i])) {
 				t += ttree_to_html(tt.subs[i],ix.concat([i]),"parens");
 				}
 			else if (ttree_needsexplicitmul(tt.subs[i])) {

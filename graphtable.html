@@ -431,6 +431,23 @@ var cht = {
 	connectors: {type:"straight"}
 	};
 
+function toosteep(tt) {
+	if (tt.op == "func" && g_gort[tt.c]) {
+		var x = ttree_eval(tt.subs[0]);
+		var f = lagrunge(g_funcs[tt.c]);
+		if (Math.abs(f(x) - f(x+.01)) > .03) {
+			return(true);
+			}
+		}
+	if ("subs" in tt) {
+		var i;
+		for (i = 0; i < tt.subs.length; i++) {
+			if (toosteep(tt.subs[i])) {return(true);}
+			}
+		}
+	return(false);
+	}
+
 function do_everything() {
 	var cplx = Number(document.getElementById("num_cplx").value);
 	var tt = makeprob(cplx);
@@ -438,6 +455,7 @@ function do_everything() {
 	makeg_funcs();
 	if (ttfuncs(tt).length == 0) {do_everything();}
 	if (ttree_eval(tt) == "FAIL") {do_everything();}
+	if (toosteep(g_tt)) {do_everything();}
 	drawfuncs();
 	document.getElementById("hinttarg").innerHTML = "";
 	upd_treeform();

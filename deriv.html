@@ -224,7 +224,7 @@ function ttree_to_tex(tt,ix) {
 	else if (tt.op == "mul") {
 		var i;
 		for (i = 0; i < tt.subs.length; i++) {
-			if (!t) {
+			if (!t && tt.subs[i].op != "add") {
 				t += ttree_to_tex(tt.subs[i],ix.concat([i]));
 				}
 			else if (tt.subs[i].op == "add" || ttree_issubtract(tt.subs[i])) {
@@ -806,19 +806,35 @@ function derivative_button(ix,c,tt) {
 	}
 
 function parenify(s,id) {
-	return("<span class='parens' id='"+id+"'>" + s + "</span>");
+	switch(Number(document.getElementById("sel_parenbackup").value)) {
+		case 0: return("<span class='parens' id='"+id+"'>" + s + "</span>");
+		case 1: return("<span class='backup_parens' id='"+id+"'><span style='margin:4px'>" + s + "</span></span>");
+		case 2: return("<span id='"+id+"'>(" + s + ")</span>"); 
+		}
 	}
 
 function brackify(s,id) {
-	return("<span class='brack' id='"+id+"'>" + s + "</span>");
+	switch(Number(document.getElementById("sel_bracbackup").value)) {
+		case 0: return("<span class='brack' id='"+id+"'>" + s + "</span>");
+		case 1: return("<span class='backup_brackets' id='"+id+"'><span style='margin:4px'>" + s + "</span></span>");
+		case 2: return("<span id='"+id+"'>[" + s + "]</span>"); 
+		}
 	}
 
 function sqrtify(s,id) {
-	return("<span class='squareroot' id='"+id+"'>" + s + "</span>");
+	switch(Number(document.getElementById("sel_sqrtbackup").value)) {
+		case 0: return("<span class='squareroot' id='"+id+"'>" + s + "</span>");
+		case 1: return("<span class='backup_squareroot' id='"+id+"'><span style='margin:4px'>" + s + "</span></span>");
+		case 2: return("<span id='"+id+"'>sqrt(" + s + ")</span>"); 
+		}
 	}
 
 function absify(s,id) {
-	return("<span class='absolutevalue' id='"+id+"'>" + s + "</span>");
+	switch(Number(document.getElementById("sel_absbackup").value)) {
+		case 0: return("<span class='absolutevalue' id='"+id+"'>" + s + "</span>");
+		case 1: return("<span class='backup_absolutevalue' id='"+id+"'><span style='margin:4px'>" + s + "</span></span>");
+		case 2: return("<span id='"+id+"'>|" + s + "|</span>"); 
+		}
 	}
 
 function ttree_to_html(tt,ix,opts) {
@@ -848,7 +864,7 @@ function ttree_to_html(tt,ix,opts) {
 		}
 	else if (tt.op == "mul") {
 		for (i = 0; i < tt.subs.length; i++) {
-			if (!t) {
+			if (!t && tt.subs[i].op != "add") {
 				t += ttree_to_html(tt.subs[i],ix.concat([i]));
 				}
 			else if (tt.subs[i].op == "add" || ttree_issubtract(tt.subs[i])) {
@@ -1439,6 +1455,48 @@ blockquote.caution {
 	padding: 20px;
 	border-left: 3px solid yellow;
 	}
+.backup_parens {
+	border-radius: 7px / 50%;
+	border-left: 2px solid black;
+	border-right: 2px solid black;
+	display:inline-block;
+	margin-left: 4px;
+	}
+.backup_brackets {
+	border-radius: 7px / 1px;
+	border-left: 2px solid black;
+	border-right: 2px solid black;
+	display:inline-block;
+	}
+.backup_squareroot {
+	border-top: 2px solid black;
+	display:inline-block;
+	position:relative;
+	margin-left: 20px;
+	}
+.backup_squareroot:before {
+	width: 10px;
+	top: 0px;
+	bottom: 0px;
+	background: linear-gradient(to top left, rgba(0,0,0,0) 40%, black 49% 51%, rgba(0,0,0,0) 63%);
+	position:absolute;
+	left: -8px;
+	content: '';
+	}
+.backup_squareroot:after {
+	width: 10px;
+	top: 50%;
+	bottom: 0px;
+	background: linear-gradient(to top right, rgba(0,0,0,0) 42%, black 49% 51%, rgba(0,0,0,0) 58%);
+	position:absolute;
+	left: -18px;
+	content: '';
+	}
+.backup_absolutevalue {
+	border-left: 2px solid black;
+	border-right: 2px solid black;
+	display:inline-block;
+	}
 
 </style>
 <link rel="stylesheet" href="katex.min.css">
@@ -1481,5 +1539,28 @@ This interactive is a useful tool to develop an understanding of how derivatives
 <input type="checkbox" id="chk_latex" checked onchange="upd_tree()"> Show latex<br>
 <input type="checkbox" id="chk_latex_source" onchange="upd_tree()"> Show latex source (for debugging)<br>
 Names of functions: <input id="inp_funnames" value="f,g"> <br>
+
+Render options:
+Parentheses: <select id='sel_parenbackup'>
+<option value=0>SVG</option>
+<option value=1 selected>CSS</option>
+<option value=2>text</option>
+</select>
+Brackets: <select id='sel_bracbackup'>
+<option value=0>SVG</option>
+<option value=1 selected >CSS</option>
+<option value=2>text</option>
+</select>
+Roots: <select id='sel_sqrtbackup'>
+<option value=0>SVG</option>
+<option value=1 selected>CSS</option>
+<option value=2>text</option>
+</select>
+Absolute Values: <select id='sel_absbackup'>
+<option value=0>SVG</option>
+<option value=1 selected>CSS</option>
+<option value=2>text</option>
+</select>
+
 </body>
 </html>

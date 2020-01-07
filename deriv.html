@@ -1346,6 +1346,15 @@ function upd_form() {
 	document.getElementById("htmltarg").innerHTML = ttree_to_html(g_deriv_tt,[]);
 	}
 
+function loaduri() {
+	var str = document.URL;
+	if (str.indexOf("?") == -1) {return;}
+	str = str.slice(str.indexOf("?")+1);
+	str = decodeURI(str);
+	document.getElementById("inp").value = str;
+	deriv_ttree_do_everything();
+	}
+
 /*
 <svg width="100%" height="100%" viewBox="0 0 18 14">
 <line x1="8.5" y1="0" x2="18" y2="0" stroke="black"/>
@@ -1502,7 +1511,7 @@ blockquote.caution {
 <link rel="stylesheet" href="katex.min.css">
 <link rel="stylesheet" href="treant/Treant.css" type="text/css"/>
 </head>
-<body>
+<body onload="loaduri()">
 
 Type a math formula in the box below and push "Compute Derivative":<br>
 <input id="inp" value="x^2+2x+1"><br>
@@ -1510,7 +1519,7 @@ Type a math formula in the box below and push "Compute Derivative":<br>
 Derivative Variable: <input id="inp_x" value="x" style="width:2em"><br>
 Number of times to compute derivative: <input type="number" min=1 id="inp_n" value=1 style="width:3em">
 </td></tr><tr><td>
-<button onclick="deriv_ttree_do_everything()">Compute Derivative</button>
+<button onclick="deriv_ttree_do_everything()">Start Differentiating</button>
 </td></tr></table>
 <div id="htmltarg" style='font-size:200%;user-select:none;'></div>
 <div id="treetarg" style='display:none'></div>

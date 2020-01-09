@@ -10,6 +10,7 @@
 <script src="underscore-min.js"></script>
 <script src="kas.js"></script>
 <script src="katex.min.js"></script>
+<script src="math.min.js"></script>
 <script>
 function text_expand(id) {
 	var str = document.getElementById(id).value;
@@ -209,6 +210,160 @@ function oni(e) {
 		}
 	}
 
+/*
+<div id="gg_q"></div>
+
+<button onclick="gg_new()">New Problem</button> <input id="gg_a" style="width:5em"> <button onclick="gg_guess()">Guess</button> <button onclick="gg_show()">Show Answer</button>
+
+<input type="checkbox" id="gg_b10" checked> Base 10 logs<br>
+<input type="checkbox" id="gg_b2"> Base 2 logs<br>
+<input type="checkbox" id="gg_bs"> Simple bases<br>
+<input type="checkbox" id="gg_bc"> Complicated bases<br>
+<input type="checkbox" id="gg_bf"> Fractional bases<br>
+<input type="checkbox" id="gg_bv"> Variable bases<br>
+<input type="checkbox" id="gg_bi"> Invalid bases (enter DNE if the problem doesn't make sense)<br>
+<input type="checkbox" id="gg_if"> Fractional inputs<br>
+<input type="checkbox" id="gg_ir"> Radical inputs<br>
+<input type="checkbox" id="gg_ic"> Complicated inputs<br>
+<input type="checkbox" id="gg_ii"> Invalid inputs (enter DNE if the problem doesn't make sense)<br>
+*/
+
+function powpow(a,b,c) {//returns proper latex string for a^(b/c)
+	//assumes a,b,c are integers or variables
+	//and a and c, if integers, are positive
+	var atotheabsb;
+	if (Number.isInteger(a) && Number.isInteger(b)) {
+		atotheabsb = Math.pow(a,Math.abs(b)).toLocaleString();
+		}
+	else {
+		var absb = b;
+		if (Number.isInteger(b) && b < 0) {absb = -b;}
+		if (Number.isInteger(b) && b == 0) {atotheabsb = "1";}
+		else if (Number.isInteger(b) && absb == 1) {atotheabsb = a;}
+		else {
+			atotheabsb = "{"+a+"}^{"+absb+"}";
+			}
+		}
+	var ataboc;
+	if (c == 1) {
+		ataboc = atotheabsb;
+		}
+	else if (c == 2) {
+		ataboc = "\\sqrt{"+atotheabsb+"}";
+		}
+	else {
+		ataboc = "\\sqrt["+c+"]{"+atotheabsb+"}";
+		}
+	var str = ataboc;
+	if (Number.isInteger(b) && b < 0) {
+		str = "\\frac{1}{"+ataboc+"}";
+		}
+	return(str);
+	}
+
+function fracfrac(p,q) { //proper string string for p/q;
+	if (q < 0) {
+		p *= -1;
+		q *= -1;
+		}
+	var k = math.gcd(p,q);
+	p /= k;
+	q /= k;
+	if (q == 1) {
+		return(p);
+		}
+	return(p + "/" + q);
+	}
+
+var g_gg_ans;
+
+function gg_new() {
+	document.getElementById("gg_ans").innerHTML = "";
+	var l = [];
+	if (document.getElementById("gg_b10").checked) {l.push(10);}
+	if (document.getElementById("gg_b2").checked) {l.push(2);}
+	if (document.getElementById("gg_bs").checked) {l.push(3,4,5);}
+	if (document.getElementById("gg_bc").checked && l.length == 0) {l.push(10,2,3,4,5);}
+	if (document.getElementById("gg_bf").checked && l.length == 0) {l.push(10,2,3,4,5);}
+	if (document.getElementById("gg_bv").checked) {l.push("a","b","x","y");}
+//	if (document.getElementById("gg_bi").checked) {l.push(-2,-1,0);}
+
+	if (l.length == 0) {
+		document.getElementById("gg_q").innerHTML = "Please select at least one type of base"
+		return;
+		}
+
+	var h = math.pickRandom(l);
+
+	l = [0,1,2,3];
+	if (h == 10) {l = [0,1,2,3,4,5,6,9];}
+	if (h == 2) {l = [0,1,2,3,4];}
+	if (typeof(h) == "string") {l = [0,1,2,3,4,5,6,7,8,9];}
+
+	var p = math.pickRandom(l);
+	var q;
+	if (document.getElementById("gg_bc").checked) {
+		q = math.pickRandom(l);
+		if (q == 0) {q = 1;}
+		}
+	else {q = 1;}
+
+	if (document.getElementById("gg_if").checked && math.pickRandom([0,1])) {
+		p *= -1;
+		}
+	if (document.getElementById("gg_bf").checked && math.pickRandom([0,1])) {
+		q *= -1;
+		}
+
+	var bxd = 1;
+	var cxd = 1;
+
+	if (document.getElementById("gg_ir").checked) {
+		cxd = math.pickRandom([1,1,1,1,2,2,2,3,3,4]);
+		}
+	if (document.getElementById("gg_br").checked) {
+		bxd = math.pickRandom([1,1,1,1,2,2,2,3,3,4]);
+		}
+
+	var b = powpow(h,q,bxd);
+	var c = powpow(h,p,cxd);
+	var ans = fracfrac(p*bxd,q*cxd);
+
+	if (document.getElementById("gg_bi").checked && math.pickRandom([0,0,0,1]) && (typeof(h) != "string")) {
+		b = math.pickRandom([0,"\\text{-}" + b,1]);
+		ans = "DNE"
+		}
+	if (document.getElementById("gg_ii").checked && math.pickRandom([0,0,0,1]) && (typeof(h) != "string")) {
+		c = math.pickRandom([0,"\\text{-}" + c]);
+		ans = "DNE"
+		}
+	g_gg_ans = ans;
+	document.getElementById("gg_q").innerHTML = katex.renderToString("\\log_{"+b+"}\\left("+c+"\\right)");
+	}
+
+function gg_guess() {
+	var inp = document.getElementById("gg_a").value;
+	if (g_gg_ans == "DNE") {
+		if (inp == "DNE") {
+			document.getElementById("gg_ans").innerHTML = "<span class='correct'>Correct!</span>";
+			}
+		else {
+			document.getElementById("gg_ans").innerHTML = "<span class='incorrect'>Please try again!</span>";
+			}
+		return;
+		}
+	if (KAS.compare(KAS.parse(g_gg_ans.toString()).expr,KAS.parse(inp).expr).equal) {
+		document.getElementById("gg_ans").innerHTML = "<span class='correct'>Correct!</span>";
+		}
+	else {
+		document.getElementById("gg_ans").innerHTML = "<span class='incorrect'>Please try again!</span>";
+		}
+	}
+
+function gg_show() {
+	document.getElementById("gg_ans").innerHTML = g_gg_ans;
+	}
+
 </script>
 <link rel="stylesheet" href="katex.min.css">
 <style>
@@ -228,7 +383,7 @@ function oni(e) {
 	position:relative;
 	top: .5em;
 	}
-input {
+input[type='text'] {
 	pointer-events:auto;
 	width: 1ch;
 	text-overflow: ellipsis;
@@ -245,6 +400,14 @@ input {
 .fd {
 	font-size:500%;
 	}
+.correct {
+	background-color: #88CCEE;
+	font-size:150%;
+	}
+.incorrect {
+	background-color: #DDDDDD;
+	font-size:150%;
+	}
 </style>
 </head>
 <body onload='updateletter("a",10,"a1")'>
@@ -253,7 +416,7 @@ input {
 <br>
 
 <div class="fd">
-<input class='bigin a' oninput='oni(event)' id='a1' value='10'> <input class='supin b' oninput='oni(event)' id='b1'> = <input class='bigin c' oninput='oni(event)' id='c1'>
+<input type="text" class='bigin a' oninput='oni(event)' id='a1' value='10'> <input type="text" class='supin b' oninput='oni(event)' id='b1'> = <input type="text" class='bigin c' oninput='oni(event)' id='c1'>
 
 <button id='fix' onclick='fix()' style='visibility:hidden'>Equation doesn't appear to be true. Click to fix</button>
 <span id="poswarn" style='font-size:20%'></span>
@@ -262,11 +425,11 @@ input {
 <hr>
 
 <div class="fd">
-<input class='bigin b' oninput='oni(event)' id='b2'> =
+<input type="text" class='bigin b' oninput='oni(event)' id='b2'> =
 
-log <input class='subin a' oninput='oni(event)' id='a2'> (<input class='bigin c' oninput='oni(event)' id='c2'>) = 
-<table border=0 style='font-size:60%; display:inline-table; vertical-align:middle'><tr><td style='border-bottom:solid 2px;text-align:center'>log(<input class='bigin c' oninput='oni(event)' id='c3'>)</td></tr>
-<tr><td style='text-align:center'>log(<input class='bigin a' oninput='oni(event)' id='a3'>)</td></tr></table>
+log <input type="text" class='subin a' oninput='oni(event)' id='a2'> (<input type="text" class='bigin c' oninput='oni(event)' id='c2'>) = 
+<table border=0 style='font-size:60%; display:inline-table; vertical-align:middle'><tr><td style='border-bottom:solid 2px;text-align:center'>log(<input type="text" class='bigin c' oninput='oni(event)' id='c3'>)</td></tr>
+<tr><td style='text-align:center'>log(<input type="text" class='bigin a' oninput='oni(event)' id='a3'>)</td></tr></table>
 </div>
 
 <hr>
@@ -274,11 +437,11 @@ log <input class='subin a' oninput='oni(event)' id='a2'> (<input class='bigin c'
 <div class="fd">
 <span class="katex pointereventsnone"><span class="katex-mathml"><math><semantics><mrow><mroot><mrow><mi>b</mi></mrow><mrow><mi>a</mi></mrow></mroot></mrow><annotation encoding="application/x-tex">\sqrt[\alpha]{\beta}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height:0.835em;"></span><span class="strut bottom" style="height:1.04em;vertical-align:-0.20500000000000007em;"></span><span class="base"><span class="mord sqrt"><span class="root"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.5932799999999999em;"><span style="top:-2.878em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size6 size1 mtight"><span class="mord mtight"><span class="mord mathit mtight" style="margin-right:0.0037em;">
 
-<input class='supin b' oninput='oni(event)' id='b4'>
+<input type="text" class='supin b' oninput='oni(event)' id='b4'>
 
 </span></span></span></span></span></span></span></span><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.835em;"><span class="svg-align" style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord" style="padding-left:0.833em;"><span class="mord mathit" style="margin-right:0.05278em;">
 
-<input class='bigin c' oninput='oni(event)' id='c4'>
+<input type="text" class='bigin c' oninput='oni(event)' id='c4'>
 
 </span></span></span><span style="top:-2.795em;"><span class="pstrut" style="height:3em;"></span><span class="hide-tail" style="min-width:0.853em;height:1.08em;"><svg width='400em' height='1.08em' viewBox='0 0 400000 1080' preserveAspectRatio='xMinYMin slice'><path d='M95,702c-2.7,0,-7.17,-2.7,-13.5,-8c-5.8,-5.3,-9.5,
 -10,-9.5,-14c0,-2,0.3,-3.3,1,-4c1.3,-2.7,23.83,-20.7,67.5,-54c44.2,-33.3,65.8,
@@ -288,7 +451,7 @@ log <input class='subin a' oninput='oni(event)' id='a2'> (<input class='bigin c'
 s-235,486,-235,486c-2.7,4.7,-9,7,-19,7c-6,0,-10,-1,-12,-3s-194,-422,-194,-422
 s-65,47,-65,47z M834 80H400000v40H845z'/></svg></span></span></span><span class="vlist-s">?</span></span><span class="vlist-r"><span class="vlist" style="height:0.20500000000000007em;"></span></span></span></span></span></span></span>
 
-= <input class='bigin a' oninput='oni(event)' id='a4'>
+= <input type="text" class='bigin a' oninput='oni(event)' id='a4'>
 </div>
 
 <hr>
@@ -302,6 +465,26 @@ Smart fill mode:
 Smart fill updates the third variable based on the previous two values you've entered.
 <br>
 Note: you can type functions like <code>sqrt</code> and <code>log</code> into the textboxes, but may encounter strange behavior during the process of typing the functions in due to the way the parser works. Please report bugs to trk43@cornell.edu.
+
+<hr>
+
+<h1> Logarithm Guessing Game </h1>
+
+<div id="gg_q" style='font-size:xx-large'></div>
+
+<button onclick="gg_new()">New Problem</button> <input id="gg_a" style="width:5em"> <button onclick="gg_guess()">Guess</button> <button onclick="gg_show()">Show Answer</button> <span id="gg_ans"></span><br> 
+
+<input type="checkbox" checked id="gg_b10"> Base 10 logs<br>
+<input type="checkbox" checked id="gg_b2"> Base 2 logs<br>
+<input type="checkbox" checked id="gg_bs"> Simple bases<br>
+<input type="checkbox" id="gg_bc"> Complicated bases<br>
+<input type="checkbox" id="gg_bf"> Fractional bases<br>
+<input type="checkbox" checked id="gg_bv"> Variable bases<br>
+<input type="checkbox" id="gg_br"> Radical bases<br>
+<input type="checkbox" id="gg_bi"> Invalid bases (enter DNE if the problem doesn't make sense)<br>
+<input type="checkbox" checked id="gg_if"> Fractional inputs<br>
+<input type="checkbox" checked id="gg_ir"> Radical inputs<br>
+<input type="checkbox" checked id="gg_ii"> Invalid inputs (enter DNE if the problem doesn't make sense)<br>
 
 <div class="fd"> <span id="expander" style="visibility:hidden; position:fixed"></span> </div>
 

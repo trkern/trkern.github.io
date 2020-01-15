@@ -1,0 +1,597 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<meta name=description content="Factoring Practice">
+<title> Factoring Polynomials </title>
+<script src="underscore-min.js"></script>
+<script src="kas.js"></script>
+<script src="math.min.js"></script>
+<script src="katex.min.js"></script>
+<script>
+
+function ribet(mn,mx) {
+	return(Math.floor(Math.random()*(mx-mn+1))+mn);
+	}
+
+function degree(str) { //only works for single variable.
+	str = KAS.parse(str).expr.print();
+	return(math.rationalize(str,{},true).coefficients.length-1);
+	}
+
+function mjfactorbreakup(ptree) {
+	if (ptree.fn && ptree.fn=="multiply") {
+		return(mjfactorbreakup(ptree.args[0]).concat(mjfactorbreakup(ptree.args[1])));
+		}
+	else if (ptree.fn && ptree.fn=="pow") {
+		return([[ptree.args[0].toString(),ptree.args[1].toString()]]);
+		}
+	else {
+		return([ptree.toString()]);
+		}
+	}
+
+function kasfactorbreakup(ke) {
+	if (ke.name() != "Mul" && ke.name() != "Pow") {return([[ke,1]]);}
+	if (ke.name() == "Pow") {return([[ke.base,ke.exp.n]]);}
+	var i;
+	var l = [];
+	for (i = 0; i < ke.terms.length; i++) {
+		if (ke.terms[i].name() == "Pow") {
+			var b = ke.terms[i].base;
+			var e = ke.terms[i].exp;
+			if (e.name() != "Int" || e.n < 0) {
+				return("ERROR: bad exponent");
+				}
+			l.push([b,e.n]);
+			}
+		else if (ke.terms[i].name() == "Mul") {
+			l = l.concat(kasfactorbreakup(ke.terms[i]));
+			}
+		else {
+			l.push([ke.terms[i],1]);
+			}
+		}
+	return(l);
+	}
+
+function comparebreakups(ibu1, ibu2) {
+	var bu1 = reducebreakup(ibu1);
+	var bu2 = reducebreakup(ibu2);
+	var i, j;
+	var k;
+	if (bu1.length != bu2.length) {return(false);}
+	for (i = 0; i < bu1.length; i++) {
+		k = false;
+		for (j = 0; j < bu2.length; j++) {
+			if (bu1[i][1] == bu2[j][1] && KAS.compare(bu1[i][0],bu2[j][0]).equal) {k = true; break;}
+			}
+		if (!k) {return(false);}
+		}
+	return(true);
+	}
+
+function reducebreakup(bu) {
+	var i,j;
+	var rlist = [];
+	var b;
+	for (i = 0; i < bu.length; i++) {
+		b = false;
+		for (j = 0; j < rlist.length; j++) {
+			if (KAS.compare(bu[i][0],rlist[j][0]).equal) {
+				rlist[j][1] += bu[i][1];
+				b = true;
+				break;
+				}
+			}
+		if (!b) {
+			rlist.push(bu[i]);
+			}
+		}
+	return(rlist);
+	}
+
+function negate(ke) {
+	var str = "-("+ke.print()+")";
+	return(KAS.parse(str).expr);
+	}
+
+function comparebreakupspm(ibu1, ibu2) {
+	var bu1 = reducebreakuppm(ibu1);
+	var bu2 = reducebreakuppm(ibu2);
+	var i, j;
+	var k;
+	if (bu1.length != bu2.length) {return(false);}
+	for (i = 0; i < bu1.length; i++) {
+		k = false;
+		for (j = 0; j < bu2.length; j++) {
+			if (bu1[i][1] == bu2[j][1] && KAS.compare(bu1[i][0],bu2[j][0]).equal) {k = true; break;}
+			if (bu1[i][1] == bu2[j][1] && KAS.compare(bu1[i][0],negate(bu2[j][0])).equal) {k = true; break;}
+			}
+		if (!k) {return(false);}
+		}
+	return(true);
+	}
+
+function reducebreakuppm(bu) {
+	var i,j;
+	var rlist = [];
+	var b;
+	for (i = 0; i < bu.length; i++) {
+		b = false;
+		if (KAS.compare(bu[i][0],KAS.parse("-1").expr)) {
+			break;
+			}
+		for (j = 0; j < rlist.length; j++) {
+			if (KAS.compare(bu[i][0],rlist[j][0]).equal) {
+				rlist[j][1] += bu[i][1];
+				b = true;
+				break;
+				}
+			else if (KAS.compare(bu[i][0],negate(rlist[j][0])).equal) {
+				rlist[j][1] += bu[i][1];
+				b = true;
+				break;
+				}
+			}
+		if (!b) {
+			rlist.push(bu[i]);
+			}
+		}
+	return(rlist);
+	}
+
+function comparepm(str1,str2) {
+	try {
+	var ke1 = KAS.parse(str1).expr;
+	var ke2 = KAS.parse(str2).expr;
+	if (!(KAS.compare(ke1,ke2).equal)) {return(false);}
+	var bu1 = kasfactorbreakup(ke1);
+	var bu2 = kasfactorbreakup(ke2);
+	return(comparebreakupspm(bu1,bu2));
+	}
+	catch(e) {
+		return(false);
+		}
+	}
+
+/*
+A factor problem has:
+poly: string, the question
+factors: string, the answer
+hint: htmlstring
+*/
+
+function compare(str1,str2) {
+	try {
+		return(comparebreakups(kasfactorbreakup(KAS.parse(str1).expr),kasfactorbreakup(KAS.parse(str2).expr)));
+		}
+	catch(e) {
+		return(false);
+		}
+	}
+
+function pfy(n) {
+	if (n < 0) {return(n);}
+	return("+"+n);
+	}
+
+function tex_number(n,force_plus,squash_ones) {
+	if (n == 1 && squash_ones) {
+		if (force_plus) {return("+");}
+		return("");
+		}
+	if (n == -1 && squash_ones) {
+		return("-");
+		}
+	if (force_plus && n >= 0) {return("+"+n);}
+	return(n);
+	}
+
+function tex_monomial(m,force_plus) {
+	if (m[0] == 0) {return("");}
+	var str = tex_number(m[0],force_plus,true);
+	var i;
+	var didanything = false;
+	for (i in m[1]) {
+		if (m[1][i] == 0) {str += "";}
+		else if (m[1][i] == 1) {
+			str += i;
+			didanything = true;
+			}
+		else {
+			str += i + "^{"+tex_number(m[1][i])+"}";
+			didanything = true;
+			}
+		}
+	if (!didanything) {str = tex_number(m[0],force_plus,false);}
+	return(str);
+	}
+
+function tex_polynomial(p) {
+	var i;
+	var str = "";
+	var didanything = false;
+	for (i = 0; i < p.length; i++) {
+		str += tex_monomial(p[i],didanything);
+		if (p[i][0] != 0) {didanything = true;}
+		}
+	if (!didanything) {
+		return("0");
+		}
+	return(str);
+	}
+
+function string_monomial(m,force_plus) {
+	if (m[0] == 0) {return("");}
+	var str = tex_number(m[0],force_plus,true);
+	var i;
+	var didanything = false;
+	for (i in m[1]) {
+		if (m[1][i] == 0) {str += "";}
+		else if (m[1][i] == 1) {
+			str += i;
+			didanything = true;
+			}
+		else {
+			str += i + "^("+tex_number(m[1][i])+")";
+			didanything = true;
+			}
+		}
+	if (!didanything) {str = tex_number(m[0],force_plus,false);}
+	return(str);
+	}
+
+function string_polynomial(p) {
+	var i;
+	var str = "";
+	var didanything = false;
+	for (i = 0; i < p.length; i++) {
+		str += string_monomial(p[i],didanything);
+		if (p[i][0] != 0) {didanything = true;}
+		}
+	if (!didanything) {
+		return("0");
+		}
+	return(str);
+	}
+
+function list2polynomial(l,vr) {//coefficientlist to polynomial object type
+	var i;
+	var rval = [];
+	var o;
+	for (i = l.length -1; i >= 0; i--) {
+		o = {};
+		o[vr] = i;
+		rval.push([l[i],o]);
+		}
+	return(rval);
+	}
+
+function issquare(x) {
+	if (x < 0) {return(false);}
+	return(Math.sqrt(x) == Math.round(Math.sqrt(x)));
+	}
+
+function factorquadratic(a,b,c) { //returns a string, either p(qx+r)(sx+t) or p(ax^2+bx+c) or ax^2+bx+c (also handles a=0 correctly)
+	if (a == 0 && b == 0) {
+		return(String(c));
+		}
+	if (b == 0 && c == 0) {
+		return(a + "x^2");
+		}
+	if (a == 0 && c == 0) {
+		return(b + "x");
+		}
+	if (a <= 0 && b <= 0 && c <= 0) {
+		var k = factorquadratic(-a,-b,-c);
+		if (k.includes("(")) {
+			if (k[0] != "-") {
+				return("-" + k);
+				}
+			else {
+				return(k.slice(1));
+				}
+			}
+		}
+	var p = math.gcd(a,b,c);
+	a /= p;
+	b /= p;
+	c /= p;
+	var d = b*b-4*a*c;
+	if (issquare(d) && a != 0) {
+		rn1 = -b+Math.sqrt(d);
+		rn2 = -b-Math.sqrt(d);
+		var g = math.gcd(rn1,2*a);
+		var h = math.gcd(rn2,2*a);
+		var q = 2*a/g;
+		var r = -rn1/g;
+		var s = 2*a/h;
+		var t = -rn2/h;
+		var pp = a/(q*s);
+		if (q < 0) {
+			pp *= -1;
+			r *= -1;
+			q *= -1;
+			}
+		if (s < 0) {
+			pp *= -1;
+			t *= -1;
+			s *= -1;
+			}
+		//console.log(p*a,p*b,p*c);
+		//console.log(pp*p*q*s,pp*p*(q*t+r*s),pp*p*r*t);
+		var str = "";
+		str += tex_number(pp*p,false,true);
+		str += "("+tex_polynomial(list2polynomial([r,q],"x"))+")";
+		str += "("+tex_polynomial(list2polynomial([t,s],"x"))+")";
+		return(str);
+		}
+	if (p == 1) {
+		return(tex_polynomial(list2polynomial([c,b,a],"x")));
+		}
+	return(p + "(" + tex_polynomial(list2polynomial([c,b,a],"x")) + ")");
+	}
+
+function polyp(l) {
+	return(tex_polynomial(list2polynomial(l,"x")));
+	}
+
+function test() {
+	var p = ribet(-10,10);
+	var q = ribet(-10,10);
+	var r = ribet(-10,10);
+	var s = ribet(-10,10);
+	var t = ribet(-10,10);
+	factorquadratic(p*q*s,p*(q*t+r*s),p*r*t);
+	}
+
+function make_monic_quadratic_factor_problem() {
+	var r1 = ribet(-10,10);
+	var r2 = ribet(-10,10);
+	var pstr = "x^2 "+pfy(r1+r2)+"x"+pfy(r1*r2);
+	var fstr = "(x"+pfy(r1)+")(x"+pfy(r2)+")";
+	return({
+		poly:pstr,
+		factors:fstr,
+		hint:""
+		});
+	}
+
+function make_quadratic_factor_problem() {
+	var a1 = ribet(1,10);
+	var a2 = ribet(1,10);
+	var b1 = ribet(-10,10);
+	var b2 = ribet(-10,10);
+	var g1 = math.gcd(a1,b1);
+	var g2 = math.gcd(a2,b2);
+	a1 /= g1;
+	a2 /= g2;
+	b1 /= g1;
+	b2 /= g2;
+	var pstr = polyp([b1*b2,a1*b2+a2*b1,a1*a2]);
+	var fstr = "("+polyp([b1,a1])+")("+polyp([b2,a2])+")";
+	return({
+		poly:pstr,
+		factors:fstr,
+		hint:""
+		});
+	}
+
+function make_bad_monic_quadratic_factor_problem() {
+	var b = ribet(-5,5)+ribet(-5,5);
+	var c = ribet(-5,5)*ribet(-5,5);
+	var pstr = polyp([c,b,1]);
+	var fstr = factorquadratic(1,b,c);
+	return({
+		poly:pstr,
+		factors:fstr,
+		hint:""
+		});
+	}
+
+function make_bad_quadratic_factor_problem() {
+	var a = ribet(-5,5)*ribet(-5,5);
+	var b = ribet(-5,5)+ribet(-5,5);
+	var c = ribet(-5,5)*ribet(-5,5);
+	var pstr = polyp([c,b,a]);
+	var fstr = factorquadratic(a,b,c);
+	return({
+		poly:pstr,
+		factors:fstr,
+		hint:""
+		});
+	}
+
+function make_double_factor_problem() {
+	var a1 = ribet(-5,5);
+	var b1 = ribet(-5,5);
+	var a2 = ribet(-5,5);
+	var b2 = ribet(-5,5);
+	var a3 = ribet(-5,5);
+	var b3 = ribet(-5,5);
+	var a4 = ribet(-5,5);
+	var b4 = ribet(-5,5);
+	var pm = ribet(0,1);
+	var apm = 2*pm-1;
+	var pstr = "("+polyp([b1,a1])+")("+polyp([b2,a2])+")" + ["-","+"][pm] + "("+polyp([b3,a3])+")("+polyp([b4,a4])+")";
+	var fstr = factorquadratic(a1*a2+apm*a3*a4,a1*b2+a2*b1+apm*a3*b4+apm*a4*b3,b1*b2+apm*b3*b4);
+	return({
+		poly:pstr,
+		factors:fstr,
+		hint:""
+		});
+	}
+
+function checkredundancy(l) {
+	var i, j;
+	for (i = 0; i < l.length; i++) {
+		for (j = 0; j < l.length; j++) {
+			if ((i != j) && (l[i][0] == l[j][0]) && (l[i][1] == l[j][1])) {return(true);}
+			}
+		}
+	return(false);
+	}
+
+function make_factor_by_grouping_problem() {
+	if (ribet(0,1)) {
+		var n1 = ribet(1,5);
+		var n2 = 0;
+		}
+	else {
+		var n1 = 0;
+		var n2 = ribet(1,5);
+		}
+	if (ribet(0,1)) {
+		var m1 = ribet(1,5);
+		var m2 = 0;
+		}
+	else {
+		var m1 = 0;
+		var m2 = ribet(1,5);
+		}
+	if (ribet(0,1)) {
+		var n3 = ribet(1,5);
+		var n4 = 0;
+		}
+	else {
+		var n3 = 0;
+		var n4 = ribet(1,5);
+		}
+	if (ribet(0,1)) {
+		var m3 = ribet(1,5);
+		var m4 = 0;
+		}
+	else {
+		var m3 = 0;
+		var m4 = ribet(1,5);
+		}
+	var a = ribet(-5,5);
+	var b = ribet(-5,5);
+	var c = ribet(-5,5);
+	var d = ribet(-5,5);
+	var l = [[n1+n3,m1+m3],[n2+n3,m2+m3],[n1+n4,m1+m4],[n2+n4,m2+m4]];
+	if (checkredundancy(l)) {return(make_factor_by_grouping_problem());}
+	if (math.gcd(a,b) > 1) {return(make_factor_by_grouping_problem());}
+	if (math.gcd(c,d) > 1) {return(make_factor_by_grouping_problem());}
+	if (a == 0 && b == 0) {return(make_factor_by_grouping_problem());}
+	if (c == 0 && d == 0) {return(make_factor_by_grouping_problem());}
+
+	var fstr = "(" + string_polynomial([[a,{x:n1,y:m1}],[b,{x:n2,y:m2}]]) + ")"
+	fstr += "(" + string_polynomial([[c,{x:n3,y:m3}],[d,{x:n4,y:m4}]]) + ")";
+
+	if (ribet(0,1)) {
+		var pstr = string_polynomial([
+			[a*c,{x:n1+n3,y:m1+m3}],
+			[b*c,{x:n2+n3,y:m2+m3}],
+			[a*d,{x:n1+n4,y:m1+m4}],
+			[b*d,{x:n2+n4,y:m2+m4}]]);
+		}
+	else {
+		var pstr = string_polynomial([
+			[a*c,{x:n1+n3,y:m1+m3}],
+			[b*d,{x:n2+n4,y:m2+m4}],
+			[a*d,{x:n1+n4,y:m1+m4}],
+			[b*c,{x:n2+n3,y:m2+m3}]]);
+		}
+
+	return({
+		poly:pstr,
+		factors:fstr,
+		hint:""
+		});
+	}
+
+function make_factor_by_gcd_problem() {
+	var n = ribet(1,7);
+	var a = ribet(-5,5)*ribet(-5,5);
+	var b = ribet(-5,5)+ribet(-5,5);
+	var c = ribet(-5,5)*ribet(-5,5);
+	var pstr = string_polynomial([
+		[a,{x:n+2}],
+		[b,{x:n+1}],
+		[c,{x:n}]
+		]);
+	var tstr = factorquadratic(a,b,c);
+	if (tstr[tstr.length-1] != ")") {tstr = "(" + tstr + ")";}
+	var fstr = tstr + "x^" + n;
+	return({
+		poly:pstr,
+		factors:fstr,
+		hint:""
+		});
+	}
+
+var g_problem = "NO";
+
+function make_problem() {
+	document.getElementById("out").innerHTML = "";
+	var l = [];
+	for (i = 0; i < 7; i++) {
+		if (document.getElementById("chk_p"+i).checked) {l.push(i);}
+		}
+	if (l.length == 0) {alert("Must pick a problem type"); return;}
+	var k = math.pickRandom(l);
+	if (k == 0) {
+		g_problem = make_monic_quadratic_factor_problem();
+		}
+	else if (k == 1) {
+		g_problem = make_quadratic_factor_problem();
+		}
+	else if (k == 2) {
+		g_problem = make_double_factor_problem();
+		}
+	else if (k == 3) {
+		g_problem = make_bad_monic_quadratic_factor_problem();
+		}
+	else if (k == 4) {
+		g_problem = make_bad_quadratic_factor_problem();
+		}
+	else if (k == 5) {
+		g_problem = make_factor_by_grouping_problem();
+		}
+	else if (k == 6) {
+		g_problem = make_factor_by_gcd_problem();
+		}
+	document.getElementById("pstr").innerHTML = katex.renderToString(KAS.parse(g_problem.poly).expr.tex());
+	document.getElementById("fstr").innerHTML = katex.renderToString(KAS.parse(g_problem.factors).expr.tex());
+	}
+
+function check_problem() {
+	var inp = document.getElementById("answerentry").value;
+	var k = comparepm(g_problem.factors,inp);
+	if (k) {
+		document.getElementById("out").innerHTML = "Correct!";
+		}
+	else {
+		document.getElementById("out").innerHTML = "Try Again!";
+		}
+	}
+
+function show_solution() {
+	document.getElementById("out").innerHTML = katex.renderToString(KAS.parse(g_problem.factors).expr.tex());
+	}
+
+</script>
+<link rel="stylesheet" href="katex.min.css">
+</head>
+<body>
+<input type="checkbox" id="chk_p0" checked> Factor x<sup>2</sup>+bx+c <br>
+<input type="checkbox" id="chk_p1" checked> Factor ax<sup>2</sup>+bx+c <br>
+<input type="checkbox" id="chk_p2" checked> *Factor (ax+b)(cx+d) &pm; (ex+f)(gx+h) <br>
+<input type="checkbox" id="chk_p3" checked> *Factor x<sup>2</sup>+bx+c <br>
+<input type="checkbox" id="chk_p4" checked> *Factor ax<sup>2</sup>+bx+c <br>
+<input type="checkbox" id="chk_p5" checked> *Factor by grouping <br>
+<input type="checkbox" id="chk_p6" checked> *Factor out a GCD<br>
+*These problems might not be nicely factorable. If so, factor out any GCD and leave the rest.<br>
+<button onclick="make_problem()">Generate problem</button>
+<br>Factor:<br>
+<div id="pstr"></div>
+<div id="fstr" style='display:none'></div>
+<input type="text" id="answerentry"><button onclick="check_problem()">Check</button>
+<button onclick="show_solution()">Show Solution</button>
+<div id="out"></div>
+</body>
+</html>

@@ -49,6 +49,14 @@ var sUTF16Base64 = base64EncArr(new Uint8Array(aUTF16CodeUnits.buffer));
 	document.getElementById("kxo2").value = i;
 	}
 
+function kxify5() {
+	var s = document.getElementById("kxi").value;
+	var t = encodeURI(s);
+	var l = "https://pi.math.cornell.edu/~tomkern/katexify?"+t;
+	document.getElementById("kxo2").value = l;
+	document.getElementById("kxo").innerHTML = "<a href = '" + l + "'>" + katex.renderToString(s) + "</a>";
+	}
+
 function b64ToUint6 (nChr) {
 
   return nChr > 64 && nChr < 91 ?
@@ -147,6 +155,7 @@ function checkuri() {
 <button onclick="kxify2()">kxify (not displaymode)</button>
 <button onclick="kxify3()">kxify URI</button>
 <button onclick="kxify4()">kxify embed</button>
+<button onclick="kxify5()">kxify Cornell embed</button>
 <span id="kxo"></span>
 <textarea id="kxo2"></textarea>
 </body>

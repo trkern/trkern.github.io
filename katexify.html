@@ -1,0 +1,153 @@
+<html>
+<head>
+<script src="katex.min.js"></script>
+<script>
+function kxify() {
+	var s = katex.renderToString(document.getElementById("kxi").value, {displayMode:true});
+	document.getElementById("kxo").innerHTML = s;
+	console.log(s);
+	document.getElementById("kxo2").value = s;
+	}
+function kxify2() {
+	var s = katex.renderToString(document.getElementById("kxi").value);
+	document.getElementById("kxo").innerHTML = s;
+	console.log(s);
+	document.getElementById("kxo2").value = s;
+	}
+function kxify3() {
+	var s = katex.renderToString(document.getElementById("kxi").value);
+	var t = '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css" integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/+DiW/UqRcLbRjq" crossorigin="anonymous">'
+	console.log(t+s);
+
+	var myString = t+s;	
+
+var aUTF16CodeUnits = new Uint16Array(myString.length);
+Array.prototype.forEach.call(aUTF16CodeUnits, function (el, idx, arr) { arr[idx] = myString.charCodeAt(idx); });
+var sUTF16Base64 = base64EncArr(new Uint8Array(aUTF16CodeUnits.buffer));
+
+
+	var l = "data:text/html;charset=utf-16;base64," + sUTF16Base64;
+	document.getElementById("kxo2").value = l;
+	}
+
+function kxify4() {
+	var s = katex.renderToString(document.getElementById("kxi").value);
+	var t = '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css" integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/+DiW/UqRcLbRjq" crossorigin="anonymous">'
+	console.log(t+s);
+
+	var myString = t+s;	
+
+var aUTF16CodeUnits = new Uint16Array(myString.length);
+Array.prototype.forEach.call(aUTF16CodeUnits, function (el, idx, arr) { arr[idx] = myString.charCodeAt(idx); });
+var sUTF16Base64 = base64EncArr(new Uint8Array(aUTF16CodeUnits.buffer));
+
+
+	var l = "data:text/html;charset=utf-16;base64," + sUTF16Base64;
+
+	var i = '<iframe src="'+l+'" width="100%" height="640"></iframe>';
+
+	document.getElementById("kxo2").value = i;
+	}
+
+function b64ToUint6 (nChr) {
+
+  return nChr > 64 && nChr < 91 ?
+      nChr - 65
+    : nChr > 96 && nChr < 123 ?
+      nChr - 71
+    : nChr > 47 && nChr < 58 ?
+      nChr + 4
+    : nChr === 43 ?
+      62
+    : nChr === 47 ?
+      63
+    :
+      0;
+
+}
+
+function base64DecToArr (sBase64, nBlockSize) {
+
+  var
+    sB64Enc = sBase64.replace(/[^A-Za-z0-9\+\/]/g, ""), nInLen = sB64Enc.length,
+    nOutLen = nBlockSize ? Math.ceil((nInLen * 3 + 1 >>> 2) / nBlockSize) * nBlockSize : nInLen * 3 + 1 >>> 2, aBytes = new Uint8Array(nOutLen);
+
+  for (var nMod3, nMod4, nUint24 = 0, nOutIdx = 0, nInIdx = 0; nInIdx < nInLen; nInIdx++) {
+    nMod4 = nInIdx & 3;
+    nUint24 |= b64ToUint6(sB64Enc.charCodeAt(nInIdx)) << 18 - 6 * nMod4;
+    if (nMod4 === 3 || nInLen - nInIdx === 1) {
+      for (nMod3 = 0; nMod3 < 3 && nOutIdx < nOutLen; nMod3++, nOutIdx++) {
+        aBytes[nOutIdx] = nUint24 >>> (16 >>> nMod3 & 24) & 255;
+      }
+      nUint24 = 0;
+    }
+  }
+
+  return aBytes;
+}
+
+/* Base64 string to array encoding */
+
+function uint6ToB64 (nUint6) {
+
+  return nUint6 < 26 ?
+      nUint6 + 65
+    : nUint6 < 52 ?
+      nUint6 + 71
+    : nUint6 < 62 ?
+      nUint6 - 4
+    : nUint6 === 62 ?
+      43
+    : nUint6 === 63 ?
+      47
+    :
+      65;
+
+}
+
+function base64EncArr (aBytes) {
+
+  var eqLen = (3 - (aBytes.length % 3)) % 3, sB64Enc = "";
+
+  for (var nMod3, nLen = aBytes.length, nUint24 = 0, nIdx = 0; nIdx < nLen; nIdx++) {
+    nMod3 = nIdx % 3;
+    /* Uncomment the following line in order to split the output in lines 76-character long: */
+    /*
+    if (nIdx > 0 && (nIdx * 4 / 3) % 76 === 0) { sB64Enc += "\r\n"; }
+    */
+    nUint24 |= aBytes[nIdx] << (16 >>> nMod3 & 24);
+    if (nMod3 === 2 || aBytes.length - nIdx === 1) {
+      sB64Enc += String.fromCharCode(uint6ToB64(nUint24 >>> 18 & 63), uint6ToB64(nUint24 >>> 12 & 63), uint6ToB64(nUint24 >>> 6 & 63), uint6ToB64(nUint24 & 63));
+      nUint24 = 0;
+    }
+  }
+
+  return  eqLen === 0 ?
+      sB64Enc
+    :
+      sB64Enc.substring(0, sB64Enc.length - eqLen) + (eqLen === 1 ? "=" : "==");
+
+}
+
+function checkuri() {
+	var str = document.URL;
+	if (str.indexOf("?") == -1) {return;}
+	str = str.slice(str.indexOf("?")+1);
+	str = decodeURI(str);
+	console.log(str);
+	document.body.innerHTML = katex.renderToString(str);
+	}
+
+</script>
+<link rel="stylesheet" href="katex.min.css">
+</head>
+<body onload="checkuri()">
+<textarea id="kxi">\frac{-b\pm\sqrt{b^2-4ac}}{2a}</textarea>
+<button onclick="kxify()">kxify</button>
+<button onclick="kxify2()">kxify (not displaymode)</button>
+<button onclick="kxify3()">kxify URI</button>
+<button onclick="kxify4()">kxify embed</button>
+<span id="kxo"></span>
+<textarea id="kxo2"></textarea>
+</body>
+</html>

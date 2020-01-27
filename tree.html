@@ -806,19 +806,76 @@ function absify(s,id) {
 		}
 	}
 
+//options:
+//chk_allp: all expressions get parens
+//chk_eneg: -x -> ((-1)*x)
+//chk_ediv: 1/x -> (x^-1)
+
+function ttree_explicitify(tt) {
+
+	var newsubs = [];	
+	var i;
+
+	if ("subs" in tt) {
+		for (i = 0; i < tt.subs.length; i++) {
+			newsubs.push(ttree_explicitify(tt.subs[i]));
+			}
+		}
+
+	if (document.getElementById("chk_long").checked && ("subs" in tt) && tt.subs.length > 2) {
+		var rval = {op:tt.op,subs:[newsubs[0],newsubs[1]]};
+		var i;
+		for (i = 2; i < tt.subs.length; i++) {
+			rval = {op:tt.op,subs:[rval,newsubs[i]]};
+			}
+		return(rval);
+		}	
+
+	if (tt.op == "neg" && document.getElementById("chk_eneg").checked) {
+		if (tt.subs[0].op == "mul") {
+			return({op:"mul",subs:[{op:"int",c:-1}].concat(newsubs[0].subs)});
+			}
+		return({op:"mul",subs:[{op:"int",c:-1},newsubs[0]]});
+		}
+	if (tt.op == "div" && document.getElementById("chk_ediv").checked) {
+		if (tt.subs[0].op == "int" && tt.subs[0].c == 1) {
+			return({op:"pow",subs:[newsubs[1],{op:"int",c:-1}]});
+			}
+		return({op:"mul",subs:[
+			newsubs[0],
+			{op:"pow",subs:[newsubs[1],{op:"int",c:-1}]}
+			]});
+		}
+
+	var rval = {op:tt.op};
+
+	if ("subs" in tt) {rval.subs = newsubs;}
+	if ("c" in tt) {rval.c = tt.c;}
+
+	return(rval);
+	}
+
 function ttree_to_html(tt,ix,opts) {
 	var t = "";
 	var i;
 	if (ix) {} else {
 		ix = ["d"];
 		}
-	if (opts) {} else {opts = "";}
+	if (opts) {} else {
+		opts = "";
+		if (document.getElementById("chk_allp").checked && (["var","const","int"].indexOf(tt.op) == -1)) {
+			opts = "parens";
+			}
+		if (document.getElementById("chk_allp").checked && (tt.op == "int") && (tt.c < 0)) {
+			opts = "parens";
+			}
+		}
 
 	var sqrtneeded = false;
 
 	if (tt.op == "add") {
 		for (i = 0; i < tt.subs.length; i++) {
-			if (!t || ttree_issubtract(tt.subs[i])) {
+			if (!t || (ttree_issubtract(tt.subs[i]) && !document.getElementById("chk_allp").checked && !document.getElementById("chk_eneg").checked )) {
 				t += ttree_to_html(tt.subs[i],ix.concat([i]));
 				}
 			else {
@@ -851,7 +908,7 @@ function ttree_to_html(tt,ix,opts) {
 		t = "-" + ttree_to_html(tt.subs[0],ix.concat([0]));
 		}
 	else if (tt.op == "sqrt") {
-		t = ttree_to_html(tt.subs[0],ix.concat([0]));
+		t = ttree_to_html(tt.subs[0],ix.concat([0]),"no");
 		t = sqrtify(t,ixify(ix))
 		}
 	else if (tt.op == "nrt") {
@@ -914,9 +971,7 @@ function ttree_to_html(tt,ix,opts) {
 	else {
 		return("<span class='ttmath' id='"+ixify(ix)+"'>"+t+"</span>");
 		}
-
 	}
-
 
 function ixify(ix) {
 	var i;
@@ -1146,6 +1201,7 @@ function html_do_everything() {
 	var s = document.getElementById("inp").value;
 	var fs = getfuns();
 	var tt = myparse(s,{functions:fs});
+	tt = ttree_explicitify(tt);
 	document.getElementById("htmltarg").innerHTML = ttree_to_html(tt,[]);
 	new Treant({
 		chart:cht,
@@ -1478,11 +1534,20 @@ Hover your mouse over subexpressions below to highlight them:
 <br>
 <div id="treetarg"></div>
 
+<hr>
+
+<h1>Options</h1>
+
 <input type="checkbox" id="chk_treeshow" onchange="upd_tree()" checked style='display:none'>
 <input type="checkbox" id="chk_treename" onchange="upd_tree()" checked> Show node names in tree <br>
 <input type="checkbox" id="chk_treehi" checked> Highlight hovered subexpressions<br>
 <button onclick="colorify()">Colorize</button> (For debugging) <br>
 Names of functions: <input id="inp_funnames" value="f,g"> <br>
+
+<input type="checkbox" id="chk_allp" onchange="html_do_everything()"> Draw unwritten parentheses <br>
+<input type="checkbox" id="chk_eneg" onchange="html_do_everything()"> Write negatives as multiplying by -1 <br>
+<input type="checkbox" id="chk_ediv" onchange="html_do_everything()"> Write division as to the -1st power <br>
+<input type="checkbox" id="chk_long" onchange="html_do_everything()"> Break up long sums and products <br>
 
 Render options:
 Parentheses: <select id='sel_parenbackup'>

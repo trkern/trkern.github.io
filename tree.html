@@ -239,7 +239,12 @@ function ttree_to_tex(tt,ix) {
 			}
 		}
 	else if (tt.op == "neg") {
-		t = "-" + ttree_to_tex(tt.subs[0],ix.concat([0]));
+		if (tt.subs[0].op == "add") {
+			t = "-\\!\\left(" + ttree_to_tex(tt.subs[0],ix.concat([0])) + "\\right)";
+			}
+		else {
+			t = "-" + ttree_to_tex(tt.subs[0],ix.concat([0]));
+			}
 		}
 	else if (tt.op == "sqrt") {
 		t = " \\sqrt{" + ttree_to_tex(tt.subs[0],ix.concat([0])) + "}";
@@ -905,7 +910,12 @@ function ttree_to_html(tt,ix,opts) {
 			}
 		}
 	else if (tt.op == "neg") {
-		t = "-" + ttree_to_html(tt.subs[0],ix.concat([0]));
+		if (tt.subs[0].op == "add") {
+			t = "-" + ttree_to_html(tt.subs[0],ix.concat([0]),"parens");
+			}
+		else {
+			t = "-" + ttree_to_html(tt.subs[0],ix.concat([0]));
+			}
 		}
 	else if (tt.op == "sqrt") {
 		t = ttree_to_html(tt.subs[0],ix.concat([0]),"no");

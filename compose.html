@@ -352,7 +352,7 @@ function shotable(dfn_tt) {
 	l.push("x");
 	l.push(3);
 	l.push(ribet(-5,2));
-	l.push(ribet(3,9));
+	l.push(ribet(4,9));
 	l.push(10);
 	l.push("y");
 	l.push(math.pickRandom(["a","b","c","w","z"]));
@@ -836,6 +836,9 @@ function make_problem() {
 	}
 
 function redraw() {
+	if (document.getElementById("sho") && document.getElementById("sho").style.display == "") {
+		window.requestAnimationFrame(sho);
+		}
 	var s = "";
 	var i;
 	for (i in g_funs) {

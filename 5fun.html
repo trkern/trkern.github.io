@@ -1,0 +1,60 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<meta name=description content="">
+<script>
+
+function push_ans(str) {
+	document.getElementById("history").innerHTML += document.getElementById("ans").innerHTML;
+	document.getElementById("ans").innerHTML = str;
+	}
+
+function doa() {
+	var a = Number(document.getElementById("aa").value);
+	var b = Number(document.getElementById("ab").value);
+	var str = a + " + " + b + " = " + (a+b);
+	push_ans(str);
+	}
+
+function dos() {
+	var a = Number(document.getElementById("sa").value);
+	var b = Number(document.getElementById("sb").value);
+	var str = a + " - " + b + " = " + (a-b);
+	push_ans(str);
+	}
+
+function dom() {
+	var a = Number(document.getElementById("ma").value);
+	var b = Number(document.getElementById("mb").value);
+	var str = a + " * " + b + " = " + (a*b);
+	push_ans(str);
+	}
+
+function dod() {
+	var a = Number(document.getElementById("da").value);
+	var b = Number(document.getElementById("db").value);
+	var str = a + " / " + b + " = " + (a/b);
+	push_ans(str);
+	}
+
+function doq() {
+	var a = Number(document.getElementById("qa").value);
+	var str = "sqrt( " + a + " ) = " + Math.sqrt(a);
+	push_ans(str);
+	}
+
+</script>
+</head>
+<body>
+<div id='history'></div>
+<div id='ans'></div>
+<input id='aa'> + <input id='ab'> <button onclick='doa()'>=</button><br>
+<input id='sa'> - <input id='sb'> <button onclick='dos()'>=</button><br>
+<input id='ma'> * <input id='mb'> <button onclick='dom()'>=</button><br>
+<input id='da'> / <input id='db'> <button onclick='dod()'>=</button><br>
+sqrt(<input id='qa'>) <button onclick='doq()'>=</button><br>
+</body>
+</html>

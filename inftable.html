@@ -44,6 +44,7 @@ function populate_table() {
 	var str = "<table border=1><tr><td>10<sup>n</sup></td><td>f(10<sup>n</sup>)</td><td>Decimal Approximation</td></tr>";
 	for (i = 0; i < numrows; i++) {
 		var x = math.pow(10,math.bignumber(i));
+		if (document.getElementById("neg").checked) {x = math.multiply(-1,x);}
 		var fn = math.eval(fnstr,{x:x});
 		var fd = math.eval(fdstr,{x:x});
 		str += "<tr><td>"
@@ -110,9 +111,10 @@ td {
 </style>
 </head>
 <body onload="boot()">
-f:<input type='text' id='fn' value='x^2' onchange='populate_table()'>/
-<input type='text' id='fd' value='x^2+1' onchange='populate_table()'>
+f:<table><tr><td style='border-bottom:solid 2px;height:0px'><input type='text' id='fn' value='x^2' onchange='populate_table()'></td></tr><tr><td style='height:0px'>
+<input type='text' id='fd' value='x^2+1' onchange='populate_table()'></td></tr></table>
 n:<input type="number" id='n' value=30 min=0 oninput='populate_table()'>
+<input type='checkbox' id='neg' onchange='populate_table()'> Go to negative infinity
 <button onclick='populate_table()'>Go!</button>
 <div id='tabl'></div>
 <div id='perma'></div>

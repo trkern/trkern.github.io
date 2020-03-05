@@ -1071,8 +1071,85 @@ function abc_to_roots_walkthrough_html(a,b,c) {
 	return(str);
 	}
 
+
+function abc_to_roots_walkthrough_latex(a,b,c) {
+	var d = b*b-4*a*c;
+	var l = largestsquarefactorsroot(Math.abs(d));
+	var str = "";
+	var kstr = "\\[\\begin{alignedat}{4}"
+	kstr += "\\frac{-b \\pm \\sqrt{b^2-4ac}}{2a} &= \\frac{" + (-b) + "\\pm \\sqrt{"
+	if (b < 0) {kstr += "("+b+")^2";}
+	else {kstr += b+"^2";}
+	kstr += "-4("+a+")("+c+")}}{2("+a+")}";
+	kstr += "&\\qquad&\\text{plugging in $a,b,c$}\\\\";
+	kstr += "&= \\frac{"+ (-b) + "\\pm \\sqrt{"+(b*b)+tex_number(-4*a*c,true,false)+"}}{"+(2*a)+"}&&\\\\";
+	kstr += "&= \\frac{"+ (-b) + "\\pm \\sqrt{"+(b*b-4*a*c)+"}}{"+(2*a)+"}&&\\\\";
+	if (d == 0) {
+		kstr += "&=\\frac{"+(-b)+"}{"+(2*a)+"}";
+		if (a < 0 || math.gcd(-b,2*a) != 1) {
+			kstr += "&&\\\\&=" + quadroottex(a,b,c,0);
+			}
+		}
+	else if (d < 0) {
+		kstr += "&=\\frac{"+(-b) + "\\pm \\sqrt{"+(-d)+"}i}{"+(2*a)+"} && \\text{rule for square root of negative}\\\\";
+		if (l != 1) {
+			kstr += "&= \\frac{"+(-b) + "\\pm\\sqrt{" + (l*l) + "}\\sqrt{"+(-d/(l*l))+"}i}{"+(2*a)+"} && \\text{breaking apart square root}\\\\";
+			kstr += "&= \\frac{"+(-b) + "\\pm"+l+"\\sqrt{"+(-d/(l*l))+"}i}{"+(2*a)+"} && \\\\";
+			var g = math.gcd(-b,l,2*a);
+			if (g != 1) {
+				kstr += "&= \\frac{"+(-b/g) + "\\pm"+(l/g)+"\\sqrt{"+(-d/(l*l))+"}i}{"+(2*a/g)+"} && \\text{cancelling common factor "+g+"}\\\\";
+				}
+			if (a < 0) {
+				kstr += "&= \\frac{"+(-b/g) + tex_number(l/g,true,true)+"\\sqrt{"+(-d/(l*l))+"}i}{"+(2*a/g)+"} \\qquad\\text{and}\\qquad";
+				kstr += "\\frac{"+(-b/g) + tex_number(-l/g,true,true)+"\\sqrt{"+(-d/(l*l))+"}i}{"+(2*a/g)+"}&&\\text{breaking apart $\\pm$}\\\\";
+				}
+			}
+		else if (a < 0) {
+			kstr += "&=\\frac{"+(-b) + "+ \\sqrt{"+(-d)+"}i}{"+(2*a)+"} \\qquad\\text{and}\\qquad";
+			kstr += "\\frac{"+(-b) + "- \\sqrt{"+(-d)+"}i}{"+(2*a)+"}&&\\text{breaking apart $\\pm$}\\\\";
+			}
+		}
+	else {//d > 0
+		if (l * l == d) {
+			kstr += "&= \\frac{"+(-b)+"\\pm"+l+"}{"+(2*a)+"} && \\\\";
+			kstr += "&= \\frac{"+(-b)+ tex_number(l,true,false)+ "}{"+(2*a)+"} \\qquad\\text{ and }\\qquad";
+			kstr += "\\frac{"+(-b)+tex_number(-l,true,false)+"}{"+(2*a)+"} && \\text{breaking apart $\\pm$}\\\\";
+			kstr += "&= \\frac{"+(-b+l)+"}{"+(2*a)+"} \\qquad\\text{ and }\\qquad";
+			kstr += "\\frac{"+(-b-l)+"}{"+(2*a)+"} && \\\\";
+			}
+		else if (l != 1) {
+			kstr += "&= \\frac{"+(-b) + "\\pm\\sqrt{" + (l*l) + "}\\sqrt{"+(d/(l*l))+"}}{"+(2*a)+"} && \\text{breaking apart square root}\\\\";
+			kstr += "&= \\frac{"+(-b) + "\\pm"+l+"\\sqrt{"+(d/(l*l))+"}}{"+(2*a)+"} && \\\\";
+			var g = math.gcd(-b,l,2*a);
+			if (g != 1) {
+				kstr += "&= \\frac{"+(-b/g) + "\\pm"+(l/g)+"\\sqrt{"+(d/(l*l))+"}}{"+(2*a/g)+"} && \\text{cancelling common factor "+g+"}\\\\";
+				}
+			if (a < 0) {
+				kstr += "&= \\frac{"+(-b/g) +tex_number(l/g,true,true)+"\\sqrt{"+(d/(l*l))+"}}{"+(2*a/g)+"} \\qquad\\text{ and }\\qquad";
+				kstr += "\\frac{"+(-b/g) +tex_number(-l/g,true,true)+"\\sqrt{"+(d/(l*l))+"}}{"+(2*a/g)+"}&&\\text{breaking apart $\\pm$}\\\\";
+				}
+			}
+		else if (a < 0) {
+			kstr += "&=\\frac{"+(-b) + "+ \\sqrt{"+(d)+"}}{"+(2*a)+"} \\qquad\\text{ and }\\qquad";
+			kstr += "\\frac{"+(-b) + "- \\sqrt{"+(d)+"}}{"+(2*a)+"} && \\text{breaking apart $\\pm$}\\\\";
+			}
+		}
+	kstr += "\\end{alignedat}";
+	str += kstr + "\\]";
+	str += "Giving us solutions:"
+	kstr = "x = " + quadroottex(a,b,c,0) + "\\qquad\\text{and}\\qquad x=" + quadroottex(a,b,c,1);
+	str += "\\["+kstr+"\\]";
+	return(str);
+	}
+
 var g_practice_answers;
 var g_practice_walkthrough;
+
+function make_walkthrough_latex(a,b,c) {
+	var str = "We first identify $a$, $b$, and $c$ in this quadratic. $a = " + a + ", b = "+b+"$, and $c = "+c+".$";
+	str += abc_to_roots_walkthrough_latex(a,b,c);
+	return(str);
+	}
 
 function practice_example() {
 	var str = "";
@@ -1080,6 +1157,7 @@ function practice_example() {
 	if (document.getElementById("chk_practice_roots").checked) {l.push(0);}
 	if (document.getElementById("chk_practice_solve").checked) {l.push(1);}
 	if (document.getElementById("chk_practice_factor").checked) {l.push(2);}
+	if (document.getElementById("chk_practice_simplify").checked) {l.push(3);}
 	if (l.length == 0) {
 		document.getElementById("practice_example").innerHTML = "Please pick at least one type of problem to practice."
 		return;
@@ -1103,6 +1181,10 @@ function practice_example() {
 		if (a == 0) {a = 1;}
 		b = ribet(-30,30);
 		c = ribet(-20,20);
+		if (!document.getElementById("chk_practice_large").checked) {
+			b = ribet(-10,10);
+			c = ribet(-6,6);
+			}
 		okay = true;
 		if (!ck1 && (b*b-4*a*c < 0)) {okay = false;}
 		if (!ck2 && !math.isInteger(Math.sqrt(Math.abs(b*b-4*a*c)))) {okay = false;}
@@ -1150,6 +1232,17 @@ function practice_example() {
 		g_practice_walkthrough += abc_to_roots_walkthrough_html(a,b,c);
 		g_practice_walkthrough += "We then negate the roots to get:";
 		g_practice_walkthrough += katex.renderToString(tex_number(a,false,true)+"\\left("+v+pf(quadroottex(a,b,c,0,true))+"\\right)\\left("+v+pf(quadroottex(a,b,c,1,true)+"\\right)"),{displayMode:true});
+		}
+	else if (k == 3) {
+		str = "When you use the quadratic formula to solve " + katex.renderToString(tex_poly(a,b,c,v)) + ", you get ";
+		str += katex.renderToString("\\frac{-(" + b + ") \\pm \\sqrt{" + (b*b-4*a*c) + "}}{" + (2*a) + "}");
+		str += ". Simplify this as much as you can.";
+		str += "<br>"+v+"=" + root_entry_string("r1",document.getElementById("chk_practice_complex").checked,document.getElementById("chk_practice_alg").checked);
+		str += "<br>"+v+"=" + root_entry_string("r2",document.getElementById("chk_practice_complex").checked,document.getElementById("chk_practice_alg").checked);
+		g_practice_answers = {r1: math.eval("(-b+sqrt(b^2-4a*c))/(2a)",{a:a,b:b,c:c}),
+				r2: math.eval("(-b-sqrt(b^2-4a*c))/(2a)",{a:a,b:b,c:c})};
+		g_practice_walkthrough = "We first identify a, b, and c in this quadratic. a = " + a + ", b = "+b+", and c = "+c+".<br>";
+		g_practice_walkthrough += abc_to_roots_walkthrough_html(a,b,c);
 		}
 	str += "<br><button onclick='practice_check()'>Check Answer</button><button onclick='practice_walkthrough()'>Show Solution</button>";
 	str += "<div id='practice_check'></div>";
@@ -1238,6 +1331,15 @@ function practice_check() {
 	document.getElementById("practice_check").innerHTML = str;
 	}
 
+var root_entry_ids = {};
+
+function update_all_root_entries() {
+	var i;
+	for (i in root_entry_ids) {
+		root_entry_update(i);
+		}
+	}
+
 function root_entry_string(id,allow_complex,allow_roots) {
 	var str = "";
 	var a,b,c,d,i;
@@ -1263,6 +1365,8 @@ function root_entry_string(id,allow_complex,allow_roots) {
 	str += rt_to_html([1,1,1,1,0],1,"root_entry_"+id+"__");
 	str += "</span>";
 	str += "</td></tr></table>";
+	root_entry_ids[id] = true;
+	window.requestAnimationFrame(update_all_root_entries);
 	return(str);
 	}
 
@@ -1533,6 +1637,8 @@ what to cancel and when cancelling.
 <button onclick="cancel_example(0)">Generate Example</button>
 <div id="cancel_example"></div>
 
+<blockquote> You can practice simplifying the results of applying the quadratic formula under the "Practice" section below </blockquote>
+
 <h1>From Roots to Factoring</h1>
 Once we've found our roots, we can figure out a factorization of our polynomial. If we let r and s be our roots, then our polynomial factors as
 ax<sup>2</sup>+bx+c = a(x-r)(x-s). But that's only if we've found our roots already. We combine this with the quadratic formula below:
@@ -1572,14 +1678,18 @@ Select one (or many) types of problems to practice:<br>
 <input type="checkbox" id="chk_practice_roots" checked> Finding roots problems <br>
 <input type="checkbox" id="chk_practice_solve"> Solving quadratic equations problems <br>
 <input type="checkbox" id="chk_practice_factor"> Factoring problems <br>
+<input type="checkbox" id="chk_practice_simplify"> Simplifying results of the quadratic formula <br>
 Type of solutions to include:<br>
 <input type="checkbox" id="chk_practice_complex"> Include complex solutions <br>
 <input type="checkbox" id="chk_practice_alg" checked> Include solutions with square roots <br>
 <input type="checkbox" id="chk_practice_vars"> Use variables other than x<br>
+<input type="checkbox" id="chk_practice_large"> Use larger numbers in problems<br>
 <button onclick="practice_example()">Generate Problem</button>
+<blockquote> To enter an answer, first select a template from the drop down menu, then enter the appropriate numbers into the boxes.</blockquote>
 <div id="practice_example"></div>
 
-<h1>Where Did the Quadratic Formula Come From?</h1>
+<h1>Bonus: Where Did the Quadratic Formula Come From?</h1>
+<blockquote>The sections below are extra, in case you are curious about the origins of the Quadratic Formula.</blockquote>
 The difficulty in solving the equation ax<sup>2</sup>+bx+c = 0 is that there are two xs. If we had one x, we could isolate it on one side by moving everything else
 to the other side. But try as we might, we can't get an x by itself without the other x causing trouble on the other side. And we want our solution for x to
 not have an x in it. It's bnot much of a big win if we need to know x to plug it in to solve for x.<br><br>

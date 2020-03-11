@@ -371,6 +371,7 @@ function quickderiv(tt,v) { //checksoptions
 	}
 
 function derivative_rule(tt) { //assumes tt.op == "magic_derivative"
+	console.log(tt);
 	if (tt.c[0] > 1) {
 		return("Multiple Derivative Rule");
 		}
@@ -393,7 +394,7 @@ function derivative_rule(tt) { //assumes tt.op == "magic_derivative"
 		for (i = 0; i < tt0.subs.length; i++) {
 			if (!isconst(tt0.subs[i])) {k++;}
 			}
-		if (k == 1) {
+		if (k == 1 && !document.getElementById("chk_smartcmul").checked) {
 			return("Constant Multiple Rule");
 			}
 		return("Product Rule");
@@ -437,7 +438,7 @@ function derivative_rule(tt) { //assumes tt.op == "magic_derivative"
 		return("Constant Rule");
 		}
 	if (tt0.op == "force_paren") {
-		return(derivative_rule({op:"magic_derivative",c:tt.c,subs:[tt0.subs[0]]},ix.slice(1)));
+		return(derivative_rule({op:"magic_derivative",c:tt.c,subs:[tt0.subs[0]]}));
 		}
 	if (tt0.op == "magic_derivative") {
 		return("Combining Multiple Derivatives");
@@ -684,6 +685,7 @@ function magic_derivative(tt,ix) { //assumes tt(@ix).op == "magic_derivative"
 		alert("it is meaningless to differentiate inequalities!");
 		}
 	if (tt0.op == "force_paren") {
+		console.log(magic_derivative({op:"magic_derivative",c:tt.c,subs:[tt0.subs[0]]},ix.slice(1)));
 		return(magic_derivative({op:"magic_derivative",c:tt.c,subs:[tt0.subs[0]]},ix.slice(1)));
 		}
 
@@ -759,7 +761,9 @@ function nthcap(n) {
 function derivative_tooltip(tt,c) {
 	var i;
 	if (tt.subs[0].op == "force_paren") {
-		tt = tt.subs[0];
+		var newtt = deepcopy(tt);
+		newtt.subs[0] = newtt.subs[0].subs[0];
+		return(derivative_tooltip(newtt,c));
 		}
 	var pp = {op:tt.subs[0].op};
 	if ("c" in tt.subs[0]) {pp.c = tt.subs[0].c};
@@ -1182,8 +1186,9 @@ function deriv_ttree_do_everything() {
 		});	
 	initializemouseover(tt);
 	g_latex = "&" + ttree_to_tex(tt) + "&\\qquad&";
-	document.getElementById("worktarg").innerHTML = katex.renderToString(g_latex);
-	document.getElementById("latextarg").value = g_latex;
+		var s = "\\begin{alignedat}{999}" + g_latex + "\\end{alignedat}"
+		document.getElementById("worktarg").innerHTML = katex.renderToString(s);
+		document.getElementById("latextarg").value = s;
 	}
 
 function html_do_everything() {
@@ -1546,8 +1551,8 @@ Push the derivative buttons to apply an appropriate rule. Hover over the derivat
 This interactive is a useful tool to develop an understanding of how derivatives work, particularly for problems that require multiple derivative rules. However, you should learn how to solve these problems on your own, without this interactive or a calculator.
 </blockquote>
 
-<input type="checkbox" id="chk_smartprod" checked onchange="upd_form()"> Break up long products to use binary product rule <br>
-<input type="checkbox" id="chk_smartquot" checked onchange="upd_form()"> Rewrite quotients to use product, power, and chain rules <br>
+<input type="checkbox" id="chk_smartprod" onchange="upd_form()"> Break up long products to use binary product rule <br>
+<input type="checkbox" id="chk_smartquot" onchange="upd_form()"> Rewrite quotients to use product, power, and chain rules <br>
 <input type="checkbox" id="chk_smartsqrt" checked onchange="upd_form()"> Rewrite roots to use the power rule <br>
 <input type="checkbox" id="chk_smartpow" checked onchange="upd_form()"> Use simpler exponent and power rules when appropriate <br>
 <input type="checkbox" id="chk_smartexp" checked onchange="upd_form()"> Rewrite exponents in terms of ln and e<sup>x</sup> <br>

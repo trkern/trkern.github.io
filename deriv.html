@@ -1182,6 +1182,8 @@ function deriv_ttree_do_everything() {
 		});	
 	initializemouseover(tt);
 	g_latex = "&" + ttree_to_tex(tt) + "&\\qquad&";
+	document.getElementById("worktarg").innerHTML = katex.renderToString(g_latex);
+	document.getElementById("latextarg").value = g_latex;
 	}
 
 function html_do_everything() {

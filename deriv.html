@@ -260,10 +260,10 @@ function ttree_to_tex(tt,ix) {
 		t = s+"^{" + ttree_to_tex(tt.subs[1],ix.concat([1])) + "}";
 		}
 	else if (["ln","log","sin","cos","tan","cot","sec","csc","arcsin","arccos","arctan","arccot","arcsec","arccsc","sinh","cosh","tanh","coth","sech","csch"].indexOf(tt.op) >= 0) {
-		t = "\\"+tt.op+" \\left( "+ttree_to_tex(tt.subs[0],ix.concat([0]))+" \\right) ";
+		t = "{\\"+tt.op+" }{\\left( "+ttree_to_tex(tt.subs[0],ix.concat([0]))+" \\right)} ";
 		}
 	else if (tt.op == "log_") {
-		t = "\\log_{"+ttree_to_tex(tt.subs[1],ix.concat([1]))+"}("+ttree_to_tex(tt.subs[0],ix.concat([0]))+")";
+		t = "{\\log_{"+ttree_to_tex(tt.subs[1],ix.concat([1]))+"}}{("+ttree_to_tex(tt.subs[0],ix.concat([0]))+")}";
 		}
 	else if (tt.op == "abs") {
 		t = "\\left| " + ttree_to_tex(tt.subs[0],ix.concat([0])) + "\\right| ";
@@ -272,7 +272,7 @@ function ttree_to_tex(tt,ix) {
 		t = ttree_to_tex(tt.subs[0],ix.concat([0])) + ttree_texineq(tt.op) + ttree_to_tex(tt.subs[1],ix.concat([1]));
 		}
 	else if (tt.op == "func") {
-		t = tt.c + " \\left( " + ttree_to_tex(tt.subs[0],ix.concat([0])) + " \\right) ";
+		t = "{"+ tt.c + "}{\\left( " + ttree_to_tex(tt.subs[0],ix.concat([0])) + " \\right)}";
 		}
 	else if (tt.op == "var") {
 		t = tt.c;

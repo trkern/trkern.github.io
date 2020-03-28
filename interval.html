@@ -33,6 +33,7 @@ function within(x,i) {
 function parenswap(i,j) {
 	template[i][j] = 1-template[i][j];
 	update_n();
+	check_badness();
 	}
 
 function magic(s) {
@@ -44,14 +45,44 @@ function magic(s) {
 function update_interval(i,e) {
 	var lo = document.getElementById("low"+i).value;
 	var hi = document.getElementById("hi"+i).value;
-	if (magic(lo) >= magic(hi)) {
-		document.getElementById("low"+i).value = template[i][1];
-		document.getElementById("hi"+i).value = template[i][2];
+/*	if (magic(lo) >= magic(hi)) {
+		if (document.getElementById("bad").checked) {
+			}
+		else {
+			document.getElementById("low"+i).value = template[i][1];
+			document.getElementById("hi"+i).value = template[i][2];
+			}
 		return;
-		}
+		}*/
 	template[i][1] = document.getElementById("low"+i).value;
 	template[i][2] = document.getElementById("hi"+i).value;
+	check_badness();
 	update_gobjs();
+	}
+
+function check_badness() {
+	var n = Number(document.getElementById("n").value);
+	var i;
+	document.getElementById("obad").innerHTML = "";
+	for (i = 0; i < n; i++) {
+		document.getElementById("low"+i).className = "";
+		document.getElementById("blow"+i).className = "";
+		document.getElementById("hi"+i).className = "";
+		document.getElementById("bhi"+i).className = "";
+		if (magic(template[i][1]) > magic(template[i][2])) {
+			document.getElementById("low"+i).className = "bad";
+			document.getElementById("hi"+i).className = "bad";
+			document.getElementById("obad").innerHTML += "Lower bound must be less than upper bound!<br>";
+			}
+		if (magic(template[i][1]) == -Infinity && template[i][0] == 1) {
+			document.getElementById("blow"+i).className = "bad";
+			document.getElementById("obad").innerHTML += "Infinite endpoint must have parenthesis!<br>";
+			}
+		if (magic(template[i][2]) == Infinity && template[i][3] == 1) {
+			document.getElementById("bhi"+i).className = "bad";
+			document.getElementById("obad").innerHTML += "Infinite endpoint must have parenthesis!<br>";
+			}
+		}
 	}
 
 function update_n() {
@@ -69,13 +100,13 @@ function update_n() {
 	var str = "";
 	for (i = 0; i < n; i++) {
 		if (i != 0) {str += " &cup; ";}
-		str += "<button onclick='parenswap("+i+","+0+")'>";
+		str += "<button id='blow"+i+"' onclick='parenswap("+i+","+0+")'>";
 		str += ["(","["][template[i][0]];
 		str += "</button>";
 		str += "<input type='number' id='low"+i+"' value='"+template[i][1]+"' onchange='update_interval("+i+", event)'>";
 		str += ",";
 		str += "<input type='number' id='hi"+i+"' value='"+template[i][2]+"' onchange='update_interval("+i+", event)'>";
-		str += "<button onclick='parenswap("+i+","+3+")'>";
+		str += "<button id='bhi"+i+"' onclick='parenswap("+i+","+3+")'>";
 		str += [")","]"][template[i][3]];
 		str += "</button>";
 		}
@@ -168,7 +199,38 @@ function update_gobjs() {
 	else {
 		document.getElementById("pointyout").innerHTML = "";
 		}
+	}
+
+function drawarrows() {
+	var ctx = document.getElementById("tgr_canv_gr").getContext("2d");
+
+	var n = Number(document.getElementById("n").value);
+	var i;
+	for (i = 0; i < n; i++) {
+		var mn = magic(template[i][1]);
+		var mx = magic(template[i][2]);
+		if (mn < tgr_graph_array.gr.plotdata.xmin) {
+			ctx.lineWidth=5;
+			ctx.strokeStyle = "blue";
 	
+			ctx.beginPath();
+			ctx.moveTo(10,40);
+			ctx.lineTo(0,50);
+			ctx.lineTo(10,60);
+			ctx.stroke();
+			}
+		if (mx > tgr_graph_array.gr.plotdata.xmax) {
+			ctx.lineWidth=5;
+			ctx.strokeStyle = "blue";
+	
+			ctx.beginPath();
+			ctx.moveTo(490,40);
+			ctx.lineTo(500,50);
+			ctx.lineTo(490,60);
+			ctx.stroke();
+			}
+		}
+
 	}
 
 function update_pointy_chk() {
@@ -184,7 +246,7 @@ function update_pointy_n() {
 	}
 
 function boot() {
-	tgr_grapher("gr",[],{no_y:true,height:100,ymin:1,ymax:3,oymin:1,oymax:3});
+	tgr_grapher("gr",[],{on_redraw:drawarrows,no_y:true,height:100,ymin:1,ymax:3,oymin:1,oymax:3});
 	update_n();
 	}
 
@@ -213,12 +275,14 @@ body {
 <body onload="boot()">
 Number of pieces: <input type="number" min=0 id="n" value="1" oninput="update_n()">
 <div id="inputs"></div>
+<div id="obad" class="bad"></div>
 <div id="pre" style="font-size:x-large"></div>
 <div id="gr"></div>
 <div id="ctarg" style="display:none"></div>
 <input type="checkbox" id="showpointy" oninput="update_pointy_chk()"> Check if a point is in the set above:
 <input type="number" step=.1 oninput="update_pointy_n()" id="pointy">
 <div id="pointyout"> </div>
+
 <h1>Instructions</h1>
 <ul>
 <li> Press the buttons to switch the parentheses/brackets
@@ -227,5 +291,6 @@ Number of pieces: <input type="number" min=0 id="n" value="1" oninput="update_n(
 <li> Mouse wheel to zoom out
 <li> Click and drag to pan
 </ul>
+
 </body>
 </html>

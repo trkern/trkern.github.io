@@ -160,12 +160,17 @@ function makeg_funcs() {
 	g_funcs = {};
 	g_gort = {};
 	g_forms = {};
+	var gortlist = [];
+	if (document.getElementById("chk_ff").checked) {gortlist.push("f");}
+	if (document.getElementById("chk_fg").checked) {gortlist.push("g");}
+	if (document.getElementById("chk_ft").checked) {gortlist.push("t");}
+	if (gortlist.length == 0) {gortlist = ["t"];}
 	for (i = 0; i < l.length; i++) {
 		g_funcs[l[i]] = {};
 		for (j = 0; j <= 4; j++) {
 			g_funcs[l[i]][ribet(-4,4)] = ribet(-4,4);
 			}
-		g_gort[l[i]] = ["g","t","f"][ribet(0,2)];
+		g_gort[l[i]] = gortlist[ribet(0,gortlist.length-1)];
 		if (g_gort[l[i]] == "f") {
 			randomize_function(l[i]);
 			}
@@ -222,7 +227,12 @@ function drawfuncs() {
 
 function makeprob(cplx) {
 	if (cplx == 0) {
-		return({op:"int",c:ribet(-4,4)});
+		if (document.getElementById("chk_neg").checked) {
+			return({op:"int",c:ribet(-4,4)});
+			}
+		else {
+			return({op:"int",c:ribet(1,4)});
+			}
 		}
 	var l = ["f","g","h"];
 	if (document.getElementById("chk_sums").checked) {
@@ -541,7 +551,7 @@ function ml(tt) {
 	var il = indexlist(tt);
 	for (i = 0; i < il.length; i++) {
 		document.getElementById(ixify(il[i])).style.backgroundColor = "";
-		document.getElementById("tabl_"+ixify(il[i])).style.backgroundColor = "";
+		if (document.getElementById("tabl_"+ixify(il[i]))) {document.getElementById("tabl_"+ixify(il[i])).style.backgroundColor = "";}
 		}
 	}
 
@@ -562,7 +572,9 @@ function mm(e,tt) {
 		}
 	for (i = 0; i < il.length; i++) {
 		if (ixify(il[i]).startsWith(id)) {
-			document.getElementById("tabl_"+ixify(il[i])).style.backgroundColor="#CCDDAA";
+			if (document.getElementById("tabl_"+ixify(il[i]))) {
+				document.getElementById("tabl_"+ixify(il[i])).style.backgroundColor="#CCDDAA";
+				}
 			}
 		}
 	}
@@ -597,6 +609,12 @@ function toosteep(tt) {
 	return(false);
 	}
 
+function toodeep(tt) {
+	if (document.getElementById("chk_comp").checked) {return(false);}
+	if (ttfuncs(tt).length > 1) {return(true);}
+	return(false);
+	}
+
 function do_everything() {
 	var cplx = Number(document.getElementById("num_cplx").value);
 	var tt = makeprob(cplx);
@@ -605,6 +623,7 @@ function do_everything() {
 	if (ttfuncs(tt).length == 0) {do_everything();}
 	if (ttree_eval(tt) == "FAIL") {do_everything();}
 	if (toosteep(g_tt)) {do_everything();}
+	if (toodeep(g_tt)) {do_everything();}
 	drawfuncs();
 	document.getElementById("hinttarg").innerHTML = "";
 	upd_treeform();
@@ -621,11 +640,11 @@ function upd_treeform() {
 		chart:cht,
 		nodeStructure: ttree_to_treant(tt)
 		});
-	initializemouseover(tt);
 		}
 	else {
 		document.getElementById("treetarg").style.display = "none";
 		}
+	initializemouseover(tt);
 	}
 
 function colorify() {
@@ -925,15 +944,35 @@ function check_ans() {
 <div id="htmltarg" style='font-size:200%;user-select:none;'></div>
 Type your answer here: <input id="ans" style='width:4em'> 
 <button onclick="check_ans()">Check Answer</button>
-<button onclick="show_hint()" title="Try working from the inside out">Hint</button>
+<button onclick="show_hint()" title="Try working from the inside out">Walkthrough</button>
 <div id="hinttarg"></div>
 <hr>
+<details> <summary>Click to Open/Close Instructions</summary>
+
+<ol>
+<li> Click "Create Problem" above to create a new problem.
+<li> You can choose how functions are presented below under "Types of Functions", if you want to specifically practice reading graphs, etc.
+<li> Increase the "Complexity" (at top) from 1 to 2 to practice with expressions where you need to do arithmetic inside and outside the function (f(1+2) or 2+f(3)).
+<li> The Option "Allow functions inside functions" allows you to practice with function composition (an advanced topic). You'll need to set "Complexity" to at least 2 for this to work.
+</ol>
+</details>
+
+<details><summary>Click to Open/Close Options</summary>
+<h3>Types of Function Presentations:</h3>
+<input type="checkbox" checked id="chk_ff"> Formulas <br>
+<input type="checkbox" checked id="chk_fg"> Graphs <br>
+<input type="checkbox" checked id="chk_ft"> Tables (default)
+
+<h3>Options:</h3>
 <input type="checkbox" id="chk_sums" checked> Allow sums <br>
 <input type="checkbox" id="chk_muls" checked> Allow multiplication <br>
-<input type="checkbox" id="chk_treehi" onchange="upd_treeform()"> Highlight subexpressions <br>
+<input type="checkbox" id="chk_comp"> Allow functions inside functions <br>
+<input type="checkbox" id="chk_neg"> Allow negative numbers <br>
+<input type="checkbox" id="chk_treehi" onchange="upd_treeform()"> Highlight subexpressions on Mouse Over <br>
 <input type="checkbox" id="chk_treeshow" onchange="upd_treeform()"> Show tree <br>
 <input type="checkbox" id="chk_treename" onchange="upd_treeform()"> Show names on tree (for debugging) <br>
 <button onclick="colorify()">Colorify</button> (for debugging);
+</details>
 
 <div id="treetarg"></div>
 </body>

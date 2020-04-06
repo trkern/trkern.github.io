@@ -1,0 +1,296 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<meta name=description content="">
+<link rel="icon" href="icon.png">
+<title> Reading Graphs </title>
+<script src="math.min.js" type="text/javascript"></script>
+<script src="tgr.js"></script>
+<script>
+
+var xresizemode = 0;
+var padxmin = 0;
+var padxmax = Infinity;
+var padymin = 0;
+var padymax = 0;
+var padw = 1;
+var justrand = false;
+
+var g_rand_minx;
+var g_rand_maxx;
+var g_rand_func;
+
+function updxo() {
+	var xo = Number(document.getElementById("xo").value);
+	padxmin = xo;
+	}
+
+function repadxmin() {
+	var xo = Number(document.getElementById("xo").value);
+	padxmin = 2*xo-padxmax;
+	padw = padxmax-xo;
+	}
+
+function repadxmax() {
+	var xo = Number(document.getElementById("xo").value);
+	padxmax = 2*xo-padxmin;
+	padw = xo-padxmin;
+	}
+
+function mathjsfct(str) {
+	var f = math.compile(str);
+	return(function(ooo){return(f.eval({x:ooo}));});
+	}
+
+function carnivalfunction() {
+	var str = document.getElementById("carnivalfun").value;
+	if (str == "f(x)") {return(g_rand_func);}
+	return(mathjsfct(str));
+	}
+
+function updatecarnivalfun() {
+	var pd = tgr_graph_array["gr2"].plotdata;
+	var f = carnivalfunction();
+	var xo = padxmin;
+	var i;
+	var x;
+	var l = [{type:"plot", fct:carnivalfunction()}];
+	if (document.getElementById("carnivalfun").value == "f(x)") {
+		l.push({type:"dot", x:g_rand_minx, y:f(g_rand_minx)});
+		l.push({type:"dot", x:g_rand_maxx, y:f(g_rand_maxx)});
+		}
+	l.push({type:"line", x:xo, y:-Infinity, x2:xo, y2:f(xo), color:"red", linewidth:4});
+	l.push({type:"line", x:xo, y:f(xo), x2:Infinity, y2:f(xo), color:"blue", linewidth:4});
+	if (isFinite(f(xo))) {
+		var ctxx = document.getElementById("xbar").getContext("2d");
+		ctxx.beginPath();
+		var cmin = tgr_tocanv([padxmin,padymin],pd);
+		ctxx.strokeStyle = "red";
+		ctxx.moveTo(cmin[0],16);
+		ctxx.lineTo(cmin[0],18);
+		ctxx.stroke();
+		var ctxy = document.getElementById("ybar").getContext("2d");
+		ctxy.beginPath();
+		var cmin = tgr_tocanv([padxmin,f(xo)],pd);
+		ctxy.strokeStyle = "blue";
+		ctxy.moveTo(16,cmin[1]);
+		ctxy.lineTo(18,cmin[1]);
+		ctxy.stroke();
+		}
+	tgr_update_grapher_objs("gr2", l);
+	}
+
+var oldxmin; 
+var oldxmax;
+var oldymin;
+var oldymax;
+var oldf;
+
+function drawpaddle() {
+	var pd = tgr_graph_array["gr2"].plotdata;
+	var ctxx = document.getElementById("xbar").getContext("2d");
+	var cmin = tgr_tocanv([padxmin,padymin],pd);
+	var cmax = tgr_tocanv([padxmax,padymax],pd);
+	if (oldxmin == pd.xmin && oldxmax == pd.xmax && oldf == document.getElementById("carnivalfun").value && !justrand) {
+		ctxx.clearRect(0, 0, ctxx.canvas.width, 16);
+		}
+	else {
+		ctxx.clearRect(0,0,ctxx.canvas.width,ctxx.canvas.height);
+		}
+	oldxmin = pd.xmin;
+	oldxmax = pd.xmax;
+
+	ctxx.strokeStyle = "black";
+	ctxx.lineWidth = 2;
+	ctxx.beginPath();
+	ctxx.moveTo(cmin[0],4);
+	ctxx.lineTo(cmin[0],16);
+	ctxx.stroke();
+	var ctxy = document.getElementById("ybar").getContext("2d");
+	if (oldymin == pd.ymin && oldymax == pd.ymax && oldf == document.getElementById("carnivalfun").value && !justrand) {
+		ctxy.clearRect(0,0,16,ctxy.canvas.height);
+		}
+	else {
+		ctxy.clearRect(0,0,ctxy.canvas.width,ctxy.canvas.height);
+		}
+	oldf = document.getElementById("carnivalfun").value;
+	justrand = false;
+	var f = carnivalfunction();
+	if (isFinite(f(padxmin))) {
+		ctxy.beginPath();
+		var cmin2 = tgr_tocanv([padxmin,f(padxmin)],pd);
+		ctxy.strokeStyle = "black";
+		ctxy.lineWidth = 2;
+		ctxy.moveTo(4,cmin2[1]);
+		ctxy.lineTo(16,cmin2[1]);
+		ctxy.stroke();
+		document.getElementById("yo").innerHTML = f(padxmin);
+		}
+	else {
+		document.getElementById("yo").innerHTML = "DNE";
+		}
+	document.getElementById("xo").value = padxmin;
+
+	oldymin = pd.ymin;
+	oldymax = pd.ymax;
+	}
+
+function xbarmleave(e) {
+	if (xresizemode == 0) {document.body.style.cursor = "auto";}
+	}
+
+function xbarmmove(e) {
+	e.preventDefault();
+	var pd = tgr_graph_array["gr2"].plotdata;
+	var cmin = tgr_tocanv([padxmin,padymin],pd)[0];
+	var cmax = tgr_tocanv([padxmax,padymax],pd)[0];
+	var rect=document.getElementById("xbar").getBoundingClientRect();
+	var eX = e.clientX-rect.x;
+	var eY = e.clientY-rect.y;
+	var w = 3;
+	if (xresizemode != 0) {
+		document.body.style.cursor = "col-resize";
+		}
+	else if (eX < cmin + w && eX > cmin - w) {
+		document.body.style.cursor = "col-resize";
+		}
+	else if (eX < cmax + w && eX > cmax - w) {
+		document.body.style.cursor = "col-resize";
+		}
+	else {
+		document.body.style.cursor = "auto";
+		}
+	var wall;
+	if (xresizemode == 1) {
+		wall = pd.xmax;
+		padxmin = Math.min(Math.max(pd.xmin,tgr_fromcanv([eX,0],pd)[0]),wall);
+		repadxmax();
+		drawpaddle();
+		updatecarnivalfun();
+		}
+	}
+
+function xbarmdown(e) {
+	e.preventDefault();
+	var pd = tgr_graph_array["gr2"].plotdata;
+	var cmin = tgr_tocanv([padxmin,padymin],pd)[0];
+	var cmax = tgr_tocanv([padxmax,padymax],pd)[0];
+	var rect=e.target.getBoundingClientRect();
+	var eX = e.clientX-rect.x;
+	var eY = e.clientY-rect.y;
+	var w = 3;
+	if (eX < cmin + w && eX > cmin - w) {
+		xresizemode = 1;
+		window.addEventListener("mousemove",xbarmmove);
+		window.addEventListener("mouseup",xbarmup);
+		}
+	else {
+		xresizemode = 0;
+		}
+	}
+
+function xbarmup(e) {
+	e.preventDefault();
+	xresizemode = 0;
+	document.body.style.cursor = "auto";
+	window.removeEventListener("mousemove",xbarmmove);
+	window.removeEventListener("mouseup",xbarmup);
+	}
+
+function bootgr2() {
+	tgr_grapher("gr2", [],{width:500, height:500, ctarg:"ct", on_redraw:drawpaddle});
+	updatecarnivalfun();
+	}
+
+function boot() {
+	bootgr2();
+	}
+
+function lb(tbl,xj,x) {
+	var xm;
+	var p = 1;
+	for (xm in tbl) {
+		if (xm != xj) {
+			p *= (x-xm)/(xj-xm);
+			}
+		}
+	return(p);
+	}
+
+function lagrunge(tbl,a,b) {
+	return(function(x) {
+		if (x < a) {return(NaN);}
+		if (x > b) {return(NaN);}
+		var s = 0;
+		for (xj in tbl) {
+			s += tbl[xj]*lb(tbl,xj,x);
+			}
+		return(s);
+		});
+	}
+
+function ribet(mn,mx) {
+	return(Math.floor(Math.random()*(mx-mn+1))+mn);
+	}
+
+function make_tbl() {
+	var rval = {};
+	var i;
+	for (i = 0; i < 4; i++) {
+		rval[ribet(-4,4)] = ribet(-4,4);
+		}
+	return(rval);
+	}
+
+function randomfunc() {
+	var tbl = make_tbl();
+	if (tbl.length == 1) {return(randomfunc());}
+	var minx = Infinity;
+	var maxx = -Infinity;
+	for (i in tbl) {
+		minx = Math.min(minx,i);
+		maxx = Math.max(maxx,i);
+		}
+	g_rand_minx = minx;
+	g_rand_maxx = maxx;
+	return(lagrunge(tbl,minx,maxx));
+	}
+
+
+function rfun() {
+	g_rand_func = randomfunc();
+	document.getElementById("carnivalfun").value = "f(x)";
+	justrand = true;
+	updatecarnivalfun();
+	}
+
+</script>
+</head>
+<body onload="boot()">
+Let f(x) = <input type="text" id="carnivalfun" value="x^2" onchange="updatecarnivalfun()"></input>
+<button onclick='rfun()'>Random Function</button>
+<br>
+
+f(<input type="number" id="xo" value=1 step=.05 oninput="updxo();updatecarnivalfun()"></input>) = <span id='yo'></span>
+
+<table>
+<tr> <td>
+<div id="gr2"></div>
+</td><td style='vertical-align:top;'>
+<canvas width=20 height=500 style="border:1px solid;" id="ybar"></canvas>
+</td></tr>
+<tr> <td style='vertical-align:top;'>
+<canvas width=500 height=20 style="border:1px solid;" id="xbar" onmousedown="xbarmdown(event)" onmousemove="xbarmmove(event)"
+onmouseup="xbarmup(event)" onmouseleave="xbarmleave(event)"> </canvas>
+</td><td>
+<span id="ct"></span>
+</td></tr>
+</table>
+
+As you trace out the graph, the red dots below trace out the Domain of the function, and the Blue dots to the right trace out the Range of the function.
+
+</body>
+</html>

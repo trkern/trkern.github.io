@@ -738,6 +738,10 @@ function replac() {
 	}
 
 function show_hint() {
+	if (g_tt) {} else {
+		document.getElementById("hinttarg").innerHTML = 'Begin by clicking "Create Problem" to generate a new problem. See more detailed instructions below.'
+		return;
+		}
 	var ix = placetostart();
 	if (ix == "NOPE") {
 		document.getElementById("hinttarg").innerHTML = "You're done!";

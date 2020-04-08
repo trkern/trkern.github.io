@@ -18,6 +18,7 @@ var padymin = 0;
 var padymax = 0;
 var padw = 1;
 var justrand = false;
+var g_xsquish = 1;
 
 var g_rand_minx;
 var g_rand_maxx;
@@ -51,20 +52,22 @@ function carnivalfunction() {
 	return(mathjsfct(str));
 	}
 
-function updatecarnivalfun() {
+function updatecarnivalfun(k) {
+	if (k) {} else {resetsquish()}
 	var pd = tgr_graph_array["gr2"].plotdata;
+	var old
 	var f = carnivalfunction();
 	var xo = padxmin;
 	var i;
 	var x;
-	var l = [{type:"plot", fct:carnivalfunction()}];
+	var l = [{type:"squishplot", fct:f, linewidth:4, hsquish:g_xsquish, vsquish:g_ysquish}];
 	if (document.getElementById("carnivalfun").value == "f(x)") {
-		l.push({type:"dot", x:g_rand_minx, y:f(g_rand_minx)});
-		l.push({type:"dot", x:g_rand_maxx, y:f(g_rand_maxx)});
+		l.push({type:"dot", x:g_rand_minx*g_xsquish, y:f(g_rand_minx)*g_ysquish});
+		l.push({type:"dot", x:g_rand_maxx*g_xsquish, y:f(g_rand_maxx)*g_ysquish});
 		}
-	l.push({type:"line", x:xo, y:-Infinity, x2:xo, y2:f(xo), color:"red", linewidth:4});
-	l.push({type:"line", x:xo, y:f(xo), x2:Infinity, y2:f(xo), color:"blue", linewidth:4});
 	if (isFinite(f(xo))) {
+		l.push({type:"line", x:xo, y:-Infinity, x2:xo, y2:f(xo), color:"red", linewidth:4});
+		l.push({type:"line", x:xo, y:f(xo), x2:Infinity, y2:f(xo), color:"blue", linewidth:4});
 		var ctxx = document.getElementById("xbar").getContext("2d");
 		ctxx.beginPath();
 		var cmin = tgr_tocanv([padxmin,padymin],pd);
@@ -79,6 +82,9 @@ function updatecarnivalfun() {
 		ctxy.moveTo(16,cmin[1]);
 		ctxy.lineTo(18,cmin[1]);
 		ctxy.stroke();
+		}
+	else {
+		l.push({type:"line", x:xo, y:-Infinity, x2:xo, y2:Infinity, color:"gray", linewidth:4});
 		}
 	tgr_update_grapher_objs("gr2", l);
 	}
@@ -267,6 +273,39 @@ function rfun() {
 	updatecarnivalfun();
 	}
 
+var g_animframe = "NOPE";
+
+function resetsquish() {
+	g_xsquish = 1;
+	g_ysquish = 1;
+	if (g_animframe != "NOPE") {
+		cancelAnimationFrame(g_animframe);
+		}
+	updatecarnivalfun(true);
+	}
+
+function xsquish() {
+	if (g_xsquish > 0) {
+		g_xsquish -= .01;
+		updatecarnivalfun(true);
+		g_animframe = requestAnimationFrame(xsquish);
+		}
+	else {
+		g_animframe = "NOPE";
+		}
+	}
+
+function ysquish() {
+	if (g_ysquish > 0) {
+		g_ysquish -= .01;
+		updatecarnivalfun(true);
+		g_animframe = requestAnimationFrame(ysquish);
+		}
+	else {
+		g_animframe = "NOPE";
+		}
+	}
+
 </script>
 </head>
 <body onload="boot()">
@@ -290,7 +329,14 @@ onmouseup="xbarmup(event)" onmouseleave="xbarmleave(event)"> </canvas>
 </td></tr>
 </table>
 
-As you trace out the graph, the red dots below trace out the Domain of the function, and the Blue dots to the right trace out the Range of the function.
+As you trace out the graph, the red dots below trace out the Domain of the function, and the Blue dots to the right trace out the Range of the function.<br>
+
+You can also squash the graph onto the x-axis to find the domain or squash the graph onto the y-axis to find the range:<br>
+
+<button onclick="resetsquish();ysquish();">Squash onto x-axis (domain)</button>
+<button onclick="resetsquish();xsquish()">Squash onto y-axis (range)</button>
+<button onclick="resetsquish()">Undo Squashing</button><br>
+
 
 </body>
 </html>

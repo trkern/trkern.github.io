@@ -1,6 +1,5 @@
 ﻿/*Graphing library:
 
-
 The curve contains:
 fct //A string, representing javascript code that can be executed as the function to be graphed
 hints //An array of hints
@@ -87,6 +86,8 @@ var tgr_default_grapher_obj = {
 	linewidth: 1,
 	r:5,
 	incolor: "white",
+	vsquish:1,
+	hsquish:1,
 	}
 
 var tgr_default_plotdata = {
@@ -447,6 +448,35 @@ function tgr_plot(grapher_obj, ctx, pd) {
 				ctx.beginPath();
 				}
 			ctx.lineTo(...tgr_tocanv([x2,f(x2)],pd));
+			ctx.stroke();
+			}
+		}
+	if (grapher_obj.type == "squishplot") {
+		var xmax, xmin;
+		var minhintindex = 0;
+		var hints = tgr_plug(grapher_obj.hints,pd);
+		if (grapher_obj.xmax !== undefined) {
+			xmax = Math.min(pd.xmax,tgr_plug(grapher_obj.xmax,pd));
+			}
+		else {xmax = pd.xmax;}
+		if (grapher_obj.xmin !== undefined) {
+			xmin = Math.max(pd.xmin,tgr_plug(grapher_obj.xmin,pd));
+			}
+		else {xmin = pd.xmin;}
+		var vsquish = grapher_obj.vsquish;
+		var hsquish = grapher_obj.hsquish;
+		var f = grapher_obj.fct;
+		var dx = (xmax-xmin)/pd.numpts;
+		ctx.beginPath();
+		ctx.strokeStyle = grapher_obj.color;
+		ctx.lineWidth = grapher_obj.linewidth;
+		var x = 0;
+		for (i = 0; i < pd.numpts; i++) {
+			var x1 = xmin + i*(xmax-xmin)/pd.numpts;
+			var x2 = xmin + (i+1)*(xmax-xmin)/pd.numpts;
+			ctx.beginPath();
+			ctx.moveTo(...tgr_tocanv([x1*hsquish,f(x1)*vsquish],pd));
+			ctx.lineTo(...tgr_tocanv([x2*hsquish,f(x2)*vsquish],pd));
 			ctx.stroke();
 			}
 		}

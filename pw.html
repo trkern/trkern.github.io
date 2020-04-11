@@ -1,0 +1,693 @@
+﻿<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="bracket.png">
+<link rel="image_src" href="icon.png">
+<meta name=description content="This interactive will allow you to enter a piecewise function and view its graph. 
+While normally pieces are not allowed to overlap, this interactive allows them to overlap so you can make drawings.">
+<title> Piecewise Functions </title>
+<script src="tgr.js"></script>
+<script src="math.min.js"></script>
+<script src="katex.min.js"></script>
+<script src="underscore-min.js"></script>
+<script src="mod_kas.js"></script>
+<link rel="stylesheet" href="mathquill.css"/>
+<script src="jquery-3.3.1.min.js"></script>
+<script src="mathquill.js"></script>
+<script>
+var MQ = MathQuill.getInterface(2);
+
+var pieces = [];
+var ggt;
+
+var lcmp = ["","","","","<","≤","<","≤","<","≤",""];
+var ucmp = ["=","≠","<","≤","<","<","≤","≤","","",""];
+var cmps = ["x = a","x ≠ a","x < a","x ≤ a","a < x < b","a ≤ x < b","a < x ≤ b","a ≤ x ≤ b","a < x","a ≤ x","All x"];
+
+function mqify() {
+	var i;
+	var mf;
+	var n = Number(document.getElementById("n").value);
+	for (i = 0; i < n; i++) {
+		const a = i;
+		mf = MQ.MathField(document.getElementById("mq"+i),
+			{handlers: {edit: function() {
+				changefuns(a);
+				fixbracket();
+				}}}
+			);
+		mf.latex(pieces[i].fun);
+		}
+	}
+
+var g_changefuns_on = true;
+
+function changefuns(a) {
+	if (!g_changefuns_on) {return;}
+	var i;
+	var n = Number(document.getElementById("n").value);
+	var mf;
+	for (i = 0; i < n; i++) {
+		mf = MQ(document.getElementById("mq"+i));
+		if (mf) {pieces[i].fun = mf.latex()};
+		}
+	upd();
+	}
+
+function makerow(i) {
+	if (!(i in pieces)) {
+		pieces[i] = {fun:"", lbound:0, ubound:0, style:10, color:"#000000"};
+		}
+	//var str = "<td><input id='i"+i+"'";
+	//str += " value='"+pieces[i].fun+"'";
+	//str += " oninput='changefun("+i+")'></td>";
+	var str = "<td><span id='mq"+i+"'></span></td>";
+	if (pieces[i].style != 10) {str += "<td id='if"+i+"'>If</td>";}
+	else {str += "<td id='if"+i+"'></td>";}
+	str += "<td><input type='number' value='"+pieces[i].lbound+"' style='width:3em";
+	if (lcmp[pieces[i].style] == "") {str += ";display:none";}
+	str += "' id='lb"+i+"' oninput='changelbound("+i+")'></td>";
+	str += "<td id='li"+i+"'>"+lcmp[pieces[i].style]+"</td>";
+	if (pieces[i].style != 10) {
+		str += "<td id='vi"+i+"'>x</td>";
+		}
+	else {
+		str += "<td id='vi"+i+"'></td>";
+		}
+	str += "<td id='ui"+i+"'>"+ucmp[pieces[i].style]+"</td>";
+	str += "<td><input type='number' value='"+pieces[i].ubound+"' style='width:3em";
+	if (ucmp[pieces[i].style] == "") {str += ";display:none";}
+	str += "' id='ub"+i+"' oninput='changeubound("+i+")'></td>";
+	str += "<td width='80'></td>";
+	var j;
+	str += "<td><select id='s"+i+"' onchange='changesel("+i+")'>";
+	for (j = 0; j < cmps.length; j++) {
+		str += "<option value="+j;
+		if (j == pieces[i].style) {
+			str += " selected";
+			}
+		str += ">"+cmps[j]+"</option>";
+		}
+	str += "</select></td>";
+	str += "<td><input type='color' id='c"+i+"' value='"+pieces[i].color+"' oninput='changecol("+i+")'></td>";
+	return(str);
+	}
+
+function fixbracket() { //not thrilled about this either
+	document.getElementById("bracketsvg").style.height = (document.getElementById("brackettd").getBoundingClientRect().height-4) + "px";
+	}
+
+function makeinputs() {
+	var n = Number(document.getElementById("n").value);
+	var i;
+	var str = "<table border=0 class='inps'><tr><td rowspan="+n+" style='vertical-align:middle'>f(x) =</td>";
+	str += "<td id='brackettd' rowspan="+n+">";
+	str += "<svg id='bracketsvg' style='width:1em;height:"+(n*1.56)+"em;display:block' viewbox='0 0 47 166' preserveAspectRatio='none'>"; //works, but I'm not happy with hardcoded height
+	str += "<path d='M 26.8,25.8 C 26.8,11.2 31.0,2.2 46.6,0.4 L 46.2,0 C 23.6,0.4 17.4,7.2 17.4,29 L 17.4,59.2 C 17.4,72.6 16.0,79 1.4,82.6 L 1.4,83 C 15.8,86.6 17.4,93 17.4,106.2 L 17.4,138.4 C 17.4,159.4 25.2,165.4 46.2,166 L 46.6,165.601 C 30.6,163.201 26.8,155.201 26.8,140 L 26.8,107.8 C 26.8,94.2 25.0,86.4 10.0,83 L 10.0,82.6 C 25.2,79 26.8,70.6 26.8,57 L 26.8,25.8 z'>";
+	str += "</path></svg>";
+	for (i = 0; i < n; i++) {
+		if (i > 0) {str += "<tr class='inps'>";}
+		str += makerow(i);
+		str += "</tr>";
+		}
+	str += "</table>";
+	document.getElementById("inputs").innerHTML = str;
+	requestAnimationFrame(mqify);
+	upd();
+	}
+
+function svgmagic() {
+	var d="M 19.8,25.8 C 19.8,11.2 15.6,2.2 0,0.4 L 0.4,0 C 23,0.4 29.2,7.2 29.2,29 L 29.2,59.2 C 29.2,72.6 30.6,79 45.2,82.6 L 45.2,83 C 30.8,86.6 29.2,93 29.2,106.2 L 29.2,138.4 C 29.2,159.4 21.4,165.4 0.4,166 L 0,165.601 C 16,163.201 19.8,155.201 19.8,140 L 19.8,107.8 C 19.8,94.2 21.6,86.4 36.6,83 L 36.6,82.6 C 21.4,79 19.8,70.6 19.8,57 L 19.8,25.8 z ";
+	var l = d.split(" ");
+	var i;
+	var r = "";
+	var t;
+	for (i = 0; i < l.length; i++) {
+		r += " ";
+		if (l[i].indexOf(",") != -1) {
+			t = l[i].split(",");
+			r += (46.6-t[0]).toFixed(1) + "," + t[1];
+			}
+		else {
+			r += l[i];
+			}
+		}
+	console.log(r);
+	}
+
+function changefun(i) {
+	pieces[i].fun = document.getElementById("i"+i).value;
+	upd();
+	}
+
+function changelbound(i) {
+	pieces[i].lbound = Number(document.getElementById("lb"+i).value);
+	upd();
+	}
+
+function changeubound(i) {
+	pieces[i].ubound = Number(document.getElementById("ub"+i).value);
+	upd();
+	}
+
+function changesel(i) {
+	pieces[i].style = Number(document.getElementById("s"+i).value);
+	document.getElementById("li"+i).innerHTML = lcmp[pieces[i].style];
+	document.getElementById("ui"+i).innerHTML = ucmp[pieces[i].style];
+
+	if (lcmp[pieces[i].style] == "") {
+		document.getElementById("lb"+i).style.display = "none";
+		}
+	else {
+		document.getElementById("lb"+i).style.display = "";
+		}
+
+	if (ucmp[pieces[i].style] == "") {
+		document.getElementById("ub"+i).style.display = "none";
+		}
+	else {
+		document.getElementById("ub"+i).style.display = "";
+		}
+
+	if (pieces[i].style == 10) {
+		document.getElementById("vi"+i).innerHTML = "";
+		document.getElementById("if"+i).innerHTML = "";
+		}
+	else {
+		document.getElementById("vi"+i).innerHTML = "x";
+		document.getElementById("if"+i).innerHTML = "If";
+		}
+
+	upd();
+	}
+
+function changecol(i) {
+	pieces[i].color = document.getElementById("c"+i).value;
+	upd();
+	}
+
+function kxineq(piece) {
+	var a = piece.lbound;
+	var b = piece.ubound;
+	switch(piece.style) {
+		case 0: return("x="+b);
+		case 1: return("x\\neq "+b);
+		case 2: return("x<"+b);
+		case 3: return("x\\leq "+b);
+		case 4: return(a+"<x<"+b);
+		case 5: return(a+"\\leq x<"+b);
+		case 6: return(a+"<x\\leq "+b);
+		case 7: return(a+"\\leq x\\leq "+b);
+		case 8: return(a+"<x");
+		case 9: return(a+"\\leq x");
+		case 10: return("");
+		}
+	}
+
+function mathjsfct(str) {
+	a = mathjsfctisnolongerinuse;
+	var f = math.compile(str);
+	return(function(ooo){return(f.eval({x:ooo}));});
+	}
+
+var kasfctlookup = {};
+
+function kasfct(str) {
+	try{
+		if (str == "") {return(function(x){return(NaN);});}
+		if (!isNaN(str)) {
+			return(function(x){return(str)});
+			}
+		if (str in kasfctlookup) {return(kasfctlookup[str]);}
+		var rval = function(x){return(KAS.parse(str).expr.compile()({x:x}))};
+		kasfctlookup[str] = rval;
+		return(rval);
+		}
+	catch(e) {
+		kasfctlookup[str] = function(x){return(NaN);};
+		return(function(x){return(NaN);});
+		}
+	}
+
+function makekx(pl,n) {
+	var kx = "f(x) = \\begin{cases}";
+	var i;
+	for (i = 0; i < n; i++) {
+		kx += pl[i].fun;
+		kx += "&";
+		kx += kxineq(pl[i]);
+		kx += "\\\\";
+		}
+	kx += "\\end{cases}";
+	return(katex.renderToString(kx));
+	}
+
+function maketgr(pl,n,gg) {
+	var lw = 4;
+	if (gg) {
+		lw = 6;
+		}
+	var l = [];
+	var tobj;
+	var fillpts = [];
+	var holepts = [];
+	var f;
+	var s;
+	for (i = 0; i < n; i++) {
+		s = pl[i].style;
+		f = kasfct(pl[i].fun);
+		if (s != 0) {
+			tobj = {type:"plot", fct:f, color:pl[i].color, linewidth:lw};
+			if (s >= 4 && s <= 9) {
+				tobj.xmin = pl[i].lbound;
+				}
+			if (s >= 2 && s <= 7) {
+				tobj.xmax = pl[i].ubound;
+				}
+			l.push(tobj);
+			}
+		if (s == 4 || s == 6 || s == 8) {
+			holepts.push([pl[i].lbound,f(pl[i].lbound),pl[i].color]);
+			}
+		if (s == 5 || s == 7 || s == 9) {
+			fillpts.push([pl[i].lbound,f(pl[i].lbound),pl[i].color]);
+			}
+		if (s == 1 || s == 2 || s == 4 || s == 5) {
+			holepts.push([pl[i].ubound,f(pl[i].ubound),pl[i].color]);
+			}
+		if (s == 3 || s == 6 || s == 7) {
+			fillpts.push([pl[i].ubound,f(pl[i].ubound),pl[i].color]);
+			}
+		if (s == 0) {
+			fillpts.push([pl[i].ubound,f(pl[i].ubound),pl[i].color]);
+			}
+		}
+
+	var j;
+	var k;
+
+	for (i = 0; i < fillpts.length; i++) {
+		k = true;
+		for (j = 0; j < holepts.length; j++) {
+			if (math.equal(fillpts[i][0],holepts[j][0]) && math.equal(fillpts[i][1],holepts[j][1])) {
+				k = false;
+				} //currently, 0:x=0,x:x>0 looks wrong. This is a desirable bug, since it provides more drawing flexibility.
+			}
+		if (k) {
+			l.push({type:"dot", x:fillpts[i][0], y:fillpts[i][1], color:fillpts[i][2]});
+			}
+		}
+
+	for (i = 0; i < holepts.length; i++) {
+		k = true;
+		for (j = 0; j < fillpts.length; j++) {
+			if (math.equal(holepts[i][0],fillpts[j][0]) && math.equal(holepts[i][1],fillpts[j][1])) {
+				k = false;
+				}
+			}
+		if (k) {
+			l.push({type:"hole", x:holepts[i][0], y:holepts[i][1], color:holepts[i][2]});
+			}
+		}
+	return(l);
+
+	}
+
+function upd() {
+	fixbracket();	
+
+	var n = Number(document.getElementById("n").value);
+
+	var l = [];
+
+	if (document.getElementById("chk_showgg").checked) {
+		l = l.concat(maketgr(ggt,ggt.length,true));
+		}
+	if (document.getElementById("chk_showgraph").checked) {
+		l = l.concat(maketgr(pieces,n));
+		}
+	
+	tgr_update_grapher_objs("gr",l);
+	
+	makepermalink();	
+	}
+
+//sqrt((x+1)/(4(x+2)))
+
+function loaduri() {
+	var str = document.URL;
+	if (str.indexOf("?") == -1) {return;}
+	str = str.slice(str.indexOf("?")+1);
+	if (str[0] == "!") {
+		document.getElementById("gr").id = "oldgr";
+		document.getElementById("everything").style.display="none";
+		str = str.slice(1);
+		}
+	tgr_grapher("gr",[]);
+	str = decodeURI(str);
+	loadex(stringtopieces(str));
+	document.getElementById("chk_showpermalink").checked = true;
+	}
+
+function makepermalink() {
+	var base = document.URL.split("?")[0];
+	var eu = encodeURI(piecestostring(pieces.slice(0,Number(document.getElementById("n").value))));
+	var str = base+"?"+eu;
+	document.getElementById("permalink").innerHTML = "<a href='"+str+"'>"+str+"</a>";
+
+	str = base+"?!"+eu;
+	document.getElementById("permaembed").innerText = "<iframe src='"+str+"'>";
+
+	if (document.getElementById("chk_showpermalink").checked) {
+		history.pushState({},"",base+"?"+eu);
+		}
+	}
+
+function piecestostring(pl) {
+	var str = "";
+	var i;
+	for (i = 0; i < pl.length; i++) {
+		if (i != 0) {str += "__";}
+		str += pl[i].fun+"_"+pl[i].lbound+"_"+pl[i].ubound+"_"+pl[i].style;
+		if (pl[i].color != "#000000") {
+			str += pl[i].color.slice(1);
+			}
+		}
+	return(str);
+	}
+
+function stringtopieces(s) {
+	var l = s.split("__");
+	var i;
+	var t;
+	var rv = [];
+	for (i = 0; i < l.length; i++) {
+		t = l[i].split("_");
+		if (t.length == 1) {
+			rv.push({fun:t[0], lbound:0, ubound:0, style:10, color:"#000000"});
+			}
+		else if (t.length == 4) {
+			rv.push({fun:t[0], lbound:Number(t[1]), ubound:Number(t[2]), style:Number(t[3]), color:"#000000"});
+			}
+		else if (t.length == 5) {
+			rv.push({fun:t[0], lbound:Number(t[1]), ubound:Number(t[2]), style:Number(t[3]), color:"#"+t[4]});
+			}
+		}
+	return(rv);
+	}
+
+function plusify(x) {
+	if (x == 0) {return("");}
+	if (String(x)[0]!="-") {return("+"+x);}
+	return(x);
+	}
+
+function multify(x) {
+	if (x == 1) {return("");}
+	if (x == -1) {return("-");}
+	if (String(x).indexOf("/") != -1) {return(x+"*");}
+	return(x);
+	}
+
+function ribet(mn,mx) {
+	return(Math.floor(Math.random()*(mx-mn+1))+mn);
+	}
+
+function oob(x) {
+	return(x < -5 || x > 5);
+	}
+
+function make_rand_lin(lb,ub) {
+	do {
+		var x1 = ribet(lb,ub);
+		var x2;
+		do {x2 = ribet(lb,ub);} while (x1 == x2);
+		var y1 = ribet(-5,5);
+		var y2 = ribet(-5,5);
+		} while (oob((y1-y2)/(x1-x2)*(lb-x1)+y1) || oob((y1-y2)/(x1-x2)*(ub-x1)+y1) || math.equal((y1-y2)/(x1-x2)*(lb-x1)+y1,gavoidy));
+	if (y1 == y2) {return(y1.toString());}
+	var m = multify(math.simplify((y1-y2)+"/"+(x1-x2)));
+	var b = plusify(math.simplify(-x1+"*"+(y1-y2)+"/"+(x1-x2)+"+"+y1));
+	gavoidy = (y1-y2)/(x1-x2)*(ub-x1)+y1;
+	return(KAS.parse(m+"x"+b).expr.tex());
+	}
+
+function make_rand_quad(lb,ub) {
+	var c = 0;
+	do {
+		var x1 = ribet(lb,ub);
+		var y1 = ribet(-5,5);
+		var a;
+		do {a = ribet(-6,6)/2; c++} while(y1+a > 5 || y1 + a < -5 || a == 0);
+		if (c > 100) {return(make_rand_lin(lb,ub));}
+		} while(oob(a*(lb-x1)*(lb-x1)+y1) || oob(a*(ub-x1)*(ub-x1)+y1) || math.equal(a*(lb-x1)*(lb-x1)+y1,gavoidy));
+	var h = plusify(-x1);
+	var k = plusify(y1);
+	a = multify(a);
+	gavoidy = a*(ub-x1)*(ub-x1)+y1;
+	return(a+"\\left(x"+h+"\\right)^2"+k);
+	}
+
+function make_rand_sqrt(lb,ub) {
+	var k = ribet(0,1);
+	if (lb == -5) {k = 0;}
+	if (ub == 5) {k = 1;}
+	if (lb == -5 && ub == 5) {return(make_rand_lin(lb,ub));}
+	if (k) {
+		do {
+			var x1 = lb;
+			var y1 = ribet(-5,5);
+			var a = ribet(-2,2);
+			} while(oob(y1+a) || a == 0 || oob(y1+a*Math.sqrt(ub-lb)) || math.equal(y1,gavoidy));
+		var b = multify(a);
+		var c = plusify(-x1);
+		var d = plusify(y1)
+		gavoidy = y1+a*Math.sqrt(ub-lb);
+		return(b+"\\sqrt{x"+c+"}"+d);
+		}
+	else {
+		do {
+			var x1 = ub;
+			var y1 = ribet(-5,5);
+			var a = ribet(-2,2);
+			} while(oob(y1+a) || a == 0 || oob(y1+a*Math.sqrt(ub-lb)) || math.equal(y1+a*Math.sqrt(ub-lb),gavoidy));
+		var b = multify(a);
+		var c = plusify(x1);
+		var d = plusify(y1)
+		gavoidy = y1;
+		return(b+"\\sqrt{-x"+c+"}"+d);
+		}
+	}
+
+function make_rand_fun(lb,ub,qi) { //assume lb,ub are unequal, integer.
+	
+	switch(ribet(0,qi)) {
+		case 0: //linear:
+		return(make_rand_lin(lb,ub));
+		case 1: //quadratic:
+		return(make_rand_quad(lb,ub));
+		case 2: //square root:
+		return(make_rand_sqrt(lb,ub));
+		}
+	}
+
+var stylelookup = {
+41: 2,
+42: 2,
+43: 3,
+11: 4,
+12: 4,
+13: 6,
+21: 5,
+22: 5,
+23: 7,
+31: 4,
+32: 4,
+33: 6,
+14: 8,
+24: 9,
+34: 8,
+44: 10};
+
+	//[0"x = a",1"x ≠ a",2"x < a",3"x ≤ a",4"a < x < b",5"a ≤ x < b",6"a < x ≤ b",7"a ≤ x ≤ b",8"a < x",9"a ≤ x",10"any"]
+
+var gavoidy;
+
+function make_rand_ex(qi,gg) {
+	gavoidy = -10;
+	var col = "#000000";
+	if (gg) {
+		col = "#0077BB";
+		}
+	var i;
+	var obds = [];
+	var l = [];
+	var k = ribet(1,3);
+	for (i = 0; i < k; i++) {
+		obds.push(ribet(-4,4));
+		}
+	obds.sort(function(a, b){return a - b});
+	var bds = [];
+	var bdtypes = []; //1: open on both ends, extra point in middle, 2: open on left, closed on right, 3: closed on left, open on right.
+	for (i = 1; i < obds.length; i++) {
+		if (obds[i] != obds[i-1]) {bds.push(obds[i-1]); bdtypes.push(ribet(1,3));}
+		}
+	var tobj = {};
+	var tlb = -10;
+	var tub = 10;
+	var sl;
+	var ty;
+	for (i = 0; i <= bds.length; i++) {
+		sl = "";
+		if (i == 0) {tlb = -5; sl += 4;}
+		else {tlb = bds[i-1]; sl+=bdtypes[i-1];}
+		if (i == bds.length) {tub = 5; sl+=4;}
+		else {tub = bds[i]; sl+=bdtypes[i];}
+		l.push({fun:make_rand_fun(tlb,tub,qi),lbound:tlb,ubound:tub,style:stylelookup[sl],color:col});
+		if (bdtypes[i] == 1) {
+			do {ty = ribet(-5,5)} while(math.equal(ty,gavoidy));
+			l.push({fun:ty,lbound:0,ubound:bds[i],style:0,color:col});
+			gavoidy = ty;
+			}
+		}
+	return(l);
+	}
+
+var ex_abs = [
+	{fun:"-x",lbound:0,ubound:0,style:2,color:"#000000"},
+	{fun:"x",lbound:0,ubound:0,style:9,color:"#000000"}
+	];
+
+var ex_face = [
+	{fun:"4\\sqrt{1-\\left(\\frac{x}{4}\\right)^2}",lbound:-4,ubound:4,style:7,color:"#000000"},
+	{fun:"-4\\sqrt{1-\\left(\\frac{x}{4}\\right)^2}",lbound:-4,ubound:4,style:6,color:"#000000"},
+	{fun:"1.5",lbound:0,ubound:-1.5,style:0,color:"#000000"},
+	{fun:"1.5",lbound:0,ubound:1.5,style:0,color:"#000000"},
+	{fun:"2x",lbound:-.25,ubound:.25,style:7,color:"#000000"},
+	{fun:"-.5",lbound:-.25,ubound:.25,style:6,color:"#000000"},
+	{fun:"\\left(\\frac{x}{2}\\right)^2-2.5",lbound:-2,ubound:2,style:6,color:"#000000"}
+	];
+
+var ex_frac = [
+	{fun:"1/(x+1)",lbound:0,ubound:-2,style:1,color:"#000000"}
+	];
+
+function turn_funs_on() {
+	g_changefuns_on = true;
+	}
+
+function loadex(ex) {
+	g_changefuns_on = false;
+	var i;
+	var j;
+	var tobj;
+	pieces = [];
+	for (i = 0; i < ex.length; i++) {
+		tobj = {};
+		for (j in ex[i]) {
+			tobj[j] = ex[i][j];
+			}
+		pieces.push(tobj);
+		}
+	document.getElementById("n").value = ex.length;
+	makeinputs();
+	requestAnimationFrame(turn_funs_on);
+	}
+
+function upd_pd() {
+	var pd = {
+		showgrid:document.getElementById("chk_showgrid").checked,
+		showaxes:document.getElementById("chk_showaxes").checked,
+		labelaxes:document.getElementById("chk_labelaxes").checked
+		}
+	tgr_update_plotdata("gr",pd);
+	}
+
+function randgg() {
+	document.getElementById("ggans").innerHTML = "";
+	ggt = make_rand_ex(document.getElementById("ggsel").value,true);
+	upd();
+	}
+
+function showggans() {
+	document.getElementById("ggans").innerHTML = makekx(ggt,ggt.length);
+	}
+
+function resetpieces() {
+	pieces = [];
+	makeinputs();
+	}
+
+function boot() {
+	loaduri(); //contains 	tgr_grapher("gr",[]);
+	makeinputs();
+	randgg();
+	}
+
+</script>
+<style>
+table.inps {
+	border-collapse:collapse;
+	}
+tr.inps:nth-child(even) {
+	//background-color: #f2f2f2
+	}
+</style>
+<link rel="stylesheet" href="katex.min.css">
+</head>
+<body onload="boot()">
+<div id='everything'>
+<h1>Piecewise Functions</h1>
+<p>
+This interactive will allow you to enter a piecewise function and view its graph. 
+While normally pieces are not allowed to overlap, this interactive allows them to overlap so you can make drawings.
+</p>
+To use:
+<ul>
+<li> Choose a number of pieces you want.
+<li> For each piece, type in the formula for that piece in the first textbox. You can make sure your formula has been parsed correctly by looking at the prettified version of the piecewise expression below the entry boxes.
+<li> Choose from the dropdown box what type of equality/inequality you want to define your piece.
+<li> Then choose the lower and upper bounds (as appropriate) for each piece.
+<li> You also have the option of choosing a color for each piece.
+</ul>
+
+Examples:
+<button onclick="loadex(ex_abs)"> Abs(x) </button>
+<button onclick="loadex(ex_face)"> Face </button>
+<button onclick="loadex(make_rand_ex(2))"> Random </button> <br><br>
+
+<table><tr>
+<td><div id="gr"></div></td>
+<td style="vertical-align:top">
+Number of Pieces: <input type="number" id="n" style="width:3em" oninput="makeinputs()" value=2> <button onclick="resetpieces()">Clear Inputs</button>
+<div id="inputs"></div>
+<div id="kx"></div></td>
+</tr></table>
+<input type="checkbox" id="chk_showgrid" checked onchange="upd_pd()"> Show Grid <br>
+<input type="checkbox" id="chk_showaxes" checked onchange="upd_pd()"> Show Axis <br>
+<input type="checkbox" id="chk_labelaxes" checked onchange="upd_pd()"> Label Axis <br>
+<input type="checkbox" id="chk_showgraph" checked onchange="upd()"> Show Graph <br>
+Permalink: <span id="permalink"></span><br>
+Embed: <span id='permaembed'></span><br>
+<input type="checkbox" id="chk_showpermalink" onchange="upd()"> Update URL <br>
+<input type="checkbox" id="chk_showgg" onchange="upd()"> Show Guessing Game Target
+<select id="ggsel">
+<option value=0>Linear Pieces</option>
+<option value=1>Linear and Quadratic Pieces</option>
+<option value=2>Linear, Quadratic, and Square Roots</option>
+</select> <button onclick="randgg()">Randomize</button> <button onclick="showggans()">Show Answer</button>
+<div id="ggans"></div>
+<h1> Suggestions for Use </h1>
+<p>
+Once you're comfortable with piecewise notation, try the following exercises:
+</p>
+<ul>
+<li> Check "Show Guessing Game Target" above to make a new piecewise function appear in the graph window. Try to enter a piecewise function whose graph matches the one that appears.
+<li> Or, uncheck the "Show Graph" checkbox above and press the "Random" button to generate a random example graph try to guess what the graph will look like, and recheck "Show Graph" to check your answer. 
+<li> Or, try to draw a picture using various pieces of graphs, as in the "Face" example. You can save and share your work with the permalink generated above.
+</ul>
+</div>
+<div id="gr"></div>
+</body>
+</html>

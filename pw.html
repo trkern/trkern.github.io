@@ -213,6 +213,10 @@ function mathjsfct(str) {
 
 var kasfctlookup = {};
 
+function pluginx(f) {
+	return(function(x){return(f({x:x}))});
+	}
+
 function kasfct(str) {
 	try{
 		if (str == "") {return(function(x){return(NaN);});}
@@ -220,7 +224,8 @@ function kasfct(str) {
 			return(function(x){return(str)});
 			}
 		if (str in kasfctlookup) {return(kasfctlookup[str]);}
-		var rval = function(x){return(KAS.parse(str).expr.compile()({x:x}))};
+		//var rval = function(x){return(KAS.parse(str).expr.compile()({x:x}))};
+		var rval = pluginx(KAS.parse(str).expr.compile());
 		kasfctlookup[str] = rval;
 		return(rval);
 		}

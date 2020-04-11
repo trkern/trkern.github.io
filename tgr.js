@@ -293,6 +293,7 @@ function tgr_draw_graph(id) {
 	try {
 	var pd = tgr_graph_array[id].plotdata;
 	var ctx = document.getElementById("tgr_canv_"+id).getContext("2d");
+	ctx.lineCap = "round";
 	ctx.beginPath();
 	ctx.fillStyle = "white";
 	ctx.fillRect(0,0,pd.width,pd.height);

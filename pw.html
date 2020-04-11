@@ -337,7 +337,7 @@ function upd() {
 
 function loaduri() {
 	var str = document.URL;
-	if (str.indexOf("?") == -1) {return;}
+	if (str.indexOf("?") == -1) {tgr_grapher("gr",[]); return;}
 	str = str.slice(str.indexOf("?")+1);
 	if (str[0] == "!") {
 		document.getElementById("gr").id = "oldgr";
@@ -357,7 +357,7 @@ function makepermalink() {
 	document.getElementById("permalink").innerHTML = "<a href='"+str+"'>"+str+"</a>";
 
 	str = base+"?!"+eu;
-	document.getElementById("permaembed").innerText = "<iframe src='"+str+"'>";
+	document.getElementById("permaembed").innerText = "<iframe src='"+str+"' width=550 height=650>";
 
 	if (document.getElementById("chk_showpermalink").checked) {
 		history.pushState({},"",base+"?"+eu);
@@ -669,7 +669,7 @@ Number of Pieces: <input type="number" id="n" style="width:3em" oninput="makeinp
 <input type="checkbox" id="chk_labelaxes" checked onchange="upd_pd()"> Label Axis <br>
 <input type="checkbox" id="chk_showgraph" checked onchange="upd()"> Show Graph <br>
 Permalink: <span id="permalink"></span><br>
-Embed: <span id='permaembed'></span><br>
+Embed [copy the text that follows into the 'HTML editor']: <span id='permaembed' style='background-color:#dddddd'></span><br>
 <input type="checkbox" id="chk_showpermalink" onchange="upd()"> Update URL <br>
 <input type="checkbox" id="chk_showgg" onchange="upd()"> Show Guessing Game Target
 <select id="ggsel">

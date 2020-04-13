@@ -1,0 +1,43 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<meta name=description content="This interactive will allow you to save permalinks to desmos">
+<title> Desmos </title>
+<script src="https://www.desmos.com/api/v1.4/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6"></script>
+<script>
+
+var g_calc;
+
+function updateURI() {
+	var base = document.URL.split("?")[0];
+	var str = encodeURI(JSON.stringify(g_calc.getState()));
+	history.pushState({},"",base+"?"+str);
+	}
+
+function loaduri() {
+	var str = document.URL;
+	if (str.indexOf("?") == -1) {return;}
+	g_calc.setState(JSON.parse(decodeURI(str.slice(str.indexOf("?")+1))));
+	}
+
+function onresize() {
+	document.getElementById("calculator").style.height = (window.innerHeight-20) + "px";
+	document.getElementById("calculator").style.width = (window.innerWidth-20) + "px";
+	g_calc.resize();
+	}
+function boot() {
+	var elt = document.getElementById('calculator');
+	g_calc = Desmos.GraphingCalculator(elt);
+	onresize();
+	g_calc.observeEvent("change", updateURI);
+	}
+
+</script>
+</head>
+<body onload="boot();loaduri()" onresize="onresize()">
+<div id="calculator"></div>
+</body>
+</html>

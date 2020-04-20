@@ -630,6 +630,22 @@ function do_everything() {
 	document.getElementById("ans").value = "";
 	}
 
+function do_everything_comp() {
+	var cplx = Number(document.getElementById("num_cplx").value);
+	if (cplx < 2) {cplx = 2};
+	var tt = makeprob(cplx);
+	g_tt = tt;
+	makeg_funcs();
+	if (ttfuncs(tt).length == 0) {do_everything_comp();}
+	if (ttree_eval(tt) == "FAIL") {do_everything_comp();}
+	if (toosteep(g_tt)) {do_everything_comp();}
+	if (ttfuncs(g_tt).length <= 1) {do_everything_comp();}
+	drawfuncs();
+	document.getElementById("hinttarg").innerHTML = "";
+	upd_treeform();
+	document.getElementById("ans").value = "";
+	}
+
 function upd_treeform() {
 	var tt = g_tt;
 	document.getElementById("htmltarg").innerHTML = "Find: " + ttree_to_html(tt,[]);
@@ -943,7 +959,7 @@ function check_ans() {
 <link rel="stylesheet" href="treant/Treant.css" type="text/css"/>
 </head>
 <body onload="">
-<button onclick="do_everything()">Create Problem</button> Complexity: <input type="number" id="num_cplx" min=1 value=1 style='width:2em'> <br>
+<button onclick="do_everything()">Create Problem</button> <button onclick="do_everything_comp()"> Create Composition Problem </button> Complexity: <input type="number" id="num_cplx" min=1 value=1 style='width:2em'> <br>
 <div id="funcs"></div>
 <div id="htmltarg" style='font-size:200%;user-select:none;'></div>
 Type your answer here: <input id="ans" style='width:4em'> 

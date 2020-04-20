@@ -16,6 +16,7 @@
 
 var g_funs = {};
 var g_targ;
+var g_work = [];
 
 function ribet(mn,mx) {
 	return(Math.floor(Math.random()*(mx-mn+1))+mn);
@@ -459,13 +460,37 @@ function fbutt(ixs,g_t) {
 	g_after_replace = after_tt;
 	g_need_color[ixify(["c"].concat(ix))] = "#CCDDAA";
 	g_need_color[ixify(["e"].concat(ix))] = "#CCDDAA";
+	s += "<button style='position:absolute;top:0px;right:0px' onclick='document.getElementById(\"helper\").innerHTML = \"\"'>X</button>";
 	document.getElementById("helper").innerHTML = s;
 	window.requestAnimationFrame(colorify);
 	}
 
+function ttfuncs(tt) {
+	var rval = [];
+	var i;
+	if ("subs" in tt) {
+		for (i = 0; i < tt.subs.length; i++) {
+			rval = rval.concat(ttfuncs(tt.subs[i]));
+			}
+		}
+	if (tt.op == "func") {
+		rval.push(tt.c);
+		}
+	return(rval);
+	}
+
 function replace() {
 	g_targ[0] = g_after_replace;
+	if (g_work[g_work.length-1] != ttree_to_tex(g_targ[0])) {
+		g_work.push(ttree_to_tex(g_targ[0]));
+		}
 	redraw();
+	if (ttfuncs(g_targ[0]).length == 0) {
+		document.getElementById("helper").innerHTML += "Problem Solved! Click the X to the top right to close or click \"Create Composition\" for a new problem.";
+		}
+	else {
+		document.getElementById("helper").innerHTML += "Replacement Complete! Click the X to the top right to close or click another function-button.";
+		}
 	}
 
 function ttree_to_html(tt,ix,opts) {
@@ -700,13 +725,32 @@ function list2polynomial(l,vr) {//coefficientlist to polynomial object type
 
 var tk_division_backdoor = true;
 
+function make_really_basic_fun() {
+	var s;
+	switch(ribet(0,4)) {
+		case 0:
+		case 1:
+		case 2:
+			s = string_polynomial(list2polynomial([rnz(),rnz()],"x"));
+			break;
+		case 3:
+			s = ribet(1,3) + "x^("+math.pickRandom([2,3,4,5]) + ")";
+			break;
+		case 4:
+			s = string_polynomial(list2polynomial([0,rnz(),1],"x"));
+			break;
+		}
+	return(s);
+	}
+
 function make_basic_fun() {
 	var s;
-	switch(ribet(0,6)) {
+	switch(ribet(0,10)) {
 		case 0:
 		case 1:
 		case 2:
 		case 3:
+		case 10:
 			s = string_polynomial(list2polynomial([rnz(),rnz()],"x"));
 			break;
 		case 4:
@@ -718,8 +762,17 @@ function make_basic_fun() {
 		case 6:
 			s = rnz() + "x^("+math.pickRandom([2,3,4,5]) + ")";
 			break;
+		case 7:
+			s = string_polynomial(list2polynomial([0,rnz(),1],"x"));
+			break;
+		case 8:
+			s = string_polynomial(list2polynomial([0,rnz(),ribet(1,3)],"x"));
+			break;
+		case 9:
+			s = string_polynomial(list2polynomial([rnz(),rnz(),1],"x"));
+			break;
 		}
-	return(myparse(s));
+	return(s);
 	}
 
 function make_advanced_fun() {
@@ -738,17 +791,18 @@ function make_advanced_fun() {
 			s = "x^x";
 			break;
 		case 4:
-			return({op:math.pickRandom(["div","mul","add"]),subs:[make_basic_fun(),make_basic_fun()]});
+			s = "("+make_basic_fun()+")" + math.pickRandom(["/","*","+","-"]) + "("+make_basic_fun()+")";
+			//return({op:math.pickRandom(["div","mul","add"]),subs:[make_basic_fun(),make_basic_fun()]});
 			break;
 		}
-	return(myparse(s));
+	return(s);
 	}
 
 function make_user_fun(fn) {
 	try {
 		var s = window.prompt(g_targ[2] + "\nEnter an expression for " + fn + "(x)");
 		if (s == "") {return(make_basic_fun());}
-		return(myparse(s));
+		return(s);
 		}
 	catch(e) {
 		return(make_basic_fun());
@@ -757,6 +811,9 @@ function make_user_fun(fn) {
 
 function make_fun(fn) {
 	var k = document.getElementById("sel_complexity").value;
+	if (k == 4) {
+		return(make_really_basic_fun());
+		}
 	if (k == 0) {
 		return(make_basic_fun());
 		}
@@ -769,9 +826,10 @@ function make_fun(fn) {
 	if (k == 2) {
 		return(make_advanced_fun());
 		}
-	if (k == 3) {
+	if (k == 3 && fn) {
 		return(make_user_fun(fn));
 		}
+	else {return(make_basic_fun());}
 	}
 
 function make_target() {
@@ -815,7 +873,14 @@ function make_target() {
 				"(f(b)-f(a))/(b-a)",
 				"(f(h)-f(0))/h"]);
 			break;
-			
+		case 4:
+			fl = [math.pickRandom(["f","g","h"])];
+			s = fl[0] + "(" + make_fun() + ")";
+			break;
+		case 5: 
+			fl = [math.pickRandom(["f","g","h"]),math.pickRandom(["f","g","h"])];
+			s = fl[0] + "(" + fl[1] + "(" + ribet(0,5) + "))";
+			break;
 		}
 	return([myparse(s,{functions:fl}),fl,s]);
 	}
@@ -827,11 +892,12 @@ function make_problem() {
 	g_targ = make_target();
 	g_funs = {};
 	for (i = 0; i < g_targ[1].length; i++) {
-		g_funs[g_targ[1][i]] = make_fun(g_targ[1][i]);
+		g_funs[g_targ[1][i]] = myparse(make_fun(g_targ[1][i]));
 		}
 	document.getElementById("helper").innerHTML = "";
 	g_last_fbutt = "NO";
 	g_last_fbutt_gtarg = "NO";
+	g_work = [ttree_to_tex(g_targ[0])];
 	redraw();
 	}
 
@@ -845,11 +911,23 @@ function redraw() {
 		s += "Let " + katex.renderToString(i + "(x) = " + ttree_to_tex(g_funs[i])) + "<br>";
 		}
 	document.getElementById("funs").innerHTML = s;
-	s = "Find: <div style='font-size:300%'>" + ttree_to_html(g_targ[0],["butt"]) + "</div>";
+	s = "<div style='font-size:300%'>" + ttree_to_html(g_targ[0],["butt"]) + "</div>";
 	document.getElementById("prob").innerHTML = s;
 	if (g_last_fbutt != "NO") {
 		fbutt(g_last_fbutt,g_last_fbutt_gtarg);
 		}
+	s = "\\begin{aligned}";
+	if (document.getElementById("chk_work").checked) {
+		for (i = 0; i < g_work.length; i++) {
+			if (i != 0) {s += "="};
+			s += "&\\;" + g_work[i] + "\\\\";
+			}
+		}
+	else {
+		s += g_work[0];
+		}
+	s += "\\end{aligned}";
+	document.getElementById("work").innerHTML = katex.renderToString(s);
 	}
 
 </script>
@@ -1006,22 +1084,29 @@ blockquote.caution {
 To get started, click "Create Composition", then click on one of the function-buttons in the expression that appears.<br>
 <button onclick="make_problem()">Create Composition</button>
 <div id="funs"></div>
+Find:
+<div id="work"></div>
 <div id="prob"></div>
-<div id="helper" style='border:1px solid'></div>
+<div id="helper" style='border:1px solid;position:relative'></div>
 
 <br><br>
 <h1> Options: </h1>
+<input type="checkbox" id="chk_work" checked onchange="redraw()"> Show Steps <br>
+<input type="checkbox" id="chk_color" checked onchange="redraw()"> Color Highlights <br>
 Function Complexity: <select id='sel_complexity'>
-<option value=0 selected>Simple</option>
-<option value=1>Complex</option>
-<option value=2>Both</option>
+<option value=4 selected>Simple</option>
+<option value=0>Moderate</option>
+<option value=2>Complex</option>
+<option value=1>Gross</option>
 <option value=3>Manual Entry</option>
 </select><br>
 Type of problem: <br>
+<input type="checkbox" id="chk_p5" checked> Composition of Number <br>
+<input type="checkbox" id="chk_p4" checked> Plug in formula <br>
 <input type="checkbox" id="chk_p0" checked> Composition <br>
-<input type="checkbox" id="chk_p1" checked> Triple Composition <br>
-<input type="checkbox" id="chk_p2" checked> Difference Quotient <br>
-<input type="checkbox" id="chk_p3" checked> Difference Quotient Relatives <br>
+<input type="checkbox" id="chk_p1"> Triple Composition <br>
+<input type="checkbox" id="chk_p2"> Difference Quotient <br>
+<input type="checkbox" id="chk_p3"> Difference Quotient Relatives <br>
 
 Render options:
 Parentheses: <select id='sel_parenbackup' onchange="redraw()">
@@ -1048,7 +1133,7 @@ Walkthrough Renderer: <select id='sel_renderer' onchange="redraw()">
 <option value=0>KaTeX</option>
 <option value=1>ttree</option>
 </select>
-<input type="checkbox" id="chk_color" checked onchange="redraw()"> Color Highlights </input>
+
 
 </body>
 </html>

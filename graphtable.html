@@ -778,7 +778,7 @@ function show_hint() {
 		var y = g_funcs[z.c][x];
 		s += "To do this we need to figure out what value " + z.c + "(x) is when x is " + x + ".<br>";
 		s += "Let's start by finding when x = " + x + " on the ";
-		if (g_gort[z.c]) {s += "graph of " + z.c + ": ";}
+		if (g_gort[z.c] == "g") {s += "graph of " + z.c + ": ";}
 		else {s += "table for " + z.c + ": ";}
 		s += " <button onclick='hix(\"" + z.c + "\"," + x + ")'> Show x = " + x + "</button><br>";
 		s += "Then look at the corresponding value of " + z.c + "(x)";
@@ -786,8 +786,8 @@ function show_hint() {
 			s += " (i.e. y)";
 			}
 		s += ":";
-		s += " <button onclick='hiy(\"" + z.c + "\"," + x + "," + y + ")'> Show " + z.c + "(x) </button><br>";
-		s += "Finally, since we know " + z.c + "(x) = " + y + ", we can replace " + z.c + "(x) by " + y +",";
+		s += " <button onclick='hiy(\"" + z.c + "\"," + x + "," + y + ")'> Show " + z.c + "("+x+") </button><br>";
+		s += "Finally, since we know " + z.c + "("+x+") = " + y + ", we can replace " + z.c + "("+x+") by " + y +",";
 		if (ix.length == 0) {
 			s += " to get our final answer.";
 			}

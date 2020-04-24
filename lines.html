@@ -10,6 +10,8 @@
 <script src="tgr.js"></script>
 <script>
 
+var g_nprobs = 15;
+
 function ribet(mn,mx) {
 	return(Math.floor(Math.random()*(mx-mn+1))+mn);
 	}
@@ -23,6 +25,7 @@ function tex_number(n,force_plus,squash_ones) {
 		return("-");
 		}
 	if (force_plus && n >= 0) {return("+"+n);}
+	if (force_plus && (n + "")[0] != "-") {return("+"+n);} 
 	return(n);
 	}
 
@@ -76,7 +79,7 @@ function generate_problem() {
 	document.getElementById("solution").innerHTML = "";
 	var l = [];
 	var i;
-	for (i = 0; i < 14; i++) {
+	for (i = 0; i < g_nprobs; i++) {
 		if (document.getElementById("chk_problem_"+i).checked) {l.push(i);}
 		}
 	if (l.length == 0) {
@@ -99,6 +102,7 @@ function generate_problem() {
 	else if (k == 11) {make_int_si();}
 	else if (k == 12) {make_int_si_s();}
 	else if (k == 13) {make_int_s();}
+	else if (k == 14) {make_est();}
 	}
 
 var g_questions; //list of objects with .id, .label, .answer, .type
@@ -106,7 +110,7 @@ var g_questions; //list of objects with .id, .label, .answer, .type
 
 function ptinp(e,id) {
 	text_expand(e.target.id);
-	document.getElementById(id).checked = true;
+	if (id) {document.getElementById(id).checked = true;}
 	}
 
 function pointinput(qu) {
@@ -123,6 +127,11 @@ function siinput(qu) {
 	str += "<input type='text' id='m_"+qu.id+"' class='m' oninput='ptinp(event,\"chk_S_"+qu.id+"\")' placeholder='m'>x+";
 	str += "<input type='text' id='b_"+qu.id+"' class='b' oninput='ptinp(event,\"chk_S_"+qu.id+"\")' placeholder='b'> &nbsp;";
 	str += "<input type='radio' id='chk_V_"+qu.id+"' name='"+qu.id+"'>x = <input type='text' id='x_"+qu.id+"' class='b' oninput='ptinp(event,\"chk_V_"+qu.id+"\")'><br>";
+	return(str);
+	}
+
+function ninput(qu) {
+	var str = qu.label + "<input type='text' id='n_"+qu.id+"' oninput='ptinp(event)'><br>";
 	return(str);
 	}
 
@@ -146,6 +155,10 @@ function check_si(qu) {
 		}
 	}
 
+function check_n(qu) {
+	return(req(document.getElementById("n_"+qu.id).value,qu.answer));
+	}
+
 function show_point(qu) {
 	if (qu.answer == "N") {return("None (no points)");}
 	if (qu.answer == "I") {return("Infinitely Many");}
@@ -154,11 +167,16 @@ function show_point(qu) {
 
 function show_si(qu) {
 	if (qu.answer.length == 2) {
+		//console.log(qu.answer);
 		return("y = " + tex_si(math.simplify(qu.answer[0]).toString(),math.simplify(qu.answer[1]).toString()));
 		}
 	if (qu.answer.length == 1) {
 		return("x = " + math.simplify(qu.answer[0]).toString());
 		}
+	}
+
+function show_n(qu) {
+	return(qu.answer);
 	}
 
 function make_problem() {
@@ -170,6 +188,9 @@ function make_problem() {
 			}
 		if (g_questions[i].type == "si") {
 			str += siinput(g_questions[i]);
+			}
+		if (g_questions[i].type == "n") {
+			str += ninput(g_questions[i]);
 			}
 		}
 	str += "<button onclick='check()'>Check Answer</button>";
@@ -189,6 +210,9 @@ function check() {
 		else if (g_questions[i].type == "si") {
 			k = check_si(g_questions[i]);
 			}
+		else if (g_questions[i].type == "n") {
+			k = check_n(g_questions[i]);
+			}
 		if (k) {str += g_questions[i].label + "Correct!<br>";}
 		else {str += g_questions[i].label + "Try Again!<br>";}
 		}
@@ -205,6 +229,9 @@ function show() {
 			}
 		else if (g_questions[i].type == "si") {
 			str += show_si(g_questions[i]);
+			}
+		else if (g_questions[i].type == "n") {
+			str += show_n(g_questions[i]);
 			}
 		str += "<br>";
 		}
@@ -451,6 +478,59 @@ function make_int_s() {
 	make_problem();
 	}
 
+function estnum(i) {
+	//1: -inf to -1
+	//2: -1
+	//3: -1 to 0
+	//4: 0
+	//5: 0 to 1
+	//6: 1
+	//7: 1 to inf
+	if (i == 1) {
+		return(ribet(-10,-3));
+		}
+	if (i == 2) {
+		return(-1)
+		}
+	if (i == 3) {
+		return(math.pickRandom([-.3,-.4,-.5,-.6]));
+		}
+	if (i == 4) {
+		return(0);
+		}
+	if (i == 5) {
+		return(math.pickRandom([.3,.4,.5,.6]));
+		}
+	if (i == 6) {
+		return(1);
+		}
+	if (i == 7) {
+		return(ribet(3,10));
+		}
+	return(0);
+	}
+
+function make_est() {
+	var l = [];
+	var i;
+	for (i = 1; i <= 7; i++) {
+		l.push(estnum(i));
+		}
+	var m = math.pickRandom(l);
+	var b = ribet(-2,2);
+	ans = m;
+	gob = {type:"plot", fct:function(x){return(m*x+b);}, linewidth:4};
+	var str = "Estimate the slope of the line shown below. The answer is one of:<ul>";
+	for (i = 0; i < l.length; i++) {
+		str += "<li>" + l[i];
+		}
+	str += "</ul>";
+	str += tgr_grapher_string("gr0", [gob], {showgrid:false, showaxes:false, labelaxes:false});
+	document.getElementById("problem").innerHTML = str;
+	g_questions = [{id:"l",label:"m: ", type:"n", answer:ans}];
+	make_problem();
+	}
+
 var svgplus = "<svg width=20 height=18><polyline points='4,7 10,13 16,7' style='fill:none;stroke:black;stroke-width:2'></polyline></svg>";
 var svgminus = "<svg width=20 height=18><polyline points='4,13 10,7 16,13' style='fill:none;stroke:black;stroke-width:2'></polyline></svg>";
 
@@ -467,7 +547,7 @@ function maxminimize() {
 
 function checkna(b) {
 	var i;
-	for (i = 0; i < 14; i++) {
+	for (i = 0; i < g_nprobs; i++) {
 		document.getElementById("chk_problem_"+i).checked = b;
 		}
 	}
@@ -514,19 +594,20 @@ button {
 </button>
 Pick what types of problems you'd like to practice below, then click "Generate Problem". <br>
 <input type="checkbox" id="chk_problem_0" checked> Find x- and y- intercepts given slope-intercept form <br>
-<input type="checkbox" id="chk_problem_1" checked> Find x- and y- intercepts given standard form <br>
+<input type="checkbox" id="chk_problem_1"> Find x- and y- intercepts given standard form <br>
 <input type="checkbox" id="chk_problem_2" checked> Convert point-slope form to slope-intercept <br>
 <input type="checkbox" id="chk_problem_3" checked> Convert "standard" form to slope-intercept <br>
 <input type="checkbox" id="chk_problem_4" checked> Convert point and slope to slope-intercept <br>
 <input type="checkbox" id="chk_problem_5" checked> Find a line perpendicular to y=mx+b passing through a point <br>
 <input type="checkbox" id="chk_problem_6" checked> Find a line parallel to y=mx+b passing through a point <br>
-<input type="checkbox" id="chk_problem_7" checked> Find a line perpendicular to ax+by=c passing through a point <br>
-<input type="checkbox" id="chk_problem_8" checked> Find a line parallel to ax+by=c passing through a point <br>
+<input type="checkbox" id="chk_problem_7"> Find a line perpendicular to ax+by=c passing through a point <br>
+<input type="checkbox" id="chk_problem_8"> Find a line parallel to ax+by=c passing through a point <br>
 <input type="checkbox" id="chk_problem_9" checked> Find a line passing through two points <br>
 <input type="checkbox" id="chk_problem_10" checked> Find the equation of a line given the graph <br>
 <input type="checkbox" id="chk_problem_11" checked> Find the intersection of two lines in slope-intercept form <br>
-<input type="checkbox" id="chk_problem_12" checked> Find the intersection of two lines in slope-intercept and "standard" forms <br>
-<input type="checkbox" id="chk_problem_13" checked> Find the intersection of two lines in "standard" form <br>
+<input type="checkbox" id="chk_problem_12"> Find the intersection of two lines in slope-intercept and "standard" forms <br>
+<input type="checkbox" id="chk_problem_13"> Find the intersection of two lines in "standard" form <br>
+<input type="checkbox" id="chk_problem_14" checked> Estimate the slope of a line given a graph <br>
 <button onclick="checkna(0)">Check None</button>
 <button onclick="checkna(1)">Check All</button>
 </div>

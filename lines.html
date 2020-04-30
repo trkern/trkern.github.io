@@ -320,7 +320,7 @@ function make_perp_si() {
 		ans = [xn];
 		}
 	else {
-		ans = [-1+"/"+m,(m*yn-xn)+"/"+m];
+		ans = [-1+"/"+m,(m*yn+xn)+"/"+m];
 		}
 	g_questions = [{id:"l",label:"", type:"si", answer:ans}];
 	make_problem();
@@ -339,7 +339,8 @@ function make_par_si() {
 		var str = "Write the equation for the line parallel to the line " + tex_si(m,b) + " passing through the point ("+xn+","+yn+").";
 		}
 	document.getElementById("problem").innerHTML = str;
-	ans = [-1+"/"+m,yn-m*xn];
+	//ans = [-1+"/"+m,yn-m*xn];
+	ans = [m,yn-m*xn];
 	g_questions = [{id:"l",label:"", type:"si", answer:ans}];
 	make_problem();
 	}

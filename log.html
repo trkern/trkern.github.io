@@ -100,6 +100,10 @@ function update_fix_vis() {
 		document.getElementById("poswarn").innerHTML = "Warning: make sure the base, " + a + ", is positive and not 1!";
 		}
 
+	if (b != "" && KAScompare("0",b)) {
+		document.getElementById("poswarn").innerHTML = "Warning: zeroth roots don't make sense.";
+		}
+
 	}
 
 function update_lasttwo(ltr) {

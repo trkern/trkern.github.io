@@ -501,7 +501,9 @@ function lc_upd() {
 	var i;
 	str += "<tr><td style='height:1em'>Launch Angle (degrees)</td><td style='height:1em'>Landing Position (meters)</td><td rowspan=2 style='height:2em'> Differences </td></tr>";
 	for (i = -c; i <= c; i++) {
-		str += "<tr><td rowspan=2 style='height:2em'>"+(lc_a+i*e).toFixed(10)+"</td><td rowspan=2 style='height:2em'>"+lc_f(lc_a+i*e).toFixed(10)+"</td></tr>";
+		str += "<tr><td rowspan=2 style='height:2em"
+		if (i==0) {str += "; background-color:#CCDDAA"};
+		str += "'>"+(lc_a+i*e).toFixed(10)+"</td><td rowspan=2 style='height:2em'>"+lc_f(lc_a+i*e).toFixed(10)+"</td></tr>";
 		if (i != c) {str += "<tr><td rowspan=2 style='height:2em'>"+(lc_f(lc_a+(i+1)*e)-lc_f(lc_a+i*e)).toFixed(10)+"</td></tr>";}
 		}
 	str += "</table>";
@@ -532,7 +534,7 @@ function svot_upd() {
 function lca_tabl_load() {
 	var str = "<table border=1>";
 	var i,j;
-	str += "<tr><td>Angle<br>Step</td>";
+	str += "<tr><td>Angle (Adjust the Launch Angle above to fill out each column)<br>Step</td>";
 	for (i = 0; i <= 90; i+=15) {
 		str += "<td>"+i+" degrees<br>step .1</td>";
 		}

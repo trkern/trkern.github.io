@@ -23,8 +23,11 @@ function reset_lion() {
 	hist = "";
 	document.getElementById("history").innerHTML = "";
 	}
+var last_lion_guess = Infinity;
 function use_detector() {
 	var n = Number(document.getElementById("detector").value);
+	if (n == last_lion_guess) {return;}
+	last_lion_guess = n;
 	if (isNaN(n)) {alert("Please Enter a Number in Decimal Form!"); return;}
 	if (n < lion) {
 		hist = "<tr><td>" + n + "</td><td>to the Right (+)</td></tr>" + hist;

@@ -1,0 +1,1594 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="parsetree.png">
+<meta name=description content="Parse Tree Generator">
+<title> Parse Tree Generator </title>
+<script src="tgr.js"></script>
+<script src="underscore-min.js"></script>
+<script src="mod_kas.js"></script>
+<script src="math.min.js"></script>
+<script src="katex.min.js"></script>
+<script src="treant/vendor/raphael.js"></script>
+<script src="treant/Treant.js"></script>
+<script>
+
+function deepcopy(x) {
+	if (null == x || "object" != typeof x) { return(x);}
+	var i;
+	if (x instanceof Object) {
+		var o = new x.constructor();
+		for (i in x) {
+			o[i] = deepcopy(x[i]);
+			}
+		return(o);
+		}
+	if (x instanceof Array) {
+		o = [];
+		var l = o.length;
+		for (i = 0; i < l; i++) {
+			o[i] = deepcopy(x[i]);
+			}
+		}
+	console.log("DEEP COPY FAILED",x);
+	return(false);
+	}
+
+function boxify(k) {
+	var s = katex.renderToString(k.tex());
+		return("<textarea></textarea><table><tr><td>"+k.name()+"</td></tr><tr><td>"+s+"</td></tr></table>");
+	return(s);
+	}
+
+function kas_to_treant(k) {
+	if (!k || !(typeof k === "object") || !("args" in k)) {return(false);}
+	console.log(k);
+	var t = {
+		innerHTML: boxify(k), //katex.renderToString(k.tex()),
+		children: []
+		}
+	var i,j,l;
+	j = k.args();
+	for (i = 0; i < j.length; i++) {
+		var l = kas_to_treant(j[i]);
+		if (l) {
+			t.children.push(l);
+			}
+		}
+	return(t);
+	}
+
+var cht = {
+	container: "#treetarg",
+	rootOrientation: "SOUTH",
+	connectors: {type:"straight"}
+	};
+
+function kas_do_everything() {
+	var s = document.getElementById("inp").value;
+	new Treant({
+		chart:cht,
+		nodeStructure: kas_to_treant(KAS.parse(s).expr)
+		});
+	}
+
+function mathjs_to_treant(k) {
+	if (!k || !(typeof k === "object")) {return(false);}
+	if ("content" in k) {return(mathjs_to_treant(k.content));}
+	console.log(k);
+	var t = {
+		innerHTML: katex.renderToString(k.toTex()),
+		children: []
+		}
+	var i,j,l;
+	if (!("args" in k)) {return(t)};
+	j = k.args;
+	for (i = 0; i < j.length; i++) {
+		var l = mathjs_to_treant(j[i]);
+		if (l) {
+			t.children.push(l);
+			}
+		}
+	return(t);
+	}
+
+function mathjs_do_everything() {
+	var s = document.getElementById("inp").value;
+	new Treant({
+		chart:cht,
+		nodeStructure: mathjs_to_treant(math.parse(s))
+		});
+	}
+
+function kfy(k) {
+	if (typeof k !== "object") {return(k);}
+	if ("hints" in k) {k.hints = {};}
+	var i;
+	for (i in k) {
+		kfy(k[i]);
+		}
+	return(k);
+	}
+
+function kfix(k) {
+	return(KAS.parse(k.print()).expr.tex());
+	}
+
+function show_kfy() {
+	document.getElementById("treetarg").innerHTML = katex.renderToString(kfix(kfy(KAS.parse(document.getElementById("inp").value).expr)));
+	}
+
+
+
+function frobtex(k) {
+	if (!k || !(typeof k === "object") || !("tex" in k)) {return(k);}
+	k.oldtex = k.tex;
+	k.tex = function() {return("\\boxed{"+k.oldtex()+"}");}
+	var i;
+/*	if ("terms" in k) {
+		for (i = 0; i < k.terms.length; i++) {
+			frobtex(k.terms[i]);
+			}
+		}
+	if ("base" in k) {
+		frobtex(k.base);
+		}
+	if ("exp" in k) {
+		frobtex(k.exp);
+		}*/
+	for (i in k.args()) {
+		frobtex(k.args()[i]);
+		}
+	return(k);
+	}
+
+function doallfrob(s) {
+	var k = KAS.parse(s).expr;
+	var j = deepcopy(k);
+	console.log(j);
+	console.log(k);
+	frobtex(j);
+	document.getElementById("treetarg").innerHTML = katex.renderToString(j.tex());
+	}
+
+//ttree has:
+//op (type: add,div,mul,neg,pow,sqrt,nrt,ln,log,log_,
+//sin,cos,tan,cot,sec,csc,arcsin,arccos,arctan,arccot,arcsec,arccsc,sinh,cosh,tanh,coth,sech,csch,abs, =, <, >, <>, <=, >=, func, var, const, int, float, error, magic_derivative, force_paren
+//subs (subexpression)
+//c (content; either a number or a string for variables, or function name)
+
+
+function ttree_needsexplicitmul(tt) {
+	if (tt.op == "mul") {return(ttree_needsexplicitmul(tt.subs[0]));}
+	if (tt.op == "pow") {return(ttree_needsexplicitmul(tt.subs[0]));}
+	if (tt.op == "neg") {return(true);}
+	if (tt.op == "int" || tt.op == "float") {return(true);}
+	return(false);
+	}
+
+function ttree_issubtract(tt) { //checks if tt starts with a minus sign
+	if (tt.op == "neg") {return(true);}
+	if (tt.op == "mul") {return(ttree_issubtract(tt.subs[0]));}
+	if (tt.op == "int" || tt.op == "float") {return(tt.c < 0);}
+	return(false);
+	}
+
+function ttree_needsparenpow(tt) {
+	if (tt.op == "int" && tt.c >= 0) {return(false);}
+	if (tt.op == "var") {return(false);}
+	if (tt.op == "const") {return(false);}
+	return(true);
+	}
+
+function ttree_texineq(s) {
+	if (s == "<=") {return("\\leq ");}
+	if (s == ">=") {return("\\geq ");}
+	if (s == "<>") {return("\\neq ");}
+	return(s);
+	}
+
+function ttree_htmlineq(s) {
+	if (s == "<=") {return(" &leq; ");}
+	if (s == ">=") {return(" &geq; ");}
+	if (s == "<>") {return(" &ne; ");}
+	return(s);
+	}
+
+function ttree_to_tex(tt,ix) {
+	if (ix) {
+		}
+	else {
+		ix = ["d"];
+		}
+
+
+	var t = "";
+	if (tt.op == "add") {
+		var i;
+		for (i = 0; i < tt.subs.length; i++) {
+			if (!t || ttree_issubtract(tt.subs[i])) {
+				t += ttree_to_tex(tt.subs[i],ix.concat([i]));
+				}
+			else {
+				t += "+" + ttree_to_tex(tt.subs[i],ix.concat([i]));
+				}
+			}
+		}
+	else if (tt.op == "div") {
+		t = "\\frac{" + ttree_to_tex(tt.subs[0],ix.concat([0])) + "}{" + ttree_to_tex(tt.subs[1],ix.concat([1])) + "}";
+		}
+	else if (tt.op == "mul") {
+		var i;
+		for (i = 0; i < tt.subs.length; i++) {
+			if (!t && tt.subs[i].op != "add") {
+				t += ttree_to_tex(tt.subs[i],ix.concat([i]));
+				}
+			else if (tt.subs[i].op == "add" || ttree_issubtract(tt.subs[i])) {
+				t += "\\left( " + ttree_to_tex(tt.subs[i],ix.concat([i])) + "\\right) ";
+				}
+			else if (ttree_needsexplicitmul(tt.subs[i])) {
+				t += " \\cdot " + ttree_to_tex(tt.subs[i],ix.concat([i]));
+				}
+			else {
+				t += ttree_to_tex(tt.subs[i],ix.concat([i]));
+				}
+			}
+		}
+	else if (tt.op == "neg") {
+		if (tt.subs[0].op == "add") {
+			t = "-\\!\\left(" + ttree_to_tex(tt.subs[0],ix.concat([0])) + "\\right)";
+			}
+		else {
+			t = "-" + ttree_to_tex(tt.subs[0],ix.concat([0]));
+			}
+		}
+	else if (tt.op == "sqrt") {
+		t = " \\sqrt{" + ttree_to_tex(tt.subs[0],ix.concat([0])) + "}";
+		}
+	else if (tt.op == "nrt") {
+		t = " \\sqrt[" + ttree_to_tex(tt.subs[0],ix.concat([0])) + "]{" + ttree_to_tex(tt.subs[1],ix.concat([1])) + "}";
+		}
+	else if (tt.op == "pow") {
+		var s = ttree_to_tex(tt.subs[0],ix.concat([0]));
+		if (ttree_needsparenpow(tt.subs[0])) {
+			s = " \\left( " + s + " \\right) ";
+			}
+		t = s+"^{" + ttree_to_tex(tt.subs[1],ix.concat([1])) + "}";
+		}
+	else if (["ln","log","sin","cos","tan","cot","sec","csc","arcsin","arccos","arctan","arccot","arcsec","arccsc","sinh","cosh","tanh","coth","sech","csch"].indexOf(tt.op) >= 0) {
+		t = "{\\"+tt.op+" }{\\left( "+ttree_to_tex(tt.subs[0],ix.concat([0]))+" \\right)} ";
+		}
+	else if (tt.op == "log_") {
+		t = "{\\log_{"+ttree_to_tex(tt.subs[1],ix.concat([1]))+"}}{("+ttree_to_tex(tt.subs[0],ix.concat([0]))+")}";
+		}
+	else if (tt.op == "abs") {
+		t = "\\left| " + ttree_to_tex(tt.subs[0],ix.concat([0])) + "\\right| ";
+		}
+	else if (["=","<",">",">=","<=","<>"].indexOf(tt.op) >= 0) {
+		t = ttree_to_tex(tt.subs[0],ix.concat([0])) + ttree_texineq(tt.op) + ttree_to_tex(tt.subs[1],ix.concat([1]));
+		}
+	else if (tt.op == "func") {
+		t = "{"+ tt.c + "}{\\left( " + ttree_to_tex(tt.subs[0],ix.concat([0])) + " \\right)}";
+		}
+	else if (tt.op == "var") {
+		t = tt.c;
+		}
+	else if (tt.op == "const") {
+		if (tt.c == "pi") {t = "\\pi";}
+		else {t = tt.c;}
+		}
+	else if (tt.op == "int" || tt.op == "float") {
+		t = tt.c.toString();
+		}
+	else if (tt.op == "magic_derivative") {
+		var n = tt.c[0];
+		var v = tt.c[1];
+		if (n == 1) {n = "";}
+		else {n = "^{"+n+"}";}
+		t = "\\frac{d"+n+"}{d" + n + v + "}\\left["
+		t += ttree_to_tex(tt.subs[0],ix.concat([0]));
+		t += "\\right]";
+		if (tt.subs[0].op == "var") {
+			t = "\\frac{d"+n+tt.subs[0].c+"}{d"+n+v+"}";
+			}
+		}
+	else if (tt.op == "force_paren") {
+		t = " \\left( " + ttree_to_tex(tt.subs[0],ix.concat([0])) + " \\right) ";
+		}
+
+
+	if (ix.length==0 || ix[0] != "d") {
+		return("\\htmlId{"+ixify(ix)+"}{"+t+"}");
+		}
+	else {
+		return(t);
+		}
+	}
+
+function plugin(tt1,v,tt2) { //plug tt2 into tt1 wherever you see var v
+	if (tt1.op == "var" && tt1.c == v) {return(tt2);}
+	var rval = {op:tt1.op};
+	if ("c" in tt1) {rval.c = tt1.c;}
+	if ("subs" in tt1) {
+		var i;
+		rval.subs = [];
+		for (i = 0; i < tt1.subs.length; i++) {
+			rval.subs.push(plugin(tt1.subs[i],v,tt2));
+			}
+		}
+	return(rval);
+	}
+
+function isconst(tt) {
+	if (tt.op == "var") {return(false);}
+	if ("subs" in tt) {
+		var i;
+		for (i = 0; i < tt.subs.length; i++) {
+			if (!isconst(tt.subs[i])) {return(false);}
+			}
+		}
+	return(true);
+	}
+
+var derivlookup = {
+	sqrt:"1/(2sqrt(x))",
+	ln:"1/x",
+	log:"1/(x ln(10))",
+	sin:"cos(x)",
+	cos:"sin(x)",
+	tan:"(sec(x))^2",
+	cot:"-(csc(x))^2",
+	sec:"sec(x)tan(x)",
+	csc:"-csc(x)cot(x)",
+	arcsin:"1/sqrt(1-x^2)",
+	arccos:"-1/sqrt(1-x^2)",
+	arctan:"1/(1+x^2)",
+	arccot:"-1/(1+x^2)",
+	arcsec:"1/(abs(x)sqrt(x^2-1))",
+	arccsc:"-1/(abs(x)sqrt(x^2-1))",
+	sinh:"cosh(x)",
+	cosh:"sinh(x)",
+	tanh:"(sech(x))^2",
+	coth:"-(csch(x))^2",
+	sech:"-tanh(x)sech(h)",
+	csch:"-coth(x)csch(x)",
+	abs:"abs(x)/x"
+	}
+
+function quickderiv(tt,v) { //checksoptions
+	var rval = {op:"magic_derivative",c:[1,v],subs:[tt]};
+	if (document.getElementById("chk_smartvar").checked && tt.op == "var") {
+		return(magic_derivative(rval,[]));
+		}
+	if (document.getElementById("chk_smartconst").checked && isconst(tt)) {
+		return(magic_derivative(rval,[]));
+		}
+	return(rval);
+	}
+
+function derivative_rule(tt) { //assumes tt.op == "magic_derivative"
+	if (tt.c[0] > 1) {
+		return("Multiple Derivative Rule");
+		}
+	var tt0 = tt.subs[0];
+	if (tt0.op == "add") {
+		return("Sum Rule");
+		}
+	if (tt0.op == "div") {
+		if (document.getElementById("chk_smartquot").checked) {
+			return("Rewrite Quotient");
+			}
+		return("Quotient Rule");
+		}
+	if (tt0.op == "mul") {
+		var i;
+		var k = 0;
+		for (i = 0; i < tt0.subs.length; i++) {
+			if (!isconst(tt0.subs[i])) {k++;}
+			}
+		if (k == 1) {
+			return("Constant Multiple Rule");
+			}
+		return("Product Rule");
+		}
+	if (tt0.op == "neg") {
+		return("Constant Multiple Rule");
+		}
+	if (tt0.op == "pow") {
+		var oldb = tt0.subs[0];
+		var oldp = tt0.subs[1];
+		if (isconst(oldp) && document.getElementById("chk_smartpow").checked) {
+			return("Power Rule");
+			}
+		if (isconst(oldb) && document.getElementById("chk_smartpow").checked) {
+			return("Exponent Rule");
+			}
+		if (document.getElementById("chk_smartexp").checked) {
+			return("Rewrite Exponent");
+			}
+		return("General Power Rule");
+		}
+	if (tt0.op in derivlookup) {
+		return("Derivative of " + tt0.op);
+		}
+	if (tt0.op == "nrt") {
+		return("Rewrite Root");
+		}
+	if (tt0.op == "log_") {
+		return("Change of Base");
+		}
+	if (tt0.op == "func") {
+		return("Chain Rule");
+		}
+	if (tt0.op == "=") {
+		return("Implicit Differentiation");
+		}
+	if (tt0.op == "var") {
+		return("Derivative of " + tt0.c);
+		}
+	if (tt0.op == "const" || tt0.op == "int" || tt0.op == "float") {
+		return("Constant Rule");
+		}
+	if (tt0.op == "force_paren") {
+		return(derivative_rule({op:"magic_derivative",c:tt.c,subs:[tt0.subs[0]]},ix.slice(1)));
+		}
+	if (tt0.op == "magic_derivative") {
+		return("Combining Multiple Derivatives");
+		}
+	}
+
+function magic_derivative(tt,ix) { //assumes tt(@ix).op == "magic_derivative"
+	if (ix.length != 0) {
+		var rval = {op:tt.op};
+		if ("c" in tt) {rval.c = tt.c};
+		var dummy = tt.subs[ix[0]]; //just test to make sure this exists
+		rval.subs = [];
+		var i;
+		for (i = 0; i < tt.subs.length; i++) {
+			if (i != ix[0]) {
+				rval.subs.push(tt.subs[i]);
+				}
+			else {
+				rval.subs.push(magic_derivative(tt.subs[i],ix.slice(1)));
+				}
+			}
+		return(rval);
+		}
+	//assume ix.length == [];
+	if (tt.op != "magic_derivative") {console.log("magic_derivative failed horribly!");}
+	if (tt.c[0] > 1) {
+		var rval = {op:"magic_derivative",c:[tt.c[0]-1,tt.c[1]],subs:[
+			{op:"magic_derivative",c:[1,tt.c[1]],subs:tt.subs}
+			]};
+		return(rval);
+		}
+	var tt0 = tt.subs[0];
+//op (type: add,div,mul,neg,pow,sqrt,nrt,ln,log,log_,
+//sin,cos,tan,cot,sec,csc,arcsin,arccos,arctan,arccot,arcsec,arccsc,sinh,cosh,tanh,coth,sech,csch,abs, =, <, >, <>, <=, >=, func, var, const, int, float, error, magic_derivative,force_paren
+	if (tt0.op == "add") {
+		var i;
+		var rval = {op:"add",subs:[]};
+		for (i = 0; i < tt0.subs.length; i++) {
+			rval.subs.push(quickderiv(tt0.subs[i],tt.c[1]));
+			}
+		return(rval);
+		}
+	if (tt0.op == "div") {
+		var oldn = tt0.subs[0];
+		var oldd = tt0.subs[1];
+		if (document.getElementById("chk_smartquot").checked) {
+			var d = {op:"pow",subs:[oldd,{op:"int",c:-1}]};
+			var m;
+			if (oldn.op == "int" && oldn.c == 1) {
+				m = d;
+				}
+			else {
+				m = {op:"mul",subs:[oldn,d]};
+				}
+			rval = {op:"magic_derivative",c:[1,tt.c[1]],subs:[m]};
+			return(rval);
+			}
+		var rval = {op:"div", subs:[
+			{op:"add", subs:[
+				{op:"mul", subs:[
+					quickderiv(oldn,tt.c[1]),
+					//{op:"magic_derivative", c:[1,tt.c[1]], subs:[oldn]},
+					oldd
+					]},
+				{op:"neg", subs:[{op:"mul",subs:[
+					oldn,
+					quickderiv(oldd,tt.c[1]),
+					//{op:"magic_derivative", c:[1,tt.c[1]], subs:[oldd]}
+					]}]}
+				]},
+			{op:"pow", subs:[oldd, {op:"int",c:2}]}
+			]};
+		return(rval);
+		}
+	if (tt0.op == "mul") {
+		if (document.getElementById("chk_smartprod").checked && tt0.subs.length > 2) {
+			/*var rval = quickderiv({op:"mul",subs:[
+				tt0.subs[0],
+				{op:"mul", subs:tt0.subs.slice(1)}
+				]},tt.c[1]);
+			return(magic_derivative(rval,[]));*/
+			var rval = quickderiv({op:"mul",subs:[
+				tt0.subs[0],
+				{op:"force_paren",subs:[{op:"mul", subs:tt0.subs.slice(1)}]}
+				]},tt.c[1]);
+			return(rval);
+			}
+		var i,j;
+		var tempprod;
+		var rval = {op:"add",subs:[]};
+		for (i = 0; i < tt0.subs.length; i++) {
+			tempprod = [];
+			for (j = 0; j < tt0.subs.length; j++) {
+				if (j != i) {tempprod.push(tt0.subs[j]);}
+				else {
+					tempprod.push(quickderiv(tt0.subs[j],tt.c[1]));
+					//tempprod.push({op:"magic_derivative",c:[1,tt.c[1]],subs:[tt0.subs[j]]});
+					}
+				}
+			if (document.getElementById("chk_smartcmul").checked && isconst(tt0.subs[i])) {}
+			else {rval.subs.push({op:"mul", subs:tempprod})};
+			}
+		if (rval.subs.length == 0) {
+			rval.subs.push({op:"int",c:0});
+			}
+		return(rval);
+		}
+	if (tt0.op == "neg") {
+		return({op:"neg",subs:[
+			//{op:"magic_derivative",c:[1,tt.c[1]],subs:[tt0.subs[0]]}
+			quickderiv(tt0.subs[0],tt.c[1])
+			]});
+		}
+	if (tt0.op == "pow") {
+		var oldb = tt0.subs[0];
+		var oldp = tt0.subs[1];
+		if (isconst(oldp) && document.getElementById("chk_smartpow").checked) {
+			var rval = {op:"mul", subs:[
+				oldp,
+				{op:"pow", subs:[
+					oldb,
+					{op:"add", subs:[
+						oldp,
+						{op:"int",c:-1}
+						]}
+					]},
+				//{op:"magic_derivative",c:[1,tt.c[1]],subs:[oldb]}
+				quickderiv(oldb,tt.c[1])
+				]};
+			return(rval);
+			}
+		if (isconst(oldb) && document.getElementById("chk_smartpow").checked) {
+			if (oldb.op == "const" && oldb.c == "e") {
+				var rval = {op:"mul", subs:[
+					tt0,
+					quickderiv(oldp,tt.c[1])
+					]};
+				return(rval);
+				}
+			var rval = {op:"mul", subs:[
+				tt0,
+				{op:"ln", subs:[oldb]},
+				//{op:"magic_derivative",c:[1,tt.c[1]],subs:[oldp]}
+				quickderiv(oldp,tt.c[1])
+				]};
+			return(rval);
+			}
+		if (document.getElementById("chk_smartexp").checked) {
+			var rval = {op:"magic_derivative",c:[1,tt.c[1]],subs:[
+				{op:"pow",subs:[
+					{op:"const",c:"e"},
+					{op:"mul",subs:[
+						{op:"ln",subs:[oldb]},
+						oldp
+						]}
+					]}
+				]};
+			return(rval);
+			}
+		var rval = {op:"mul", subs:[
+			{op:"pow",subs:[oldb,oldp]},
+			{op:"add",subs:[
+				{op:"mul",subs:[
+					{op:"div",subs:[oldp,oldb]},
+					//{op:"magic_derivative",c:[1,tt.c[1]],subs:[oldb]}
+					quickderiv(oldb,tt.c[1])
+					]},
+				{op:"mul",subs:[
+					{op:"ln",subs:[oldb]},
+					//{op:"magic_derivative",c:[1,tt.c[1]],subs:[oldp]}
+					quickderiv(oldp,tt.c[1])
+					]}
+				]}
+			]};
+		return(rval);
+		}
+	if (tt0.op in derivlookup) {
+		if (tt0.op == "sqrt" && document.getElementById("chk_smartsqrt").checked) {
+			var rval = {op:"magic_derivative",c:[1,tt.c[1]],subs:[
+				{op:"pow",subs:[tt0.subs[0],{op:"div",subs:[{op:"int",c:1},{op:"int",c:2}]}]}
+				]};
+			return(rval);
+			}
+		var rval = {op:"mul", subs:[
+			plugin(myparse(derivlookup[tt0.op]),"x",tt0.subs[0]),
+			//{op:"magic_derivative",c:[1,tt.c[1]],subs:[tt0.subs[0]]}
+			quickderiv(tt0.subs[0],tt.c[1])
+			]};
+		return(rval);
+		}
+	if (tt0.op == "nrt") {
+		var rval = {op:"magic_derivative",c:[1,tt.c[1]],subs:[
+			{op:"pow",subs:[tt0.subs[1],{op:"div",subs:[{op:"int",c:1},tt0.subs[0]]}]}
+			]};
+		return(rval);
+		}
+	if (tt0.op == "log_") {
+		var rval = {op:"magic_derivative",c:[1,tt.c[1]],subs:[{op:"div",subs:[
+			{op:"ln",subs:[tt0.subs[0]]},
+			{op:"ln",subs:[tt0.subs[1]]}
+			]}]};
+		return(rval);
+		}
+	if (tt0.op == "func") {
+		var rval = {op:"mul",subs:[
+			{op:"func", c:tt0.c + "'", subs:[tt0.subs[0]]},
+			quickderiv(tt0.subs[0],tt.c[1])
+			]}
+		return(rval);
+		}
+	if (tt0.op == "=") {
+		var rval = {op:"=",subs:[
+			quickderiv(tt0.subs[0],tt.c[1]),
+			quickderiv(tt0.subs[1],tt.c[1])
+			]};
+		return(rval);
+		}
+	if (["<",">",">=","<=","<>"].indexOf(tt0.op) >= 0) {
+		alert("it is meaningless to differentiate inequalities!");
+		}
+	if (tt0.op == "force_paren") {
+		return(magic_derivative({op:"magic_derivative",c:tt.c,subs:[tt0.subs[0]]},ix.slice(1)));
+		}
+
+	if (tt0.op == "var") {
+		if (tt0.c == tt.c[1]) {
+			return({op:"int",c:1});
+			}
+		else {
+			return(tt);
+			//return({op:"int",c:0});
+			}
+		}
+	if (tt0.op == "const" || tt0.op == "int" || tt0.op == "float") {
+		return({op:"int",c:0});
+		}
+	if (tt0.op == "magic_derivative") {
+		if (tt.c[1] == tt0.c[1]) {
+			return({op:"magic_derivative",c:[tt0.c[0]+1,tt0.c[1]],subs:[tt0.subs[0]]});
+			}
+		else {
+			return(tt);
+			}
+		}
+
+	}
+
+function deixify(s) {
+	var i;
+	var t = s.split("_");
+	var rval = [];
+	for (i = 1; i < t.length; i++) {
+		rval.push(Number(t[i]));
+		}
+	return(rval);
+	}
+
+function ttree_zoom_in(tt,ix) {
+	if (ix.length == 0) {return(tt);}
+	return(ttree_zoom_in(tt.subs[ix[0]],ix.slice(1)));
+	}
+
+var g_latex;
+
+function dbutt(ixs) { //returns true if something changed
+	var ix = deixify(ixs);
+	var tt = magic_derivative(g_deriv_tt,ix);
+	var rval = true;
+	if (ttree_to_tex(tt) == ttree_to_tex(g_deriv_tt)) {rval = false;}
+	var old_tt = g_deriv_tt;
+	g_deriv_tt = tt;
+	document.getElementById("htmltarg").innerHTML = ttree_to_html(tt,[]);
+	new Treant({
+		chart:cht,
+		nodeStructure: ttree_to_treant(tt)
+		});
+	initializemouseover(tt);
+	if (rval) {
+		g_latex += "\n\\\\=&" + ttree_to_tex(g_deriv_tt) + "&&\\text{" + derivative_rule(ttree_zoom_in(old_tt,ix)) + "}";
+		var s = "\\begin{alignedat}{999}" + g_latex + "\\end{alignedat}"
+		document.getElementById("worktarg").innerHTML = katex.renderToString(s);
+		document.getElementById("latextarg").value = s;
+		}
+	}
+
+function nthletter(n) { //starts from a=0
+	return(String.fromCharCode("a".charCodeAt(0)+n));
+	}
+
+function nthcap(n) {
+	return(String.fromCharCode("A".charCodeAt(0)+n));
+	}
+
+function derivative_tooltip(tt,c) {
+	var i;
+	if (tt.subs[0].op == "force_paren") {
+		tt = tt.subs[0];
+		}
+	var pp = {op:tt.subs[0].op};
+	if ("c" in tt.subs[0]) {pp.c = tt.subs[0].c};
+	if ("subs" in tt.subs[0]) {
+		pp.subs = [];
+		for (i = 0; i < tt.subs[0].subs.length; i++) {
+			if (isconst(tt.subs[0].subs[i]) && (tt.subs[0].op == "pow") && (document.getElementById("chk_smartpow").checked)) {
+				if ((i == 0) && (tt.subs[0].subs[0].op == "const") && (tt.subs[0].subs[0].c == "e")) {
+					pp.subs.push({op:"const",c:"e"});
+					}
+				else {
+					pp.subs.push({op:"const",c:nthcap(i)});
+					}
+				}
+			else if (isconst(tt.subs[0].subs[i]) && (tt.subs[0].op == "mul") && document.getElementById("chk_smartcmul").checked) {
+				pp.subs.push({op:"const",c:nthcap(i)});
+				}
+			else if (tt.subs[0].subs[i].op == "var") {
+				pp.subs.push({op:"var",c:tt.subs[0].subs[i].c});
+				//TODO: keep track of "used variables". "d" is used from the get-go
+				}
+			else {
+				pp.subs.push({op:"var",c:nthletter(i)});
+				}
+			}
+		}
+	var ppp = {op:"magic_derivative",c:c,subs:[pp]};
+	var ddd = magic_derivative(ppp,[]);
+	var s = katex.renderToString(ttree_to_tex(ppp) + " = " + ttree_to_tex(ddd));
+	s = derivative_rule(tt) + "<br>" + s;
+	return("<span class='tooltiptext'>"+s+"<span>");
+	}
+
+function derivative_button(ix,c,tt) {
+	var n;
+	var v = c[1];
+	if (c[0] == 1) {n = "";}
+	else {n = "<sup>"+c[0]+"</sup>";}
+	var r ="<button onclick='dbutt(\""+ixify(ix)+"\")'>";
+	r += "<table class='fraction'><tr><td class='numerator'>" + "d" + n;
+	r += "</td></tr><tr><td class='denominator'>" + "d" + n + v;
+	r += "</td></tr></table>";
+	r += derivative_tooltip(tt,c);
+	r += "</button>";
+	return(r);
+	}
+
+function parenify(s,id) {
+	if (document.getElementById("chk_parenswap").checked) {
+	switch(Number(document.getElementById("sel_parenbackup").value)) {
+		case 0: return("<span class='parens' id='"+id+"'>" + s + "</span>");
+		case 1: return("<span class='backup_parens' id='"+id+"'><span style='margin:4px'>" + s + "</span></span>");
+		case 2: return("<span id='"+id+"'>(" + s + ")</span>"); 
+		}
+	}
+	else {
+	switch(Number(document.getElementById("sel_parenbackup").value)) {
+		case 0: return("<span class='parens'><span id='"+id+"'>" + s + "</span></span>");
+		case 1: return("<span class='backup_parens'><span style='margin:4px'><span id='"+id+"'>" + s + "</span></span></span>");
+		case 2: return("<span>(<span id='"+id+"'>" + s + "</span>)</span>"); 
+		}
+	}
+	}
+
+function brackify(s,id) {
+	switch(Number(document.getElementById("sel_bracbackup").value)) {
+		case 0: return("<span class='brack' id='"+id+"'>" + s + "</span>");
+		case 1: return("<span class='backup_brackets' id='"+id+"'><span style='margin:4px'>" + s + "</span></span>");
+		case 2: return("<span id='"+id+"'>[" + s + "]</span>"); 
+		}
+	}
+
+function sqrtify(s,id) {
+	switch(Number(document.getElementById("sel_sqrtbackup").value)) {
+		case 0: return("<span class='squareroot' id='"+id+"'>" + s + "</span>");
+		case 1: return("<span class='backup_squareroot' id='"+id+"'><span style='margin:4px'>" + s + "</span></span>");
+		case 2: return("<span id='"+id+"'>sqrt(" + s + ")</span>"); 
+		}
+	}
+
+function absify(s,id) {
+	switch(Number(document.getElementById("sel_absbackup").value)) {
+		case 0: return("<span class='absolutevalue' id='"+id+"'>" + s + "</span>");
+		case 1: return("<span class='backup_absolutevalue' id='"+id+"'><span style='margin:4px'>" + s + "</span></span>");
+		case 2: return("<span id='"+id+"'>|" + s + "|</span>"); 
+		}
+	}
+
+//options:
+//chk_allp: all expressions get parens
+//chk_eneg: -x -> ((-1)*x)
+//chk_ediv: 1/x -> (x^-1)
+
+function ttree_explicitify(tt) {
+
+	var newsubs = [];	
+	var i;
+
+	if ("subs" in tt) {
+		for (i = 0; i < tt.subs.length; i++) {
+			newsubs.push(ttree_explicitify(tt.subs[i]));
+			}
+		}
+
+	if (document.getElementById("chk_long").checked && ("subs" in tt) && tt.subs.length > 2) {
+		var rval = {op:tt.op,subs:[newsubs[0],newsubs[1]]};
+		var i;
+		for (i = 2; i < tt.subs.length; i++) {
+			rval = {op:tt.op,subs:[rval,newsubs[i]]};
+			}
+		return(rval);
+		}	
+
+	if (tt.op == "neg" && document.getElementById("chk_eneg").checked) {
+		if (tt.subs[0].op == "mul") {
+			return({op:"mul",subs:[{op:"int",c:-1}].concat(newsubs[0].subs)});
+			}
+		return({op:"mul",subs:[{op:"int",c:-1},newsubs[0]]});
+		}
+	if (tt.op == "div" && document.getElementById("chk_ediv").checked) {
+		if (tt.subs[0].op == "int" && tt.subs[0].c == 1) {
+			return({op:"pow",subs:[newsubs[1],{op:"int",c:-1}]});
+			}
+		return({op:"mul",subs:[
+			newsubs[0],
+			{op:"pow",subs:[newsubs[1],{op:"int",c:-1}]}
+			]});
+		}
+
+	var rval = {op:tt.op};
+
+	if ("subs" in tt) {rval.subs = newsubs;}
+	if ("c" in tt) {rval.c = tt.c;}
+
+	return(rval);
+	}
+
+function ttree_to_html(tt,ix,opts) {
+	var t = "";
+	var i;
+	if (ix) {} else {
+		ix = ["d"];
+		}
+	if (opts) {} else {
+		opts = "";
+		if (document.getElementById("chk_allp").checked && (["var","const","int"].indexOf(tt.op) == -1)) {
+			opts = "parens";
+			}
+		if (document.getElementById("chk_allp").checked && (tt.op == "int") && (tt.c < 0)) {
+			opts = "parens";
+			}
+		}
+
+	var sqrtneeded = false;
+
+	if (tt.op == "add") {
+		for (i = 0; i < tt.subs.length; i++) {
+			if (!t || (ttree_issubtract(tt.subs[i]) && !document.getElementById("chk_allp").checked && !document.getElementById("chk_eneg").checked )) {
+				t += ttree_to_html(tt.subs[i],ix.concat([i]));
+				}
+			else {
+				t += "+" + ttree_to_html(tt.subs[i],ix.concat([i]));
+				}
+			}
+		}
+	else if (tt.op == "div") {
+		t = "<table class='fraction'><tr><td class='numerator'>" + ttree_to_html(tt.subs[0],ix.concat([0]));
+		t += "</td></tr><tr><td class='denominator'>" + ttree_to_html(tt.subs[1],ix.concat([1]));
+		t += "</td></tr></table>";
+		}
+	else if (tt.op == "mul") {
+		for (i = 0; i < tt.subs.length; i++) {
+			if (!t && tt.subs[i].op != "add") {
+				t += ttree_to_html(tt.subs[i],ix.concat([i]));
+				}
+			else if (tt.subs[i].op == "add" || ttree_issubtract(tt.subs[i])) {
+				t += ttree_to_html(tt.subs[i],ix.concat([i]),"parens");
+				}
+			else if (ttree_needsexplicitmul(tt.subs[i])) {
+				t += " &middot " + ttree_to_html(tt.subs[i],ix.concat([i]));
+				}
+			else {
+				t += ttree_to_html(tt.subs[i],ix.concat([i]));
+				}
+			}
+		}
+	else if (tt.op == "neg") {
+		if (tt.subs[0].op == "add") {
+			t = "-" + ttree_to_html(tt.subs[0],ix.concat([0]),"parens");
+			}
+		else {
+			t = "-" + ttree_to_html(tt.subs[0],ix.concat([0]));
+			}
+		}
+	else if (tt.op == "sqrt") {
+		t = ttree_to_html(tt.subs[0],ix.concat([0]),"no");
+		t = sqrtify(t,ixify(ix))
+		}
+	else if (tt.op == "nrt") {
+		t = "<sup>" + ttree_to_html(tt.subs[0],ix.concat([0])) +"</sup>" + sqrtify(ttree_to_html(tt.subs[1],ix.concat([1])),"");
+		}
+	else if (tt.op == "pow") {
+		if (ttree_needsparenpow(tt.subs[0])) {
+			s = ttree_to_html(tt.subs[0],ix.concat([0]),"parens");
+			}
+		else {
+			s = ttree_to_html(tt.subs[0],ix.concat([0]));
+			}
+		t = s+"<sup>" + ttree_to_html(tt.subs[1],ix.concat([1])) + "</sup>";
+		}
+	else if (["ln","log","sin","cos","tan","cot","sec","csc","arcsin","arccos","arctan","arccot","arcsec","arccsc","sinh","cosh","tanh","coth","sech","csch"].indexOf(tt.op) >= 0) {
+		t = tt.op + ttree_to_html(tt.subs[0],ix.concat([0]),"parens");
+		}
+	else if (tt.op == "log_") {
+		t = "log<sub>"+ ttree_to_html(tt.subs[1],ix.concat([1]))+"</sub>"+ttree_to_html(tt.subs[0],ix.concat([0]),"parens");
+		}
+	else if (tt.op == "abs") {
+		t = ttree_to_html(tt.subs[0],ix.concat([0]),"abs")
+		}
+	else if (["=","<",">",">=","<=","<>"].indexOf(tt.op) >= 0) {
+		t = ttree_to_html(tt.subs[0],ix.concat([0])) + ttree_htmlineq(tt.op) + ttree_to_html(tt.subs[1],ix.concat([1]));
+		}
+	else if (tt.op == "func") {
+		t = tt.c + ttree_to_html(tt.subs[0],ix.concat([0]),"parens");
+		}
+	else if (tt.op == "var") {
+		t = tt.c;
+		}
+	else if (tt.op == "const") {
+		if (tt.c == "pi") {t = "&pi;";}
+		else {t = tt.c;}
+		}
+	else if (tt.op == "int" || tt.op == "float") {
+		t = tt.c.toString();
+		}
+	else if (tt.op == "magic_derivative") {
+		t = derivative_button(ix,tt.c,tt);
+		t += ttree_to_html(tt.subs[0],ix.concat([0]),"brack");
+		}
+	else if (tt.op == "force_paren") {
+		t = ttree_to_html(tt.subs[0],ix.concat([0]),"parens");
+		}
+
+	if (opts == "parens") {
+		return(parenify(t,ixify(ix)));
+		}
+	else if (opts == "brack") {
+		return(brackify(t,ixify(ix)));
+		}
+	else if (opts == "abs") {
+		return(absify(t,ixify(ix)));
+		}
+	else if (sqrtneeded || (opts == "sqrt")) {
+		return(sqrtify(t,ixify(ix)));
+		}
+	else {
+		return("<span class='ttmath' id='"+ixify(ix)+"'>"+t+"</span>");
+		}
+	}
+
+function ixify(ix) {
+	var i;
+	var s = "ix";
+	for (i = 0; i < ix.length; i++) {
+		s += "_";
+		s += ix[i];
+		}
+	return(s);
+	}
+
+function kas_to_ttree(k) {
+	var subs = [];
+	if (k.name() == "Add") {
+		var i;
+		for (i = 0; i < k.terms.length; i++) {
+			subs.push(kas_to_ttree(k.terms[i]));
+			}
+		return({op:"add",subs:subs});
+		}
+	if (k.name() == "Mul") {
+		var i;
+		if (k.terms.length == 2 && k.terms[1].isDivide()) {
+			var n = kas_to_ttree(k.terms[0]);
+			var d = kas_to_ttree(k.terms[1].asDivide());
+			return({op:"div",subs:[n,d]});
+			}
+		if (k.terms[0].name() == "Int" && k.terms[0].n == -1) {
+			var recurseval = {name: function() {return("Mul");}, terms:k.terms.slice(1)}
+			if (k.terms.length == 2) {
+				recurseval = k.terms[1];
+				}
+			return({op:"neg",subs:[kas_to_ttree(recurseval)]});
+			}
+		for (i = 0; i < k.terms.length; i++) {
+			subs.push(kas_to_ttree(k.terms[i]));
+			}
+		return({op:"mul",subs:subs});
+		}
+	if (k.name() == "Pow") {
+		var base = kas_to_ttree(k.base);
+		if (k.isRoot()) {
+			if (k.exp.d == 2) {
+				return({op:"sqrt",subs:[base]});
+				}
+			else {
+				return({op:"nrt",subs:[k.exp.d,base]});
+				}
+			}
+		return ({op:"pow", subs:[kas_to_ttree(k.base),kas_to_ttree(k.exp)]});
+		}
+	if (k.name() == "Log") {
+		if (k.isNatural()) {
+			return({op:"ln", subs:[kas_to_ttree(k.power)]});
+			}
+		else if (k.base.name() == "Int" && k.base.n == 10) {
+			return({op:"log", subs:[kas_to_ttree(k.power)]});
+			}
+		else {
+			return({op:"log_", subs:[kas_to_ttree(k.power),kas_to_ttree(k.base)]});
+			}
+		}
+	if (k.name() == "Trig") {
+		return({op:k.type, subs:[kas_to_ttree(k.arg)]});
+		}
+	if (k.name() == "Abs") {
+		return({op:"abs", subs:[kas_to_ttree(k.arg)]});
+		}
+	if (k.name() == "Eq") {
+		return({op:k.type, subs:[kas_to_ttree(k.left), kas_to_ttree(k.right)]});
+		}
+	if (k.name() == "Func") {
+		return({op:"func", c:k.symbol, subs:[kas_to_ttree(k.arg)]});
+		}
+	if (k.name() == "Var") {
+		return({op:"var", c:k.symbol});
+		}
+	if (k.name() == "Const") {
+		return({op:"const", c:k.symbol});
+		}
+	if (k.name() == "Rational") {
+		console.log("tk_division_backdoor", tk_division_backdoor);
+		}
+	if (k.name() == "Int") {
+		return({op:"int", c:k.n});
+		}
+	if (k.name() == "Float") {
+		return({op:"float", c:k.n});
+		}
+	console.log("kas_to_ttree failed");
+	return({op:"error"});
+	}
+
+function myparse(str,opts) {
+	return(kas_to_ttree(KAS.parse(str,opts).expr));
+	}
+
+function ttree_to_treant(tt,ix) {
+	if (ix) {} else {ix = []};
+	s = "<table style='text-align:center' id='tabl_"+ixify(ix)+"'><tr><td>";
+	if (document.getElementById("chk_treename").checked) {
+		s += tt.op;
+		if ("c" in tt) {
+			s += ": "+tt.c;
+			}
+		s += "</td></tr><tr><td>";
+		}
+	s += katex.renderToString(ttree_to_tex(tt),{strict:false,trust:true});
+	s += "</td></tr></table>";
+
+	var t = {
+		innerHTML: s,
+		children: []
+		}
+
+	var i;
+
+	if ("subs" in tt) {
+		for (i = 0; i < tt.subs.length; i++) {
+			t.children.push(ttree_to_treant(tt.subs[i],ix.concat([i])));
+			} 
+		}
+	return(t);
+	}
+
+function indexlist(tt) {
+	var rval = [[]];
+	var i,j;
+	if ("subs" in tt) {
+		for (i = 0; i < tt.subs.length; i++) {
+			var t = indexlist(tt.subs[i]);
+			for (j = 0; j < t.length; j++) {
+				rval.push([i].concat(t[j]));
+				}
+			}
+		}
+	return(rval);
+	}
+
+var targid = "";
+
+function mo(e,tt) {
+	//console.log(e.target.id,ix);
+	ml(tt);
+	//if (e.target.id) {
+		e.currentTarget.style.backgroundColor = "blue";
+		//}
+	//document.getElementById(ix).style.backgroundColor = "blue";
+	}
+
+function ml(tt) {
+	var i;
+	var il = indexlist(tt);
+	for (i = 0; i < il.length; i++) {
+		document.getElementById(ixify(il[i])).style.backgroundColor = "";
+		document.getElementById("tabl_"+ixify(il[i])).style.backgroundColor = "";
+		}
+	}
+
+function mm(e,tt) {
+	var l = document.querySelectorAll(":hover");
+	if (!document.getElementById("chk_treehi").checked) {l = [];}
+	var i;
+	var il = indexlist(tt);
+	for (i = 0; i < il.length; i++) {
+		document.getElementById(ixify(il[i])).style.backgroundColor = "";
+		}
+	var id = "";
+	for (i = 0; i < l.length; i++) {
+		if (l[i].id) {id = l[i].id;}
+		}
+	document.getElementById(id).style.backgroundColor = "#CCDDAA";
+	for (i = 0; i < il.length; i++) {
+		if (ixify(il[i]).startsWith(id)) {
+			document.getElementById("tabl_"+ixify(il[i])).style.backgroundColor="#CCDDAA";
+			}
+		}
+	}
+
+function initializemouseover(tt) {
+	document.getElementById("ix").addEventListener("mousemove",function(e) {mm(e,tt)});
+	document.getElementById("ix").addEventListener("mouseout",function(e) {ml(tt)});
+	var i;
+	var il = indexlist(tt);
+	for (i = 0; i < il.length; i++) {
+		//document.getElementById(ixify(il[i])).style.margin = '2px';
+		}
+	}
+
+function ttree_do_everything() {
+	tk_division_backdoor = true;
+	var s = document.getElementById("inp").value;
+	var tt = myparse(s,{functions:["f","g"]});
+	new Treant({
+		chart:cht,
+		nodeStructure: ttree_to_treant(tt)
+		});
+	document.getElementById("htmltarg").innerHTML = katex.renderToString(ttree_to_tex(tt,[]),{strict:false,trust:true});
+	initializemouseover(tt);
+	}
+
+var g_deriv_tt = "NOPE";
+
+function getfuns() {
+	return(document.getElementById("inp_funnames").value.split(/[^A-Za-z]/));
+	}
+
+function deriv_ttree_do_everything() {
+	tk_division_backdoor = true;
+	var n = Number(document.getElementById("inp_n").value);
+	var x = document.getElementById("inp_x").value;
+	var s = document.getElementById("inp").value;
+	var fs = getfuns();
+	var tt = {op:"magic_derivative",c:[n,x],subs:[myparse(s,{functions:fs})]};
+	g_deriv_tt = tt;
+	document.getElementById("htmltarg").innerHTML = ttree_to_html(tt,[]);
+	new Treant({
+		chart:cht,
+		nodeStructure: ttree_to_treant(tt)
+		});	
+	initializemouseover(tt);
+	g_latex = "&" + ttree_to_tex(tt) + "&\\qquad&";
+	}
+
+function html_do_everything() {
+	tk_division_backdoor = true;
+	var s = document.getElementById("inp").value;
+	var fs = getfuns();
+	var tt = myparse(s,{functions:fs});
+	tt = ttree_explicitify(tt);
+	document.getElementById("htmltarg").innerHTML = ttree_to_html(tt,[]);
+	new Treant({
+		chart:cht,
+		nodeStructure: ttree_to_treant(tt)
+		});
+	initializemouseover(tt);
+	g_deriv_tt = tt;
+	}
+
+function mykastex(k) { //modified from the original kas.js
+	var t = "";
+	if (k.name() == "Add") {
+		var t = "";
+		var i;
+		for (i = 0; i < k.terms.length; i++) {
+			if (!t || k.terms[i].isSubtract()) {
+				t += mykastex(k.terms[i]);
+				}
+			else {
+				t += "+" + mykastex(k.terms[i]);
+				}
+			}
+		return(t);
+		}
+	if (k.name() == "Mul") {
+		var t = "";
+		var i;
+		if (k.terms.length == 2 && k.terms[1].isDivide()) {
+			var n = mykastex(k.terms[0]);
+			var d = mykastex(k.terms[1].asDivide());
+			return("\\frac{"+n+"}{"+d+"}");
+			}
+		var minusstart = true;
+		for (i = 0; i < k.terms.length; i++) {
+			if (minusstart && k.terms[i].name() == "Int" && k.terms[i].n == -1) {
+				t += "-";
+				}
+			else if (!t) {
+				minusstart = false;
+				t += mykastex(k.terms[i]);
+				}
+			else if (k.terms[i].needsExplicitMul()) {
+				minusstart = false;
+				t += " \\cdot " + mykastex(k.terms[i]);
+				}
+			else if (k.terms[i].name() == "Add") {
+				minusstart = false;
+				t += "(" + mykastex(k.terms[i]) + ")";
+				}
+			else {
+				minusstart = false;
+				t += mykastex(k.terms[i]);
+				}
+			}
+		return(t);
+		}
+	if (k.name() == "Pow") {
+		if (k.isRoot()) {
+			if (k.exp.d == 2) {
+				return("\\sqrt{"+mykastex(k.base)+"}");
+				}
+			else {
+				return("\\sqrt["+k.exp.d+"]{"+mykastex(k.base)+"}");
+				}
+			}
+		var btex = mykastex(k.base);
+		//if (k.base instanceof Seq || k.base instanceof Pow || (k.base instanceof Num && !k.base.isSimple()) || k.base instanceof Trig || k.base instanceof Log) {
+		if ((k.base.name() == "Int" && k.base.n >= 0) || k.base.name() == "Var") {
+			}
+		else {
+			btex = "(" + btex + ")";
+			}
+		return (btex + "^{" + mykastex(k.exp) + "}");
+		}
+	if (k.name() == "Log") {
+		if (k.isNatural()) {
+			return("\\ln("+mykastex(k.power)+")");
+			}
+		else if (k.base.name() == "Int" && k.base.n == 10) {
+			return("\\log("+mykastex(k.power)+")");
+			}
+		else {
+			return("\\log_{"+mykastex(k.base)+"}(" + mykastex(k.power) + ")");
+			}
+		}
+	if (k.name() == "Trig") {
+		return(k.functions[k.type].tex + "(" + mykastex(k.arg) + ")");
+		}
+	if (k.name() == "Abs") {
+		return("\\left|"+ mykastex(k.arg) + "\\right|");
+		}
+	if (k.name() == "Eq") {
+		return(mykastex(k.left) + k.signs[k.type] + mykastex(k.right));
+		}
+	if (k.name() == "Func") {
+		return(k.symbol + "(" + mykastex(k.arg) + ")");
+		}
+	if (k.name() == "Var") {
+		var sub = "";
+		if (k.subscript) {
+			sub = "_{" + mykastex(k.subscript) + "}";
+			}
+		var prefix = "";
+		if (k.symbol.length > 1) {
+			prefix = "\\"; //KAS supports multisymbol variable names? what is this, mathjs?
+			}
+		return(prefix + k.symbol + sub);
+		}
+	if (k.name() == "Const") {
+		if (k.symbol == "pi") {
+			return("\\pi");
+			}
+		else if (k.symbol == "e") {
+			return("e");
+			}
+		}
+	if (k.name() == "Rational") {
+		console.log("tk_division_backdoor", tk_division_backdoor);
+		return(k.tex());
+		}
+	if (k.name() == "Int") {
+		return(k.n.toString());
+		}
+	if (k.name() == "Float") {
+		return(k.n.toString());
+		}
+	console.log("mykastex failed, fallingback");
+	return(k.tex());
+	}
+
+function mykastex_do_everything() {
+	var s = document.getElementById("inp").value;
+	s = mykastex(KAS.parse(s).expr);
+	s = katex.renderToString(s);
+	document.getElementById("treetarg").innerHTML = s;
+	}
+
+function upd_tree() {
+	var tt = g_deriv_tt;
+	document.getElementById("htmltarg").innerHTML = ttree_to_html(tt,[]);
+	new Treant({
+		chart:cht,
+		nodeStructure: ttree_to_treant(tt)
+		});	
+	initializemouseover(tt);
+	}
+
+function colorify() {
+	var il = indexlist(g_deriv_tt);
+	var i;
+	var s;
+	for (i = 0; i < il.length; i++) {
+		s = "hsl("+360*i/il.length+",100%,72%)";
+		document.getElementById("tabl_"+ixify(il[i])).style.backgroundColor = s;
+		document.getElementById(ixify(il[i])).style.backgroundColor = s;
+		}
+	}
+
+function loaduri() {
+	var str = document.URL;
+	if (str.indexOf("?") == -1) {return;}
+	str = str.slice(str.indexOf("?")+1);
+	str = decodeURI(str);
+	document.getElementById("inp").value = str;
+	html_do_everything();
+	}
+
+/*
+<svg width="100%" height="100%" viewBox="0 0 18 14">
+<line x1="8.5" y1="0" x2="18" y2="0" stroke="black"/>
+<text x="0" y="14">√</text></svg>
+
+<svg width="100%" height="100%" viewBox="0 0 10 15">
+<text x="0" y="11">()</text></svg>
+*/
+
+</script>
+<style>
+.ttmath {
+	display:inline-block;
+	margin: 2px;
+	}
+.node {
+	border: 1px solid;
+	padding: 10px;
+	}
+.fraction {
+	font-size: 60%;
+	display: inline-table;
+	vertical-align: middle;
+	border-spacing: 0px
+	}
+.numerator {
+	border-bottom:solid 2px;
+	text-align:center;
+	padding:0px;
+	}
+.numerator > .ttmath {
+	margin-bottom: -7px;
+	}
+.denominator {
+	text-align:center;
+	}
+.denominator > .ttmath {
+	margin-top: -5px;
+	}
+.parens {
+	border-left: .5em solid;
+	border-right: .5em solid;
+	border-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 10 15'%3E%3Ctext x='0' y='11'%3E()%3C/text%3E%3C/svg%3E");
+	border-image-slice: 0 50%;
+	border-image-repeat: stretch;
+	display:inline-block;
+	margin: 2px;
+	}
+.squareroot {
+	border-left: 1.1em solid;
+	border-top: 4px solid;
+	border-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 18 14'%3E%3Cline x1='8.5' y1='0' x2='18' y2='0' stroke='black'/%3E%3Ctext x='0' y='14'%3E√%3C/text%3E%3C/svg%3E");
+	border-image-repeat: stretch;
+	border-image-slice: 1 0 0 48%;
+	display: inline-block;
+	margin: 2px;
+	}
+.absolutevalue {
+	border-left: .5em solid;
+	border-right: .5em solid;
+	border-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 7 14'%3E%3Ctext x='0' y='11'%3E||%3C/text%3E%3C/svg%3E");
+	border-image-slice: 0 50%;
+	border-image-repeat: stretch;
+	display:inline-block;
+	margin: 2px;
+	}
+.brack {
+	border-left: .8em solid;
+	border-right: .8em solid;
+	border-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 10 15'%3E%3Ctext x='0' y='11'%3E[]%3C/text%3E%3C/svg%3E");
+	border-image-slice: 0 50%;
+	border-image-repeat: stretch;
+	display:inline-block;
+	margin: 2px;
+	}
+button {
+	font-size:80%;
+	vertical-align:middle;
+	position:relative;
+	}
+@font-face {
+	font-family:"qu";
+	src:url("Questrial-Regular.ttf"); //see questrial.zip
+	}
+body {
+	font-family: "qu", sans-serif;
+	font-size: large;
+	}
+button .tooltiptext {
+	visibility:hidden;
+	border:1px solid black;
+	text-align:center;
+	position: absolute;
+	bottom: 100%;
+	left: 50%;
+	z-index: 1;
+	background-color:white;
+	font-size: small;
+	white-space:nowrap;
+	padding:4px;
+	}
+button:hover .tooltiptext {
+	visibility:visible;
+	}
+blockquote.caution {
+	background-color: #EEEEBB;
+	padding: 20px;
+	border-left: 3px solid yellow;
+	}
+.backup_parens {
+	border-radius: 7px / 50%;
+	border-left: 2px solid black;
+	border-right: 2px solid black;
+	display:inline-block;
+	margin-left: 4px;
+	}
+.backup_brackets {
+	border-radius: 7px / 1px;
+	border-left: 2px solid black;
+	border-right: 2px solid black;
+	display:inline-block;
+	}
+.backup_squareroot {
+	border-top: 2px solid black;
+	display:inline-block;
+	position:relative;
+	margin-left: 20px;
+	}
+.backup_squareroot:before {
+	width: 10px;
+	top: 0px;
+	bottom: 0px;
+	background: linear-gradient(to top left, rgba(0,0,0,0) 40%, black 49% 51%, rgba(0,0,0,0) 63%);
+	position:absolute;
+	left: -8px;
+	content: '';
+	}
+.backup_squareroot:after {
+	width: 10px;
+	top: 50%;
+	bottom: 0px;
+	background: linear-gradient(to top right, rgba(0,0,0,0) 42%, black 49% 51%, rgba(0,0,0,0) 58%);
+	position:absolute;
+	left: -18px;
+	content: '';
+	}
+.backup_absolutevalue {
+	border-left: 2px solid black;
+	border-right: 2px solid black;
+	display:inline-block;
+	}
+</style>
+<link rel="stylesheet" href="katex.min.css">
+<link rel="stylesheet" href="treant/Treant.css" type="text/css"/>
+</head>
+<body onload="loaduri()">
+
+<input type="checkbox" id="chk_parenswap" onchange="html_do_everything()">Swap parentheses<br>
+
+Type a math formula in the box below and push "Draw Tree":<br>
+<input id="inp" value="x^(2(x-1))+2(x+1)+x(2+1/2)"> <button onclick="html_do_everything()">Draw Tree</button> <br>
+
+Hover your mouse over subexpressions below to highlight them:
+<div id="htmltarg" style='font-size:200%;user-select:none;'></div>
+<br>
+<div id="treetarg"></div>
+
+<hr>
+
+<h1>Options</h1>
+
+<input type="checkbox" id="chk_treeshow" onchange="upd_tree()" checked style='display:none'>
+<input type="checkbox" id="chk_treename" onchange="upd_tree()" checked> Show node names in tree <br>
+<input type="checkbox" id="chk_treehi" checked> Highlight hovered subexpressions<br>
+<button onclick="colorify()">Colorize</button> (For debugging) <br>
+Names of functions: <input id="inp_funnames" value="f,g"> <br>
+
+<input type="checkbox" id="chk_allp" onchange="html_do_everything()"> Draw unwritten parentheses <br>
+<input type="checkbox" id="chk_eneg" onchange="html_do_everything()"> Write negatives as multiplying by -1 <br>
+<input type="checkbox" id="chk_ediv" onchange="html_do_everything()"> Write division as to the -1st power <br>
+<input type="checkbox" id="chk_long" onchange="html_do_everything()"> Break up long sums and products <br>
+
+Render options:
+Parentheses: <select id='sel_parenbackup'>
+<option value=0>SVG</option>
+<option value=1 selected>CSS</option>
+<option value=2>text</option>
+</select>
+Brackets: <select id='sel_bracbackup'>
+<option value=0>SVG</option>
+<option value=1 selected >CSS</option>
+<option value=2>text</option>
+</select>
+Roots: <select id='sel_sqrtbackup'>
+<option value=0>SVG</option>
+<option value=1 selected>CSS</option>
+<option value=2>text</option>
+</select>
+Absolute Values: <select id='sel_absbackup'>
+<option value=0>SVG</option>
+<option value=1 selected>CSS</option>
+<option value=2>text</option>
+</select>
+
+</body>
+</html>

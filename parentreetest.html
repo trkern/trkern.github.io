@@ -778,18 +778,25 @@ function derivative_button(ix,c,tt) {
 	}
 
 function parenify(s,id) {
-	if (document.getElementById("chk_parenswap").checked) {
+	if (document.getElementById("chk_parenswap").value == 2) {
 	switch(Number(document.getElementById("sel_parenbackup").value)) {
 		case 0: return("<span class='parens' id='"+id+"'>" + s + "</span>");
 		case 1: return("<span class='backup_parens' id='"+id+"'><span style='margin:4px'>" + s + "</span></span>");
 		case 2: return("<span id='"+id+"'>(" + s + ")</span>"); 
 		}
 	}
-	else {
+	else if (document.getElementById("chk_parenswap").value == 1) {
 	switch(Number(document.getElementById("sel_parenbackup").value)) {
 		case 0: return("<span class='parens'><span id='"+id+"'>" + s + "</span></span>");
 		case 1: return("<span class='backup_parens'><span style='margin:4px'><span id='"+id+"'>" + s + "</span></span></span>");
 		case 2: return("<span>(<span id='"+id+"'>" + s + "</span>)</span>"); 
+		}
+	}
+	else {
+	switch(Number(document.getElementById("sel_parenbackup").value)) {
+		case 0: return("<span id='"+id+"'><span class='parens'>" + s + "</span></span>");
+		case 1: return("<span id='"+id+"'><span class='backup_parens'><span style='margin:4px'>" + s + "</span></span></span>");
+		case 2: return("<span id='"+id+"'><span>(" + s + "</span>)</span>"); 
 		}
 	}
 	}
@@ -1545,9 +1552,13 @@ blockquote.caution {
 
 This interactive is meant to test display options for parentheses. Specifically, in an expression like 2(x+1), should highighting the sum also highlight the parentheses? The checkbox below allows adding this option. You can adjust how parentheses are rendered with the drop down menu:<br>
 
-<input type="checkbox" id="chk_parenswap" onchange="html_do_everything()">Swap parentheses<br>
+Highlight: <select id='chk_parenswap' onchange="html_do_everything()">
+<option value=0>Out</option>
+<option value=1>In</option>
+<option value=2 selected>On (only for CSS below)</option>
+</select><br>
 
-Parentheses: <select id='sel_parenbackup' onchange="html_do_everything()">
+Parentheses Renderer: <select id='sel_parenbackup' onchange="html_do_everything()">
 <option value=0>SVG</option>
 <option value=1 selected>CSS</option>
 <option value=2>text</option>

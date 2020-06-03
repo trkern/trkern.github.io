@@ -1543,10 +1543,18 @@ blockquote.caution {
 </head>
 <body onload="loaduri()">
 
+This interactive is meant to test display options for parentheses. Specifically, in an expression like 2(x+1), should highighting the sum also highlight the parentheses? The checkbox below allows adding this option. You can adjust how parentheses are rendered with the drop down menu:<br>
+
 <input type="checkbox" id="chk_parenswap" onchange="html_do_everything()">Swap parentheses<br>
 
+Parentheses: <select id='sel_parenbackup' onchange="html_do_everything()">
+<option value=0>SVG</option>
+<option value=1 selected>CSS</option>
+<option value=2>text</option>
+</select><br>
+
 Type a math formula in the box below and push "Draw Tree":<br>
-<input id="inp" value="x^(2(x-1))+2(x+1)+x(2+1/2)"> <button onclick="html_do_everything()">Draw Tree</button> <br>
+<input id="inp" value="x^(2(x-1))+2(x+1)+sin(2+1/2)"> <button onclick="html_do_everything()">Draw Tree</button> <br>
 
 Hover your mouse over subexpressions below to highlight them:
 <div id="htmltarg" style='font-size:200%;user-select:none;'></div>
@@ -1569,11 +1577,6 @@ Names of functions: <input id="inp_funnames" value="f,g"> <br>
 <input type="checkbox" id="chk_long" onchange="html_do_everything()"> Break up long sums and products <br>
 
 Render options:
-Parentheses: <select id='sel_parenbackup'>
-<option value=0>SVG</option>
-<option value=1 selected>CSS</option>
-<option value=2>text</option>
-</select>
 Brackets: <select id='sel_bracbackup'>
 <option value=0>SVG</option>
 <option value=1 selected >CSS</option>

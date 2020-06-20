@@ -1,0 +1,111 @@
+<!doctype html>
+<html>
+<head>
+<script src="tkas.js"></script>
+<script src="underscore-min.js"></script>
+<script src="mod_kas.js"></script>
+<script>
+
+var one = {op: "NUM", c:1};
+
+var test = {op: "ROOT", subs:[one,one]}
+
+function outp(str) {
+	document.getElementById("out").innerHTML = str;
+	document.getElementById("out2").innerHTML = str;
+	document.getElementById("out3").innerHTML = str;
+	}
+
+function tkas_kas_test(str,k) {
+	var pt = tkas_kas_parse(str,{functions:["f","g"]});
+	console.log(pt);
+	outp(tkas_render(pt,[],{rendertype:k}));
+	}
+
+function tkas_test() {
+	document.getElementById("out").innerHTML = tkas_render(test_sum,[],tkas_default_pgdecor);
+	}
+
+function root_test(str1,str2,k) {
+	var pt1 = tkas_kas_parse(str1);
+	var pt2 = tkas_kas_parse(str2);
+	var pt = {op:"ROOT",subs:[pt1,pt2]};
+	console.log(pt);
+	document.getElementById("out").innerHTML = tkas_render(pt,[],{rendertype:k,parentype:"css"});
+	}
+
+function tree_test(str) {
+	var T = test;//tkas_kas_parse(str);
+	document.getElementById("out").innerHTML = tkas_html_from_tps(tkas_tps_from_htree(tkas_htree_from_ptree(T)),{id:"tree"});
+	document.getElementById("out2").innerHTML = tkas_render(T,{id:"form"});
+	tkas_highlight(["Ttree","Fform"],T);
+	}
+
+var rn = /\d+\.\d*|\d+|\.\d*/g
+
+var rt = `(sqrt|root|ln|log|sin|cos|tan|sec|csc|abs)*`
+
+function rendertree(T) {
+	return(tkas_html_from_tps(tkas_tps_from_htree(tkas_htree_from_ptree(T))));
+	}
+
+function parsetest(str) {
+	var p = tkas_lex(str);
+	console.log(p);
+	document.getElementById("out").innerHTML = tkas_print_lexlist(p);
+	var fz = tkas_parse_find_parentheses(p,tkas_fz(p));
+	//var np = tkas_parse_merge(p,fz,["S",{op:"NUM",c:42}]);
+	//console.log(np);
+	//document.getElementById("out2").innerHTML = tkas_print_lexlist(np);
+	//console.log(tkas_pemdas_exponent(p,tkas_fz(p)));
+	console.log(p);
+	document.getElementById("out3").innerHTML = tkas_print_lexlist(tkas_pemdas_md(p));
+	console.log(tkas_pemdas_md(p));
+	}
+
+function pemdastest(str) {
+	var p = tkas_lex(str);
+	var hstr = "";
+	var lastgood = p;
+	var o = tkas_pemdas(p);
+	console.log(o,p);
+	var i = 0;
+	while(o) {
+		lastgood = o;
+		console.log(i);
+		i++;
+		if (i > 10) {document.getElementById("out").innerHTML = hstr; return;}
+		hstr += tkas_print_lexlist(o);
+		hstr += "<br>";
+		o = tkas_pemdas(o);
+		console.log(o);
+		}
+	var T = tkas_parse_cleanup(lastgood[0][1]);
+	document.getElementById("out3").innerHTML = hstr;
+	document.getElementById("out").innerHTML = tkas_html_from_tps(tkas_tps_from_htree(tkas_htree_from_ptree(T)),{id:"tree"});
+	document.getElementById("out2").innerHTML = tkas_render(T,{id:"form"});
+	tkas_highlight(["Ttree","Fform"],T);
+	}
+
+</script>
+<style>
+textarea {
+	z-index:-2;
+	}
+body {
+	font-family: sans-serif;
+	}
+sup {
+	font-size: 70%;
+	}
+</style>
+</head>
+<body onload=''>
+<input id="in"> <button onclick="pemdastest(document.getElementById('in').value)">Parse!</button>
+<span id="out" style="font-size:100%"></span>
+<br>
+<span id="out2" style="font-size:300%"></span>
+<br>
+<span id="out3" style="font-size:100%"></span>
+</body>
+</html>

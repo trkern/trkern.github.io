@@ -63,6 +63,8 @@ function parsetest(str) {
 	console.log(tkas_pemdas_md(p));
 	}
 
+var g_T = "NOPE";
+
 function pemdastest(str) {
 	var p = tkas_lex(str);
 	var hstr = "";
@@ -81,10 +83,16 @@ function pemdastest(str) {
 		console.log(o);
 		}
 	var T = tkas_parse_cleanup(lastgood[0][1]);
+	g_T = T;
 	document.getElementById("out3").innerHTML = hstr;
 	document.getElementById("out").innerHTML = tkas_html_from_tps(tkas_tps_from_htree(tkas_htree_from_ptree(T)),{id:"tree"});
 	document.getElementById("out2").innerHTML = tkas_render(T,{id:"form"});
 	tkas_highlight(["Ttree","Fform"],T);
+	}
+
+function colorif() {
+	if (g_T == "NOPE") {return;}
+	tkas_colorify(["Ttree","Fform"],g_T);
 	}
 
 </script>
@@ -101,7 +109,7 @@ sup {
 </style>
 </head>
 <body onload=''>
-<input id="in"> <button onclick="pemdastest(document.getElementById('in').value)">Parse!</button>
+<input id="in"> <button onclick="pemdastest(document.getElementById('in').value)">Parse!</button> <button onclick="colorif()">Colorify</button>
 <span id="out" style="font-size:100%"></span>
 <br>
 <span id="out2" style="font-size:300%"></span>

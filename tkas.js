@@ -858,6 +858,18 @@ function tkas_highlight(tagl,T) {
 		}
 	}
 
+function tkas_colorify(tagl,T) {
+	var l = tkas_lix_list(T);
+	var i,j;
+	var s;
+	for (i = 0; i < l.length; i++) {
+		s = "hsl("+360*i/l.length+",100%,72%)";
+		for (j = 0; j < tagl.length; j++) {
+			document.getElementById(tkas_id_from_tag_and_lix(tagl[j],l[i])).style.backgroundColor = s;
+			}
+		}
+	}
+
 function tkas_line_intersection(x1,y1,x2,y2,x3,y3,x4,y4) {
 	var t = ((x1-x3)*(y3-y4)-(y1-y3)*(x3-x4))/((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4));
 	var u = -((x1-x2)*(y1-y3)-(y1-y2)*(x1-x3))/((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4));

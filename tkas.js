@@ -230,6 +230,10 @@ function tkas_render_parenify(S,D,id) {
 		}
 	}
 
+function tkas_render_html_abs(S,D) {
+	return("<span class='tkas_absolute_value'>" + S + "</span>");
+	}
+
 function tkas_render_label(S,id) {
 	return("<span id='"+id+"'>" + S + "</span>");
 	}
@@ -264,6 +268,7 @@ function tkas_render_recurser(T, L, D) {
 	if (T.op == "FUN") {rval = tkas_render_FUN(T,L,D);}
 	if (T.op == "APP") {rval = tkas_render_APP(T,L,D);}
 	if (T.op == "LOGN") {rval = tkas_render_LOGN(T,L,D);}
+	if (T.op == "ABS") {rval = tkas_render_ABS(T,L,D);}
 	return(tkas_render_wrapper(T,L,D,rval));
 	}
 
@@ -276,6 +281,7 @@ function tkas_render_check_force_plus(T,L,D,i) {
 function tkas_render_check_needs_mul(T,L,D,i) {
 	var sub = T.subs[i];
 	if (tkas_sub_needs_paren(T,D,i)) {return(false);}
+	if (sub.op == "ABS") {return(false);}
 	if (sub.op == "ROOT") {return(false);}
 	if (sub.op == "VAR") {return(false);}
 	if (sub.op == "NUM" && typeof sub.c == "string") {return(false);}
@@ -500,12 +506,26 @@ function tkas_render_LOGN(T,L,D) {
 	return(tkas_render_function(F,[subrendA],D));
 	}
 
+function tkas_render_ABS(T,L,D) {
+	var subrend = tkas_subrend(T,L,D,0);
+	if (D.rendertype == "string") {
+		return("|" + subrend + "|");
+		}
+	else if (D.rendertype == "tex") {
+		return("\\left| " + subrend + "\\right| ");
+		}
+	else if (D.rendertype == "html") {
+		return(tkas_render_html_abs(subrend,D));
+		}
+	}
+
 var tkas_default_pgdecor = {rendertype:"html",parentype:"css"};
 
 function tkas_width_height_pair_from_html_string(S) {
 	var dummy =  document.createElement("span");
 	document.body.appendChild(dummy);
 	dummy.innerHTML = S;
+	dummy.style.display = "inline-table";
 	var rval = dummy.getBoundingClientRect()
 	document.body.removeChild(dummy);
 	return(rval);
@@ -528,10 +548,7 @@ function tkas_tdraw_juxtaposetps(tps1, tps2, index, yoffset, TD) {
 	var dist = 0;
 	//calculate distance to shift tps2 over
 	for (i = 0; i < Math.min(tps1.rights.length,tps2.lefts.length); i++) {
-		if (dist < tps1.rights[i] - tps2.lefts[i]) {dist = tps1.rights[i]-tps2.lefts[i];}
-		}
-	if (tps1.nodes.length != 0) {
-		dist += TD.xpad;
+		if (dist < tps1.rights[i] - tps2.lefts[i]+TD.xpad) {dist = tps1.rights[i]-tps2.lefts[i]+TD.xpad;}
 		}
 	//copy tps1 into "rval"
 	for (i = 0; i < tps1.nodes.length; i++) {
@@ -688,7 +705,8 @@ function tkas_htree_from_ptree(T, opts) {
 		};
 	opts = Object.assign({},defaultoptions,opts);
 	var c = tkas_render(T,{rendertype:"string"});
-	c = T.op + "<br>" + c;
+	//c = T.op + "<br>" + c;
+	c = "<table style='text-align:center;display:inline-table'><tr><td>" + T.op + "</td></tr><tr><td>" + c + "</td></tr></table>";
 	var rval = {c:c, subs:[]};
 	var i;
 	if ("subs" in T) {
@@ -929,6 +947,7 @@ var tkas_re_consts = ["C",/pi|e/];
 var tkas_re_number = ["N",/\d+\.\d*|\d+|\.\d*/];
 var tkas_re_var = ["V",/[A-Za-z]/];
 var tkas_re_comma = [",",/,/];
+var tkas_re_abs = ["|",/\|/];
 var tkas_rel_lexemes = [
 	tkas_re_add,
 	tkas_re_mul,
@@ -942,6 +961,7 @@ var tkas_rel_lexemes = [
 	tkas_re_number,
 	tkas_re_var,
 	tkas_re_comma,
+	tkas_re_abs,
 	];
 var tkas_re_space = /\s/;
 var tkas_re_innerparen = /\([^()]*\)/;
@@ -1048,6 +1068,24 @@ function tkas_pemdas_parentheses(L,fz) {
 	if (pf) {
 		var zoom = tkas_parse_focus(L,pf);
 		var newT = zoom[1];
+		return(tkas_parse_merge(L,pf,newT));
+		}
+	return(false);
+	}
+
+function tkas_parse_find_abs(L,fz) {
+	var s = tkas_parse_project(L);
+	var re = new RegExp(/\|S\|/);
+	var m = tkas_forward_match(re,s,fz);
+	if (m) {return(tkas_fz(m));}
+	return(false);
+	}
+
+function tkas_pemdas_abs(L,fz) {
+	var pf = tkas_parse_find_abs(L,fz);
+	if (pf) {
+		var zoom = tkas_parse_focus(L,pf);
+		var newT = ["S",{op:"ABS",subs:[zoom[1][1]]}];
 		return(tkas_parse_merge(L,pf,newT));
 		}
 	return(false);
@@ -1197,6 +1235,7 @@ function tkas_pemdas(L) {
 	var fz = tkas_parse_find_paren_focuszone(L);
 	return(
 		tkas_pemdas_function(L,fz) ||
+		tkas_pemdas_abs(L,fz) ||
 		tkas_pemdas_long_function(L,fz) ||
 		tkas_pemdas_parentheses(L,fz) || 
 		tkas_pemdas_exponent(L,fz) ||
@@ -1215,6 +1254,11 @@ function tkas_parse_cleanup(T) {
 	if (T.op == "APP" && T.subs[0].op == "FUN" && T.subs[0].c == "root") {
 		rval.op = "ROOT"
 		rval.subs = [tkas_parse_cleanup(T.subs[1]),tkas_parse_cleanup(T.subs[2])];
+		return(rval);
+		}
+	if (T.op == "APP" && T.subs[0].op == "FUN" && T.subs[0].c == "abs") {
+		rval.op = "ABS"
+		rval.subs = [tkas_parse_cleanup(T.subs[1])];
 		return(rval);
 		}
 	for (i in T) {
@@ -1309,6 +1353,11 @@ var tkas_css = `
 	vertical-align: .8em;
 	display:inline-block;
 	margin-left: -.2em;
+	}
+.tkas_absolute_value {
+	border-left: 2px solid black;
+	border-right: 2px solid black;
+	display:inline-block;
 	}
 .tkas_tree_node {
 	background-color: white;

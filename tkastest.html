@@ -23,7 +23,7 @@ function tkas_kas_test(str,k) {
 	}
 
 function tkas_test() {
-	document.getElementById("out").innerHTML = tkas_render(test_sum,[],tkas_default_pgdecor);
+	document.getElementById("out").innerHTML = tkas_render({op:"ABS",subs:[one]},[],tkas_default_pgdecor);
 	}
 
 function root_test(str1,str2,k) {
@@ -82,6 +82,7 @@ function pemdastest(str) {
 		o = tkas_pemdas(o);
 		console.log(o);
 		}
+	console.log(lastgood);
 	var T = tkas_parse_cleanup(lastgood[0][1]);
 	g_T = T;
 	document.getElementById("out3").innerHTML = hstr;

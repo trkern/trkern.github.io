@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<meta name="google" content="notranslate">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<link rel="stylesheet" href="mathquill.css"/>
+<script src="jquery-3.3.1.min.js"></script>
+<script src="mathquill.js"></script>
+<title> Math Scrap Paper </title>
+<script>
+var MQ = MathQuill.getInterface(2);
+
+var freemqid = 0;
+
+function movecursorafterpo(i) {
+	var range = document.createRange();
+	range.setStartAfter(document.getElementById("po"+i));
+	range.collapse(true);
+	var selection = window.getSelection();
+	selection.removeAllRanges();
+	selection.addRange(range);
+	}
+
+function movecursorbeforemq(i) {
+	var range = document.createRange();
+	range.setStartAfter(document.getElementById("pr"+i));
+	range.collapse(true);
+	var selection = window.getSelection();
+	selection.removeAllRanges();
+	selection.addRange(range);
+	}
+
+function updownoutmq(mf,sel,d) {
+	var l = document.getElementsByClassName("mq-editable-field");
+	var i;
+	var j = -1;
+	var p = getcursorpos(mf);
+	console.log(p);
+	for (i = 0; i < l.length; i++) {
+		if (mf.id == MQ(l[i]).id) {j = i};
+		}
+	if (j == -1) {console.log("I'm Confused!"); return;}
+	if (!(j+d in l)) {console.log("reached end"); return;}
+	MQ(l[j+d]).focus();
+	setcursorpos(MQ(l[j+d]),p);
+	}
+
+function getcursorpos(m) {
+	var rval = 0;
+	var curse = m.__controller.cursor;
+	while(curse) {
+		curse = curse[-1];
+		rval += 1;
+		}
+	return(rval);
+	}
+
+function setcursorpos(m,n) {
+	console.log(n);
+	var i;
+	m.moveToRightEnd();
+	var j = getcursorpos(m);
+	if (j < n) {n = j};
+	console.log(j);
+	m.moveToLeftEnd();
+	console.log(getcursorpos(m));
+	for (i = 1; i < n; i++) {
+		m.keystroke("Right");
+	console.log(getcursorpos(m));
+		}
+	}
+
+function finalizemathquill(j,str) {
+	const i = j;
+	var mq = document.getElementById("mq"+i);
+	fixprpo();
+	var m = MQ.MathField(mq, {
+		handlers: {
+			moveOutOf: function(dir,m) {
+				var k = Number(m.el().id.slice(2));
+				if (dir == MQ.R) {movecursorafterpo(k);}
+				if (dir == MQ.L) {movecursorbeforemq(k);}
+				},
+			upOutOf: function(m) {
+				var selection=window.getSelection();
+				updownoutmq(m,selection,-1);
+				},
+			downOutOf: function(m) {
+				var selection=window.getSelection();
+				updownoutmq(m,selection,1);
+				},
+			deleteOutOf: function (d,m) {
+				var k = Number(m.el().id.slice(2));
+				movecursorbeforemq(k);
+				m.el().remove();
+				},
+			}
+		});
+	m.latex(str);
+	m.focus();
+	mq.addEventListener("keydown", function(e) {
+		console.log(e);
+		if (e.key == "$") {
+			movecursorafterpe(i);
+			e.preventDefault();
+			}
+		if (e.key == "Enter") {
+			var range = document.createRange();
+			range.setStartAfter(document.getElementById("po"+i));
+			range.collapse(true);
+			var str = "";
+			if (e.shiftKey) {
+				str = MQ(document.getElementById("mq"+i)).latex();
+				}
+			insertmathquill(range,str);
+			var br = document.createElement("br");
+			range.insertNode(br);
+			e.preventDefault();
+			}
+		});
+	}
+
+function fixprpo() {
+	var i;
+	for (i = 0; i < freemqid; i++) {
+		if (document.getElementById("mq"+i)) {
+			if (!document.getElementById("po"+i)) {
+				var postE = document.createElement("span");
+				postE.id = "po"+i;
+				postE.innerHTML = "&nbsp;";
+				postE.contentEditable = "false";
+				document.getElementById("mq"+i).insertAdjacentElement("afterend",postE);
+				}
+			if (!document.getElementById("pr"+i)) {
+				var preE = document.createElement("span");
+				preE.id = "pr"+i;
+				preE.innerHTML = "&nbsp;";
+				preE.contentEditable = "false";
+				document.getElementById("mq"+i).insertAdjacentElement("beforebegin",preE);
+				}
+			}
+		else {
+			if (document.getElementById("po"+i)) {
+				document.getElementById("po"+i).remove();
+				}
+			if (document.getElementById("pr"+i)) {
+				document.getElementById("pr"+i).remove();
+				}
+			}
+		}
+	}
+
+function insertmathquill(range,str) {
+	var newE = document.createElement("span");
+	var i = freemqid;
+	freemqid++;
+	newE.id = "mq"+i;
+	range.insertNode(newE);
+	requestAnimationFrame(function() {finalizemathquill(i,str)});
+	}
+
+function isinmq(n) {
+	var o = n;
+	while(o) {
+		if ("id" in o && o.id.slice(0,2) == "mq") {return(o);}
+		o = o.parentNode;
+		}
+	return(false);
+	}
+
+function takepic(e) {
+	var gcs = window.getComputedStyle(e.target);
+	var width = gcs.getPropertyValue("width").slice(0,-2);
+	var height = gcs.getPropertyValue("height").slice(0,-2);
+	var canv = document.createElement("canvas");
+	canv.width = width;
+	canv.height = height;
+	var i = Number(e.target.id.slice(2));
+	canv.id = "cv"+i;
+	var ctx = canv.getContext("2d");
+	console.log(e.target);
+
+	ctx.drawImage(e.target,0,0,width,height);
+	var data = canv.toDataURL("image/png");
+	var img = document.createElement("img");
+	img.setAttribute("src",data);
+	e.target.insertAdjacentElement("beforebegin",img);
+	e.target.remove();
+	}
+
+function addcamera() {
+	var sel = window.getSelection();
+	var range = sel.getRangeAt(0);
+	var cam = document.createElement("video");
+	const i = freemqid;
+	cam.id = "vi"+i;
+	cam.onclick = takepic;
+	freemqid++;
+	range.insertNode(cam);
+	navigator.mediaDevices.getUserMedia({video:true, audio: false}).then(
+		function(stream) {
+			document.getElementById("vi"+i).srcObject = stream;
+			document.getElementById("vi"+i).play();
+			}
+		).catch(function(err) {
+		console.log(err);
+		});
+	}
+
+function key(e) {
+	window.requestAnimationFrame(fixprpo);
+	var sel = window.getSelection();
+	var range = sel.getRangeAt(0);
+	if (isinmq(range.startContainer)) {
+		MQ(isinmq(range.startContainer)).focus();
+		}
+	if ("id" in e.target && e.target.id == "editarea") {
+	if (e.key == "$") {
+		selection_to_mathquill();
+		e.preventDefault();
+		}
+	}
+	}
+
+function selection_to_mathquill() {
+	var sel = window.getSelection();
+	var range = sel.getRangeAt(0);
+	var str = sel.toString();
+	insertmathquill(range,str);
+	}
+
+function mqbutt(e,c) { //fakes pressing c in the current mq box
+	var sel = window.getSelection();
+	var range = sel.getRangeAt(0);
+	console.log(range.startContainer);
+	if (isinmq(range.startContainer)) {
+		console.log(MQ(isinmq(range.startContainer)));
+		MQ(isinmq(range.startContainer)).typedText(c);
+		}
+	e.preventDefault();
+	}
+
+function upd_opts() {
+	var fs = Number(document.getElementById("opt_fs").value);
+	document.body.style.fontSize = fs + "px";
+	var ls = Number(document.getElementById("opt_ls").value);
+	document.body.style.letterSpacing = ls + "em";
+	var ft = document.getElementById("opt_font").options[document.getElementById("opt_font").selectedIndex].value;
+	document.body.style.fontFamily = ft;
+	}
+
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Lexend+Deca&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat&display=swap" rel="stylesheet"> 
+</head>
+<body onload="upd_opts()">
+<div style="background-color:#DDDDDD">
+Font size:<input type="number" style="width:3em" value=24 oninput="upd_opts()" step=4 id="opt_fs">px
+Letter spacing:<input type="number" style="width:3em" value=0 oninput="upd_opts()" step=.01 id="opt_ls">em
+Font:<select id="opt_font" oninput="upd_opts()">
+<option>Serif</option>
+<option>Sans-Serif</option>
+<option>Lexend Deca</option>
+<option>Roboto</option>
+<option>Montserrat</option>
+<option disabled>Let me know if you want a specific font</option>
+</select><br>
+<button onclick="selection_to_mathquill()">Mathbox ($)</button>
+<button onmousedown="mqbutt(event,'/')">Fraction (/)</button>
+<button onclick="addcamera()">Camera</button>
+</div>
+<div id="editarea" contenteditable="true" onkeydown="key(event)" style="padding-left:1px;border:2px solid"></div>
+</body>
+</html>

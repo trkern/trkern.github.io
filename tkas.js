@@ -12,16 +12,15 @@ function tkas_ptree_copy(T) {
 	}
 
 function tkas_ptree_deep_sub(T, L) {
-	if (L == []) {return(T)};
+	if (L.length == 0) {return(T)};
 	return(tkas_ptree_deep_sub(T.subs[L[0]],L.slice(1)));
 	}
 
-
 function tkas_ptree_deep_replace(T1, L, T2) {
-	if (L == []) {return(tkas_ptree_copy(T2))}
+	if (L.length == 0) {return(tkas_ptree_copy(T2))}
 	var rval = {};
 	var i;
-	for (i in T1) {rval[i] = T[i]}
+	for (i in T1) {rval[i] = T1[i]}
 	if ("subs" in T1) {
 		rval.subs = [];
 		for (i = 0; i < T1.subs.length; i++) {
@@ -158,14 +157,14 @@ function tkas_kas_parse(str,opts) {
 	}
 
 var tkas_ptree_op_precedence = {
-	"COMP": 11,
-	"NUM": 11,
-	"VAR": 11,
-	"FUN": 11,
-	"APP": 10,
-	"ROOT": 10,
-	"LOGN": 10,
-	"ABS": 10,
+	"NUM": 12,
+	"VAR": 12,
+	"FUN": 12,
+	"APP": 11,
+	"ROOT": 11,
+	"LOGN": 11,
+	"ABS": 11,
+	"COMP": 10,
 	"POW": 9,
 	"MUL": 8,
 	"DIV": 8,
@@ -234,23 +233,20 @@ function tkas_render_html_abs(S,D) {
 	return("<span class='tkas_absolute_value'>" + S + "</span>");
 	}
 
-function tkas_render_label(S,id) {
+function tkas_render_label(S,id,D) {
+	if (D.rendertype == "string") {return(S);}
 	return("<span id='"+id+"'>" + S + "</span>");
 	}
 
 
 function tkas_render_wrapper(T,L,D,S) {
-	var rval;
-	//if (D.rendertype == "html") {
-	//	rval = "<span style='border:1px solid black; margin:2px'>" + S + "</span>";
-	//	return(rval);
-	//	}
 	return(S);
 	}
 
 function tkas_render(T,D) {
 	D = Object.assign({},tkas_default_pgdecor,D);
 	var rval = tkas_render_recurser(T,[],D);
+	if (D.rendertype =="string") {return(rval);}
 	rval = "<span id='"+tkas_id_from_tag_and_lix("F"+D.id,[])+"'>"+rval+"</span>";
 	return(rval);
 	}
@@ -269,6 +265,12 @@ function tkas_render_recurser(T, L, D) {
 	if (T.op == "APP") {rval = tkas_render_APP(T,L,D);}
 	if (T.op == "LOGN") {rval = tkas_render_LOGN(T,L,D);}
 	if (T.op == "ABS") {rval = tkas_render_ABS(T,L,D);}
+	if (T.op == "REL") {rval = tkas_render_REL(T,L,D);}
+	if (T.op == "DER") {rval = tkas_render_DER(T,L,D);}
+	if (T.op == "AND") {rval = tkas_render_AND(T,L,D);}
+	if (T.op == "OR") {rval = tkas_render_OR(T,L,D);}
+	if (T.op == "NOT") {rval = tkas_render_NOT(T,L,D);}
+	if (T.op == "COMP") {rval = tkas_render_COMP(T,L,D);}
 	return(tkas_render_wrapper(T,L,D,rval));
 	}
 
@@ -319,7 +321,7 @@ function tkas_subrend(T,L,D,i) {
 	var rval = tkas_render_recurser(T.subs[i],L.concat([i]),D);
 	if (tkas_sub_needs_paren(T,D,i)) {rval = tkas_render_parenify(rval,D,id);}
 	else {
-		rval = tkas_render_label(rval,id);
+		rval = tkas_render_label(rval,id,D);
 		}
 	return(rval);
 	}
@@ -355,6 +357,7 @@ function tkas_render_MUL(T,L,D) {
 	var rval = "";
 	var msign = "*";
 	if (D.rendertype == "tex") {msign = "\\cdot ";}
+	if (D.rendertype == "html") {msign = "&#8729;";}
 	var i;
 	for (i = 0; i < T.subs.length; i++) {
 		if (i > 0 && tkas_render_check_needs_mul(T,L,D,i)) {
@@ -372,8 +375,8 @@ function tkas_render_NEG(T,L,D) {
 
 function tkas_render_NUM(T,L,D) {
 	if (T.c == "pi" && D.rendertype == "string") {return("π");}
-	if (T.c == "pi" && D.rendertype == "html") {return("&pi");}
-	if (T.c == "pi" && D.rendertype == "tex") {return("\\pi");}
+	if (T.c == "pi" && D.rendertype == "html") {return("&pi;");}
+	if (T.c == "pi" && D.rendertype == "tex") {return("\\pi ");}
 	return(T.c);
 	}
 
@@ -519,6 +522,56 @@ function tkas_render_ABS(T,L,D) {
 		}
 	}
 
+function tkas_render_DER(T,L,D) {
+	}
+
+function tkas_render_AND(T,L,D) {
+	}
+
+function tkas_render_OR(T,L,D) {
+	}
+
+function tkas_render_NOT(T,L,D) {
+	}
+
+function tkas_render_COMP(T,L,D) {
+	var subrendF = tkas_subrend(T,L,D,0);
+	var subrendG = tkas_subrend(T,L,D,1);
+	if (D.rendertype == "string") {
+		return(subrendF + " o " + subrendG);
+		}
+	else if (D.rendertype == "tex") {
+		return(subrendF + "\\circ " + subrendG);
+		}
+	else if (D.rendertype == "html") {
+		return(subrendF + "&#8728;" + subrendG);
+		}
+	}
+
+var tkas_rel_lookup = {
+	"EQ":["=","=","="],
+	"LT":["<","<","<"],
+	"GT":[">",">",">"],
+	"GEQ":["≥","\\geq ","&ge;"],
+	"LEQ":["≤","\\leq ","&le;"],
+	"NEQ":["≠","\\neq ","&ne;"],
+	"APPROX":["≈","\\approx ","&asymp;"],
+	}
+
+function tkas_render_REL(T,L,D) {
+	var subrendL = tkas_subrend(T,L,D,0);
+	var subrendR = tkas_subrend(T,L,D,1);
+	if (D.rendertype == "string") {
+		return(subrendL + " " + tkas_rel_lookup[T.c][0] + " " + subrendR);
+		}
+	else if (D.rendertype == "tex") {
+		return(subrendL + tkas_rel_lookup[T.c][1] + subrendR);
+		}
+	else if (D.rendertype == "html") {
+		return(subrendL + tkas_rel_lookup[T.c][2] + subrendR);
+		}
+	}
+
 var tkas_default_pgdecor = {rendertype:"html",parentype:"css"};
 
 function tkas_width_height_pair_from_html_string(S) {
@@ -652,7 +705,7 @@ function tkas_tdraw_join_tps(c,tpslist,TD) {
 			}
 		,...rval.nodes];
 	if (halfwidth > center) {
-		rval = tkas_tdraw_shift_tps_right(rval,halfwidth);
+		rval = tkas_tdraw_shift_tps_right(rval,halfwidth-center);
 		}
 	return(rval);
 	}
@@ -922,7 +975,7 @@ function tkas_print_lexlist(LL) {
 	rstr += "</tr><tr>";
 	for (i = 0; i < LL.length; i++) {
 		rstr += "<td>";
-		if (LL[i][0] == "S" || LL[i][0] == "F") {
+		if (LL[i][0] == "S" || LL[i][0] == "F" || LL[i][0] == "B") {
 			rstr += tkas_html_from_tps(tkas_tps_from_htree(tkas_htree_from_ptree(LL[i][1])));
 			}
 		else {
@@ -948,6 +1001,7 @@ var tkas_re_number = ["N",/\d+\.\d*|\d+|\.\d*/];
 var tkas_re_var = ["V",/[A-Za-z]/];
 var tkas_re_comma = [",",/,/];
 var tkas_re_abs = ["|",/\|/];
+var tkas_re_rel = ["=",/>=|<=|>|<|=|!=/];
 var tkas_rel_lexemes = [
 	tkas_re_add,
 	tkas_re_mul,
@@ -962,6 +1016,7 @@ var tkas_rel_lexemes = [
 	tkas_re_var,
 	tkas_re_comma,
 	tkas_re_abs,
+	tkas_re_rel,
 	];
 var tkas_re_space = /\s/;
 var tkas_re_innerparen = /\([^()]*\)/;
@@ -1073,6 +1128,32 @@ function tkas_pemdas_parentheses(L,fz) {
 	return(false);
 	}
 
+function tkas_parse_find_rel(L,fz) {
+	var s = tkas_parse_project(L);
+	var re = new RegExp(/S=S/);
+	var m = tkas_forward_match(re,s,fz);
+	if (m) {return(tkas_fz(m));}
+	return(false);
+	}
+
+function tkas_pemdas_rel(L,fz) {
+	var pf = tkas_parse_find_rel(L,fz);
+	var lookup = {
+		"=":"EQ",
+		">":"GT",
+		"<":"LT",
+		">=":"GEQ",
+		"<=":"LEQ",
+		"!=":"NEQ",
+		};
+	if (pf) {
+		var zoom = tkas_parse_focus(L,pf);
+		var newT = ["B",{op:"REL", c:lookup[zoom[1][1]], subs:[zoom[0][1],zoom[2][1]]}];
+		return(tkas_parse_merge(L,pf,newT));
+		}
+	return(false);
+	}
+
 function tkas_parse_find_abs(L,fz) {
 	var s = tkas_parse_project(L);
 	var re = new RegExp(/\|S\|/);
@@ -1112,7 +1193,6 @@ function tkas_pemdas_function(L,fz) {
 function tkas_parse_find_long_function(L,fz) {
 	var s = tkas_parse_project(L);
 	var re = /F\(S(,S)*\)/;
-	console.log(s,fz);
 	m = tkas_forward_match(re,s,[fz[0]-1,fz[1]]);
 	if (m) {return(tkas_fz(m));}
 	return(false);
@@ -1216,7 +1296,6 @@ function tkas_parse_find_as(L,fz) {
 	var s = tkas_parse_project(L);
 	var re = /-S|[\+-]?S(\+S|-S)+/
 	var m = tkas_forward_match(re,s,fz);
-	console.log(m);
 	if (m) {return(tkas_fz(m));}
 	return(false);
 	}
@@ -1240,7 +1319,9 @@ function tkas_pemdas(L) {
 		tkas_pemdas_parentheses(L,fz) || 
 		tkas_pemdas_exponent(L,fz) ||
 		tkas_pemdas_md(L,fz) ||
-		tkas_pemdas_as(L,fz));
+		tkas_pemdas_as(L,fz) ||
+		tkas_pemdas_rel(L,fz)
+		);
 	}
 
 function tkas_parse_cleanup(T) {
@@ -1264,8 +1345,8 @@ function tkas_parse_cleanup(T) {
 	for (i in T) {
 		rval[i] = T[i];
 		}
-	rval.subs = [];
 	if ("subs" in T) {
+		rval.subs = [];
 		for (i = 0; i < T.subs.length; i++) {
 			rval.subs.push(tkas_parse_cleanup(T.subs[i]));
 			}
@@ -1274,7 +1355,141 @@ function tkas_parse_cleanup(T) {
 	}
 
 function tkas_parse(str) {
+	var p = tkas_lex(str);
+	var lastgood = p;
+	var o = tkas_pemdas(p);
+	while(o) {
+		lastgood = o;
+		o = tkas_pemdas(o);
+		}
+	return(tkas_parse_cleanup(lastgood[0][1]));
+	}
+
+function tkas_rule_left_distributivity(T,L) {
+	var sT = tkas_ptree_deep_sub(T,L);
+	if (sT.op != "MUL") {return(false);}
+	if (sT.subs.length != 2) {return(false);}
+	if (sT.subs[1].op != "ADD") {return(false);}
+	var l = [];
+	var i;
+	var newT = {op:"ADD", subs:[]};
+	var aT = sT.subs[0];
+	for (i = 0; i < sT.subs[1].subs.length; i++) {
+		newT.subs.push({op:"MUL", subs:[aT, sT.subs[1].subs[i]]});
+		}
+	return(tkas_ptree_deep_replace(T, L, newT));
+	}
+
+function tkas_rule_right_distributivity(T,L) {
+	var sT = tkas_ptree_deep_sub(T,L);
+	if (sT.op != "MUL") {return(false);}
+	if (sT.subs.length != 2) {return(false);}
+	if (sT.subs[0].op != "ADD") {return(false);}
+	var l = [];
+	var i;
+	var newT = {op:"ADD", subs:[]};
+	var aT = sT.subs[1];
+	for (i = 0; i < sT.subs[0].subs.length; i++) {
+		newT.subs.push({op:"MUL", subs:[sT.subs[0].subs[i],aT]});
+		}
+	return(tkas_ptree_deep_replace(T, L, newT));
+	}
+
+function tkas_combine_variable_maps(VM1, VM2) {
+	var rval = {};
+	var i;
+	for (i in VM1) {
+		rval[i] = VM1[i];
+		}
+	for (i in VM2) {
+		if (i in VM1 && VM2[i] != VM1[i]) {return(false);}
+		rval[i] = VM2[i];
+		}
+	return(rval);
+	}
+
+function tkas_rule_grab_variables(R,T) {
+	var rval = {};
+	var i;
+	var o;
+	if (R.op == "VAR") {rval[R.c] = T; return(rval);}
+	if ("subs" in R) {
+		if (!("subs" in T)) {return(false);}
+		if (R.op != T.op) {return(false);}
+		if (R.subs.length != T.subs.length) {return(false);}
+		for (i = 0; i < R.subs.length; i++) {
+			o = tkas_rule_grab_variables(R.subs[i],T.subs[i]);
+			if (!o) {return(false);}
+			rval = tkas_combine_variable_maps(rval,o);
+			}
+		return(rval);
+		}
+	if (R.op != T.op) {return(false);}
+	if ("c" in R) {
+		if (!("c" in T)) {return(false);}
+		if (R.c != T.c) {return(false);}
+		return({});
+		}
+	}
+
+function tkas_plugin_variables(R,VM) {
+	var rval = {};
+	var i;
+	if (!("subs" in R)) {
+		if (R.op == "VAR" && R.c in VM) {
+			return(VM[R.c]);
+			}
+		return(R);
+		}
+	for (i in R) {
+		rval[i] = R[i];
+		}
+	rval.subs = [];
+	for (i = 0; i < R.subs.length; i++) {
+		rval.subs.push(tkas_plugin_variables(R.subs[i],VM));
+		}
+	return(rval);
+	}
+
+function tkas_rule_simple_rule(R,T,L) {
+	var S = tkas_ptree_deep_sub(T,L);
+	var VM = tkas_rule_grab_variables(R.subs[0],S);
+	if (!VM) {return(false);}
+	var newS = tkas_plugin_variables(R.subs[1],VM);
+	return(tkas_ptree_deep_replace(T, L, newS));
+	}
+
+var tkas_simple_rules = [
+	{EQ:"(a+b)+c=a+(b+c)",fname:"additive associativity",aname:"shuffle sum"},
+	{EQ:"a+(b+c)=(a+b)+c",fname:"additive associativity",aname:"shuffle sum"},
+	{EQ:"a+b=b+a",fname:"additive commutativity",aname:"reorder sum"},
+	{EQ:"a+0=a",fname:"additive identity",aname:"adding zero"},
+	{EQ:"a=a+0",fname:"additive identity",aname:"adding zero"},
+	{EQ:"a-a=0",fname:"additive inverse",aname:"subtract to get zero"},
+	{EQ:"(ab)c=a(bc)",fname:"multiplicative associativity",aname:"shuffle product"},
+	{EQ:"a(bc)=(ab)c",fname:"multiplicative associativity",aname:"shuffle product"},
+	{EQ:"ab=ba",fname:"multiplicative commutativity",aname:"reorder product"},
+	{EQ:"1a=a",fname:"multiplicative identity",aname:"multiplying by 1"},
+	{EQ:"a=1a",fname:"multiplicative identity",aname:"multiplying by 1"},
+	{EQ:"0a=0",fname:"multiplicative annihilator",aname:"multiplying by 0"},
+	{EQ:"0=0a",fname:"multiplicative annihilator",aname:"multiplying by 0"},
+	{EQ:"a(b+c)=ab+ac",fname:"left distributivity",aname:"distributing"},
+	{EQ:"ab+ac=a(b+c)",fname:"left distributivity",aname:"factoring out"},
+	{EQ:"(a+b)c=ac+bc",fname:"right distributivity",aname:"distributing"},
+	{EQ:"ac+bc=(a+b)c",fname:"right distributivity",aname:"factoring out"},
+	{EQ:"-a=(-1)a",fname:"negation",aname:"multiplying by -1"},
+	];
+
+function tkas_rule_immediately_applicable_srules(T,L) {
+	var i;
+	var o;
+	var rval = [];
+	for (i = 0; i < tkas_simple_rules.length; i++) {
+		o = tkas_rule_simple_rule(tkas_parse(tkas_simple_rules[i].EQ),T,L);
+		if (o) {rval.push(o); console.log(tkas_render(o,{rendertype:"string"}))}
+		}
 	
+	return(rval);
 	}
 
 var tkas_css = `

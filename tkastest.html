@@ -1,6 +1,7 @@
 <!doctype html>
 <html>
 <head>
+<meta charset="utf-8">
 <script src="tkas.js"></script>
 <script src="underscore-min.js"></script>
 <script src="mod_kas.js"></script>
@@ -68,6 +69,7 @@ var g_T = "NOPE";
 function pemdastest(str) {
 	var p = tkas_lex(str);
 	var hstr = "";
+	hstr += tkas_print_lexlist(p);
 	var lastgood = p;
 	var o = tkas_pemdas(p);
 	console.log(o,p);
@@ -96,25 +98,95 @@ function colorif() {
 	tkas_colorify(["Ttree","Fform"],g_T);
 	}
 
+function make_menu(x,y) {
+	var str = "<table border=1><tr><td>hello</td></tr><tr><td>hello</td></tr><tr><td>hello</td></tr><tr><td>hello</td></tr><tr><td>hello</td></tr><tr><td>hello</td></tr></table>";
+	var menu = document.createElement("span");
+	menu.style.position = "absolute";
+	menu.style.top = y + "px";
+	menu.style.left = x + "px";
+	menu.style.backgroundColor = "white";
+	menu.innerHTML = str;
+	menu.addEventListener("mouseleave", function() {document.body.removeChild(menu)});
+	document.body.appendChild(menu);
+	}
+
+function menu_test() {
+	document.getElementById("menutest").addEventListener('mousedown', function(e) {make_menu(e.offsetX,e.offsetY)});
+	}
+
+function rule_test() {
+	var T2 = tkas_parse("1+(x+y+4)3");
+	var T = tkas_rule_right_distributivity(T2,[1]);
+	document.getElementById("out").innerHTML = tkas_html_from_tps(tkas_tps_from_htree(tkas_htree_from_ptree(T)),{id:"tree"});
+	document.getElementById("out2").innerHTML = tkas_render(T,{id:"form"});
+	}
+
+function grab_test(s1,s2) {
+	console.log(tkas_parse(s1),tkas_parse(s2));
+	console.log(tkas_rule_grab_variables(tkas_parse(s1),tkas_parse(s2)));
+	}
+
+function sr_test(s1,s2,L) {
+	var T = tkas_rule_simple_rule(tkas_parse(s1),tkas_parse(s2),L);
+	document.getElementById("out").innerHTML = tkas_html_from_tps(tkas_tps_from_htree(tkas_htree_from_ptree(T)),{id:"tree"});
+	document.getElementById("out2").innerHTML = tkas_render(T,{id:"form"});
+	tkas_highlight(["Ttree","Fform"],T);
+	}
+
+function draw(T) {
+	document.getElementById("out").innerHTML = tkas_html_from_tps(tkas_tps_from_htree(tkas_htree_from_ptree(T)),{id:"tree"});
+	document.getElementById("out2").innerHTML = tkas_render(T,{id:"form"});
+	tkas_highlight(["Ttree","Fform"],T);
+	}
+
 </script>
 <style>
+@font-face {
+	font-family:"ll";
+	src:url("LinLibertine_R.ttf");
+	}
+@font-face {
+	font-family:"XR";
+	src:url("XITS-Reular.otf");
+	}
+@font-face {
+	font-family:"LR";
+	src:url("lmroman10-regular.otf");
+	}
 textarea {
 	z-index:-2;
 	}
 body {
-	font-family: sans-serif;
 	}
 sup {
 	font-size: 70%;
 	}
 </style>
 </head>
-<body onload=''>
+<body>
+Please enter a formula in the text box below and hit "parse!" <br>
+Supported math:
+<ul>
+<li> +, - , *, /, ^
+<li> Absolute value, as |x| or abs(x)
+<li> sqrt, root(a,b) for the ath root of b
+<li> ln, log, sin-csc
+<li> =, <, >, <=, >=, !=
+</ul>
+Three things will appear:
+<ul>
+<li> A tree representing the internal structure of the formula (hover your mouse over the nodes!)
+<li> The formula itself, pretty-printed (hover your mouse over the formula!)
+<li> The steps of the parse process (for debugging purposes)
+</ul>
+The "colorify" button will color each node of the tree for debugging purposes<br>
 <input id="in"> <button onclick="pemdastest(document.getElementById('in').value)">Parse!</button> <button onclick="colorif()">Colorify</button>
 <span id="out" style="font-size:100%"></span>
 <br>
 <span id="out2" style="font-size:300%"></span>
 <br>
 <span id="out3" style="font-size:100%"></span>
+<br>
+<span id="out4"></span>
 </body>
 </html>

@@ -1022,7 +1022,7 @@ var tkas_re_space = /\s/;
 var tkas_re_innerparen = /\([^()]*\)/;
 
 function tkas_reverse_match(re,str,fz) {
-	fz = fz ?? [0,str.length-1];
+	fz = fz || [0,str.length-1];
 	var i;
 	var rval = null;
 	var m;
@@ -1034,7 +1034,7 @@ function tkas_reverse_match(re,str,fz) {
 	}
 
 function tkas_forward_match(re,str,fz) {
-	fz = fz ?? [0,str.length-1];
+	fz = fz || [0,str.length-1];
 	var r = new RegExp(re.source, "g");
 	r.lastIndex = fz[0];
 	var rval = r.exec(str);

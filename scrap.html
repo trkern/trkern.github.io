@@ -1,0 +1,743 @@
+<!doctype html>
+<html lang="en">
+<meta name="google" content="notranslate">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<link rel="stylesheet" href="mathquill_mod.css"/>
+<script src="jquery-3.3.1.min.js"></script>
+<script src="mathquill_mod.js"></script>
+<script src="textareacaretposition.js"></script>
+<script src="tgr.js"></script>
+<title> Math Scrap Paper </title>
+<script>
+
+var MQ = MathQuill.getInterface(2);
+
+var gautocommands = "sqrt pi nthroot pm lim int";
+
+var gmoveoutof = false;
+
+var gtablmoveoutofcheck = false; //do gtabls activate gmoveoutof?
+
+var gtabltabls = [];
+
+var gfreepb = 0;
+
+function reawaken() {
+	var l = document.querySelectorAll("[data-latex]");
+	var i,j;
+	for (i = 0; i < l.length; i++) {
+		span_to_mq(l[i]);
+		MQ(l[i]).latex(l[i].getAttribute("data-latex"));
+		}
+	l = document.querySelectorAll("[data-tlatex]");
+	var foundids = {};
+	var id, tab, rowid;
+	for (i = 0; i < l.length; i++) {
+		id = l[i].id;
+		tab = id.split("_")[1];
+		rowid = id.split("_")[2];
+		if (! (tab in foundids)) {foundids[tab] = []};
+		foundids[tab].push(Number(rowid));
+		boot_individual_mqt(l[i]);
+		MQ(l[i]).latex(l[i].getAttribute("data-tlatex"));
+		}
+	gtabltabls = [];
+	for (i = 0; foundids[i]; i++) {
+		gtabltabls.push(foundids[i]);
+		}
+	}
+
+function mqedit(m) {
+	m.el().setAttribute("data-latex",m.latex());
+	}
+
+function mqtedit(m) {
+	m.el().setAttribute("data-tlatex",m.latex());	
+	}
+
+function inputbox_setselection(e,x) {
+	var i;
+	var dist = Infinity;
+	var minind = -1;
+	var tx;
+	for (i = 0; i < e.value.length; i++) {
+		tx = getCaretCoordinates(e,i).left;
+		if (Math.abs(tx-x) < dist) {
+			dist = Math.abs(tx-x);
+			minind = i;
+			}
+		}
+	e.focus();
+	e.setSelectionRange(minind,minind);
+	}
+
+function isinmq(n) {
+	var o = n;
+	while(o) {
+		if (MQ(o)) {return(o);}
+		o = o.parentNode;
+		}
+	return(false);
+	}
+
+function mqbutt(e,c) { //fakes pressing c in the current mq box
+	e.preventDefault();
+	var sel = window.getSelection();
+	var range = sel.getRangeAt(0);
+	if (isinmq(range.startContainer)) {
+		MQ(isinmq(range.startContainer)).typedText(c);
+		MQ(isinmq(range.startContainer)).focus();
+		}
+	
+	}
+
+function mqcmd(e,c) {
+	e.preventDefault();
+	var sel = window.getSelection();
+	var range = sel.getRangeAt(0);
+	if (isinmq(range.startContainer)) {
+		MQ(isinmq(range.startContainer)).cmd(c);
+		MQ(isinmq(range.startContainer)).focus();
+		}
+	}
+
+function mqkeys(e,c) {
+	e.preventDefault();
+	var sel = window.getSelection();
+	var range = sel.getRangeAt(0);
+	if (isinmq(range.startContainer)) {
+		MQ(isinmq(range.startContainer)).keystroke(c);
+		MQ(isinmq(range.startContainer)).focus();
+		}
+	}
+
+function mqtablenter(e,c) {
+	e.preventDefault();
+	var sel = window.getSelection();
+	var range = sel.getRangeAt(0);
+	if (isinmq(range.startContainer)) {
+		tablenter(MQ(isinmq(range.startContainer)),c);
+		}
+	}
+
+function derivbutt(e) {
+	var str = "d/d"+document.getElementById("derivbuttvar").value;
+	mqbutt(e,str);
+	mqkeys(e,"Right");
+	}
+
+function tablid_to_index(tab,id) {
+	var i;
+	for (i = 0; i < gtabltabls[tab].length; i++) {
+		if (gtabltabls[tab][i] == id) {return(i);}
+		}
+	return("NOPE");
+	}
+
+function tablunused(i) {
+	var j;
+	return(Math.max(...gtabltabls[i])+1);
+	}
+
+function tablenter(m,shiftpressed) {
+	var id = m.el().id;
+	var tab = id.split("_")[1];
+	var rowid = id.split("_")[2];
+	var newid = tablunused(tab);
+	var newrow = document.createElement("tr");
+	newrow.id = "tablrow_"+tab+"_"+newid;
+	newrow.innerHTML = "<td><span id='mqt_"+tab+"_"+newid+"'></span></td><td><input id='imqt_"+tab+"_"+newid+"' class='tabli' type='text' onkeypress='tablikp(event)' onkeydown='tablikd(event)'></td>";
+
+	document.getElementById("tablrow_"+tab+"_"+rowid).insertAdjacentElement("afterend",newrow);
+
+	var ix = tablid_to_index(tab,rowid);
+
+	gtabltabls[tab] = [...gtabltabls[tab].slice(0,ix+1),newid,...gtabltabls[tab].slice(ix+1)];
+
+	var mqnew = MQ.MathField(document.getElementById("mqt_"+tab+"_"+newid),{autoCommands:gautocommands,handlers:{
+		edit: mqtedit,
+		moveOutOf: tablmoveout,
+		upOutOf: tablup,
+		downOutOf: tabldown,
+		deleteOutOf: tabldelete,
+		}});
+
+	mqnew.el().addEventListener("keydown", function(e) {
+		if (e.key == "Enter") {
+			tablenter(mqnew,e.shiftKey);
+			}
+		});
+
+	if (shiftpressed) {mqnew.latex(m.latex())};
+
+	mqnew.focus();
+	}
+
+function tablikp(e) {
+	if (e.key == "Enter") {
+		tablenter(MQ(document.getElementById(e.target.id.slice(1))),e.shiftKey);
+		}
+	}
+
+function tablikd(e) {
+	if (e.key == "ArrowLeft" || e.key == "Backspace") {
+		if (e.target.selectionStart == 0) {
+			var mq = MQ(document.getElementById(e.target.id.slice(1)));
+			mq.focus();
+			mq.moveToRightEnd();
+			}
+		}
+	if (e.key == "ArrowUp") {
+		var x = getCaretCoordinates(e.target, e.target.selectionEnd).left;
+		var id = e.target.id;
+		var tab = id.split("_")[1];
+		var rowid = id.split("_")[2];
+		var ix = tablid_to_index(tab,rowid);
+		if (ix != 0) {ix--}
+		var newbox = document.getElementById("imqt_"+tab+"_"+gtabltabls[tab][ix])
+		inputbox_setselection(newbox,x)
+		e.preventDefault();
+		}
+	if (e.key == "ArrowDown") {
+		var x = getCaretCoordinates(e.target, e.target.selectionEnd).left;
+		var id = e.target.id;
+		var tab = id.split("_")[1];
+		var rowid = id.split("_")[2];
+		var ix = tablid_to_index(tab,rowid);
+		if (ix < gtabltabls[tab].length-1) {ix++}
+		var newbox = document.getElementById("imqt_"+tab+"_"+gtabltabls[tab][ix])
+		inputbox_setselection(newbox,x)
+		e.preventDefault();
+		}
+	}
+
+function tablup(m) {
+	var orect = getcursorcoords(m);
+	var id = m.el().id;
+	var tab = id.split("_")[1];
+	var rowid = id.split("_")[2];
+	var ix = tablid_to_index(tab,rowid);
+	if (ix == 0) {return;}
+	var newmq = MQ(document.getElementById("mqt_"+tab+"_"+gtabltabls[tab][ix-1]));
+	newmq.moveToLeftEnd();
+	var error = Infinity;
+	newmq.focus();
+	gtablmoveoutofcheck = true;
+	while(!gmoveoutof) {
+		if (getcursorcoords(newmq).left >= orect.left) {break;}
+		error = Math.abs(getcursorcoords(newmq).left - orect.left);
+		newmq.keystroke("Right");
+		}
+	if (Math.abs(getcursorcoords(newmq).left - orect.left) > error) {
+		newmq.keystroke("Left");
+		}
+	gtablmoveoutofcheck = false;
+	gmoveoutof = false;
+	}
+
+function tabldown(m) {
+	var orect = getcursorcoords(m);
+	var id = m.el().id;
+	var tab = id.split("_")[1];
+	var rowid = id.split("_")[2];
+	var ix = tablid_to_index(tab,rowid);
+	if (ix == gtabltabls[tab].length-1) {return;}
+	var newmq = MQ(document.getElementById("mqt_"+tab+"_"+gtabltabls[tab][ix+1]));
+	newmq.moveToRightEnd();
+	var error = Infinity;
+	newmq.focus();
+	gtablmoveoutofcheck = true;
+	while(!gmoveoutof) {
+		if (getcursorcoords(newmq).left <= orect.left) {break;}
+		error = Math.abs(getcursorcoords(newmq).left - orect.left);
+		newmq.keystroke("Left");
+		}
+	if (Math.abs(getcursorcoords(newmq).left - orect.left) > error) {
+		newmq.keystroke("Right");
+		}
+	gtablmoveoutofcheck = false;
+	gmoveoutof = false;
+	}
+
+function tabldelete(d,m) {
+	var id = m.el().id;
+	var tab = id.split("_")[1];
+	var rowid = id.split("_")[2];
+	var ix = tablid_to_index(tab,rowid);
+	if (gtabltabls[tab].length == 1) {m.el().parentElement.parentElement.parentElement.parentElement.remove(); return;}
+	gtabltabls[tab] = [...gtabltabls[tab].slice(0,ix),...gtabltabls[tab].slice(ix+1)];
+	document.getElementById("tablrow_"+tab+"_"+rowid).remove();
+	//give focus to MQ element above
+	if (ix != 0) {ix--}
+	MQ(document.getElementById("mqt_"+tab+"_"+gtabltabls[tab][ix])).focus();
+	}
+
+function tablmoveout(d,m) {
+	if (gtablmoveoutofcheck) {
+		gmoveoutof = true;
+		return;
+		}
+	if (d == MQ.R) {
+		document.getElementById("i"+m.el().id).focus();
+		}
+	}
+
+function getcursorcoords(m) {
+	var el = findFirstChildByClass(m.el(),"mq-cursor");
+	var mrect = el.getBoundingClientRect();
+	return(mrect);
+	}
+
+function goup(m) {
+	var distleft = 0;
+	var curse = m.__controller.cursor;
+	//step 0: get original cursor coordinates
+	var orect = getcursorcoords(m);
+
+	//step 1: move left until we hit a newline or the beginning of the box
+	while (curse[-1].ctrlSeq != "\\\\" && !gmoveoutof) {
+		m.keystroke("Left");
+		curse = m.__controller.cursor;
+		}
+
+
+	if (gmoveoutof) { // if we hit the beginning, reset the global checker
+		gmoveoutof = false;
+		}
+	else { //if not, move left to move to the end of the previous line
+		m.keystroke("Left");
+		}
+
+	var error = Infinity;
+
+	//step 2: move left until we pass the original cursor left position.
+	while (curse[-1].ctrlSeq != "\\\\" && !gmoveoutof) {
+		if (getcursorcoords(m).left <= orect.left) {break;}
+		error = Math.abs(getcursorcoords(m).left - orect.left);
+		m.keystroke("Left");
+		}
+
+	if (Math.abs(getcursorcoords(m).left - orect.left) > error) {
+		m.keystroke("Right");
+		}
+
+	gmoveoutof = false;
+	}
+
+function godown(m) {
+	var distleft = 0;
+	var curse = m.__controller.cursor;
+	//step 0: get original cursor coordinates
+	var orect = getcursorcoords(m);
+
+	//step 1: move right until we hit a newline or the end of the box
+	while (curse[1].ctrlSeq != "\\\\" && !gmoveoutof) {
+		m.keystroke("Right");
+		curse = m.__controller.cursor;
+		}
+
+
+	if (gmoveoutof) { // if we hit the end, reset the global checker
+		gmoveoutof = false;
+		}
+	else { //if not, move right to move to the beginning of the next line
+		m.keystroke("Right");
+		}
+
+	var error = Infinity;
+
+	//step 2: move right until we pass the original cursor left position.
+	while (curse[1].ctrlSeq != "\\\\" && !gmoveoutof) {
+		if (getcursorcoords(m).left >= orect.left) {break;}
+		error = Math.abs(getcursorcoords(m).left - orect.left);
+		m.keystroke("Right");
+		}
+
+	if (Math.abs(getcursorcoords(m).left - orect.left) > error) {
+		m.keystroke("Left");
+		}
+
+	gmoveoutof = false;
+	}
+
+//https://stackoverflow.com/questions/12166753/how-to-get-child-element-by-class-name
+   function findFirstChildByClass(element, className) {
+        var foundElement = null, found;
+        function recurse(element, className, found) {
+            for (var i = 0; i < element.childNodes.length && !found; i++) {
+                var el = element.childNodes[i];
+                var classes = el.className != undefined? el.className.split(" ") : [];
+                for (var j = 0, jl = classes.length; j < jl; j++) {
+                    if (classes[j] == className) {
+                        found = true;
+                        foundElement = element.childNodes[i];
+                        break;
+                    }
+                }
+                if(found)
+                    break;
+                recurse(element.childNodes[i], className, found);
+            }
+        }
+        recurse(element, className, false);
+        return foundElement;
+    }
+
+function boot_individual_mqt(el) {
+	el.innerHTML = "";
+	var mqnew = MQ.MathField(el,{autoCommands:gautocommands,handlers:{
+		edit: mqtedit,
+		moveOutOf: tablmoveout,
+		upOutOf: tablup,
+		downOutOf: tabldown,
+		deleteOutOf: tabldelete,
+		}});
+
+	el.addEventListener("keydown", function(e) {
+		if (e.key == "Enter") {
+			tablenter(mqnew,e.shiftKey);
+			}
+		});
+	}
+
+function finishspan_to_mqt() {
+	var tab = gtabltabls.length;
+	var mqnew = MQ.MathField(document.getElementById("mqt_"+tab+"_0"),{autoCommands:gautocommands,handlers:{
+		edit: mqtedit,
+		moveOutOf: tablmoveout,
+		upOutOf: tablup,
+		downOutOf: tabldown,
+		deleteOutOf: tabldelete,
+		}});
+
+	document.getElementById("mqt_"+tab+"_0").addEventListener("keydown", function(e) {
+		if (e.key == "Enter") {
+			tablenter(mqnew,e.shiftKey);
+			}
+		});
+
+	gtabltabls.push([0]);
+	}
+
+function mqmaker(el) {
+	var e = document.createElement("div");
+	e.innerHTML = '<button onclick="span_to_mq(event.target.parentElement,true);">Free Math Entry</button>'
+		+ '<button onclick="span_to_mqt(event.target.parentElement,true);">Structured Math Entry</button>'
+		+ '<button onclick="span_to_camera(event.target.parentElement,true);">Camera</button>'
+		+ '<button onclick="span_to_paintbox(event.target.parentElement,true);">PaintBox</button>';
+	el.insertAdjacentElement("afterend",e);
+	}
+
+function span_to_mqt(el,k) {
+	var tab = gtabltabls.length;
+	el.innerHTML = "<table border=1><tr><td>Math</td><td>Notes</td></tr>"
+	+"<tr id='tablrow_"+tab+"_0'><td><span id='mqt_"+tab+"_0'></span></td><td><input id='imqt_"+tab+"_0' class='tabli' type='text' onkeydown='tablikd(event)' onkeypress='tablikp(event)'></td></tr></table>";
+	requestAnimationFrame(finishspan_to_mqt);
+	if (k) {
+		mqmaker(el);
+		}
+	}
+
+function span_to_mq(el,k) {
+	el.innerHTML = "";
+	MQ.MathField(el, {autoCommands:gautocommands,handlers: {
+		edit: mqedit,
+		enter: function (m) {
+			while (!m.__controller.cursor[1]) {
+				if (gmoveoutof) {gmoveoutof=false; break;}
+				m.keystroke("Right");
+				}
+			m.cmd("\\\\");
+			},
+		upOutOf: goup,
+		downOutOf: godown,
+		moveOutOf: function(d,m) {
+			gmoveoutof = d;
+			},
+		deleteOutOf: function(d,m) {
+			if (m.latex() == "") {
+				m.el().remove();
+				}
+			},
+		}});
+	if (k) {
+		mqmaker(el);
+		}
+	}
+
+function takepic(i) {
+	var el = document.getElementById("cam_"+i);
+	var gcs = window.getComputedStyle(el);
+	var width = gcs.getPropertyValue("width").slice(0,-2);
+	var height = gcs.getPropertyValue("height").slice(0,-2);
+	var canv = document.createElement("canvas");
+	canv.width = width;
+	canv.height = height;
+	var ctx = canv.getContext("2d");
+
+	ctx.drawImage(el,0,0,width,height);
+	var data = canv.toDataURL("image/png");
+	var img = document.createElement("img");
+	img.setAttribute("src",data);
+	if (gcamchkstream) {}
+	else {
+		el.srcObject.getTracks()[0].stop();
+		}
+	el.insertAdjacentElement("beforeBegin",img);
+	el.remove();
+	document.getElementById("cambutt_"+i).innerHTML = "Retake Picture"
+	document.getElementById("cambutt_"+i).onclick = function() {span_to_camera(document.getElementById("camb_"+i));}
+	}
+
+function camdel(i) {
+	if(document.getElementById("cam_"+i)) {
+		document.getElementById("cam_"+i).srcObject.getTracks()[0].stop();
+		}
+	document.getElementById("camb_"+i).remove();
+	}
+
+function span_to_camera(el,k) {
+	el.innerHTML = "";
+	el.id = "camb_"+gfreepb;
+	const cam = document.createElement("video");
+	cam.id= "cam_"+gfreepb;
+	el.insertAdjacentElement("beforeend",cam);
+	if (gcamchkstream) {
+		cam.srcObject = gcamchkstream;
+		cam.play();
+		}
+	else {
+		navigator.mediaDevices.getUserMedia({video:true, audio: false}).then(
+			function(stream) {
+				cam.srcObject = stream;
+				cam.play();
+				}
+			).catch(function(err) {
+			console.log(err);
+			});
+		}
+	var controls = document.createElement("div");
+	controls.innerHTML = "<button onclick='takepic("+gfreepb+")' id='cambutt_"+gfreepb+"'>Take Picture</button><button onclick='camdel("+gfreepb+")'>Delete Picture</button>";
+	el.insertAdjacentElement("beforeEnd",controls);
+	gfreepb++;
+	if (k) {
+		mqmaker(el);
+		}
+	}
+
+var gpaintbox_x;
+var gpaintbox_y;
+var gpainting = false;
+
+function pbmd(e) {
+	gpainting = true;
+	gpaintbox_x = e.pageX - e.target.offsetLeft;
+	gpaintbox_y = e.pageY - e.target.offsetTop;
+	e.preventDefault();
+	}
+
+function pbmm(e) {
+	if (gpainting) {
+		var canv = document.createElement("canvas");
+		canv.width = e.target.width;
+		canv.height = e.target.height;
+		var ctx = canv.getContext("2d");
+		ctx.drawImage(e.target,0,0,e.target.width,e.target.height);
+		ctx.beginPath();
+		var i = e.target.id.slice(4);
+		ctx.lineCap = "round";
+		if (document.getElementById("pbe_"+i).checked) {
+			ctx.globalCompositeOperation = "destination-out";
+			ctx.lineWidth = 20;
+			ctx.strokeStyle = "black";
+			}
+		else {
+			ctx.globalCompositeOperation = "source-over";
+			ctx.lineWidth = 1;
+			ctx.strokeStyle = document.getElementById("pbc_"+i).value;
+			}
+		ctx.moveTo(gpaintbox_x,gpaintbox_y);
+		gpaintbox_x = e.pageX - e.target.offsetLeft;
+		gpaintbox_y = e.pageY - e.target.offsetTop;
+		ctx.lineTo(gpaintbox_x,gpaintbox_y);
+		ctx.stroke();
+		var data = canv.toDataURL("image/png");
+		e.target.setAttribute("src",data);
+		}
+	e.preventDefault();
+	}
+
+function pbmu(e) {
+	gpainting=false;
+	e.preventDefault();
+	}
+
+function pbdel(i) {
+	document.getElementById("pb_"+i).remove();
+	}
+
+function pberase(i) {
+	var canv = document.createElement("canvas");
+	canv.width = 500;
+	canv.height = 500;
+	document.getElementById("pbi_"+i).setAttribute("src", canv.toDataURL("image/png"));
+	}
+
+function pbgrid(i) {
+	if (document.getElementById("pbg_"+i).checked) {
+		document.getElementById("pbgr_"+i).style.display = "";
+		}
+	else {
+		document.getElementById("pbgr_"+i).style.display = "none";
+		}
+	}
+
+function span_to_paintbox(el,k) {
+	el.innerHTML = "";
+	el.id = "pb_"+gfreepb;
+	var contain = document.createElement("span");
+	contain.style.position = "relative";
+	contain.style.display = "block";
+	contain.style.width = "500px";
+	contain.style.height = "500px";
+	var img = document.createElement("img");
+	img.width = 500;
+	img.height = 500;
+	img.addEventListener("mousedown",pbmd);
+	img.addEventListener("mousemove",pbmm);
+	img.addEventListener("mouseup",pbmu);
+	img.id = "pbi_"+gfreepb;
+	img.style.border="1px solid";
+	img.style.top = 0;
+	img.style.left = 0;
+	img.style.position = "absolute";
+	var gr = document.createElement("img");
+	gr.id = "pbgr_"+gfreepb;
+	gr.src = "grid.png"
+	gr.style.top = 0;
+	gr.style.left = 0;
+	gr.width = 500;
+	gr.height = 500;
+	gr.style.position = "absolute";
+	gr.style.pointerEvents = "none";
+	gr.style.border = "1px solid";
+	gr.style.zIndex = "-1";
+	gr.style.display = "none";
+	contain.insertAdjacentElement("beforeend",img);
+	contain.insertAdjacentElement("beforeend",gr);
+	el.insertAdjacentElement("beforeend",contain);
+	var controls = document.createElement("div");
+	controls.innerHTML = "<input type='color' id='pbc_"+gfreepb+"'><input type='checkbox' id='pbg_"+gfreepb+"' oninput='pbgrid("+gfreepb+")'>Show Grid<input type='checkbox' id='pbe_"+gfreepb+"'>Erase Mode</input><button onclick='pberase("+gfreepb+")'>Clear Canvas</button><button onclick='pbdel("+gfreepb+")'>Delete Canvas</button>";
+	el.insertAdjacentElement("beforeend",controls);
+	gfreepb++;
+	if (k) {
+		mqmaker(el);
+		}
+	}
+
+function upd_opts() {
+	var fs = document.getElementById("opt_fs").value + "px";
+	var ls = document.getElementById("opt_ls").value + "em";
+	var ft = document.getElementById("opt_font").options[document.getElementById("opt_font").selectedIndex].value;
+	var tablistr = ".tabli {font-family:" + ft + "; font-size:"+fs+"; letter-spacing:"+ls+"}";
+	var mqtextmodestr = ".mq-text-mode {font-family:" + ft +" !important; font-size:"+fs+" !important; letter-spacing:"+ls+" !important; border:1px solid black}";
+	var mqrootblockstr = ".mq-root-block {font-size:"+fs+" !important}";
+	var bodytxtstr = "body, button, input, select {font-family:" + ft + "; font-size:"+fs+"; letter-spacing:"+ls+"}";
+	gstyle.innerHTML = tablistr + mqtextmodestr + mqrootblockstr + bodytxtstr;
+	}
+
+var gcamchkstream;
+
+function upd_cam_chk(e) {
+	if (e.target.checked) {
+		navigator.mediaDevices.getUserMedia({video:true, audio: false}).then(
+			function(stream) {
+				gcamchkstream = stream;
+				}
+			).catch(function(err) {console.log(err);});
+		}
+	else {
+		gcamchkstream.getTracks()[0].stop();
+		gcamchkstream = false;
+		}
+	}
+
+var gstyle = "NOPE";
+
+function bootcss() {
+	gstyle = document.createElement("style");
+	gstyle.type = "text/css";
+	gstyle.innerHTML = ".mq-text-mode {font-family:sans-serif !important; border:1px solid black} .tabli {font-family:sans-serif}";
+	document.getElementsByTagName("head")[0].appendChild(gstyle);
+	upd_opts();
+	}
+
+function boot() {
+	reawaken();
+	bootcss();
+	mqmaker(document.getElementById("start"));
+	}
+
+</script>
+<style>
+kbd {
+    background-color: #eee; //from https://developer.mozilla.org/en-US/docs/Web/HTML/Element/kbd
+    border-radius: 3px;
+    border: 1px solid #b4b4b4;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, .2), 0 2px 0 0 rgba(255, 255, 255, .7) inset;
+    color: #333;
+    display: inline-block;
+    font-size: .85em;
+    font-weight: 700;
+    line-height: 1;
+    padding: 2px 4px;
+    white-space: nowrap;
+   }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Lexend+Deca&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat&display=swap" rel="stylesheet"> 
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
+</head>
+<body onload="boot();">
+
+<div id='start'></div>
+
+<span id="buttons" style="position:fixed;top:0;right:0;background-color:#DDDDDD;padding:2px;">
+Math Commands:<br>
+<button onmousedown="mqbutt(event,'/')/*hey why is this onmousedown? see https://stackoverflow.com/questions/486414/any-way-to-prevent-deselection-of-highlighted-text*/">Fraction <kbd>/</kbd></button> <br>
+<button onmousedown="mqcmd(event,'sqrt')">Square Root <kbd>sqrt</kbd></button> <br>
+<button onclick="mqbutt(event,'^')">Exponent <kbd>^</kbd></button> <br>
+<button onclick="mqbutt(event,'_')">Subscript <kbd>_</kbd></button> <br>
+<button onclick="mqbutt(event,'<=')">Less or Equal <kbd><=</kbd></button><br>
+<button onclick="mqbutt(event,'>=')">Greater or Equal <kbd>>=</kbd></button><br>
+<button onclick="mqbutt(event,'$')">Text <kbd>$</kbd> to start and end</button><br>
+<button onclick="mqbutt(event,'nthroot')">Nth Root <kbd>nthroot</kbd></button><br>
+<button onclick="mqbutt(event,'pm')">Plus or Minus <kbd>pm</kbd></button><br>
+<button onclick="mqtablenter(event,false)">New Line <kbd>Enter</kbd></button><br>
+<button onclick="mqtablenter(event,true)">Copy New Line <kbd>Shift</kbd>+<kbd>Enter</kbd></button>(Structured Entry Only)<br>
+Calculus:<br>
+<button onclick="mqbutt(event,'lim')">Limit <kbd>lim</kbd></button><br>
+<button onclick="derivbutt(event)"><table style='text-align:center'><tr><td>d</td></tr><tr><td style='border-top: solid 2px'>d<input id='derivbuttvar' value='x' style='width:1ch'></td></tr></table></button><br>
+Options:<br>
+Font size:<input type="number" style="width:3em" value=20 oninput="upd_opts()" step=4 id="opt_fs">px <br>
+Letter spacing:<input type="number" style="width:3em" value=0 oninput="upd_opts()" step=.01 id="opt_ls">em <br>
+Font:<select id="opt_font" oninput="upd_opts()">
+<option>Serif</option>
+<option selected>Sans-Serif</option>
+<option>Open Sans</option>
+<option>Lexend Deca</option>
+<option>Roboto</option>
+<option>Montserrat</option>
+<option disabled>Let me know if you want a specific font</option>
+</select><br>
+<input type='checkbox' oninput='upd_cam_chk(event)'> Only ask for camera permission once
+</span>
+
+<div style="display:none" id="gtt"></div>
+
+</body>
+</html>

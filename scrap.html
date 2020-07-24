@@ -534,8 +534,9 @@ var gpainting = false;
 
 function pbmd(e) {
 	gpainting = true;
-	gpaintbox_x = e.pageX - e.target.offsetLeft;
-	gpaintbox_y = e.pageY - e.target.offsetTop;
+	var rect = e.target.getBoundingClientRect();
+	gpaintbox_x = e.clientX - rect.x;
+	gpaintbox_y = e.clientY - rect.y;
 	e.preventDefault();
 	}
 
@@ -560,8 +561,9 @@ function pbmm(e) {
 			ctx.strokeStyle = document.getElementById("pbc_"+i).value;
 			}
 		ctx.moveTo(gpaintbox_x,gpaintbox_y);
-		gpaintbox_x = e.pageX - e.target.offsetLeft;
-		gpaintbox_y = e.pageY - e.target.offsetTop;
+		var rect = e.target.getBoundingClientRect();
+		gpaintbox_x = e.clientX - rect.x;
+		gpaintbox_y = e.clientY - rect.y;
 		ctx.lineTo(gpaintbox_x,gpaintbox_y);
 		ctx.stroke();
 		var data = canv.toDataURL("image/png");
@@ -718,7 +720,7 @@ Math Commands:<br>
 <button onclick="mqbutt(event,'nthroot')">Nth Root <kbd>nthroot</kbd></button><br>
 <button onclick="mqbutt(event,'pm')">Plus or Minus <kbd>pm</kbd></button><br>
 <button onclick="mqtablenter(event,false)">New Line <kbd>Enter</kbd></button><br>
-<button onclick="mqtablenter(event,true)">Copy New Line <kbd>Shift</kbd>+<kbd>Enter</kbd></button>(Structured Entry Only)<br>
+<button onclick="mqtablenter(event,true)">Copy New Line <kbd>Shift</kbd>+<kbd>Enter</kbd></button><br>(Structured Entry Only)<br>
 Calculus:<br>
 <button onclick="mqbutt(event,'lim')">Limit <kbd>lim</kbd></button><br>
 <button onclick="derivbutt(event)"><table style='text-align:center'><tr><td>d</td></tr><tr><td style='border-top: solid 2px'>d<input id='derivbuttvar' value='x' style='width:1ch'></td></tr></table></button><br>

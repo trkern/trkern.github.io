@@ -1,0 +1,237 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<meta name=description content="Reduced Row Echelon Form">
+<script src="math.min.js"></script>
+<title> Reduced Row Echelon Form </title>
+<script>
+
+var storedinputs = {};
+
+function cleanup(a) {
+	if (document.getElementById("chk_frac").checked) {
+		math.config({number:"Fraction"});
+		}
+	else {
+		math.config({number:"BigNumber"});
+		}
+	var str = math.format(math.eval(a),{fraction:"ratio",precision:4});
+	math.config({number:"Fraction"});
+	if (str.split("/").length == 2 && str.split("/")[1] == 1) {
+		return(str.split("/")[0]);
+		}
+	return(str);
+	}
+
+function printratio(a) {
+	var str = math.format(a,{fraction:"ratio"});
+	return(str);
+	}
+
+function add(a,b) {
+	return(printratio(math.add(math.eval(a),math.eval(b))));
+	}
+
+function multiply(a,b) {
+	return(printratio(math.multiply(math.eval(a),math.eval(b))));
+	}
+
+function nonzero(a) {
+	return(!math.equal(math.eval(a),0));
+	}
+
+function divide(a,b) {
+	return(multiply(a,invert(b)));
+	}
+
+function negate(a) {
+	return(multiply("-1",a));
+	}
+
+function invert(a) {
+	return(printratio(math.divide(1,math.eval(a))));
+	}
+
+function read_storedinputs(i,j) {
+	if (i in storedinputs && j in storedinputs[i]) {return(storedinputs[i][j]);}
+	if (! (i in storedinputs)) {storedinputs[i] = {}};
+	if (i == j) {storedinputs[i][j] = 1; return(1);}
+	storedinputs[i][j] = 0; return(0);
+	}
+
+function changeinput(i,j) {
+	read_storedinputs(i,j);
+	storedinputs[i][j] = document.getElementById("inp_"+i+"_"+j).value;
+	}
+
+function makeinputs() {
+	var nr = Number(document.getElementById("nrows").value);
+	var nc = Number(document.getElementById("ncols").value);
+	var i,j;
+	var rval = "<table border=1>";
+	for (i = 0; i < nr; i++) {
+		rval += "<tr>";
+		for (j = 0; j < nc; j++) {
+			rval += "<td><input type='text' id='inp_"+i+"_"+j+"' value='"+read_storedinputs(i,j)+"' onchange='changeinput("+i+","+j+")'></td>";
+			}
+		rval += "</tr>";
+		}
+	rval += "</table>";
+	document.getElementById("inm").innerHTML = rval;
+	}
+
+function readgmat() {
+	var nr = Number(document.getElementById("nrows").value);
+	var nc = Number(document.getElementById("ncols").value);
+	gmat = [];
+	var i,j;
+	for (i = 0; i < nr; i++) {
+		gmat.push([]);
+		for (j = 0; j < nc; j++) {
+			gmat[i].push(document.getElementById("inp_"+i+"_"+j).value);
+			}
+		}
+	}
+
+function gmat_to_string() {
+	var i,j;
+	var rval = "<table border=1>";
+	for (i = 0; i < gmat.length; i++) {
+		rval += "<tr>";
+		for (j = 0; j < gmat[0].length; j++) {
+			rval += "<td>";
+			rval += cleanup(gmat[i][j]);
+			rval += "</td>";
+			}
+		rval += "</tr>";
+		}
+	rval += "</table>";
+	return(rval);
+	}
+
+function debug(str) {
+	var i,j;
+	//document.getElementById("debug").innerHTML += str + gmat_to_string();
+	}
+
+var gmat;
+
+function swap(r1,r2) {
+	var t = gmat[r1];
+	gmat[r1] = gmat[r2];
+	gmat[r2] = t;
+	debug("swap row " + r1 + " and row " + r2);
+	}
+
+function mult(q,r1) {
+	var i;
+	for (i = 0; i < gmat[0].length; i++) {
+		gmat[r1][i] = multiply(q,gmat[r1][i]);
+		}
+	debug("multiply row " + r1 + " by " + q);
+	}
+
+function skew(q,r1,r2) { //add q times row1 to row2
+	var i;
+	for (i = 0; i < gmat[0].length; i++) {
+		gmat[r2][i] = add(gmat[r2][i],multiply(q,gmat[r1][i]));
+		}
+	debug("add " + q + " times row " + r1 + " to row " + r2);
+	}
+
+function obliterate(r1,r2,col) { //use r1 to clear r2 in col
+	skew(negate(divide(gmat[r2][col],gmat[r1][col])),r1,r2);
+	}
+
+function first_nonzero_in_row(r) {
+	var i;
+	for (i = 0; i < gmat[0].length; i++) {
+		if (nonzero(gmat[r][i])) {return(i);}
+		}
+	return(-1);
+	}
+
+function first_first_in_row(c) {//finds the first entry in column c which is the first nonzero entry in its row, returns its row
+	var i;
+	for (i = 0; i < gmat.length; i++) {
+		if (first_nonzero_in_row(i) == c) {return(i);}
+		}
+	return(-1);
+	}
+
+function first_free_row(c) { //finds the first "free" row, if we're working on column c
+	var i;
+	for (i = 0; i < gmat.length; i++) {
+		if (first_nonzero_in_row(i) >= c) {return(i);}
+		}
+	return(-1);
+	}
+
+function stage1() {
+	//stage 1: for each column: find the first entry that is the first in its row and swap it into the first free row
+	//	then use that entry to cancel all other entries which are first in that row
+	var i,j,a,b;
+	for (i = 0; i < gmat[0].length; i++) {
+		a = first_first_in_row(i);
+		b = first_free_row(i);
+		if (a != -1 && b != -1 && b < a) {
+			swap(a,b);
+			a = b;
+			}
+		if (a != -1) {
+			for (j = 0; j < gmat.length; j++) {
+				if (first_nonzero_in_row(j) == i && j != a) {
+					obliterate(a,j,i);
+					}
+				}
+			}
+		}
+	}
+
+function stage2() {
+	//stage 2: working the columns backwards, if you find an entry which is the first in its row, turn it into a 1 and use it to cancel every other nonzero entry in its column
+	var i,j,a;
+	for (i = gmat[0].length-1; i >= 0; i--) {
+		a = first_first_in_row(i);
+		if (a != -1) {
+			mult(invert(gmat[a][i]),a);
+			for (j = 0; j < gmat.length; j++) {
+				if (j != a && nonzero(gmat[j][i])) {
+					obliterate(a,j,i);
+					}
+				}
+			}
+		}
+	}
+
+function go() {
+	readgmat();
+	stage1();
+	stage2();
+	document.getElementById("outm").innerHTML = gmat_to_string();
+	}
+
+function boot() {
+	makeinputs();
+	math.config({number:"Fraction"});
+	}
+
+</script>
+<style>
+input[type=number], input[type=text] {
+	width:3em;
+	}
+</style>
+</head>
+<body onload="boot()">
+Rows: <input type="number" min=0 value=2 id="nrows" onchange="makeinputs()"><br>
+Columns: <input type="number" min=0 value=2 id="ncols" onchange="makeinputs()"><br>
+<div id="inm"></div>
+<input type="checkbox" checked id="chk_frac"> Use Fractions<br>
+<button onclick="go()">Reduce!</button>
+<div id="debug"></div>
+<div id="outm"></div>
+</body>

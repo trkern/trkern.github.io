@@ -12,18 +12,25 @@
 var storedinputs = {};
 
 function cleanup(a) {
+	console.log("cleanup" + a);
+	var str;
 	if (document.getElementById("chk_frac").checked) {
-		math.config({number:"Fraction"});
+		str = math.format(math.eval(a),{fraction:"ratio"});
+		if (str.split("/").length == 2 && str.split("/")[1] == 1) {
+			return(str.split("/")[0]);
+			}
+		return(str);
 		}
 	else {
-		math.config({number:"BigNumber"});
+		str = math.format(math.eval(a),{fraction:"ratio"});
+		if (str.split("/").length == 2) {
+			rval = str.split("/")[0]/str.split("/")[1];
+			}
+		else {
+			rval = Number(str);
+			}
+		return(rval.toFixed(4));
 		}
-	var str = math.format(math.eval(a),{fraction:"ratio",precision:4});
-	math.config({number:"Fraction"});
-	if (str.split("/").length == 2 && str.split("/")[1] == 1) {
-		return(str.split("/")[0]);
-		}
-	return(str);
 	}
 
 function printratio(a) {
@@ -115,6 +122,7 @@ function gmat_to_string() {
 function debug(str) {
 	var i,j;
 	//document.getElementById("debug").innerHTML += str + gmat_to_string();
+	console.log(str);
 	}
 
 var gmat;
@@ -210,7 +218,9 @@ function stage2() {
 function go() {
 	readgmat();
 	stage1();
+	console.log("hiii");
 	stage2();
+	console.log("yooo");
 	document.getElementById("outm").innerHTML = gmat_to_string();
 	}
 

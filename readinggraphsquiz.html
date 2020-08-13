@@ -1,0 +1,224 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<meta name=description content="">
+<link rel="icon" href="icon.png">
+<title> Reading Graphs </title>
+<script src="tgr.js"></script>
+<script>
+
+var g_anslist = [];
+var g_ans = [];
+var g_walkthrough = {};
+
+function ribet(mn,mx) {
+	return(Math.floor(Math.random()*(mx-mn+1))+mn);
+	}
+
+function makefun(xl,y) {
+	var c = [-1,1][ribet(0,1)];
+	return(function(x) {
+		var i;
+		var rval = c;
+		for (i = 0; i < xl.length; i++) {
+			rval *= (x-xl[i]);
+			}
+		rval += y;
+		return(rval);
+		});
+	}
+
+function randlist() {
+	var k = ribet(1,5);
+	var i;
+	var rval = [];
+	for (i = 0; i < k; i++) {
+		rval.push(ribet(-4,4));
+		}
+	return(rval);
+	}
+
+function toosteep(f,l) {
+	var i;
+	for (i = 0; i < l.length; i++) {
+		if (Math.abs(f(l[i]) - f(l[i]+.0001)) > .0005) {
+			return(true);
+			}
+		}
+	return(false);
+	}
+
+function offscreen(f) {
+	var i;
+	for (i = -4; i < 4; i++) {
+		if (Math.abs(f(i)) <= 4) {return(false);}
+		}
+	return(true);
+	}
+
+var gf;
+
+function makeavoider(y) {
+	//computes pm(a(x-b)^2+c(x-d)^4+1)+y
+	var pm = [-1,1][ribet(0,1)];
+	var a = ribet(1,3);
+	var b = ribet(-4,4);
+	var c = ribet(1,3);
+	var d = ribet(-4,4);
+	return(function(x) {
+		var rval = 1;
+		rval += a*(x-b)*(x-b);
+		rval += c*(x-d)*(x-d)*(x-d)*(x-d);
+		rval *= pm;
+		rval += y;
+		return(rval);
+		});
+	}
+
+function make_no_solution() {
+	g_anslist = [];
+	g_ans = [];
+	var y = ribet(-4,4);
+	var f = makeavoider(y);
+	if (offscreen(f)) {make_no_solution(); return;};
+	tgr_update_grapher_objs("gr",[{type:"plot",fct:f}]);
+	var pstr;
+	pstr = "If f(x) is given by the graph above, solve f(x) = " + y + ".<br>";
+	pstr += "If there are multiple solutions, separate them by commas.<br>";
+	pstr += "If there are no solutions, enter 'DNE'.";
+	document.getElementById("problem").innerHTML = pstr;
+	g_walkthrough = {
+		type: "DNE",
+		y: y,
+		};
+	}
+
+function sort_and_remove_duplicates(l) {
+	l.sort();
+	var rval = [l[0]];
+	var i;
+	for (i = 1; i < l.length; i++) {
+		if (l[i] != l[i-1]) {rval.push(l[i])};
+		}
+	return(rval);
+	}
+
+function go() {
+	document.getElementById("walkthrough").innerHTML = "";
+	if (ribet(0,10)==0) {
+		make_no_solution();
+		return;
+		}
+	g_anslist = randlist();
+	var y = ribet(-4,4);
+	var f = makefun(g_anslist,y);
+	if (toosteep(f,g_anslist)) {go();return;}
+	tgr_update_grapher_objs("gr",[{type:"plot",fct:f}]);
+	var k = ribet(0,1);
+	var pstr;
+	if (k == 0) {
+		pstr = "If f(x) is given by the graph above, what is f("+g_anslist[0]+")?";
+		g_ans = [y];
+		g_walkthrough = {
+			type: "f",
+			x: g_anslist[0],
+			y: y,
+			};
+		}
+	if (k == 1) {
+		pstr = "If f(x) is given by the graph above, solve f(x) = " + y + ".<br>";
+		pstr += "If there are multiple solutions, separate them by commas.<br>";
+		pstr += "If there are no solutions, enter 'DNE'.";
+		g_ans = g_anslist;
+		g_walkthrough = {
+			type: "inv",
+			xl: sort_and_remove_duplicates(g_ans),
+			y: y,
+			};
+		}
+	document.getElementById("problem").innerHTML = pstr;
+	}
+
+function check_ans_tf() {
+	var inp = document.getElementById("ans").value;
+	if (g_anslist.length == 0) {
+		if (inp == "DNE" || inp == "'DNE'") {return(true);}
+		else {return(false);}
+		}
+	eval("var l = [" + inp + "]");
+	var i;
+	for (i = 0; i < l.length; i++) {
+		if (g_ans.indexOf(l[i]) == -1) {return(false);}
+		}
+	for (i = 0; i < g_ans.length; i++) {
+		if (l.indexOf(g_ans[i]) == -1) {return(false);}
+		}
+	return(true);
+	}
+
+function check_ans() {
+	if (check_ans_tf()) {
+		alert("Correct!");
+		}
+	else {
+		alert("Try Again!");
+		}
+	}
+
+function walkthrough() {
+	if (g_walkthrough.type == "DNE") {
+		var y = g_walkthrough.y;
+		tgr_add_to_grapher_objs("gr",{type:"plot",fct:function(x){return(y)},color:"red",linewidth:4});
+		var str = "To solve this problem we need to draw the horizontal line (above) where y = " + y + ".<br>";
+		str += "As we can see, this line does not intersect the graph. That is, no x value will give us this particular y value.<br>";
+		str += "Thus, there is no x value that solves our equation. (DNE)";
+		document.getElementById("walkthrough").innerHTML = str;
+		}
+	else if (g_walkthrough.type == "inv") {
+		var y = g_walkthrough.y;
+		tgr_add_to_grapher_objs("gr",{type:"plot",fct:function(x){return(y)},color:"red",linewidth:4});
+		var i;
+		for (i = 0; i < g_walkthrough.xl.length; i++) {
+			tgr_add_to_grapher_objs("gr",{type:"dot",x:g_walkthrough.xl[i],y:y,color:"blue"});
+			tgr_add_to_grapher_objs("gr",{type:"label",x:g_walkthrough.xl[i],y:y,labeloffsety:-10,color:"blue"});
+			}
+		var str = "To solve this problem we need to draw the horizontal line (above) where y = " + y + ".<br>";
+		str += "As we can see, this line intersects the graph at the points shown above. <br>";
+		str += "The answer then is the list of the x values of those points: ";
+		for (i = 0; i < g_walkthrough.xl.length; i++) {
+			if (i > 0) {
+				str += ", ";
+				}
+			str += g_walkthrough.xl[i];
+			}
+		document.getElementById("walkthrough").innerHTML = str;
+		}
+	else if (g_walkthrough.type == "f") {
+		tgr_add_to_grapher_objs("gr",{type:"vline",x:g_walkthrough.x,color:"red",linewidth:4});
+		tgr_add_to_grapher_objs("gr",{type:"dot",x:g_walkthrough.x,y:g_walkthrough.y,color:"blue"});
+		tgr_add_to_grapher_objs("gr",{type:"label",x:g_walkthrough.x,y:g_walkthrough.y,labeloffsety:-10,color:"blue"});
+		var str = "To solve this problem we need to draw the vertical line (above) where x = " + g_walkthrough.x + ".<br>";
+		str += "As we can see, this line intersects the graph at the point ("+g_walkthrough.x+","+g_walkthrough.y+").<br>";
+		str += "Our answer is the y coordinate of that point: " + g_walkthrough.y + ".";
+		document.getElementById("walkthrough").innerHTML = str;
+		}
+	}
+
+function boot() {
+	tgr_grapher("gr", []);
+	go();
+	}
+
+</script>
+</head>
+<body onload="boot()">
+<div id="gr"></div>
+<div id="problem"></div>
+<button onclick="go()">New Question</button><br>
+<input type="text" id="ans" onchange="check_ans()"> <button onclick="check_ans()">Check Answer</button> <button onclick="walkthrough()">Walkthrough</button>
+<div id="walkthrough"></div>
+</body>
+</html>

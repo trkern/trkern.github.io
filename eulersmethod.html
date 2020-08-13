@@ -1,0 +1,157 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png>
+<meta name=description content="Approximating the Continuous with the Discrete">
+<title>Euler's Method</title>
+<script src="tgr.js"></script>
+<script src="underscore-min.js"></script>
+<script src="kas.js"></script>
+<script>
+
+function str_to_function(str,varl) {
+	var fs = "var ooooo = function(";
+	var i;
+	for (i = 0; i < varl.length; i++) {
+		if (i > 0) {fs += ","}
+		fs += varl[i];
+		}
+	fs += ") { return(";
+	fs += kas_to_funstr(KAS.parse(str).expr);
+	fs += ")}";
+	eval(fs);
+	return(ooooo);
+	}
+
+function kas_to_funstr(k) {
+	var rstr = "";
+	if (k.name() == "Add") {
+		var i;
+		for (i = 0; i < k.terms.length; i++) {
+			if (i > 0) {rstr += " + "}
+			rstr += kas_to_funstr(k.terms[i]);
+			}
+		return("("+rstr+")");
+		}
+	if (k.name() == "Mul") {
+		var i;
+		if (k.terms.length == 2 && k.terms[1].isDivide()) {
+			var n = kas_to_funstr(k.terms[0]);
+			var d = kas_to_funstr(k.terms[1].asDivide());
+			return("(" + n + "/" + d + ")");
+			//return({op:"div",subs:[n,d]});
+			}
+		rstr = "";
+		for (i = 0; i < k.terms.length; i++) {
+			if (i > 0) {rstr += "*"}
+			rstr += kas_to_funstr(k.terms[i]);
+			}
+		return("("+rstr+")");
+		}
+	if (k.name() == "Pow") {
+		if (k.exp.name() == "Int" && k.exp.n > 0) {
+			var i;
+			var bstr = kas_to_funstr(k.base);
+			for (i = 0; i < k.exp.n; i++) {
+				if (i > 0) {rstr += " * ";}
+				rstr += bstr;
+				}
+			return("("+rstr+")");
+			}
+		return("Math.pow("+kas_to_funstr(k.base) + "," + kas_to_funstr(k.exp)+")");
+		//return ({op:"pow", subs:[kas_to_ttree(k.base),kas_to_ttree(k.exp)]});
+		}
+	if (k.name() == "Log") {
+		return("Math.log(" + kas_to_funstr(k.power) + ")/Math.log(" + kas_to_funstr(k.base) + ")");
+		}
+	if (k.name() == "Trig") {
+		var func = k.functions[k.type].codegen;
+		if (typeof func === "function") {
+			return (func(kas_to_funstr(k.arg)));
+			}
+		else if (typeof func === "string") {
+			return (func + kas_to_funstr(k.arg));
+			}
+		}
+	if (k.name() == "Abs") {
+		return("Math.abs(" + kas_to_funstr(k.arg) + ")");
+		}
+	if (k.name() == "Var") {
+		return(k.symbol);
+		}
+	if (k.name() == "Const") {
+		if (this.symbol === "pi") {
+			return ("Math.PI");
+			}
+		else if (this.symbol === "e") {
+			return ("Math.E");
+			}
+		}
+	if (k.name() == "Int" || k.name() == "Float") {
+		return("("+k.n+")");
+		}
+	console.log("kas_to_funstr failed");
+	return(k.codegen());
+	}
+
+function eulerize(f,n,start,step) {
+	var rval = [];
+	var i;
+	var tpt = start;
+	var d;
+	for (i = 0; i < n; i++) {
+		rval.push(tpt);
+		d = f(tpt);
+		tpt = [tpt[0]+step*d[0],tpt[1]+step*d[1]];
+		}
+	rval.push(tpt);
+	return({type:"polyl", vlist:trim_invalid_points(rval), color:"blue", linewidth:2});
+	}
+
+function ff(l) {
+	return([-l[1],l[0]]);
+	}
+
+function boot() {
+	tgr_grapher("gr1",[]);
+	go();
+	}
+
+function issmall(n) {
+	return(n < 100000 && n > -100000);
+	}
+
+function trim_invalid_points(l) {
+	var i;
+	var rval = [];
+	for (i = 0; i < l.length; i++) {
+		if (issmall(l[i][0]) && issmall(l[i][1])) {
+			rval.push(l[i]);
+			}
+		}
+	return(rval);
+	}
+
+function go() {
+	var n = Number(document.getElementById("inn").value);
+	var s = Number(document.getElementById("ins").value);
+	var fx = str_to_function(document.getElementById("infx").value,["x","y"]);
+	var fy = str_to_function(document.getElementById("infy").value,["x","y"]);
+	var fff = function(l) {return([fx(...l),fy(...l)]);}
+	var sx = Number(document.getElementById("inx").value);
+	var sy = Number(document.getElementById("iny").value);
+	tgr_update_grapher_objs("gr1",[eulerize(fff,n,[sx,sy],s),{type:"vf", fct:fff,numpts:10}]);
+	}
+
+</script>
+</head>
+<body onload="boot()">
+<div id="gr1"></div>
+f(x,y) = [<input type="text" id="infx" value="-y" oninput="go()">,<input type="text" id="infy" value="x" oninput="go()">]<br>
+Starting Point: [<input type="number" id="inx" value=0 oninput="go()" style="width:3em">,<input type="number" id="iny" value=1 oninput="go()" style="width:3em">]<br>
+Number of steps:<input type="number" id="inn" value=1000 min=0 step=100 oninput="go()" style="width:4em"><br>
+Length of step:<input type="number" id="ins" value=.01 step=.01 oninput="go()" style="width:4em"><br>
+</body>
+</html>

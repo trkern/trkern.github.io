@@ -420,14 +420,20 @@ function finishspan_to_mqt() {
 		});
 
 	gtabltabls.push([0]);
+	mqnew.focus();
 	}
+
+var camerasvg = "<svg width=20 height=20><polyline points='0,20 0,4 4,4 8,0 12,0 16,4 20,4 20,20 0,20' fill='none' stroke='black' stroke-width='4'/><circle cx=10 cy=11 fill='none' r=5 stroke='black' stroke-width='2'/></svg>";
+var freemathsvg = "<svg width=20 height=20><g fill='none' stroke='black' stroke-width=2><polyline points='0,12 2.5,12 5,20 10,1 20,1'/><polyline points='10,11 20,11'/><polyline points='13,4 17,4 17,8 13,8 13,4'/><polyline points='13,14 17,14 17,18 13,18 13,14'/></g></svg>";
+var structmathsvg = "<svg width=20 height=20><circle cx=4 cy=4 r=2 fill='black'/><circle cx=4 cy=10 r=2 fill='black'/><circle cx=4 cy=16 r=2 fill='black'/><g fill='none' stroke='black' stroke-width=2><polyline points='8,4 18,4'/><polyline points='8,10 18,10'/><polyline points='8,16 18,16'/></g></svg>";
+var paintsvg = "<svg width=20 height=20><g fill='none' stroke='black' stroke-width=2><polyline points='2,17 7,15 5,13 2,17'/><polyline points='7,15 5,13 13,5 15,7 7,15'/><polyline points='15,7 15,19 1,19 1,5 13,5'/></g></svg>";
 
 function mqmaker(el) {
 	var e = document.createElement("div");
-	e.innerHTML = '<button onclick="span_to_mq(event.target.parentElement,true);">Free Math Entry</button>'
-		+ '<button onclick="span_to_mqt(event.target.parentElement,true);">Structured Math Entry</button>'
-		+ '<button onclick="span_to_camera(event.target.parentElement,true);">Camera</button>'
-		+ '<button onclick="span_to_paintbox(event.target.parentElement,true);">PaintBox</button>';
+	e.innerHTML = '<button onclick="span_to_mq(event.target.parentElement,true);">'+freemathsvg+'Free Math Entry</button>'
+		+ '<button onclick="span_to_mqt(event.target.parentElement,true);">'+structmathsvg+'Structured Math Entry</button>'
+		+ '<button onclick="span_to_camera(event.target.parentElement,true);">'+camerasvg+'Camera</button>'
+		+ '<button onclick="span_to_paintbox(event.target.parentElement,true);">'+paintsvg+'PaintBox</button>';
 	el.insertAdjacentElement("afterend",e);
 	}
 
@@ -462,7 +468,7 @@ function span_to_mq(el,k) {
 				m.el().remove();
 				}
 			},
-		}});
+		}}).focus();
 	if (k) {
 		mqmaker(el);
 		}

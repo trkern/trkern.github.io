@@ -1,0 +1,114 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<title> RE: Educational Interactives </title>
+<style>
+@font-face {
+	font-family:"qu";
+	src:url("Questrial-Regular.ttf"); //see questrial.zip
+	}
+body {
+	font-family: "qu", sans-serif;
+	font-size: large;
+	}
+h1, h2, h3 { font-family: "qu", serif;
+	}
+</style>
+</head>
+<body style="margin-left:20"><svg width=1000 height=160>
+<g fill="green">
+<circle cx=35 cy=57 r=30> </circle>
+<circle cx=60 cy=32 r=30> </circle>
+<circle cx=110 cy=32 r=30> </circle>
+</g>
+<g style="stroke:black;stroke-width:2">
+<line x1=63 y1=85 x2=57 y2=79></line>
+<line x1=57 y1=85 x2=63 y2=79></line>
+<line x1=55 y1=77 x2=40 y2=62></line>
+<line x1=65 y1=77 x2=80 y2=62></line>
+<line x1=85 y1=53 x2=85 y2=61></line>
+<line x1=81 y1=57 x2=89 y2=57></line>
+<line x1=80 y1=52 x2=65 y2=37></line>
+<line x1=90 y1=52 x2=105 y2=37></line>
+<line x1=60 y1=88 x2=60 y2=147></line>
+</g>
+<text x=87 y=95 fill="#005480" style="font-family:qu;font-size:48px;"> trkern.github.io </text>
+<text x=87 y=144 style="font-family:qu;font-size:64px;"> Educational Interactives</text>
+</svg>
+<br>
+
+<h1>About</h1>
+
+<h2>Goals</h2>
+
+I began developing online interactives in the fall of 2017 to teach myself javascript and supplement the classes I was teaching at SUNY Oswego. I've mainly been using these as a platform for experimentation: many of my interactives represent me experimenting with a particular library, coding technique or teaching technique, but my hope is that they can be educational as well. I have gotten some positive feedback on these interactives from my students, but have yet to conduct studies of their effectiveness.
+
+<h2>Highlights of the Interactive Medium</h2>
+
+<h3>Encouraged Heuristic Development</h3>
+One of the best uses of the interactive medium is providing the user with a task, giving them plenty of feedback on how they're progressing, and repeating with random variations on that task. A persistent user should hopefully develop heuristics or an algorithm for tackling those sorts of problems. In specific circumstances, this algorithm can be exactly the algorithm that would normally be taught in class, but if the user develops it on their own they are more likely to retain that skill and form connections with it.
+
+<h4>Examples:</h4>
+<ul>
+<li> <a href = "completethesquare.html"> Completing The Square</a>: Users have to come up with the completing-the-square form of a quadratic, and hopefully develop an algorithm in the process.
+<li> <a href = "lion.html"> An Interactive Simulation of the Mathematical Theory of Big Game Hunting</a>: Short interactive to encourage users to discover binary search on their own.
+<li> <a href = "functiontransform2.html"> Function Transforms</a>: This interactive about function transformations includes a guessing game at the bottom that requires users to really understand what to pay attention to in graph recognition.
+<li> <a href = "efg.html"> Ehrenfeucht-Fraïssé Game on Finite Graphs</a>: Discovering winning strategies in this game is equivalent to exploring the expressivity of the first order logic of graphs. These sorts of games originally got me into Model Theory (a branch of logic).
+<li> <a href = "rosenstein.html">Ehrenfeucht-Fraïssé Games on Läuchli-Leonard Linear Orderings</a> Same on infinite linear orderings. Includes an infinite linear ordering visualizer.
+</ul>
+
+<h3>Formalist Propaganda</h3>
+<p>
+The book Gödel, Escher, Bach was a major early influence on my mathematical development. It introduced me to formal symbolic systems and the idea of encoding mathematics in formal symbolic systems, ultimately leading to my formalist mathematical philosophy. 
+</p>
+<p>
+My hope is to spread this philosophy by creating a "Computation Assistant". Similar to proof assistants, this would allow the user to work through a computation step by step, with each step being chosen by the user but applied by the computer. Eliminating the extra cognitive load of correctly copying the previous line of a computation and applying the computation step correctly should allow users to focus on the question of what steps they should apply to reach their goal. This interactive could even exhibit encouraged heuristic development for multi-step algebraic processes (such as how to add fractions).
+</p>
+<p>
+My ultimate goal is to produce something which is accessible to College Algebra students but useful for professional mathematicians. I recall having to preform page-long computations in physics classes, with a small error in one line leading to hours of minus-sign following and error hunting, and software that only allows valid computational steps could be very helpful for this.
+</p>
+<ul>
+<li> <a href = "epeedemo.html"> Electronic Polynomial Educational Experience</a>: This demo is suitable for students at an abstract algebra level, exploring the joys of having to manually apply associativity.
+</ul>
+
+<h3>Visual Exploration</h3>
+Throughout mathematics, being able to visualize the same thing in different ways is a vital skill. Digital interactives can allow users to modify an input and see how visually that changes the output.
+
+<h4>Examples:</h4>
+<ul>
+<li> <a href = "functiontransform2.html"> Function Transforms</a>: The main part of this interactive allows users to see what changes to a graph formula does.
+<li> <a href = "lineartransform.html"> Linear Transformations</a>: I developed this interactive to use in my linear algebra lectures, showing how various matrices transform space.
+<li> <a href = "tree.html"> Parse Trees</a>: Uses my own AST to html routine to allow the user to explore ASTs for algebra.
+<li> <a href = "sampling.html"> Sample Means</a>: Visualize taking lots of samples from a population
+<li> <a href = "velocity.html"> Velocity</a>: A "virtual worksheet" with a widget in the middle allowing one to take a virtual car trip and visualize the resulting position-time and velocity-time graphs. Ultimately the worksheet is meant to lead users to come up with the derivative formula on their own.
+<li> <a href = "shuffle.html"> Shuffling Cards</a>: Originally meant to explore chaos, mostly just turned into a fun visualizer exercise.
+</ul>
+
+<h3>Other Experiments</h3>
+<ul>
+<li> <a href = "decimal.html"> Reasoning about Approximation</a>: A guided exploration of the relationship between decimal approximations and interval arithmetic.
+<li> <a href = "trigsum.html"> Trig Sum Formulas</a>: An "interactive without words": Prove the trig sum formula on a diagram with adjustable angles.
+<li> <a href = "https://trkern.itch.io/polynomials"> Polynomials: Enterprise Edition</a> Diophantine equations are Turing complete, so they can be used for a programming video game, similar to Zachtronics' TIS-100 or EXAPUNKS. Game Jam Entry described by another entrant as "... the most horrifying abomination to ever grace the earth.  A++ excellent idea."
+<li> <a href = "whatis.html"> What is Math?</a>: When we present the solution to a math problem, we usually only present one solution path. In this interactive I try visualizing several solution paths at once.
+</ul>
+
+<h2>Development</h2>
+
+All my pages are written by hand in notepad, with html, css, and javascript all contained in one single file. I have made use of a few libraries, but my hope is to eventually replace them with my own. I have already developed my own graph drawing library (tgr.js) and hope to implement a basic computer algebra system this summer.
+
+<ul>
+<li><a href="https://khan.github.io/KaTeX/">KaTeX</a> (<a href="https://github.com/Khan/KaTeX/blob/master/LICENSE.txt">MIT License</a>)
+<li><a href="http://mathjs.org/">math.js</a> (<a href="http://www.apache.org/licenses/LICENSE-2.0">Apache 2.0 License</a>)
+<li><a href="https://threejs.org/">three.js</a> (<a href="https://github.com/mrdoob/three.js/blob/dev/LICENSE">MIT License</a>)
+<li><a href="https://github.com/Khan/KAS">KAS.js</a> (<a href="https://github.com/Khan/KAS/blob/master/LICENSE.txt">MIT License</a>), which depends on <a href="https://underscorejs.org/">underscore.js</a> (<a href="https://github.com/jashkenas/underscore/blob/master/LICENSE">MIT License</a>).
+<li><a href="https://sagecell.sagemath.org/">Sage Math Cell</a> (<a href="https://github.com/sagemath/sagecell/blob/master/LICENSE.txt">Modified BSD license</a>). Information about calling SageMathCell servers directly can be found <a href="http://analyticphysics.com/Coding%20Methods/Accessing%20SageMath%20as%20a%20Web%20Service.htm">here</a> (replace http:// with https:// to avoid a CORS error).
+<li><a href="http://fperucic.github.io/treant-js/">treant.js</a> (<a href="https://github.com/fperucic/treant-js/blob/master/LICENSE">MIT License</a>) which in turn uses <a href="https://dmitrybaranovskiy.github.io/raphael/">raphael</a> (<a href="https://dmitrybaranovskiy.github.io/raphael/license.html"</a>MIT License</a>)
+</ul>
+Color Palettes are from <a href="https://personal.sron.nl/~pault/">Paul Tol's Notes</a>
+
+
+</body>
+</html>

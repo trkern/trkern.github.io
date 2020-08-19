@@ -1,0 +1,80 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="grid.png">
+<link rel="image_src" href="grid.png">
+<meta name=description content="">
+<title> Coordinate Plane </title>
+<script src="tgr.js"></script>
+<script>
+var gx = 0;
+var gy = 0;
+var tx = 0;
+var ty = 0;
+
+function ribet(mn,mx) {
+	return(Math.floor(Math.random()*(mx-mn+1))+mn);
+	}
+
+var collist = ["#EE7733","#0077BB","#EE3377","#33BBEE","#CC3311","#009988"];
+var coln = 0;
+
+function draw() {
+	var k = document.getElementById("chk_minus").checked;
+	if (k) {
+		document.getElementById("targ").innerHTML = "Current Location: (" + gx + "," + gy + ") \t Targets Found: " + coln;
+		}
+	else {
+		document.getElementById("targ").innerHTML = "Target: (" + tx + "," + ty + ") \t Targets Found: " + coln;
+		}
+	if (k) {
+		tgr_update_grapher_objs("gr",[{type:"dot",x:tx,y:ty,color:collist[coln%6],r:7}]);
+		}
+	else {
+		tgr_update_grapher_objs("gr",[{type:"dot",x:gx,y:gy,color:collist[coln%6],r:7}]);
+		}
+	}
+
+function newtarg() {
+	var k = document.getElementById("chk_minus").checked;
+	tx = ribet(-4,4);
+	ty = ribet(-4,4);
+	if (tx == gx && ty == gy) {newtarg();return;}
+	draw();
+	}
+
+function boot() {
+	tgr_grapher("gr",[]);
+	newtarg();
+	}
+
+function move(key) {
+	var k = document.getElementById("chk_minus").checked;
+	if (key == "ArrowUp" || key == "w") {
+		gy++;
+		}
+	if (key == "ArrowDown" || key == "s") {
+		gy--;
+		}
+	if (key == "ArrowLeft" || key == "a") {
+		gx--;
+		}
+	if (key == "ArrowRight" || key == "d") {
+		gx++;
+		}
+	if (tx == gx && ty == gy) {
+		coln++;
+		newtarg();
+		}
+	draw();
+	}
+
+</script>
+</head>
+<body onload="boot()" onkeydown="move(event.key)">
+<div id="targ" style="font-size:xx-large;font-family:sans-serif"></div>
+<div id="gr"></div>
+<input type="checkbox" id="chk_minus" onchange="newtarg()"> Become Invisible
+</body>
+</html>

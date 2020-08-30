@@ -1,0 +1,434 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<meta name=description content="">
+<title> Ten Sevens </title>
+<script src="math.min.js"></script>
+<script src="tgr.js"></script>
+<script src="katex.min.js"></script>
+<script src="https://sagecell.sagemath.org/static/embedded_sagecell.js"></script>
+<link rel="stylesheet" href="katex.min.css">
+<script>
+function m() {
+	var i1 = BigInt(document.getElementById("m1").value);
+	var i2 = BigInt(document.getElementById("m2").value);
+	document.getElementById("m1").value = i1*i2;
+	}
+function c() {
+	document.getElementById("m2").value = document.getElementById("m1").value;
+	}
+function d2() {
+	var i1 = BigInt(document.getElementById("m1").value);
+	document.getElementById("m1").value = i1/2n;
+	}
+function sq() {
+	var i1 = BigInt(document.getElementById("m1").value);
+	document.getElementById("m1").value = i1*i1;
+	}
+
+var lightcolors = ["#DDDDDD","#77AADD", "#EE8866", "#EEDD88", "#FFAABB", "#99DDFF", "#44BB99", "#BBCC33", "#AAAA00"];
+
+var nlist = [];
+
+function bf() {
+	var n = document.getElementById("bf_n").value;
+	var i;
+	var k;
+	var j = 1n;
+	var st = "";
+	var str = "<table border=1>";
+	for (i = 0; true; i++) {
+		st = j.toString();
+		for (k = 0; k < n.length && st[k] == n[k]; k++) {}
+		while (k >= nlist.length) {nlist.push(0);}
+		nlist[k]++;
+		if (k == 0) {
+			//str += "<tr><td>"+i+"</td><td>";
+			//str += st;
+			//str += "</td></tr>";
+			}
+		else {
+			str += "<tr><td>"+i+"</td><td>";
+			str += "<span style='background-color:"+lightcolors[k]+"'>";
+			str += st.slice(0,k);
+			str += "</span>";
+			str += st.slice(k);
+			str += "</td></tr>";
+			}
+		
+		if (st.startsWith(n)) {
+			break;
+			}
+		j *= 2n;
+		}
+	str += "</table>";
+	str += "<table border=1>";
+	for (i = 0; i < nlist.length; i++) {
+		str += "<tr><td>" + i + "</td><td>" + nlist[i] + "</td></tr>";
+		}
+	str += "</table>";
+	document.getElementById("bf_out").innerHTML = str;
+	}
+
+function draw_piloop() {
+	var i, a;
+	var ro = 5;
+	var ri = 4.6;
+	var ril = 4.8;
+	var n = Number(document.getElementById("piloop_n").value);
+	var pp = math.eval(document.getElementById("piloop_pi").value);
+	document.getElementById("piloop_prod").innerHTML = katex.renderToString(math.simplify("("+n+")*("+document.getElementById("piloop_pi").value+")").toTex({implicit:'hide',notation:'fixed'}));
+	var tgr_list = [{type:"circle", x:0, y:0, r:ro}];
+	for (i = 0; i < 100; i++) {
+		a = 2*i*Math.PI/100;
+		if (i%10 == 0) {
+			tgr_list.push({type:"line", x:ro*Math.cos(a), y:ro*Math.sin(a), x2:ri*Math.cos(a), y2:ri*Math.sin(a), linewidth:1});
+			tgr_list.push({type:"label", label:"."+(i/10), x:ri*Math.cos(a), y:ri*Math.sin(a), labeloffsetx: -5*Math.cos(a), labeloffsety:5*Math.sin(a)});
+			}
+		else {
+			tgr_list.push({type:"line", x:ro*Math.cos(a), y:ro*Math.sin(a), x2:ril*Math.cos(a), y2:ril*Math.sin(a), linewidth:1});
+			}
+		}
+	tgr_list.push({type:"polyg",vlist:[[ro*Math.cos(2*.777*Math.PI),ro*Math.sin(2*.777*Math.PI)],[ro*Math.cos(2*.778*Math.PI),ro*Math.sin(2*.778*Math.PI)],[ri*Math.cos(2*.778*Math.PI),ri*Math.sin(2*.778*Math.PI)],[ri*Math.cos(2*.777*Math.PI),ri*Math.sin(2*.777*Math.PI)]],color:"blue"});
+	for (i = 0; i <= n; i++) {
+		tgr_list.push({type:"line",x:0,y:0,x2:ro*Math.cos(i*pp*2*Math.PI),y2:ro*Math.sin(i*pp*2*Math.PI)});
+		}
+	tgr_update_grapher_objs("piloop",tgr_list);
+	}
+
+function add_frac(r1,r2) {
+	return(reduce_frac([r1[0]*r2[1]+r1[1]*r2[0],r1[1]*r2[1]]));
+	}
+
+function sub_frac(r1,r2) {
+	return(reduce_frac([r1[0]*r2[1]-r1[1]*r2[0],r1[1]*r2[1]]));
+	}
+
+function mul_frac(r1,r2) {
+	return(reduce_frac([r1[0]*r2[0],r1[1]*r2[1]]));
+	}
+
+function reduce_frac(r1) {
+	var g = GCD(r1[0],r1[1]);
+	if (r1[1] > 0) {
+		return([r1[0]/g,r1[1]/g]);
+		}
+	return([-r1[0]/g,-r1[1]/g]);
+	}
+
+function pow_frac(r1,p) {
+	return([r1[0]**BigInt(p),r1[1]**BigInt(p)]);
+	}
+
+function neg_frac(r1) {
+	return([-r1[0],r1[1]]);
+	}
+
+function inv_frac(r1) {
+	return([r1[1],r1[0]]);
+	}
+
+function div_frac(r1,r2) {
+	return(reduce_frac([r1[0]*r2[1],r1[1]*r2[0]]));
+	}
+
+function GCD(a,b) {
+	if (a < 0) {a = -a};
+	if (b < 0) {b = -b};
+	while(true) {
+		if (b == 0) {return(a);}
+		a = a % b;
+		if (a == 0) {return(b);}
+		b = b % a;
+		}
+	}
+
+function upd_tay() {
+	var alpha = 0;
+	var beta = 0;
+	var n = Number(document.getElementById("tay_n").value);
+	var num = BigInt(document.getElementById("tay_in_n").value);
+	var den = BigInt(document.getElementById("tay_in_d").value);
+	var kstr = "\\sum_{k = 1}^{"+n+"} (-1)^{k+1} \\frac{1}{k} (x-1)^k = ";
+	for (i = 1; i < n; i++) {
+		if (i > 1 && i % 2 == 1) {kstr += "+"}
+		if (i % 2 == 0) {kstr += "-"}
+		kstr += "\\frac{1}{"+i+"} (x-1)^{"+i+"}";
+		}
+	document.getElementById("tay_out_tay").innerHTML = katex.renderToString(kstr,{displayMode:true});
+	if (document.getElementById("tay_in_n").value != "" && document.getElementById("tay_in_d").value != "") {
+		var f = [num,den];
+		var fm1 = reduce_frac([num-den,den]);
+		var sum = [0n,1n];
+		for (i = 1n; i < n; i++) {
+			if (i % 2n == 0) {
+				sum = add_frac(sum,[-(fm1[0]**i),i*(fm1[1]**i)]);
+				}
+			else {
+				sum = add_frac(sum,[(fm1[0]**i),i*(fm1[1]**i)]);
+				}
+			}
+		var tot = math.divide(math.bignumber(sum[0].toString()),math.bignumber(sum[1].toString()));
+		document.getElementById("tay_out").innerHTML = katex.renderToString("\\ln\\left(\\frac{"+num+"}{"+den+"}\\right) \\approx \\frac{"+sum[0]+"}{"+sum[1]+"} \\approx " + tot,{displayMode:true});
+		alpha = sum;
+		}
+	var n = Number(document.getElementById("tayb_n").value);
+	var num = BigInt(document.getElementById("tayb_in_n").value);
+	var den = BigInt(document.getElementById("tayb_in_d").value);
+	var kstr = "\\sum_{k = 1}^{"+n+"} (-1)^{k+1} \\frac{1}{k} (x-1)^k = ";
+	for (i = 1; i < n; i++) {
+		if (i > 1 && i % 2 == 1) {kstr += "+"}
+		if (i % 2 == 0) {kstr += "-"}
+		kstr += "\\frac{1}{"+i+"} (x-1)^{"+i+"}";
+		}
+	document.getElementById("tayb_out_tay").innerHTML = katex.renderToString(kstr,{displayMode:true});
+	if (document.getElementById("tayb_in_n").value != "" && document.getElementById("tayb_in_d").value != "") {
+		var f = [num,den];
+		var fm1 = reduce_frac([num-den,den]);
+		var sum = [0n,1n];
+		for (i = 1n; i < n; i++) {
+			if (i % 2n == 0) {
+				sum = add_frac(sum,[-(fm1[0]**i),i*(fm1[1]**i)]);
+				}
+			else {
+				sum = add_frac(sum,[(fm1[0]**i),i*(fm1[1]**i)]);
+				}
+			}
+		var tot = math.divide(math.bignumber(sum[0].toString()),math.bignumber(sum[1].toString()));
+		document.getElementById("tayb_out").innerHTML = katex.renderToString("\\ln\\left(\\frac{"+num+"}{"+den+"}\\right) \\approx \\frac{"+sum[0]+"}{"+sum[1]+"} \\approx " + tot,{displayMode:true});
+		beta = sum;
+		}
+	if (alpha != 0 && beta != 0) {
+		upd_tayf(alpha,beta);
+		}
+	}
+
+/*
+<input id="tayf1" type="number" value=1 onchange="upd_tay()" style="width:3em">
+<input id="tayf2" type="number" value=-3 onchange="upd_tay()" style="width:3em">
+<input id="tayf3" type="number" value=3 onchange="upd_tay()" style="width:3em">
+<input id="tayf4" type="number" value=-10 onchange="upd_tay()" style="width:3em">
+
+<div id="tayf_out"></div>
+*/
+//log(2,10).n().nearby_rational(max_error=0.000000000000001)
+var log2 = "0.30102999566398119521373889472449302676818988146210854131042746112710818927442450948692725211818617204068447719143099537909476788113352350599969233370469557506450296425419340266181973431160294350118390289817858261715443953186192904635388469952023931084961246";
+
+function upd_tayf(alpha,beta) {
+	var f1 = BigInt(document.getElementById("tayf1").value);
+	var f2 = BigInt(document.getElementById("tayf2").value);
+	var f3 = BigInt(document.getElementById("tayf3").value);
+	var f4 = BigInt(document.getElementById("tayf4").value);
+	var m1 = mul_frac([f1,1n],alpha);
+	var m2 = mul_frac([f2,1n],beta);
+	var m3 = mul_frac([f3,1n],alpha);
+	var m4 = mul_frac([f4,1n],beta);
+	var ans = div_frac(add_frac(m1,m2),add_frac(m3,m4));
+	var dec = math.divide(math.bignumber(ans[0].toString()),math.bignumber(ans[1].toString())).toString();
+	var i;
+	var decstr = "<span style='background-color:#BBCC33'>";
+	for (i = 0; i < dec.length && i < log2.length; i++) {
+		if (dec[i] == log2[i]) {
+			decstr += dec[i];
+			}
+		else {
+			break;
+			}
+		}
+	decstr += "</span>" + dec.slice(i);
+	var kstr = "\\frac{" + ans[0] + "}{" + ans[1] + "} = ";
+	document.getElementById("tayf_out").innerHTML = katex.renderToString(kstr) + decstr+"<br>" + dec;
+	}
+
+function speak(str) {
+	var msg = new SpeechSynthesisUtterance();
+	var voices = window.speechSynthesis.getVoices();
+	console.log(voices);
+	msg.voice = voices[4]; // Note: some voices don't support altering params
+	msg.voiceURI = 'native';
+	msg.volume = 1; // 0 to 1
+	msg.rate = 1; // 0.1 to 10
+	msg.pitch = 1; //0 to 2
+	msg.text = str;
+	msg.lang = 'en-US';
+
+	msg.onend = function(e) {console.log('Finished in ' + event.elapsedTime + ' seconds.');};
+
+	speechSynthesis.speak(msg);
+	}
+
+function boot_voice() {
+	var msg = new SpeechSynthesisUtterance();
+	var voices = window.speechSynthesis.getVoices();
+	console.log(voices);
+	}
+
+function boot_piloop() {
+	tgr_grapher("piloop",[],{dragging:false,labelaxes:false,showaxes:false,showgrid:false});
+	draw_piloop();
+	}
+
+function bootkatex() {
+	var l = document.getElementsByClassName("k");
+	var k = l.length;
+	var i;
+	for (i = 0; i < k; i++) {
+		katex.render(l[i].title,l[i],{});
+		}
+	var l = document.getElementsByClassName("kd");
+	console.log(l);
+	var k = l.length;
+	var i;
+	for (i = 0; i < k; i++) {
+		katex.render(l[i].title,l[i],{displayMode:true});
+		}
+	}
+
+function boot() {
+	boot_piloop();
+	bootkatex();
+	sagecell.makeSagecell({"inputLocation": ".sage"});
+	boot_voice();
+	}
+
+</script>
+
+<style>
+blockquote.caution {
+	background-color: #EEEEBB;
+	padding: 20px;
+	border-left: 3px solid #666633;
+	}
+blockquote.problem {
+	background-color: #CCEEFF;
+	padding: 20px;
+	border-left: 3px solid #225555;
+	}
+.tkas_css_parens {
+	border-radius: calc(3px + .06em) / 50%;
+	border-left: .02em solid black;
+	border-right: .02em solid black;
+	display:inline-block;
+	margin-left: calc(2px + .05em);
+	}
+</style>
+</head>
+<body onload="boot()">
+<h1> Is there a power of 2 that begins with ten 7s? </h1>
+<p>A long time ago, I took a course in Budapest called Conjecture and Proof, and one of our homework problems was to determine (with proof) whether there was a power of 2 which begins with 7777777777... . Initially, this seems very unlikely, but if we do a brute force search, we find a close call fairly early:</p>
+This input below will allow you to hunt for a power of 2 starting with whatever prefix you want and/or completely obliterate your computer:
+<input type='number' id='bf_n' value='7777777' style='width:7em'><button onclick="bf()">Brute Force</button>
+<div id="bf_out" style='height:500px; overflow-y:scroll; border:1px solid'>
+<iframe src="" width=1000 height=500></iframe>
+</div>
+<p>It should be clear by how long this process takes that we're going to have to use some math to find this number, if it even exists.</p>
+<h2>A Hint</h2>
+<p>A seasoned math problem solver should already be familiar with a technique to investigate the last few digits of numbers, namely modular arithmetic. In fact, we can go a step further than just computing the last few digits of integers. Let's solve the problem:
+<blockquote class='problem'>
+Is there a multiple of pi whose first few digits after the decimal place are .777?
+</blockquote>
+<table><tr><td>
+Rotation Amount: <input id="piloop_pi" value="pi" onchange="draw_piloop()"><br>
+Number of rotations: <input type="number" id="piloop_n" value=0 oninput="draw_piloop()">
+</td><td><span id="piloop_prod"></span></td></tr></table>
+<div id="piloop" onload="boot_piloop()"></div>
+<p>If one looks at sufficiently enough multiples of pi, two of them must be closer together than the width of the target range. In fact, one can show that one of the two multiples must be 0 pi using a subtraction argument. We can then take multiples of that multiple to get us (very inefficiently) into the target range.
+<blockquote class='caution'>
+You have now been provided with all the information I was given when presented with this homework problem. Now's a good time to take a break and try to solve the problem yourself.
+</blockquote>
+<canvas width=500 height=500></canvas>
+<h2>Taking the Logarithm of the Problem</h2>
+We begin by making a formal statement of the problem:
+<blockquote class="problem">
+Are there positive integers n and x such that:
+<div class="kd" title="7.777777777 \cdot 10^x \leq 2^n < 7.777777778 \cdot 10^x"></div>
+</blockquote>
+Taking the log (base 10) of the problem gives us:
+<div class="kd" title="\log(7.777777777) + x \leq \log(2^n) < \log(7.777777778) + x"></div>
+or:
+<div class="kd" title="\log(7.777777777) + x \leq n\log(2) < \log(7.777777778) + x"></div>
+In other words, is there a multiple of log(2), whose fractional part is between log(7.777777777) and log(7.777777778)? And, once you've proved that log(2) is irrational, a similar argument to that above will prove that such an n exists. But how do we find one?
+<p>
+We might first consider the tactic we used with multiples of pi: simply list multiples of log(2) until we find two that are close enough together (specifically, of a distance less than the width of the target interval. However, this approach is still too brute-force to be practical: the width of the target interval is:
+<div class="kd" title="\log(7.777777778) - \log(7.777777777) \approx 5.6\ldots \cdot 10^{-11}"></div>
+We would need more than <span class="k" title="\frac{1}{5.6\ldots \cdot 10^{-11}} > 17,000,000,000"></span> multiples to guarantee we had found two close enough together, and even then we'd still have to do some figuring to determine which multiples were that close together.
+</p>
+<p>
+Let's consider what we're looking for specifically: some positive integer multiple of log(2) whose decimal part is exceptionally close to 0, that we can use to walk our way around the circle and land in the target area. In other words, for some positive integers n and x:
+<div class="kd" title="n \log(2) \approx x"></div>
+In other words:
+<div class="kd" title="\log(2) \approx \frac{x}{n}"></div>
+That is, we're looking for a really good rational approximation to log(2). The go-to for rational approximations to log(2) is <span class="k" title="\frac{3}{10}"></span> since <span class="k" title="2^{10} \approx 10^3"></span>. (In fact, <span class="k" title="e^7 = 1096.6\ldots"></span> is close by too, giving good approximations of ln(2) and ln(10).)</p>
+<p>But we need a much better rational approximation, and in fact it needs to be quite good relative to its size. Specifically, we want:
+<div class="kd" title="|n \log(2) - x| < \text{ something small}"></div>
+Luckily, we know that log(2) is transcendental (a correlate of the Gelfond-Schneider theorem), and thus has irrationality measure (thanks, Liouville!) at least 2 (possibly more), and thus:
+<div class="kd" title="|\log(2) - \frac{x}{n}| < \frac{1}{n^{2-\epsilon}}"></div>
+Or:
+<div class="kd" title="|n \log(2) - x | < \frac{1}{n^{1-\epsilon}}"></div>
+Has infinitely many solutions in whole numbers n,x.
+</p>
+<p>
+One can calculate exactly how much precision we need in our rational approximation, but trial-and-error is likely to give better results. The rational approximation I used was:
+</p>
+<div class="sage">
+<script type="text/x-sage">
+n(log(2,10),digits=1000).nearby_rational(max_error = 2*10^(-21))
+</script>
+</div>
+Let's check that this does in fact give us a good power of two that's close to a power of 10:
+<div class="sage">
+<script type="text/x-sage">
+n(2^63127150117,digits=1000)
+</script>
+</div>
+Oh. Luckily we can factor: 63127150117 = 647 * 97569011
+<div class="sage">
+<script type="text/x-sage">
+factor(63127150117)
+</script>
+</div>
+And then round off halfway through:
+<div class="sage">
+<script type="text/x-sage">
+n(2^97569011,digits=10000)^647
+</script>
+</div>
+This gives us our multiple of log(2) with tiny fractional part. That fractional part is: <span class="k" title="63127150117 \log(2) -19003165726"></span>
+<div class="sage">
+<script type="text/x-sage">
+n(63127150117*(log(2,10))-19003165726,digits=100)
+</script>
+</div>
+We now divide the low end of our target range by this tiny step to determine how many steps we need to take:
+<div class="sage">
+<script type="text/x-sage">
+log(7.777777777,10)/(63127150117*(log(2,10).n(digits=10000))-19003165726)
+</script>
+</div>
+In other words, we need to multiply this multiple of log(2) by 7255876476 to get it into the target range.
+<br>
+So, overall the number we need to multiply log(2) by is:
+<div class="sage">
+<script type="text/x-sage">
+7255876476*63127150117
+</script>
+</div>
+2<sup>458,042,803,530,860,947,692</sup>. <button onclick="speak('2 to the power of 458042803530860947692')">Read</button> Hmm. How can we even test this solution?
+<div class="sage">
+<script type="text/x-sage">
+((n(2^97569011,digits=10000)/10^(29371198))^647/10^620)^7255876476
+</script>
+</div>
+We can compute the number of digits of this power of 2:
+<div class="sage">
+<script type="text/x-sage">
+n(458042803530860947692*log(2,10),digits=100)
+</script>
+</div>
+In other words:
+137,884,623,160,812,861,576 digits <button onclick="speak('137,884,623,160,812,861,576 digits')">Read</button>
+</body>
+</html>

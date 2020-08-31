@@ -317,12 +317,14 @@ blockquote.problem {
 </style>
 </head>
 <body onload="boot()">
+<blockquote class="problem">
+Hello! While you're here, feel free to check out some of my educational interactives. Highlights are on my <a href="about.html">About</a> page and the whole collection is in the <a href="index.html">Index</a>.
+</blockquote>
 <h1> Is there a power of 2 that begins with ten 7s? </h1>
 <p>A long time ago, I took a course in Budapest called Conjecture and Proof, and one of our homework problems was to determine (with proof) whether there was a power of 2 which begins with 7777777777... . Initially, this seems very unlikely, but if we do a brute force search, we find a close call fairly early:</p>
 This input below will allow you to hunt for a power of 2 starting with whatever prefix you want and/or completely obliterate your computer:
 <input type='number' id='bf_n' value='7777777' style='width:7em'><button onclick="bf()">Brute Force</button>
 <div id="bf_out" style='height:500px; overflow-y:scroll; border:1px solid'>
-<iframe src="" width=1000 height=500></iframe>
 </div>
 <p>It should be clear by how long this process takes that we're going to have to use some math to find this number, if it even exists.</p>
 <h2>A Hint</h2>
@@ -430,5 +432,6 @@ n(458042803530860947692*log(2,10),digits=100)
 </div>
 In other words:
 137,884,623,160,812,861,576 digits <button onclick="speak('137,884,623,160,812,861,576 digits')">Read</button>
+
 </body>
 </html>

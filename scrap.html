@@ -25,6 +25,57 @@ var gtabltabls = [];
 
 var gfreepb = 0;
 
+function copyToClip(str) { //from stackoverflow
+  function listener(e) {
+    e.clipboardData.setData("text/html", str);
+    e.clipboardData.setData("text/plain", str);
+    e.preventDefault();
+  }
+  document.addEventListener("copy", listener);
+  document.execCommand("copy");
+  document.removeEventListener("copy", listener);
+};
+
+function copy_tabl(i) {
+	copyToClip(tabl_to_canvas(i));
+	}
+
+function copy_mq(i) {
+	copyToClip(latex_to_canvas(MQ(document.getElementById("men_"+i)).latex()));
+	}
+
+function copy_pic(i) {
+	var str = document.getElementById("pbi_"+i).outerHTML;
+	
+	}
+
+function latex_to_canvas(l) {
+	var str = `<img class="equation_image" title="` + l + `" src="/equation_images/` + encodeURIComponent(l) + `" alt = "LaTeX: ` + l + `" data-equation-content="` + l + `" />`
+	return(str);
+	}
+
+function tabl_to_canvas(i) {
+	var r = tabl_to_array(i);
+	var j;
+	var str = "<table border=1>";
+	for (j = 0; j < r.length; j++) {
+		str += "<tr><td>" + latex_to_canvas(r[j][0]) + "</td><td>" + r[j][1] + "</td></tr>";
+		}
+	str += "</table>";
+	return(str);
+	}
+
+function tabl_to_array(i) {
+	var j;
+	var rval = [];
+	for (j = 0; j < gtabltabls[i].length; j++) {
+		rval.push([MQ(document.getElementById("mqt_"+i+"_"+j)).latex(),
+			document.getElementById("imqt_"+i+"_"+j).value
+			]);
+		}
+	return(rval);
+	}
+
 function reawaken() {
 	var l = document.querySelectorAll("[data-latex]");
 	var i,j;
@@ -439,7 +490,9 @@ function mqmaker(el) {
 
 function span_to_mqt(el,k) {
 	var tab = gtabltabls.length;
-	el.innerHTML = "<table border=1><tr><td>Math</td><td>Notes</td></tr>"
+	el.id = "ment_"+gfreepb;
+	gfreepb++;
+	el.innerHTML = "<table border=1><tr><td>Math</td><td>Notes <button onclick='copy_tabl("+tab+")'>Copy</button></td></tr>"
 	+"<tr id='tablrow_"+tab+"_0'><td><span id='mqt_"+tab+"_0'></span></td><td><input id='imqt_"+tab+"_0' class='tabli' type='text' onkeydown='tablikd(event)' onkeypress='tablikp(event)'></td></tr></table>";
 	requestAnimationFrame(finishspan_to_mqt);
 	if (k) {
@@ -449,6 +502,8 @@ function span_to_mqt(el,k) {
 
 function span_to_mq(el,k) {
 	el.innerHTML = "";
+	el.id = "men_"+gfreepb;
+	gfreepb++;
 	MQ.MathField(el, {autoCommands:gautocommands,handlers: {
 		edit: mqedit,
 		enter: function (m) {
@@ -578,6 +633,14 @@ function pbmm(e) {
 	e.preventDefault();
 	}
 
+function debug_get_grid_html() {
+	var canv = document.createElement("canvas");
+	var ctx = canv.getContext("2d");
+	ctx.drawImage(document.getElementById("lc"),0,0,500,500);
+	var data = canv.toDataURL("image/png");
+	console.log(data);
+	}
+
 function pbmu(e) {
 	gpainting=false;
 	e.preventDefault();
@@ -607,6 +670,7 @@ function span_to_paintbox(el,k) {
 	el.innerHTML = "";
 	el.id = "pb_"+gfreepb;
 	var contain = document.createElement("span");
+	contain.id = "imgcopy_"+gfreepb;
 	contain.style.position = "relative";
 	contain.style.display = "block";
 	contain.style.width = "500px";
@@ -747,5 +811,7 @@ Font:<select id="opt_font" oninput="upd_opts()">
 
 <div style="display:none" id="gtt"></div>
 
+<img id="lc" src="https://trkern.github.io/grid.png">
+<button onclick="clipboard_test()">clipboard</button>
 </body>
 </html>

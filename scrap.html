@@ -155,6 +155,26 @@ function reawaken() {
 	for (i = 0; foundids[i]; i++) {
 		gtabltabls.push(foundids[i]);
 		}
+	var ll = document.body.children;
+	for (i = 0; i < ll.length; i++) {
+		if (ll[i].id.startsWith("ment_")) {
+			gfreepb = Math.max(gfreepb, 1+Number(ll[i].id.slice(5)));
+			tabl_gfreepb_indexes[Number(ll[i].id.slice(5))] = Number(ll[i].getAttribute("data-tabli"));
+			}
+		if (ll[i].id.startsWith("men_")) {gfreepb = Math.max(gfreepb, 1+Number(ll[i].id.slice(4)));}
+		if (ll[i].id.startsWith("pbi_")) {gfreepb = Math.max(gfreepb, 1+Number(ll[i].id.slice(4)));}
+		if (ll[i].id.startsWith("camb_")) {gfreepb = Math.max(gfreepb, 1+Number(ll[i].id.slice(5)));}
+		}
+	}
+
+function textexpand(e) {
+	var el = e.target;
+	var dummy = document.createElement("span");
+	dummy.style.font = getComputedStyle(el).font;
+	dummy.innerText = el.value;
+	document.body.appendChild(dummy);
+	el.style.width = Math.max(250,dummy.getBoundingClientRect().width+2) + "px";
+	dummy.remove();
 	}
 
 function mqedit(m) {
@@ -526,6 +546,8 @@ function finishspan_to_mqt() {
 			}
 		});
 
+	document.getElementById("mqt_"+tab+"_0").setAttribute("data-tlatex","");
+
 	gtabltabls.push([0]);
 	mqnew.focus();
 	}
@@ -547,10 +569,11 @@ function mqmaker(el) {
 function span_to_mqt(el,k) {
 	var tab = gtabltabls.length;
 	el.id = "ment_"+gfreepb;
+	el.setAttribute("data-tabli",tab);
 	tabl_gfreepb_indexes[gfreepb] = tab;
 	gfreepb++;
 	el.innerHTML = "<table border=1><tr><td>Math</td><td>Notes <button onclick='copy_tabl("+tab+")'>Copy</button></td></tr>"
-	+"<tr id='tablrow_"+tab+"_0'><td><span id='mqt_"+tab+"_0'></span></td><td><input id='imqt_"+tab+"_0' class='tabli' type='text' onkeydown='tablikd(event)' onkeypress='tablikp(event)'></td></tr></table>";
+	+"<tr id='tablrow_"+tab+"_0'><td><span id='mqt_"+tab+"_0'></span></td><td><input id='imqt_"+tab+"_0' class='tabli' type='text' onkeydown='tablikd(event)' onkeypress='tablikp(event)' oninput='textexpand(event)'></td></tr></table>";
 	requestAnimationFrame(finishspan_to_mqt);
 	if (k) {
 		mqmaker(el);
@@ -560,6 +583,7 @@ function span_to_mqt(el,k) {
 function span_to_mq(el,k) {
 	el.innerHTML = "";
 	el.id = "men_"+gfreepb;
+	el.setAttribute("data-latex","");
 	gfreepb++;
 	MQ.MathField(el, {autoCommands:gautocommands,handlers: {
 		edit: mqedit,

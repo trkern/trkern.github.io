@@ -276,7 +276,7 @@ function tablenter(m,shiftpressed) {
 	var newid = tablunused(tab);
 	var newrow = document.createElement("tr");
 	newrow.id = "tablrow_"+tab+"_"+newid;
-	newrow.innerHTML = "<td><span id='mqt_"+tab+"_"+newid+"'></span></td><td><input id='imqt_"+tab+"_"+newid+"' class='tabli' type='text' onkeypress='tablikp(event)' onkeydown='tablikd(event)'></td>";
+	newrow.innerHTML = "<td><span id='mqt_"+tab+"_"+newid+"'></span></td><td><input id='imqt_"+tab+"_"+newid+"' class='tabli' type='text' onkeypress='tablikp(event)' onkeydown='tablikd(event)' oninput='textexpand(event)' style='width:250px'></td>";
 
 	document.getElementById("tablrow_"+tab+"_"+rowid).insertAdjacentElement("afterend",newrow);
 
@@ -573,7 +573,7 @@ function span_to_mqt(el,k) {
 	tabl_gfreepb_indexes[gfreepb] = tab;
 	gfreepb++;
 	el.innerHTML = "<table border=1><tr><td>Math</td><td>Notes <button onclick='copy_tabl("+tab+")'>Copy</button></td></tr>"
-	+"<tr id='tablrow_"+tab+"_0'><td><span id='mqt_"+tab+"_0'></span></td><td><input id='imqt_"+tab+"_0' class='tabli' type='text' onkeydown='tablikd(event)' onkeypress='tablikp(event)' oninput='textexpand(event)'></td></tr></table>";
+	+"<tr id='tablrow_"+tab+"_0'><td><span id='mqt_"+tab+"_0'></span></td><td><input id='imqt_"+tab+"_0' class='tabli' type='text' onkeydown='tablikd(event)' onkeypress='tablikp(event)' oninput='textexpand(event)' style='width:250px'></td></tr></table>";
 	requestAnimationFrame(finishspan_to_mqt);
 	if (k) {
 		mqmaker(el);

@@ -553,7 +553,34 @@ function checkna(b) {
 		}
 	}
 
+/*<button onclick="checko('CF20')">Calc 1 Fall 2020</button>
+<button onclick="checko('AF20')">College Algebra Fall 2020 Week 1</button>*/
+
+var courses = {
+	CF20: [4,10,14],
+	AF20W1: [4,10,14]
+	}
+
+function checko(str) {
+	if (str in courses) {
+		for (i = 0; i < g_nprobs; i++) {
+			document.getElementById("chk_problem_"+i).checked = false;
+			}
+		for (i = 0; i < courses[str].length; i++) {
+			document.getElementById("chk_problem_"+courses[str][i]).checked = true;
+			}
+		}
+	}
+
+function loaduri() {
+	str = document.URL;
+	if (str.indexOf("?") == -1) {return;}
+	str = str.slice(str.indexOf("?")+1);
+	checko(str);
+	}
+
 function boot() {
+	loaduri();
 	maxminimize();
 	}
 
@@ -595,23 +622,25 @@ button {
 </button>
 Pick what types of problems you'd like to practice below, then click "Generate Problem". <br>
 <input type="checkbox" id="chk_problem_0" checked> Find x- and y- intercepts given slope-intercept form <br>
-<input type="checkbox" id="chk_problem_1">* Find x- and y- intercepts given standard form <br>
+<input type="checkbox" id="chk_problem_1"> Find x- and y- intercepts given standard form <br>
 <input type="checkbox" id="chk_problem_2" checked> Convert point-slope form to slope-intercept <br>
 <input type="checkbox" id="chk_problem_3" checked> Convert "standard" form to slope-intercept <br>
 <input type="checkbox" id="chk_problem_4" checked> Convert point and slope to slope-intercept <br>
 <input type="checkbox" id="chk_problem_5" checked> Find a line perpendicular to y=mx+b passing through a point <br>
 <input type="checkbox" id="chk_problem_6" checked> Find a line parallel to y=mx+b passing through a point <br>
-<input type="checkbox" id="chk_problem_7">* Find a line perpendicular to ax+by=c passing through a point <br>
-<input type="checkbox" id="chk_problem_8">* Find a line parallel to ax+by=c passing through a point <br>
+<input type="checkbox" id="chk_problem_7"> Find a line perpendicular to ax+by=c passing through a point <br>
+<input type="checkbox" id="chk_problem_8"> Find a line parallel to ax+by=c passing through a point <br>
 <input type="checkbox" id="chk_problem_9" checked> Find a line passing through two points <br>
 <input type="checkbox" id="chk_problem_10" checked> Find the equation of a line given the graph <br>
 <input type="checkbox" id="chk_problem_11" checked> Find the intersection of two lines in slope-intercept form <br>
-<input type="checkbox" id="chk_problem_12">* Find the intersection of two lines in slope-intercept and "standard" forms <br>
-<input type="checkbox" id="chk_problem_13">* Find the intersection of two lines in "standard" form <br>
+<input type="checkbox" id="chk_problem_12"> Find the intersection of two lines in slope-intercept and "standard" forms <br>
+<input type="checkbox" id="chk_problem_13"> Find the intersection of two lines in "standard" form <br>
 <input type="checkbox" id="chk_problem_14" checked> Estimate the slope of a line given a graph <br>
-* = optional spring 2020<br>
+<br>
 <button onclick="checkna(0)">Check None</button>
 <button onclick="checkna(1)">Check All</button>
+<button onclick="checko('CF20')">Calc 1 Fall 2020</button>
+<button onclick="checko('AF20W1')">College Algebra Fall 2020 Week 1</button>
 </div>
 <button onclick="generate_problem()" style="margin-left:10px">Generate Problem</button>
 <div id="problem" class="box"></div>

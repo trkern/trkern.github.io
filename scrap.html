@@ -829,6 +829,17 @@ function boot() {
 	mqmaker(document.getElementById("start"));
 	}
 
+function togglebutts() {
+	if (document.getElementById("buttons").style.display == "none") {
+		document.getElementById("togglebutts").innerHTML = "^"
+		document.getElementById("buttons").style.display = "";
+		}
+	else {
+		document.getElementById("togglebutts").innerHTML = "v"
+		document.getElementById("buttons").style.display = "none";
+		}
+	}
+
 </script>
 <style>
 kbd {
@@ -888,5 +899,6 @@ Font:<select id="opt_font" oninput="upd_opts()">
 </span>
 
 <div style="display:none" id="gtt"></div>
+<button id="togglebutts" onclick="togglebutts()" style="z-index:4;position:fixed;top:0;right:0">^</button>
 </body>
 </html>

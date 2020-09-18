@@ -75,6 +75,10 @@ function copy_tabl(i) {
 	return(tabl_to_canvas(tabl_gfreepb_indexes[i]));
 	}
 
+function copy_tabl_butt(i) {
+	copyToClip(tabl_to_canvas(i));
+	}
+
 function copy_mq(i) {
 	return(latex_to_canvas(MQ(document.getElementById("men_"+i)).latex()));
 	}
@@ -572,7 +576,7 @@ function span_to_mqt(el,k) {
 	el.setAttribute("data-tabli",tab);
 	tabl_gfreepb_indexes[gfreepb] = tab;
 	gfreepb++;
-	el.innerHTML = "<table border=1><tr><td>Math</td><td>Notes <button onclick='copyToClip(copy_tabl("+tab+"))'>Copy</button></td></tr>"
+	el.innerHTML = "<table border=1><tr><td>Math</td><td>Notes <button onclick='copy_tabl_butt("+tab+")'>Copy</button></td></tr>"
 	+"<tr id='tablrow_"+tab+"_0'><td><span id='mqt_"+tab+"_0'></span></td><td><input id='imqt_"+tab+"_0' class='tabli' type='text' onkeydown='tablikd(event)' onkeypress='tablikp(event)' oninput='textexpand(event)' style='width:250px'></td></tr></table>";
 	requestAnimationFrame(finishspan_to_mqt);
 	if (k) {

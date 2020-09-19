@@ -247,6 +247,10 @@ function mqkeys(e,c) {
 
 function mqtablenter(e,c) {
 	e.preventDefault();
+	if (e.target.classList.contains("tabli")) {
+		tablikp(e);
+		return;
+		}
 	var sel = window.getSelection();
 	var range = sel.getRangeAt(0);
 	if (isinmq(range.startContainer)) {
@@ -870,8 +874,11 @@ kbd {
 <div id='start'></div>
 
 <span id="buttons" style="position:fixed;top:0;right:0;background-color:#DDDDDD;padding:2px;">
-To save your work, save the page <kbd>ctrl-s</kbd><br>
-To copy all (to paste into canvas) click: <button onclick="copyall()">Copy</button><br>
+Features:<br>
+To save your work, <kbd>ctrl-s</kbd><br>
+To copy to Canvas click: <button onclick="copyall()">Copy</button><br>
+<button onclick="mqtablenter(event,false)">New Line <kbd>Enter</kbd></button><br>
+<button onclick="mqtablenter(event,true)">Copy New Line <kbd>Shift</kbd>+<kbd>Enter</kbd></button><br>(Structured Entry Only)<br>
 Math Commands:<br>
 <button onmousedown="mqbutt(event,'/')/*hey why is this onmousedown? see https://stackoverflow.com/questions/486414/any-way-to-prevent-deselection-of-highlighted-text*/">Fraction <kbd>/</kbd></button> <br>
 <button onmousedown="mqcmd(event,'sqrt')">Square Root <kbd>sqrt</kbd></button> <br>
@@ -882,8 +889,6 @@ Math Commands:<br>
 <button onclick="mqbutt(event,'$')">Text <kbd>$</kbd> to start and end</button><br>
 <button onclick="mqbutt(event,'nthroot')">Nth Root <kbd>nthroot</kbd></button><br>
 <button onclick="mqbutt(event,'pm')">Plus or Minus <kbd>pm</kbd></button><br>
-<button onclick="mqtablenter(event,false)">New Line <kbd>Enter</kbd></button><br>
-<button onclick="mqtablenter(event,true)">Copy New Line <kbd>Shift</kbd>+<kbd>Enter</kbd></button><br>(Structured Entry Only)<br>
 Calculus:<br>
 <button onclick="mqbutt(event,'lim')">Limit <kbd>lim</kbd></button><br>
 <button onclick="derivbutt(event)"><table style='text-align:center'><tr><td>d</td></tr><tr><td style='border-top: solid 2px'>d<input id='derivbuttvar' value='x' style='width:1ch'></td></tr></table></button><br>
@@ -897,12 +902,15 @@ Font:<select id="opt_font" oninput="upd_opts()">
 <option>Lexend Deca</option>
 <option>Roboto</option>
 <option>Montserrat</option>
-<option disabled>Let me know if you want a specific font</option>
+<option disabled>Request more</option>
 </select><br>
-<input type='checkbox' oninput='upd_cam_chk(event)'> Only ask for camera permission once
+<input type='checkbox' oninput='upd_cam_chk(event)'> Ask for cam permission once
 </span>
 
 <div style="display:none" id="gtt"></div>
-<button id="togglebutts" onclick="togglebutts()" style="z-index:4;position:fixed;top:0;right:0">^</button>
+<div id="butts" style="z-index:4;position:fixed;top:0;right:0">
+<button onclick="window.open(`https://www.youtube.com/watch?v=FCexoooiLNg`)">?</button>
+<button id="togglebutts" onclick="togglebutts()">^</button>
+</div>
 </body>
 </html>

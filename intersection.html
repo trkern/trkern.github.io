@@ -1,0 +1,696 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<meta name=description content="">
+<link rel="icon" href="icon.png">
+<title> Solving Intersections </title>
+<script src="math.min.js"></script>
+<script src="tgr.js"></script>
+<script src="katex.min.js"></script>
+<link rel="stylesheet" href="katex.min.css">
+<script>
+
+var g_ans;
+
+function ribet(mn,mx) {
+	return(Math.floor(Math.random()*(mx-mn+1))+mn);
+	}
+
+function tex_number(n,force_plus,squash_ones) {
+	var nn = n;
+	if (n == 1 && squash_ones) {
+		if (force_plus) {return("+");}
+		return("");
+		}
+	if (n == -1 && squash_ones) {
+		return("-");
+		}
+	if (force_plus && n >= 0) {return("+"+nn);}
+	return(nn);
+	}
+
+function tex_poly(l,v) {
+	var a = l[2];
+	var b = l[1];
+	var c = l[0];
+	var bl = false;
+	var str = "";
+	if (a != 0) {
+		str += tex_number(a,bl,true) + v+"^2";
+		bl = true;
+		}
+	if (b != 0) {
+		str += tex_number(b,bl,true) + v;
+		bl = true;
+		}
+	if (c != 0) {
+		str += tex_number(c,bl,false);
+		bl = true;
+		}
+	if (!bl) {
+		str = "0";
+		}
+	return(str);
+	}
+
+function showllip(m1,b1,m2,b2) {
+	tgr_grapher("graphs",[
+		{type:"plot",fct:function(x){return(m1*x+b1);},color:"red",linewidth:3},
+		{type:"plot",fct:function(x){return(m2*x+b2);},color:"blue",linewidth:3},
+		]);
+	document.getElementById("grwarn").innerHTML += "<blockquote class='caution'>NOTE: you may be able to determine the intersection point exactly or approximately just by looking at the graph. The goal of this interactive is to practice with solving equations using algebra so that when we encounter problems where you can't determine the intersection point exactly from the graph, you are prepared to solve those.</blockquote>";
+	}
+
+function showqqip(a1,b1,c1,a2,b2,c2) {
+	tgr_grapher("graphs",[
+		{type:"plot",fct:function(x){return(a1*x*x+b1*x+c1);},color:"red",linewidth:3},
+		{type:"plot",fct:function(x){return(a2*x*x+b2*x+c2);},color:"blue",linewidth:3},
+		]);
+	document.getElementById("grwarn").innerHTML += "<blockquote class='caution'>NOTE: you may be able to determine the intersection point exactly or approximately just by looking at the graph. The goal of this interactive is to practice with solving equations using algebra so that when we encounter problems where you can't determine the intersection point exactly from the graph, you are prepared to solve those.</blockquote>";
+	}
+
+function checkans() {
+	var inp = document.getElementById("ans").value;
+	/*hey dummy, you need to have a flag set by the initial caller as to whether the final solution is a list of points or a list of x coordinates.*/
+	//g_ans should contain points since we don't know whether 
+	}
+
+function linearsolution(m1,b1,m2,b2) {
+	if (m1 == m2) {
+		if (b1 == b2) {
+			return("INF");
+			}
+		else {
+			return("DNE");
+			}
+		}
+	else {
+		var x = (b2-b1)/(m1-m2);
+		return([[x,m1*x+b1]]);
+		}
+	}
+
+function quadsolution(a1,b1,c1,a2,b2,c2) {
+	var a = a1-a2;
+	var b = b1-b2;
+	var c = c1-c2;
+	var d = b*b-4*a*c;
+	var f = function(x) {return(a1*x*x+b1*x+c1);}
+	if (a == 0) {
+		return(linearsolution(b1,c1,b2,c2));
+		}
+	if (d < 0) {return("DNE");}
+	if (d == 0) {
+		var x = -b/(2*a);
+		return([[x,f(x)]]);
+		}
+	var x1 = (-b+Math.sqrt(d))/(2*a);
+	var x2 = (-b-Math.sqrt(d))/(2*a);
+	return([[x1,f(x1)],[x2,f(x2)]]);
+	}
+
+function delme(e) {
+	console.log("hii");
+	e.target.style.display = "none";
+	e.preventDefault();
+	}
+
+//function tex_number(n,force_plus,squash_ones)
+
+function distributivity_svg(a,b) {
+	var str = "";
+	if (a >= 0 || a == -1) {str += "&nbsp;"}
+	str += tex_number(a,false,true);
+	str += "(x";
+	str += tex_number(b,true,false);
+	str += ")";
+	var rstr = `<svg width=100 height=35>
+  <defs>
+    <marker id='head' orient='auto' markerWidth='5' markerHeight='8'
+            refX='0.1' refY='4'>
+      <polyline points="0,0 5,4 0,8" fill="black"/>
+    </marker>
+  </defs>
+<text x=2 y=30 style="font-size:24px;font-family:'Roboto Mono',monospace">`+str+`</text>
+<path marker-end="url(#head)" d="M 22 10 Q 34 2 46 10" stroke="black" fill="none"/>
+<path marker-end="url(#head)" d="M 22 10 Q 50 -4 78 10" stroke="black" fill="none"/>
+</svg>`;
+	return(rstr);
+	}
+
+function str_dclt(x1,y1,m1,ord) {
+	var str = "";
+	if (x1 != 0) {
+		if (m1 == 1) {
+			str += "<br>We can simplify our "+ord+" line by eliminating the parentheses: "
+			}
+		else {
+			str += "<br>We can simplify our "+ord+" line by distributing the " + m1 + ":<br>";
+			str += distributivity_svg(m1,-x1);
+			str += "<br>To get: "
+			}
+		str += katex.renderToString(tex_number(m1,false,true) + "x" + tex_number(-m1*x1,true,false) + tex_number(y1,true,false));
+		if (y1 != 0) {
+			str += "<br> Combining numbers gives us: ";
+			str += katex.renderToString(tex_number(m1,false,true) + "x" + tex_number(-m1*x1+y1,true,false));
+			}
+		}
+	return(str);
+	}
+
+function steppsllip(x1,y1,m1,x2,y2,m2) {
+	if (x1 == 0 && x2 == 0) {stepllip(m1,y1,m2,y2);return;}
+	var str = "<br>We should start by rewriting the equations for our lines in slope-intercept form, which is easier to work with. ";
+	str += str_dclt(x1,y1,m1,"first");
+	str += str_dclt(x2,y2,m2,"second");
+	str += "<br>So let's solve the problem:<br>";
+	str += str_line_line_intersection_problem(m1,-m1*x1+y1,m2,-m2*x2+y2);
+	document.getElementById("problem").innerHTML += str;
+	}
+
+function stepllip(m1,b1,m2,b2) {
+	var str = "<br>We know that whatever value of y solves this equation, it's going to be equal to both " + katex.renderToString(tex_poly([b1,m1,0],"x")) + " and " + katex.renderToString(tex_poly([b2,m2,0],"x")) + ", ";
+	str += "where x is our solution for x. Thus we're trying to solve the equation " + katex.renderToString(tex_poly([b1,m1,0],"x") + "=" + tex_poly([b2,m2,0],"x")) + ". So let's solve the problem:<br>"
+	str += str_solve_linear_problem(m1,b1,m2,b2);
+	document.getElementById("problem").innerHTML += str;
+	}
+
+function str_line_line_intersection_problem(m1,b1,m2,b2) {
+	var str = "<blockquote class='problem'>Find the intersection of the lines " + katex.renderToString("y="+tex_poly([b1,m1,0],"x")) + " and " + katex.renderToString("y="+tex_poly([b2,m2,0],"x")) + ".</blockquote>";
+	str += "<button onclick='this.remove(); showllip("+m1+","+b1+","+m2+","+b2+")'>Show Graphs</button>";
+	str += "<button onclick='this.remove(); stepllip("+m1+","+b1+","+m2+","+b2+")'>Walkthrough 1 Step</button>";
+	return(str);
+	}
+
+function make_line_line_intersection_problem() {
+	var m1 = ribet(-4,4);
+	var b1 = ribet(-4,4);
+	var m2 = ribet(-4,4);
+	var b2 = ribet(-4,4);
+	document.getElementById("problem").innerHTML = str_line_line_intersection_problem(m1,b1,m2,b2);
+	g_ans = linearsolution(m1,b1,m2,b2);
+	makesolution(true);
+	}
+
+function steplp(e,m1,b1,m2,b2) {
+	if (b1 == 0) {steplp2(e,m1,b1,m2,b2); return;}
+	var str = "<br>Let's subtract " + b1 + " from both sides of the equation to work towards getting x by itself:<br>"
+	str += str_solve_linear_problem(m1,0,m2,b2-b1);
+	e.target.outerHTML = str;
+	}
+
+function steplp2(e,m1,b1,m2,b2) {
+	if (m2 == 0) {steplp3(e,m1,b1,m2,b2); return;}
+	var str = "<br>Let's subtract " + m2 + "x from both sides of the equation to work towards getting x by itself:<br>";
+	str += str_solve_linear_problem(m1-m2,b1,0,b2);
+	e.target.outerHTML = str;
+	//document.getElementById("problem").innerHTML += str;
+	}
+
+function steplp3(e,m1,b1,m2,b2) { //m2 and b1 must be 0.
+	if (m1 == 0) {
+		var str = "<br>Are there any values of x that make " + b1 + "=" + b2 + "?";
+		if (b1 == b2) {
+			str += "Of course! No matter what value of x you plug in, this equation will be true. Type the answer 'ALL'";
+			}
+		else {
+			str += "No way! No matter what value of x you plug in, this equation will never be true. Type the answer 'DNE'";
+			}
+		e.target.outerHTML = str;
+		//document.getElementById("problem").innerHTML += str;
+		return;
+		}
+	if (m1 == 1) {
+		var str = "<br>We've solved for x! Type the answer " + b2 + ".";
+		e.target.outerHTML = str;
+		//document.getElementById("problem").innerHTML += str;
+		return;
+		}
+	var str = "<br>Let's divide both sides by " + m1 + ", to get our value of x = " + math.simplify(b2 + "/" + m1).toString() + ".";
+	e.target.outerHTML = str;
+	//document.getElementById("problem").innerHTML += str;
+	}
+
+function str_solve_linear_problem(m1,b1,m2,b2) {
+	var str = "<blockquote class='problem'>Solve the equation " + katex.renderToString(tex_poly([b1,m1,0],"x") + "=" + tex_poly([b2,m2,0],"x")) + ".</blockquote>";
+	str += "<button onclick='steplp(event,"+m1+","+b1+","+m2+","+b2+");this.remove()'>Walkthrough 1 Step</button>";
+	return(str);
+	}
+
+function make_solve_linear_problem() {
+	var m1 = ribet(-4,4);
+	var b1 = ribet(-4,4);
+	var m2 = ribet(-4,4);
+	var b2 = ribet(-4,4);
+	document.getElementById("problem").innerHTML = str_solve_linear_problem(m1,b1,m2,b2);
+	g_ans = linearsolution(m1,b1,m2,b2);
+	makesolution(false);
+	}
+
+function str_solve_quad_problem(a1,b1,c1,a2,b2,c2) {
+	var str = "<blockquote class='problem'>Solve the equation " + katex.renderToString(tex_poly([c1,b1,a1],"x") + "=" + tex_poly([c2,b2,a2],"x")) + ".</blockquote>";
+	str += "<button onclick='this.remove(); stepquad("+a1+","+b1+","+c1+","+a2+","+b2+","+c2+")'>Walkthrough 1 Step</button>";
+	return(str);
+	}
+
+function stepqqip(a1,b1,c1,a2,b2,c2) {
+	var str = "<br>We know that whatever value of y solves this equation, it's going to be equal to both " + katex.renderToString(tex_poly([c1,b1,a1],"x")) + " and " + katex.renderToString(tex_poly([c2,b2,a2],"x")) + ", ";
+	str += "where x is our solution for x. Thus we're trying to solve the equation " + katex.renderToString(tex_poly([c1,b1,a1],"x") + "=" + tex_poly([c2,b2,a2],"x")) + ". So let's solve the problem:<br>"
+	str += str_solve_quad_problem(a1,b1,c1,a2,b2,c2);
+	document.getElementById("problem").innerHTML += str;
+	}
+
+function stepquad(a1,b1,c1,a2,b2,c2) {
+	var str;
+	if (a2 != 0) {
+		str = "<br>This looks like a quadratic equation, so our goal is to get everything on one side, leaving 0 on the other. ";
+		str += "Let's subtract " + katex.renderToString(tex_poly([0,0,a2],"x")) + " from both sides.";
+		str += str_solve_quad_problem(a1-a2,b1,c1,0,b2,c2);
+		document.getElementById("problem").innerHTML += str;
+		return;
+		}
+	if (a1 == 0) { //a2 = 0 and a1 = 0, it's a linear problem
+		str = "<br>This is actually a linear equation! We need to change our goal to getting x by itself.";
+		document.getElementById("problem").innerHTML += str;
+		steplp({target:document.getElementById("problem")},b1,c1,b2,c2);
+		return;
+		}
+	if (b2 != 0) {
+		str = "<br>This looks like a quadratic equation, so our goal is to get everything on one side, leaving 0 on the other. ";
+		str += "Let's subtract " + katex.renderToString(tex_poly([0,b2,0],"x")) + " from both sides.";
+		str += str_solve_quad_problem(a1,b1-b2,c1,a2,0,c2);
+		document.getElementById("problem").innerHTML += str;
+		return;
+		}
+	if (c2 != 0) {
+		str = "<br>This looks like a quadratic equation, so our goal is to get everything on one side, leaving 0 on the other. ";
+		str += "Let's subtract " + katex.renderToString(tex_poly([c2,0,0],"x")) + " from both sides.";
+		str += str_solve_quad_problem(a1,b1,c1-c2,a2,b2,0);
+		document.getElementById("problem").innerHTML += str;
+		return;
+		}
+	//at this point, we have a1x^2+b1x+c1 = 0, where a1 is nonzero
+	if (math.gcd(a1,b1,c1) != 1) {
+		var d = math.gcd(a1,b1,c1);
+		if (a1 < 0) {d = -d}
+		str = "<br>We're ready to use the quadratic formula, but first let's divide both sides of the equation by " + d + " to make it simpler:";
+		str += str_solve_quad_problem(a1/d,b1/d,c1/d,0,0,0);
+		document.getElementById("problem").innerHTML += str;
+		return;
+		}
+	var d = b1*b1-4*a1*c1;
+	str = "<table border=1><tr>";
+	if (Number.isInteger(Math.sqrt(d))) {
+		str += "<td>We can solve this using factoring. Click the button here to see how to solve it using factoring: ";
+		str += "<button onclick='stepfactor(event,"+a1+","+b1+","+c1+")'>Factor</button></td>";
+		}
+	str += "<td>We can solve this using the quadratic formula. Click the button here to see how to solve it using the quadratic formula: ";
+	str += "<button onclick='stepquadform(event,"+a1+","+b1+","+c1+")'>Quadratic Formula</button></td>";
+	str += "</tr></table>";
+	document.getElementById("problem").innerHTML += str;
+	}
+
+function largestsquarefactorsroot(x) {
+	var i;
+	for (i = Math.floor(Math.sqrt(x)); i >= 0; i--) {
+		if (x%(i*i) == 0) {return(i);}
+		}
+	}
+
+function quadroottex(a,b,c,pm,neg,doubleneg) { //pm = 0(+) or 1(-), if neg then negate the solution
+	if (a == 0) {
+		if (neg) {c *= -1;}
+		return(math.simplify("-c/b",{b:b,c:c}).toTex());
+		}
+	//(-b +- sqrt(b^2-4ac))/2a
+	var d = b*b-4*a*c;
+	if (d == 0) {
+		if (neg) {b *= -1;}
+		return(math.simplify("-b/(2a)",{a:a,b:b}).toTex());
+		}
+
+	var ad = Math.abs(d);
+	var d_coeff = largestsquarefactorsroot(ad);
+	var d_root = ad/(d_coeff*d_coeff);
+	if (a < 0) {
+		a *= -1;
+		b *= -1;
+		d_coeff *= -1;
+		}
+	if (neg) {
+		b *= -1;
+		d_coeff *= -1;
+		}
+
+	var g = math.gcd(2*a,b,d_coeff);
+
+	var str = "";
+	if (b != 0) {
+		str += (-b/g);
+		}
+	if (pm) {
+		d_coeff = -d_coeff;
+		}
+	str += tex_number(d_coeff/g, b!=0, d_root != 1 || d < 0);
+	if (d_root != 1) {
+		str += "\\sqrt{"+d_root+"}";
+		}
+	else if (d > 0) {
+		return(math.simplify("p/q",{p:(-b+d_coeff),q:2*a}).toTex());
+		}
+	if (d < 0) {
+		str += "i";
+		}
+	if (2*a != g) {
+		str = "\\frac{"+str+"}{"+(2*a/g)+"}";
+		}
+	return(str);
+	}
+
+function abc_to_roots_walkthrough_html(a,b,c) {
+	var d = b*b-4*a*c;
+	var l = largestsquarefactorsroot(Math.abs(d));
+	var str = "";
+	var kstr = "\\begin{alignedat}{4}"
+	kstr += "\\frac{-b \\pm \\sqrt{b^2-4ac}}{2a} &= \\frac{" + (-b) + "\\pm \\sqrt{"
+	if (b < 0) {kstr += "("+b+")^2";}
+	else {kstr += b+"^2";}
+	kstr += "-4("+a+")("+c+")}}{2("+a+")}";
+	kstr += "&\\qquad&\\text{plugging in $a,b,c$}\\\\";
+	kstr += "&= \\frac{"+ (-b) + "\\pm \\sqrt{"+(b*b)+tex_number(-4*a*c,true,false)+"}}{"+(2*a)+"}&&\\\\";
+	kstr += "&= \\frac{"+ (-b) + "\\pm \\sqrt{"+(b*b-4*a*c)+"}}{"+(2*a)+"}&&\\\\";
+	if (d == 0) {
+		kstr += "&=\\frac{"+(-b)+"}{"+(2*a)+"}";
+		if (a < 0 || math.gcd(-b,2*a) != 1) {
+			kstr += "&&\\\\&=" + quadroottex(a,b,c,0);
+			}
+		}
+	else if (d < 0) {
+/*		kstr += "&=\\frac{"+(-b) + "\\pm \\sqrt{"+(-d)+"}i}{"+(2*a)+"} && \\text{rule for square root of negative}\\\\";
+		if (l != 1) {
+			kstr += "&= \\frac{"+(-b) + "\\pm\\sqrt{" + (l*l) + "}\\sqrt{"+(-d/(l*l))+"}i}{"+(2*a)+"} && \\text{breaking apart square root}\\\\";
+			kstr += "&= \\frac{"+(-b) + "\\pm"+l+"\\sqrt{"+(-d/(l*l))+"}i}{"+(2*a)+"} && \\\\";
+			var g = math.gcd(-b,l,2*a);
+			if (g != 1) {
+				kstr += "&= \\frac{"+(-b/g) + "\\pm"+(l/g)+"\\sqrt{"+(-d/(l*l))+"}i}{"+(2*a/g)+"} && \\text{cancelling common factor "+g+"}\\\\";
+				}
+			if (a < 0) {
+				kstr += "&= \\frac{"+(-b/g) + tex_number(l/g,true,true)+"\\sqrt{"+(-d/(l*l))+"}i}{"+(2*a/g)+"} \\qquad\\text{and}\\qquad";
+				kstr += "\\frac{"+(-b/g) + tex_number(-l/g,true,true)+"\\sqrt{"+(-d/(l*l))+"}i}{"+(2*a/g)+"}&&\\text{breaking apart $\\pm$}\\\\";
+				}
+			}
+		else if (a < 0) {
+			kstr += "&=\\frac{"+(-b) + "+ \\sqrt{"+(-d)+"}i}{"+(2*a)+"} \\qquad\\text{and}\\qquad";
+			kstr += "\\frac{"+(-b) + "- \\sqrt{"+(-d)+"}i}{"+(2*a)+"}&&\\text{breaking apart $\\pm$}\\\\";
+			}*/
+		}
+	else {//d > 0
+		if (l * l == d) {
+			kstr += "&= \\frac{"+(-b)+"\\pm"+l+"}{"+(2*a)+"} && \\\\";
+			kstr += "&= \\frac{"+(-b)+ tex_number(l,true,false)+ "}{"+(2*a)+"} \\qquad\\text{ and }\\qquad";
+			kstr += "\\frac{"+(-b)+tex_number(-l,true,false)+"}{"+(2*a)+"} && \\text{breaking apart $\\pm$}\\\\";
+			kstr += "&= \\frac{"+(-b+l)+"}{"+(2*a)+"} \\qquad\\text{ and }\\qquad";
+			kstr += "\\frac{"+(-b-l)+"}{"+(2*a)+"} && \\\\";
+			}
+		else if (l != 1) {
+			kstr += "&= \\frac{"+(-b) + "\\pm\\sqrt{" + (l*l) + "}\\sqrt{"+(d/(l*l))+"}}{"+(2*a)+"} && \\text{breaking apart square root}\\\\";
+			kstr += "&= \\frac{"+(-b) + "\\pm"+l+"\\sqrt{"+(d/(l*l))+"}}{"+(2*a)+"} && \\\\";
+			var g = math.gcd(-b,l,2*a);
+			if (g != 1) {
+				kstr += "&= \\frac{"+(-b/g) + "\\pm"+(l/g)+"\\sqrt{"+(d/(l*l))+"}}{"+(2*a/g)+"} && \\text{cancelling common factor "+g+"}\\\\";
+				}
+			if (a < 0) {
+				kstr += "&= \\frac{"+(-b/g) +tex_number(l/g,true,true)+"\\sqrt{"+(d/(l*l))+"}}{"+(2*a/g)+"} \\qquad\\text{ and }\\qquad";
+				kstr += "\\frac{"+(-b/g) +tex_number(-l/g,true,true)+"\\sqrt{"+(d/(l*l))+"}}{"+(2*a/g)+"}&&\\text{breaking apart $\\pm$}\\\\";
+				}
+			}
+		else if (a < 0) {
+			kstr += "&=\\frac{"+(-b) + "+ \\sqrt{"+(d)+"}}{"+(2*a)+"} \\qquad\\text{ and }\\qquad";
+			kstr += "\\frac{"+(-b) + "- \\sqrt{"+(d)+"}}{"+(2*a)+"} && \\text{breaking apart $\\pm$}\\\\";
+			}
+		}
+	kstr += "\\end{alignedat}";
+	str += katex.renderToString(kstr,{displayMode:true});
+	if (d == 0) {
+		str += "Giving us root:"
+		kstr = quadroottex(a,b,c,0);
+		}
+	else if (d < 0) {
+		str += "This requires taking the square root of a negative, which we won't be doing in this class, so there is no solution (DNE). Feel free to read up on <a href='https://en.wikipedia.org/wiki/Complex_number'>Complex Numbers</a> on your own time.";
+		kstr = "";
+		}
+	else {
+		str += "Giving us roots:"
+		kstr = quadroottex(a,b,c,0) + "\\qquad\\text{and}\\qquad" + quadroottex(a,b,c,1);
+		}
+	str += katex.renderToString(kstr,{displayMode:true});
+	return(str);
+	}
+
+function stepquadform(e,a,b,c) {
+	var str = "<br> We begin by identifying a, b, and c. These are the coefficients of x^2, x, and the constant term respectively: ";
+	str += "<ul><li>a = "+a+"<li>b = "+b+"<li>c = "+c+"</ul>";
+	str += "Next, we plug these into the quadratic formula:";
+	str += abc_to_roots_walkthrough_html(a,b,c);
+	e.target.outerHTML = str;
+	}
+
+function addtomultiplyto(a,m) {
+	//these are the roots of x^2+ax+m
+	return([(-a+Math.sqrt(a*a-4*m))/2,(-a-Math.sqrt(a*a-4*m))/2]);
+	}
+
+function showatmt(e,a,m) {
+	var str = "<table border=1><tr><td>i</td><td>j</td><td>sum</td></tr>";
+	for (i = -m; i <= m; i++) {
+		if (Number.isInteger(m/i)) {
+			str += "<tr"
+			if (i + m/i == a) {str += " style='background-color:#CCDDAA'";}
+			str += "><td>"+i+"</td><td>"+(m/i)+"</td><td>"+(i+m/i)+"</td></tr>";
+			}
+		}
+	str += "</table>";
+	e.target.outerHTML = str;
+	}
+
+function stepfactor(e,a,b,c) {
+	var str = "";
+	if (a == 1) {
+		var l = addtomultiplyto(b,c);
+		str += "<br>We need to find two numbers that add to " + b + " and multiply to " + c + ". ";
+		str += "These are " + l[0] + " and " + l[1] + ". ";
+		str += "<button onclick='showatmt(event,"+b+","+c+")'>Show Search</button>";
+		str += "This allows us to factor " + katex.renderToString(tex_poly([c,b,a],"x") + "= (" + tex_poly([-l[0],1,0],"x") + ")(" + tex_poly([-l[1],1,0],"x") + ")");
+		str += "<button onclick='stepzfp(event,1,"+(-l[0])+",1,"+(-l[1])+")'>Walkthrough 1 Step</button>";
+		e.target.outerHTML = str;
+		}
+	}
+
+function stepzfp(e,m1,b1,m2,b2) {
+	str = "<br>We're trying to solve the equation " + katex.renderToString("("+tex_poly([b1,m1,0],"x") + ")(" + tex_poly([b2,m2,0],"x") + ") = 0") + ".";
+	str += "<br>If the product of two numbers is 0, that means at least one of those numbers is 0. So we need to find solutions to:";
+	str += "<table border=1><tr><td>" + str_solve_linear_problem(m1,b1,0,0) + "</td><td>AND</td><td>" + str_solve_linear_problem(m2,b2,0,0) + "</td></tr></table>";
+	e.target.outerHTML = str;
+	}
+
+function str_quad_quad_intersection_problem(a1,b1,c1,a2,b2,c2) {
+	var str = "<blockquote class='problem'>Find the intersection of the ";
+	if (a1 == 0) {
+		str += "line";
+		}
+	else {
+		str += "parabola";
+		}
+	str += " " + katex.renderToString("y="+tex_poly([c1,b1,a1],"x"));
+	str += " and the ";
+	if (a2 == 0) {
+		str += "line";
+		}
+	else {
+		str += "parabola";
+		}
+	str += " " + katex.renderToString("y="+tex_poly([c2,b2,a2],"x"));
+	str += "</blockquote>";
+	str += "<button onclick='this.remove(); showqqip("+a1+","+b1+","+c1+","+a2+","+b2+","+c2+")'>Show Graphs</button>";
+	str += "<button onclick='this.remove(); stepqqip("+a1+","+b1+","+c1+","+a2+","+b2+","+c2+")'>Walkthrough 1 Step</button>";
+	return(str);
+	}
+
+function make_line_parb_intersection_problem() {
+	var m1 = ribet(-4,4);
+	var b1 = ribet(-4,4);
+	document.getElementById("problem").innerHTML = str_quad_quad_intersection_problem(1,0,0,0,m1,b1);
+	g_ans = quadsolution(1,0,0,0,m1,b1);
+	makesolution(true);
+	}
+
+function make_solve_quad_problem() {
+	var a1 = ribet(-4,4);
+	var b1 = ribet(-4,4);
+	var c1 = ribet(-4,4);
+	var a2 = ribet(-4,4);
+	var b2 = ribet(-4,4);
+	var c2 = ribet(-4,4);
+	document.getElementById("problem").innerHTML = str_solve_quad_problem(a1,b1,c1,a2,b2,c2);
+	g_ans = quadsolution(a1,b1,c1,a2,b2,c2);
+	makesolution(false);
+	}
+
+function make_psline_psline_intersection_problem() {
+	var x1 = ribet(-4,4);
+	var y1 = ribet(-4,3);
+	if (y1 == 0) {y1 = 4;}
+	var m1 = ribet(-4,4);
+	var x2 = ribet(-4,4);
+	var y2 = ribet(-4,3);
+	if (y2 == 0) {y2 = 4;}
+	var m2 = ribet(-4,4);
+	document.getElementById("problem").innerHTML = str_psline_psline_intersection_problem(x1,y1,m1,x2,y2,m2);
+	g_ans = linearsolution(m1,-m1*x1+y1,m2,-m2*x2+y2);
+	makesolution(true);
+	}
+
+//function tex_number(n,force_plus,squash_ones)
+
+function tex_psline(x,y,m) {
+	if (x == 0) {return(tex_poly([y,m,0],"x"));}
+	var str = tex_number(m,false,true);
+	str += "(x";
+	str += tex_number(-x,true,false);
+	str += ")";
+	str += tex_number(y,true,false);
+	return(str);
+	}
+
+function str_psline_psline_intersection_problem(x1,y1,m1,x2,y2,m2) {
+	var str = "<blockquote class='problem'>Find the intersection of the lines " + katex.renderToString("y="+tex_psline(x1,y1,m1)) + " and " + katex.renderToString("y="+tex_psline(x2,y2,m2)) + ".</blockquote>";
+	str += "<button onclick='this.remove(); showllip("+m1+","+(-m1*x1+y1)+","+m2+","+(-m2*x2+y2)+")'>Show Graphs</button>";
+	str += "<button onclick='this.remove(); steppsllip("+x1+","+y1+","+m1+","+x2+","+y2+","+m2+")'>Walkthrough 1 Step</button>";
+	return(str);
+	}
+
+function make_nice_line_parb_intersection_problem() {
+	var r = ribet(-3,3);
+	var s = ribet(-3,3);
+	var m = -(r+s);
+	var b = -(r*s);
+	document.getElementById("problem").innerHTML = str_quad_quad_intersection_problem(1,0,0,0,m,b);
+	g_ans = quadsolution(1,0,0,0,m,b);
+	console.log(g_ans);
+	makesolution(true);
+	}
+
+function pointornumberinput(pointsq,i) {
+	if (pointsq) {
+		return("x = <input type='text' style='width:4em' id='x"+i+"'>, y = <input type='text' style='width:4em' id='y"+i+"'>");
+		}
+	else {
+		return("x = <input type='text' style='width:4em' id='x"+i+"'>");
+		}
+	}
+
+function makesolution(pointsq) {
+	document.getElementById("graphs").innerHTML = "";
+	document.getElementById("grwarn").innerHTML = "";
+	document.getElementById("yhint").innerHTML = "";
+	var str = "<table border=1>";
+	str += "<tr><td>Enter 5 decimal digits or exact formulas for numbers</td></tr>";
+	str += "<tr><td><input type='radio' id='ans_dne' name='ans'> No Solutions (DNE)</td></tr>";
+	str += "<tr><td><input type='radio' id='ans_one' name='ans'> One Solution:";
+	str += "<br>";
+	str += pointornumberinput(pointsq,0);
+	str += "</td></tr><tr><td>";
+	str += "<input type='radio' id='ans_two' name='ans'> Two Solutions: ";
+	str += "<br>";
+	str += pointornumberinput(pointsq,1);
+	str += "<br>";
+	str += pointornumberinput(pointsq,2);
+	str += "</td></tr><tr><td>";
+	str += "<input type='radio' id='ans_inf' name='ans'> Infinitely Many Solutions";
+	str += "</td></tr><tr><td>";
+	str += "<button onclick='checkans()'>Check Answer</button>";
+	str += "</td></tr></table>";
+	document.getElementById("finalanswer").innerHTML = str;
+	}
+
+function checkans() {
+	var b;
+	if (g_ans == "DNE") {
+		b = document.getElementById("ans_dne").checked;
+		}
+	else if (g_ans.length == 1) {
+		b = document.getElementById("ans_one").checked && equivchk(0,g_ans[0]);
+		}
+	else if (g_ans.length == 2) {
+		b = document.getElementById("ans_two").checked && ((equivchk(1,g_ans[0]) && equivchk(2,g_ans[1])) || (equivchk(2,g_ans[0]) && equivchk(1,g_ans[1])))
+		}
+	else if (g_ans == "INF") {
+		b = document.getElementById("ans_inf").checked;
+		}
+	if (b) {alert("Correct!");}
+	else {alert("Try Again!");}
+	}
+
+function numequiv(x,y) {
+	console.log("checking equivalence of");
+	console.log(x);
+	console.log(math.eval(x));
+	console.log("and");
+	console.log(y);
+	console.log(math.eval(y));
+	console.log("difference:");
+	var d = math.subtract(math.eval(x),math.eval(y));
+	console.log(d);
+	if (d < .0001) {return(true);}
+	return(false);
+	}
+
+function equivchk(id,gent) {
+	var x = document.getElementById("x"+id).value;
+	if (!numequiv(gent[0],x)) {return(false);}
+	if (document.getElementById("y"+id)) {
+		var y = document.getElementById("y"+id).value;
+		if (y == "" || !numequiv(gent[1],y)) {
+			document.getElementById("yhint").innerHTML = "<blockquote class='caution'>You can determine the y value of a point by plugging the x you found into either equation in the original problem. You'll get the same answer regardless of which equation you use: you did a bunch of work to find value(s) of x that give you the same answer (y value) in both equations!</blockquote>";
+			return(false);
+			}
+		}
+	return(true);
+	}
+</script>
+<style>
+blockquote.caution {
+	background-color: #EEEEBB;
+	padding: 20px;
+	border-left: 3px solid #666633;
+	}
+blockquote.problem {
+	background-color: #CCEEFF;
+	padding: 20px;
+	border-left: 3px solid #225555;
+	}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap" rel="stylesheet"> 
+</head>
+<body>
+<div style='background-color:#DDDDDD'>
+Please pick a type of problem:<br>
+Week 2:
+<button onclick="make_line_line_intersection_problem()">Line Line Intersection</button>
+<button onclick="make_solve_linear_problem()">Solve Linear Equation</button>
+<button onclick="make_psline_psline_intersection_problem()">Line Line Intersection (Point-Slope)</button>
+<button onclick="make_nice_line_parb_intersection_problem()">Nice Line Parabola Intersection</button><br>
+Week 3:
+<button onclick="make_line_parb_intersection_problem()">Line Parabola Intersection</button>
+<button onclick="make_solve_quad_problem()">Solve Quadratic Equation</button>
+</div>
+<div id="graphs"></div>
+<div id='grwarn'></div>
+<div id="problem"></div>
+<div id="yhint"></div>
+<div id="finalanswer"></div>
+</body>
+</html>

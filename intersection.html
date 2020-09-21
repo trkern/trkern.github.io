@@ -476,7 +476,7 @@ function showatmt(e,a,m) {
 	e.target.outerHTML = str;
 	}
 
-function stepfactor(e,a,b,c) {
+function stepfactor(e,a,b,c,k) {
 	var str = "";
 	if (a == 1) {
 		var l = addtomultiplyto(b,c);
@@ -484,7 +484,10 @@ function stepfactor(e,a,b,c) {
 		str += "These are " + l[0] + " and " + l[1] + ". ";
 		str += "<button onclick='showatmt(event,"+b+","+c+")'>Show Search</button>";
 		str += "This allows us to factor " + katex.renderToString(tex_poly([c,b,a],"x") + "= (" + tex_poly([-l[0],1,0],"x") + ")(" + tex_poly([-l[1],1,0],"x") + ")");
-		str += "<button onclick='stepzfp(event,1,"+(-l[0])+",1,"+(-l[1])+")'>Walkthrough 1 Step</button>";
+		if (k) {}
+		else {
+			str += "<button onclick='stepzfp(event,1,"+(-l[0])+",1,"+(-l[1])+")'>Walkthrough 1 Step</button>";
+			}
 		e.target.outerHTML = str;
 		}
 	}
@@ -551,6 +554,14 @@ function make_psline_psline_intersection_problem() {
 	document.getElementById("problem").innerHTML = str_psline_psline_intersection_problem(x1,y1,m1,x2,y2,m2);
 	g_ans = linearsolution(m1,-m1*x1+y1,m2,-m2*x2+y2);
 	makesolution(true);
+	}
+
+function make_nice_quadratic_problem() {
+	var m = ribet(-5,5);
+	var n = ribet(-5,5);
+	document.getElementById("problem").innerHTML = str_solve_quad_problem(1,m+n,m*n,0,0,0);
+	g_ans = quadsolution(1,m+n,m*n,0,0,0);
+	makesolution(false);
 	}
 
 //function tex_number(n,force_plus,squash_ones)
@@ -682,7 +693,8 @@ Week 2:
 <button onclick="make_line_line_intersection_problem()">Line Line Intersection</button>
 <button onclick="make_solve_linear_problem()">Solve Linear Equation</button>
 <button onclick="make_psline_psline_intersection_problem()">Line Line Intersection (Point-Slope)</button>
-<button onclick="make_nice_line_parb_intersection_problem()">Nice Line Parabola Intersection</button><br>
+<button onclick="make_nice_line_parb_intersection_problem()">Nice Line Parabola Intersection</button>
+<button onclick="make_nice_quadratic_problem()">Nice Quadratic Equation Problem</button><br>
 Week 3:
 <button onclick="make_line_parb_intersection_problem()">Line Parabola Intersection</button>
 <button onclick="make_solve_quad_problem()">Solve Quadratic Equation</button>

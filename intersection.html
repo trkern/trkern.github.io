@@ -595,11 +595,15 @@ function make_nice_line_parb_intersection_problem() {
 	}
 
 function pointornumberinput(pointsq,i) {
+	var oninputstr;
+	if (i == 0) {oninputstr = " oninput = 'document.getElementById(\"ans_one\").checked = true' "}
+	else {oninputstr = " oninput = 'document.getElementById(\"ans_two\").checked = true' "}	
+
 	if (pointsq) {
-		return("x = <input type='text' style='width:4em' id='x"+i+"'>, y = <input type='text' style='width:4em' id='y"+i+"'>");
+		return("x = <input type='text' "+oninputstr+" style='width:4em' id='x"+i+"'>, y = <input type='text' style='width:4em' id='y"+i+"'>");
 		}
 	else {
-		return("x = <input type='text' style='width:4em' id='x"+i+"'>");
+		return("x = <input type='text' "+oninputstr+" style='width:4em' id='x"+i+"'>");
 		}
 	}
 

@@ -57,7 +57,7 @@ function changefuns(a) {
 
 function makerow(i) {
 	if (!(i in pieces)) {
-		pieces[i] = {fun:"", lbound:0, ubound:0, style:10, color:"#000000"};
+		pieces[i] = {fun:"", lbound:0, ubound:0, style:10, color:"#000000",linewidth:4};
 		}
 	//var str = "<td><input id='i"+i+"'";
 	//str += " value='"+pieces[i].fun+"'";
@@ -91,6 +91,7 @@ function makerow(i) {
 		}
 	str += "</select></td>";
 	str += "<td><input type='color' id='c"+i+"' value='"+pieces[i].color+"' oninput='changecol("+i+")'></td>";
+	str += "<td><input type='number' id='lw"+i+"' min=0 style='width:3em' value='"+pieces[i].linewidth+"' oninput='changelw("+i+")'></td>";
 	return(str);
 	}
 
@@ -187,6 +188,11 @@ function changecol(i) {
 	upd();
 	}
 
+function changelw(i) {
+	pieces[i].linewidth = document.getElementById("lw"+i).value;
+	upd();
+	}
+
 function kxineq(piece) {
 	var a = piece.lbound;
 	var b = piece.ubound;
@@ -264,6 +270,9 @@ function maketgr(pl,n,gg) {
 		f = kasfct(pl[i].fun);
 		if (s != 0) {
 			tobj = {type:"plot", fct:f, color:pl[i].color, linewidth:lw};
+			if("linewidth" in pl[i]) {
+				tobj.linewidth = pl[i].linewidth;
+				}
 			if (s >= 4 && s <= 9) {
 				tobj.xmin = pl[i].lbound;
 				}
@@ -319,6 +328,41 @@ function maketgr(pl,n,gg) {
 
 	}
 
+function isindomain(p,x) {
+	var a = p.lbound;
+	var b = p.ubound;
+	switch(p.style) {
+		case 0: return(x == b);
+		case 1: return(x != b);
+		case 2: return(x < b);
+		case 3: return(x <= b);
+		case 4: return(a < x && x <b);
+		case 5: return(a <= x && x < b);
+		case 6: return(a < x && x <= b);
+		case 7: return(a <= x && x <= b);
+		case 8: return(a < x);
+		case 9: return(a <= x);
+		case 10: return(true);
+		}
+	}
+
+function pluginlist(pl,x) {
+	var i;
+	var rval = [];
+	var f;
+	var y;
+	for (i = 0; i < pl.length; i++) {
+		if (isindomain(pl[i],x)) {
+			f = kasfct(pl[i].fun);
+			y = f(x);
+			if(isFinite(y) && rval.indexOf(y) == -1) {
+				rval.push(y);
+				}
+			}
+		}
+	return(rval);
+	}
+
 function upd() {
 	fixbracket();	
 
@@ -332,6 +376,25 @@ function upd() {
 	if (document.getElementById("chk_showgraph").checked) {
 		l = l.concat(maketgr(pieces,n));
 		}
+	if (document.getElementById("chk_pluginx").checked) {
+		var x = Number(document.getElementById("pluginx").value);
+		l.push({type:"vline", x:x, color:"#66CCEE",linewidth:2});
+		var yl = pluginlist(pieces,x);
+		var i;
+		for (i = 0; i < yl.length; i++) {
+			l.push({type:"dot", r:5, x:x, y:yl[i], color:"#66CCEE"});
+			l.push({type:"hline", y:yl[i], color:"#66CCEE", linewidth:2});
+			}
+		if (yl.length == 0) {
+			document.getElementById("pluginx_out").innerHTML = "f("+x+") Does Not Exist";
+			}
+		if (yl.length == 1) {
+			document.getElementById("pluginx_out").innerHTML = "f("+x+") = " + yl[0];
+			}
+		if (yl.length > 1) {
+			document.getElementById("pluginx_out").innerHTML = "Warning: multiple values detected for f("+x+"), specifically: " + yl.join(", ") + " NOT A VALID FUNCTION";
+			}
+		}
 	
 	tgr_update_grapher_objs("gr",l);
 	
@@ -340,16 +403,21 @@ function upd() {
 
 //sqrt((x+1)/(4(x+2)))
 
+function onredraw() {
+	document.getElementById("pluginx").step = (tgr_graph_array["gr"].plotdata.xmax-tgr_graph_array["gr"].plotdata.xmin)/200;
+	}
+
 function loaduri() {
+	var pd = {on_redraw:onredraw};
 	var str = document.URL;
-	if (str.indexOf("?") == -1) {tgr_grapher("gr",[]); return;}
+	if (str.indexOf("?") == -1) {tgr_grapher("gr",[],pd); return;}
 	str = str.slice(str.indexOf("?")+1);
 	if (str[0] == "!") {
 		document.getElementById("gr").id = "oldgr";
 		document.getElementById("everything").style.display="none";
 		str = str.slice(1);
 		}
-	tgr_grapher("gr",[]);
+	tgr_grapher("gr",[],pd);
 	str = decodeURI(str);
 	loadex(stringtopieces(str));
 	document.getElementById("chk_showpermalink").checked = true;
@@ -375,10 +443,14 @@ function piecestostring(pl) {
 	for (i = 0; i < pl.length; i++) {
 		if (i != 0) {str += "__";}
 		str += pl[i].fun+"_"+pl[i].lbound+"_"+pl[i].ubound+"_"+pl[i].style;
-		if (pl[i].color != "#000000") {
+		if (pl[i].color != "#000000" || "linewidth" in pl[i]) {
+			str += "_";
 			str += pl[i].color.slice(1);
+			str += "_";
+			str += pl[i].linewidth;
 			}
 		}
+	console.log(str);
 	return(str);
 	}
 
@@ -389,6 +461,7 @@ function stringtopieces(s) {
 	var rv = [];
 	for (i = 0; i < l.length; i++) {
 		t = l[i].split("_");
+		console.log(t);
 		if (t.length == 1) {
 			rv.push({fun:t[0], lbound:0, ubound:0, style:10, color:"#000000"});
 			}
@@ -397,6 +470,9 @@ function stringtopieces(s) {
 			}
 		else if (t.length == 5) {
 			rv.push({fun:t[0], lbound:Number(t[1]), ubound:Number(t[2]), style:Number(t[3]), color:"#"+t[4]});
+			}
+		else if (t.length == 6) {
+			rv.push({fun:t[0], lbound:Number(t[1]), ubound:Number(t[2]), style:Number(t[3]), color:"#"+t[4], linewidth:t[5]});
 			}
 		}
 	return(rv);
@@ -661,6 +737,11 @@ Examples:
 <button onclick="loadex(ex_abs)"> Abs(x) </button>
 <button onclick="loadex(ex_face)"> Face </button>
 <button onclick="loadex(make_rand_ex(2))"> Random </button> <br><br>
+
+Plug-in-visualizer:
+<input type="checkbox" id="chk_pluginx" onchange="upd()"> Show Visualizer x:
+<input type="number" style="width:3em" id="pluginx" oninput="upd()" step=.02>
+<span id="pluginx_out"></span>
 
 <table><tr>
 <td><div id="gr"></div></td>

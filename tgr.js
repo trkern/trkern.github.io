@@ -39,7 +39,9 @@ grapher_obj.type //string one of the following:
 	//"vec"
 	//"label"
 	//"vline" (vertical line)
+	//"hline" (horizontal line)
 	//"polyg" (polygon)
+	//"circle"
 grapher_obj.fct //function being plotted (as a javascript function)
 grapher_obj.hints //some hints for the plot.
 	//A hint is: [ptx,pty,lc,rc]
@@ -53,14 +55,14 @@ grapher_obj.xmin //for "plot", "rect", may be a function of plotdata
 grapher_obj.xmax //for "plot", "rect", may be a function of plotdata
 grapher_obj.ymin //for "rect"
 grapher_obj.ymax //for "rect"
-grapher_obj.x //for "hole", "dot", "line", "label", "vline"
-grapher_obj.y //for "hole", "dot", "line", "label"
+grapher_obj.x //for "hole", "dot", "circle", "line", "label", "vline"
+grapher_obj.y //for "hole", "dot", "circle", "line", "label", "hline"
 grapher_obj.x2 //for "line"
 grapher_obj.y2 //for "line"
-grapher_obj.color //for "plot", "par", "rect", "hole", "dot", "line", "label", "polyg"
-grapher_obj.linewidth //for "plot", "line", "vline", "polyg"
+grapher_obj.color //for "plot", "par", "rect", "hole", "dot", "line", "label", "polyg", "circle"
+grapher_obj.linewidth //for "plot", "line", "vline", "polyg", "circle"
 grapher_obj.id //for tgr_update_grapher_obj_by_id
-grapher_obj.r //for "hole", "dot"
+grapher_obj.r //for in pixels:"hole", "dot", in grid units:"circle"
 grapher_obj.incolor //for "hole"
 grapher_obj.nojump //for "plot". If function moves from above view window to below view window in a single step, don't draw that line. May behave oddly with hinting
 grapher_obj.label //for "label" label at x,y. If "", defaults to (x,y). Requires plotdata.labelpoints
@@ -71,6 +73,8 @@ grapher_obj.textBaseline //for "label"
 grapher_obj.font //for "label"
 grapher_obj.blend //not fully implemented, access to globalCompositeOperation
 grapher_obj.vlist //for "polyg". A list of 2-element lists.
+grapher_obj.startangle //for "circle"
+grapher_obj.endangle //for"circle"
 */
 
 function dbg(x) {
@@ -495,14 +499,40 @@ function tgr_plot(grapher_obj, ctx, pd) {
 		ctx.stroke();
 		}
 	if (grapher_obj.type == "vf") {
-		var f = grapher_obj.fct;
+/*		var f = grapher_obj.fct;
 		var dx = (pd.xmax-pd.xmin)/pd.numpts;
 		var dy = (pd.ymax-pd.ymin)/pd.numpts;
-		for (i = pd.xmin; i <= pd.xmax; i += dx) {
+		console.log(dx,dy,pd);
+		for (i = pd.xmin; i <= pd.xmax; i = i + dx) {
+			console.log(i);
 			for (j = pd.ymin; j <= pd.ymax; j += dy) {
-				tgr_arrow(ctx, tgr_tocanv([i,j],pd), f([i,j]));
+				console.log(j);
+				//tgr_arrow(ctx, [100,100], [20,20]);
+				//tgr_arrow(ctx, tgr_tocanv([i,j],pd), f([i,j]));
 				}
 			}
+		console.log("hi");
+		console.log(i,pd.xmax);*/
+		var k,fk;
+		var numpts = pd.numpts;
+		if ("numpts" in grapher_obj) {numpts = grapher_obj.numpts;}
+		var f = grapher_obj.fct;
+		for (i = 0; i <= numpts; i++) {
+			for (j = 0; j <= numpts; j++) {
+				k = [pd.xmin + i*(pd.xmax-pd.xmin)/numpts,pd.ymin + j*(pd.ymax-pd.ymin)/numpts];
+				fk = f(k);
+				tgr_arrow(ctx, tgr_tocanv(k,pd), [10*fk[0],10*fk[1]]);
+				}
+			}
+		}
+	if (grapher_obj.type == "labeldistance") {
+		var lx1, lx2, ly1, ly2;
+		lx1 = tgr_plug(grapher_obj.x,pd);
+		ly1 = tgr_plug(grapher_obj.y,pd);
+		lx2 = tgr_plug(grapher_obj.x2,pd);
+		ly2 = tgr_plug(grapher_obj.y2,pd);
+		var l = grapher_obj.label ?? "";
+		tgr_labeldistance(ctx,tgr_tocanv([lx1,ly1],pd),tgr_tocanv([lx2,ly2],pd),l);
 		}
 	if (grapher_obj.type == "rect") {
 		var xmax, xmin;
@@ -649,6 +679,15 @@ function tgr_plot(grapher_obj, ctx, pd) {
 		ctx.lineTo(...tgr_tocanv([linex,Infinity],pd));
 		ctx.stroke();
 		}
+	if (grapher_obj.type == "hline") {
+		var liney = tgr_plug(grapher_obj.y,pd);
+		ctx.beginPath();
+		ctx.strokeStyle = grapher_obj.color;
+		ctx.lineWidth = grapher_obj.linewidth;
+		ctx.moveTo(...tgr_tocanv([-Infinity,liney],pd));
+		ctx.lineTo(...tgr_tocanv([Infinity,liney],pd));
+		ctx.stroke();
+		}
 	if (grapher_obj.type == "polyg") {
 		ctx.beginPath();
 		ctx.strokeStyle = "black";
@@ -663,6 +702,32 @@ function tgr_plot(grapher_obj, ctx, pd) {
 		if (grapher_obj.color != "none") {ctx.fill();}
 		ctx.stroke();
 		}
+	if (grapher_obj.type == "polyl") {
+		ctx.beginPath();
+		ctx.strokeStyle = grapher_obj.color;
+		ctx.lineWidth = grapher_obj.linewidth;
+		
+		for (i = 0; i < grapher_obj.vlist.length; i++) {
+			if (i == 0) {ctx.moveTo(...tgr_tocanv(grapher_obj.vlist[i],pd));}
+			else {ctx.lineTo(...tgr_tocanv(grapher_obj.vlist[i],pd));}
+			}
+		ctx.stroke();
+		}
+	if (grapher_obj.type == "circle") {
+		ctx.beginPath();
+		ctx.strokeStyle = grapher_obj.color;
+		ctx.lineWidth = grapher_obj.linewidth;
+		var xymax = tgr_tocanv([grapher_obj.x+grapher_obj.r,grapher_obj.y+grapher_obj.r],pd);
+		var center = tgr_tocanv([grapher_obj.x,grapher_obj.y],pd);
+		var radiusx = Math.abs(xymax[0]-center[0]);
+		var radiusy = Math.abs(xymax[1]-center[1]);
+		var startangle = 0;
+		var endangle = 2*Math.PI;
+		if ("startangle" in grapher_obj) {startangle = grapher_obj.startangle;}
+		if ("endangle" in grapher_obj) {endangle = grapher_obj.endangle;}
+		ctx.ellipse(...center,radiusx,radiusy,0,startangle,endangle);
+		ctx.stroke();
+		}
 	if ("blend" in grapher_obj) {
 		ctx.globalCompositeOperation = "source-over";
 		}
@@ -672,23 +737,81 @@ function tgr_rect(ctx, x1,y1,x2,y2) {
 	ctx.fillRect(x1,y1,x2-x1,y2-y1);
 	}
 
-function tgr_arrow(ctx, pt, dir) { //will take more options (formatting)
+function tgr_labeldistance(ctx,pt1,pt2,l) {
+	var lg = tgr_dist(pt1,pt2);
+	if (lg < 1) {return;}
+	var x = 5*(pt1[0]-pt2[0])/lg;
+	var y = 5*(pt1[1]-pt2[1])/lg;
+	ctx.lineWidth=1;
+	ctx.fillStyle="black";
+	ctx.strokeStyle="black";
 	ctx.beginPath();
-	ctx.linewidth=2;
-	ctx.strokeStyle = "black";
-	dir[1] = -dir[1];
-	var lg = Math.sqrt(dir[0]*dir[0] + dir[1]*dir[1]);
-	var ax = 5*(dir[0])/lg;
-	var ay = 5*(dir[1])/lg;
-	ctx.moveTo(pt[0],pt[1]);
-	ctx.lineTo(pt[0]+dir[0],pt[1]+dir[1]);
+	ctx.moveTo(pt1[0]-2*y,pt1[1]+2*x);
+	ctx.lineTo(pt2[0]-2*y,pt2[1]+2*x);
 	ctx.stroke();
 	ctx.beginPath();
+	ctx.moveTo(pt2[0]-2*y,pt2[1]+2*x);
+	ctx.lineTo(pt2[0]+2*x+y-2*y,pt2[1]+2*y-x+2*x);
+	ctx.lineTo(pt2[0]+2*x-y-2*y,pt2[1]+2*y+x+2*x);
+	ctx.lineTo(pt2[0]-2*y,pt2[1]+2*x);
+	ctx.fill();
+	ctx.beginPath();
+	ctx.moveTo(pt2[0],pt2[1]);
+	ctx.lineTo(pt2[0]-4*y,pt2[1]+4*x);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(pt1[0]-2*y,pt1[1]+2*x);
+	ctx.lineTo(pt1[0]-2*x+y-2*y,pt1[1]-2*y-x+2*x);
+	ctx.lineTo(pt1[0]-2*x-y-2*y,pt1[1]-2*y+x+2*x);
+	ctx.lineTo(pt1[0]-2*y,pt1[1]+2*x);
+	ctx.fill();
+	ctx.beginPath();
+	ctx.moveTo(pt1[0],pt1[1]);
+	ctx.lineTo(pt1[0]-4*y,pt1[1]+4*x);
+	ctx.stroke();
+	if (l == "") {return;}
+	ctx.beginPath();
+	ctx.font="16px serif";
 	ctx.fillStyle = "black";
-	ctx.moveTo(pt[0]+dir[0],pt[1]+dir[1]);
-	ctx.lineTo(pt[0]+dir[0]+2*ax+ay,pt[1]+dir[1]+2*ay-ax);
-	ctx.lineTo(pt[0]+dir[0]+2*ax-ay,pt[1]+dir[1]+2*ay+ax);
-	ctx.lineTo(pt[0]+dir[0],pt[1]+dir[1]);
+	ctx.textAlign = "center";
+	ctx.textBaseline = "middle";
+	ctx.strokeStyle="white";
+	ctx.lineWidth = 7;
+	ctx.strokeText(l,.5*pt1[0]+.5*pt2[0]-2*y,.5*pt1[1]+.5*pt2[1]+2*x);
+	ctx.fillText(l,.5*pt1[0]+.5*pt2[0]-2*y,.5*pt1[1]+.5*pt2[1]+2*x);
+	}
+
+function tgr_dist(pt1,pt2) {
+	return(Math.sqrt((pt1[0]-pt2[0])*(pt1[0]-pt2[0]) + (pt1[1]-pt2[1])*(pt1[1]-pt2[1])));
+	}
+
+function tgr_arrow(ctx,pt,dir) {
+	tgr_drawarrow(ctx,pt,[pt[0]+dir[0],pt[1]-dir[1]]);
+	}
+
+function tgr_drawarrow(ctx,pt1,pt2) {
+	var lg = tgr_dist(pt1,pt2);
+	var x = 5*(pt1[0]-pt2[0])/lg;
+	var y = 5*(pt1[1]-pt2[1])/lg;
+	ctx.strokeStyle = "black";
+	ctx.lineWidth = 1;
+	ctx.beginPath();
+	ctx.moveTo(pt1[0],pt1[1]);
+	ctx.lineTo(pt2[0]+x,pt2[1]+y);
+	ctx.stroke();
+	tgr_arrowhead(ctx,pt1,pt2);
+	}
+
+function tgr_arrowhead(ctx,pt1,pt2) {
+	var lg = tgr_dist(pt1,pt2);
+	var x = 5*(pt1[0]-pt2[0])/lg;
+	var y = 5*(pt1[1]-pt2[1])/lg;
+	ctx.beginPath();
+	ctx.fillStyle="black";
+	ctx.moveTo(pt2[0],pt2[1]);
+	ctx.lineTo(pt2[0]+2*x+y,pt2[1]+2*y-x);
+	ctx.lineTo(pt2[0]+2*x-y,pt2[1]+2*y+x);
+	ctx.lineTo(pt2[0],pt2[1]);
 	ctx.fill();
 	}
 

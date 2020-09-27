@@ -499,6 +499,49 @@ function stepzfp(e,m1,b1,m2,b2) {
 	e.target.outerHTML = str;
 	}
 
+function make_line_circle_intersection_problem() {
+	var r = ribet(1,5);
+	var m = ribet(-4,4);
+	var b = ribet(-4,4);
+	document.getElementById("problem").innerHTML = str_line_circle_intersection_problem(r,m,b);
+	g_ans = quadsolution(0,m,b,1+m*m,2*m*b+m,b*b-r*r+b); //cheap hack to get the y values correct
+	makesolution(true);
+	}
+
+function showlcip(r,m,b) {
+	tgr_grapher("graphs",[
+		{type:"circle",x:0,y:0,r:r,color:"red",linewidth:3},
+		{type:"plot",fct:function(x){return(m*x+b);},color:"blue",linewidth:3},
+		]);
+	document.getElementById("grwarn").innerHTML += "<blockquote class='caution'>NOTE: you may be able to determine the intersection point exactly or approximately just by looking at the graph. The goal of this interactive is to practice with solving equations using algebra so that when we encounter problems where you can't determine the intersection point exactly from the graph, you are prepared to solve those.</blockquote>";
+	}
+
+function steplcip(r,m,b) {
+	var str = "<br> We know that whatever value of y solves this equation, it's going to be equal to ";
+	str += katex.renderToString(tex_poly([b,m,0],"x"));
+	str += ", where x is our solution for x. Thus we're trying to solve the equation "
+ 	str += katex.renderToString("x^2 + \\left("+tex_poly([b,m,0],"x")+"\\right)^2 = " + r*r, {displayMode:true});
+	str += "Since " + katex.renderToString("\\left("+tex_poly([b,m,0],"x")+"\\right)^2 = " + tex_poly([b*b,2*b*m,m*m],"x"));
+	str += ", we're trying to solve the equation "
+	str += katex.renderToString("x^2 + " + tex_poly([b*b,2*b*m,m*m],"x") + "=" + r*r, {displayMode:true});
+	str += "Moving the " + r*r + " to the left side and combining like terms, we get:"
+	str += katex.renderToString(tex_poly([b*b-r*r,2*b*m,m*m+1],"x") + "= 0", {displayMode:true});
+	str += "So let's solve that problem:<br>";
+	str += str_solve_quad_problem(m*m+1,2*b*m,b*b-r*r,0,0,0);
+	document.getElementById("problem").innerHTML += str;
+	}
+
+function str_line_circle_intersection_problem(r,m,b) {
+	var str = "<blockquote class='problem'>Find the intersection of the line ";
+	str += katex.renderToString("y=" + tex_poly([b,m,0],"x"));
+	str += " and the circle ";
+	str += katex.renderToString("x^2+y^2=" + (r*r));
+	str += "</blockquote>";
+	str += "<button onclick='this.remove(); showlcip("+r+","+m+","+b+")'>Show Graphs</button>";
+	str += "<button onclick='this.remove(); steplcip("+r+","+m+","+b+")'>Walkthrough 1 Step</button>";
+	return(str);
+	}
+
 function str_quad_quad_intersection_problem(a1,b1,c1,a2,b2,c2) {
 	var str = "<blockquote class='problem'>Find the intersection of the ";
 	if (a1 == 0) {
@@ -702,6 +745,7 @@ Week 2:
 Week 3:
 <button onclick="make_line_parb_intersection_problem()">Line Parabola Intersection</button>
 <button onclick="make_solve_quad_problem()">Solve Quadratic Equation</button>
+<button onclick="make_line_circle_intersection_problem()">Line Circle Intersection</button>
 </div>
 <div id="graphs"></div>
 <div id='grwarn'></div>

@@ -831,7 +831,18 @@ function bootcss() {
 	upd_opts();
 	}
 
+function boot_uri() {
+	var str = document.URL;
+	if(str.indexOf("?") == -1) {return;}
+	str = str.slice(str.indexOf("?")+1);
+	if (str == "t") {
+		span_to_mqt(document.getElementById("start"));
+		togglebutts();
+		}
+	};
+
 function boot() {
+	boot_uri();
 	reawaken();
 	bootcss();
 	mqmaker(document.getElementById("start"));
@@ -846,6 +857,38 @@ function togglebutts() {
 		document.getElementById("togglebutts").innerHTML = "v"
 		document.getElementById("buttons").style.display = "none";
 		}
+	}
+
+/*
+<div style="display:none" id="gtt"></div>
+<div id="butts" style="z-index:4;position:fixed;top:0;right:0">
+<button onclick="window.open(`https://www.youtube.com/watch?v=FCexoooiLNg`)">?</button>
+<button onclick="toggleiframe()">I</button>
+<button id="togglebutts" onclick="togglebutts()">^</button>
+</div>
+
+<div id="frames" style="display:none; position:fixed; top:0; left:50%; bottom:0; right:0; width:100%; height:100%; background-color:blue">
+<input id="isrc" value="scrap.html" onchange="updateiframe()">
+<input id="ileft" value="50%" onchange="updateiframe()">
+<iframe src="scrap.html" style="top:0; left:0; bottom: 0; right:0; width:100%; height:100%"></iframe>
+</div>
+*/
+
+function toggleiframe() {
+	if (document.getElementById("frames").style.display == "none") {
+		document.getElementById("frames").style.display = "";
+		}
+	else {
+		document.getElementById("frames").style.display = "none";
+		}
+	}
+
+function updateiframesrc() {
+	document.getElementById("if").src = document.getElementById("isrc").value;
+	}
+
+function updateiframeleft() {
+	document.getElementById("frames").style.left = document.getElementById("ileft").value;
 	}
 
 </script>
@@ -910,7 +953,15 @@ Font:<select id="opt_font" oninput="upd_opts()">
 <div style="display:none" id="gtt"></div>
 <div id="butts" style="z-index:4;position:fixed;top:0;right:0">
 <button onclick="window.open(`https://www.youtube.com/watch?v=FCexoooiLNg`)">?</button>
+<button onclick="toggleiframe()">I</button>
 <button id="togglebutts" onclick="togglebutts()">^</button>
 </div>
+
+<div id="frames" style="display:none; position:fixed; top:0; left:50%; bottom:0; right:0; width:50%; height:100%; background-color:white;">
+<input id="isrc" value="scrap.html?t" onchange="updateiframesrc()">
+<input id="ileft" value="50%" onchange="updateiframeleft()">
+<iframe id="if" src="scrap.html" style="top:0; left:0; bottom: 0; right:0; width:100%; height:100%"></iframe>
+</div>
+
 </body>
 </html>

@@ -1,0 +1,419 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<meta name=description content="">
+<title> Associativity </title>
+<script src="tkas.js"></script>
+<script>
+
+//Convention: left-associativity: a+b+c = (a+b)+c
+
+var hist = [];
+
+var lvls = [
+	"a+b+c = (a+b)+c",
+	"a+b+c = a+(b+c)",
+	"a+b+c = a+c+b",
+	"a+b+c = b+c+a",
+	"(a+b)+(c+d) = a+(b+c)+d",
+	"a+b+c+d = d+b+c+a",
+	"a(b+c+d) = ab+ac+ad",
+	"(a+b)(c+d) = ac+ad+bc+bd",
+	];
+
+var lvlsuccesses = [];
+
+var currentgoal;
+
+function bootlvlsuccess() {
+	var i;
+	for (i = 0; i < lvls.length; i++) {
+		lvlsuccesses.push(false);
+		}
+	}
+
+function load_lvl() {
+	var selnum = document.getElementById("lvlsel").value;
+	var lvlstr;
+	if (selnum == -1) {
+		lvlstr = document.getElementById("cust").value;
+		}
+	else {
+		lvlstr = lvls[selnum];
+		}
+	var pt = tkas_parse(lvlstr);
+
+	hist = [];
+	register_goal(pt.subs[1]);
+	register_move(pt.subs[0],"starting");
+	}
+
+function change_lvlsel() {
+	if (document.getElementById("lvlsel").value == -1) {
+		document.getElementById("cust").style.display = "";
+		}
+	else {
+		document.getElementById("cust").style.display = "none";
+		}
+	load_lvl();
+	}
+
+function bootlvlsel() {
+	var str = "<select id='lvlsel' onchange='change_lvlsel()'>";
+	var i;
+	for (i = 0; i < lvls.length; i++) {
+		str += "<option value="+i+">"+lvls[i];
+		if (lvlsuccesses[i]) {str += " [complete]"};
+		str += "</option>";
+		}
+	str += "<option value=-1>custom</option>";
+	str += "</select>";
+	str += "<input id='cust' style='display:none' onchange='load_lvl()'>"
+	document.getElementById("lvlselspan").innerHTML = str;
+	}
+
+function register_goal(pt) {
+	currentgoal = pt;
+	document.getElementById("goal").innerHTML = "Current Goal: " + tkas_render(pt);
+	}
+
+function register_move(newpt,rulename) {
+	hist.push([newpt,rulename]);
+	var i;
+	var str = "<table border=1>";
+	for (i = 0; i < hist.length; i++) {
+		str += "<tr><td>";
+		str += tkas_render(hist[i][0],{rendertype:"html",id:"h"+i});
+		str += "</td><td>";
+		str += hist[i][1];
+		str += "</td></tr>";
+		}
+	str += "</table>";
+	document.getElementById("history").innerHTML = str;
+	tkas_highlight(["Fh"+(hist.length-1)],newpt,{select:true})
+	//requestAnimationFrame(function(){tkas_highlight(["Fh"+(hist.length-1)],newpt,{select:true})});
+	
+	if (tkas_ptree_equiv(currentgoal,newpt)) {
+		document.getElementById("win").innerHTML = "Goal Reached!"
+		i = Number(document.getElementById("lvlsel").value)
+		lvlsuccesses[i] = true;
+		bootlvlsel();
+		document.getElementById("lvlsel").value = i;
+		}
+	else {
+		document.getElementById("win").innerHTML = "";
+		}
+
+	requestAnimationFrame(make_menu);
+
+	}
+
+var rules = [
+	{EQ:"a+b+c=(a+b)+c",fname:"convention"},
+	{EQ:"(a+b)+c=a+b+c",fname:"convention"},
+	{EQ:"abc=(ab)c",fname:"convention"},
+	{EQ:"(ab)c=abc",fname:"convention"},
+	{EQ:"(a+b)+c=a+(b+c)",fname:"additive associativity",aname:"shuffle sum"},
+	{EQ:"a+(b+c)=(a+b)+c",fname:"additive associativity",aname:"shuffle sum"},
+	{EQ:"a+b=b+a",fname:"additive commutativity",aname:"reorder sum"},
+	{EQ:"(ab)c=a(bc)",fname:"multiplicative associativity",aname:"shuffle product"},
+	{EQ:"a(bc)=(ab)c",fname:"multiplicative associativity",aname:"shuffle product"},
+	{EQ:"ab=ba",fname:"multiplicative commutativity",aname:"reorder product"},
+	{EQ:"a(b+c)=ab+ac",fname:"left distributivity",aname:"distributing"},
+	{EQ:"ab+ac=a(b+c)",fname:"left distributivity",aname:"factoring out"},
+	{EQ:"(a+b)c=ac+bc",fname:"right distributivity",aname:"distributing"},
+	{EQ:"ac+bc=(a+b)c",fname:"right distributivity",aname:"factoring out"},
+	];
+
+function tkas_dummy_var(i) {
+	return({op:"VAR",c:"dummy"+i});
+	}
+
+function convention_expand(T) {
+	if (T.op != "ADD" && T.op != "MUL") {return(false);}
+	var rval = {};
+	rval.op = T.op;
+	var i;
+	rval.subs = [tkas_dummy_var(0),tkas_dummy_var(1)];
+	for (i = 2; i < T.subs.length; i++) {
+		rval = {op:T.op,subs:[rval,tkas_dummy_var(i)]};
+		}
+	var lval = {};
+	lval.op = T.op;
+	lval.subs = [];
+	for (i = 0; i < T.subs.length; i++) {
+		lval.subs.push(tkas_dummy_var(i));
+		}
+	return({op:"REL",c:"EQ",subs:[lval,rval]});
+	}
+
+function convention_reduce_add(T) {
+	var depth = 0;
+	var td = tkas_ptree_copy(T);
+	while(td.op == "ADD" && td.subs.length == 2) {
+		td = td.subs[0];
+		depth++;
+		}
+	depth++;
+	if (depth == 1) {return(false)}
+	var rval = {};
+	rval.op = T.op;
+	var i;
+	rval.subs = [tkas_dummy_var(0),tkas_dummy_var(1)];
+	for (i = 2; i < depth; i++) {
+		rval = {op:T.op,subs:[rval,tkas_dummy_var(i)]};
+		}
+	var lval = {};
+	lval.op = T.op;
+	lval.subs = [];
+	for (i = 0; i < depth; i++) {
+		lval.subs.push(tkas_dummy_var(i));
+		}
+
+	return({op:"REL",c:"EQ",subs:[rval,lval]});
+	}
+
+function convention_reduce_mul(T) {
+	var depth = 0;
+	var td = tkas_ptree_copy(T);
+	while(td.op == "MUL" && td.subs.length == 2) {
+		td = td.subs[0];
+		depth++;
+		}
+	depth++;
+	if (depth == 1) {return(false)}
+	var rval = {};
+	rval.op = T.op;
+	var i;
+	rval.subs = [tkas_dummy_var(0),tkas_dummy_var(1)];
+	for (i = 2; i < depth; i++) {
+		rval = {op:T.op,subs:[rval,tkas_dummy_var(i)]};
+		}
+	var lval = {};
+	lval.op = T.op;
+	lval.subs = [];
+	for (i = 0; i < depth; i++) {
+		lval.subs.push(tkas_dummy_var(i));
+		}
+
+	return({op:"REL",c:"EQ",subs:[rval,lval]});
+	}
+
+function MONAD(f) { //TODO: add to tkas.js as tkas_text_monad. Is this a monad?
+	return(function(x){return(tkas_render(f(tkas_parse(x)),{rendertype:"string"}))});
+	}
+
+function rule_i(i,T) {
+	var r;
+	if (i == 0 && T.op == "ADD") {
+		r = convention_expand(T);
+		}
+	else if (i == 2 && T.op == "MUL") {
+		r = convention_expand(T);
+		}
+	else if (i == 1 && T.op == "ADD") {
+		r = convention_reduce_add(T);
+		}
+	else if (i == 3 && T.op == "MUL") {
+		r = convention_reduce_mul(T);
+		}
+	else {
+		return(tkas_parse(rules[i].EQ));
+		}
+	return(r);
+	}
+
+function butt_rule(i) {
+	var L = tkas_highlight_get_selected(["Fh"+(hist.length-1)]);
+	if (!L) {
+		//maybe alert the user that they failed?
+		return;
+		}
+	var T = tkas_ptree_deep_sub(hist[hist.length-1][0],L);
+
+	var r = rule_i(i,T);
+
+	if (!r) {
+		//maybe alert the user that they failed?
+		return;
+		}
+	var newT = tkas_rule_simple_rule(r,hist[hist.length-1][0],L);
+	if (newT) {
+		register_move(newT,rules[i].fname);
+		}
+	//else maybe alert the user that they failed?
+	}
+
+function menu_rule(id,i) {
+	var L = tkas_lix_from_id(id);
+	if (!L) {
+		//maybe alert the user that they failed?
+		return;
+		}
+	var T = tkas_ptree_deep_sub(hist[hist.length-1][0],L);
+
+	var r = rule_i(i,T);
+
+	if (!r) {
+		//maybe alert the user that they failed?
+		return;
+		}
+	var newT = tkas_rule_simple_rule(r,hist[hist.length-1][0],L);
+	if (newT) {
+		register_move(newT,rules[i].fname);
+		}
+	//else maybe alert the user that they failed?
+	}
+
+var butt_colors = [
+	"#EEEEBB",
+	"#EEEEBB",
+	"#EEEEBB",
+	"#EEEEBB",
+	"#BBCCEE",
+	"#BBCCEE",
+	"#77AADD",
+	"#FFCCCC",
+	"#FFCCCC",
+	"#FFAABB",
+	"#CCDDAA",
+	"#CCDDAA",
+	"#CCDDAA",
+	"#CCDDAA"
+	];
+
+function bootbutts() {
+	var i;
+	var str = "<table border=1 style='border-collapse:collapse' class='butts'>";
+	for (i = 0; i < rules.length; i++) {
+		str += "<tr style='background-color:"+butt_colors[i]+"'><td>";
+		str += "<button onclick='butt_rule("+i+")'> &rarr; </button>";
+		str += "</td><td>";
+		str += rules[i].EQ;
+		str += "</td><td>";
+		str += rules[i].fname;
+		str += "</td></tr>";
+		//str += "<button onclick='butt_rule("+i+")'>" + rules[i].fname + " " + rules[i].EQ + "</button><br>";
+		}
+	document.getElementById("butts").innerHTML = str;
+	}
+
+function popup_menu(e) {
+	if (!g_popup_menus) {return;}
+	var hi = hist.length-1;
+	var L = tkas_highlight_get_selected(["Fh"+hi]);
+	var T = hist[hi][0];
+	var S = tkas_ptree_deep_sub(T,L);
+	var str = "<table border=1 style='border:2px solid; border-collapse:collapse; box-shadow:3px 3px 3px rgba(0,0,0,.2)'>";
+	var r, newT;
+	for (i = 0; i < rules.length; i++) {
+		r = rule_i(i,S);
+		if (r) {
+			newT = tkas_rule_simple_rule(r,T,L);
+			if (newT && !tkas_ptree_equiv(newT,T)) {
+				str += "<tr class='melt' onclick='menu_rule(\""+e.target.id+"\","+i+")'><td>";
+				//str += tkas_render(newT,{rendertype:"string"});
+				str += tkas_render(tkas_ptree_deep_sub(newT,L),{rendertype:"string"});
+				str += "</td><td>";
+				str += rules[i].fname;
+				str += "</td></tr>";
+				}
+			}
+		}
+	str += "</table>";
+
+	//ephemeral_element(e.pageX,e.pageY,str);
+	var rect = e.target.getBoundingClientRect();
+	ephemeral_element(rect.left+window.scrollX,rect.top+window.scrollY,str,e.target);
+	}
+
+function ephemeral_element(x,y,str,el) {
+	var menu = document.createElement("span");
+	menu.classList.add("menu");
+	menu.style.position = "fixed";
+	menu.style.bottom = "calc(100vh - " + y + "px)";
+	menu.style.left = x + "px";
+	menu.style.backgroundColor = "white";
+	menu.innerHTML = str;
+	el.appendChild(menu);
+	}
+
+function remove_popup_menu(e) {
+	var l = e.target.getElementsByClassName("menu");
+	if (l[0]) {l[0].remove()}
+	}
+
+var g_popup_menus = true;
+
+function make_menu() {
+	var i;
+	var hi = hist.length-1;
+	var T = hist[hi][0];
+	var l = tkas_lix_list(T);
+	var id;
+	for (i = 0; i < l.length; i++) {
+		id = tkas_id_from_tag_and_lix("Fh"+hi,l[i]);
+		document.getElementById(id).addEventListener("focus", popup_menu);
+		document.getElementById(id).addEventListener("blur", remove_popup_menu);
+		//document.getElementById(id).addEventListener("click",function(e){console.log(e.target)});
+		}
+	//document.getElementById("tkasid_Fh"+(hist.length-1)).addEventListener("click",popup_menu_delay);
+	}
+
+function change_opts() {
+	var k = document.getElementById("opts").value;
+	if (k == 1) {
+		g_popup_menus = true;
+		document.getElementById("butts").style.display = "none";
+		}
+	else if (k == 2) {
+		g_popup_menus = false;
+		document.getElementById("butts").style.display = "";
+		}
+	else if (k == 3) {
+		g_popup_menus = true;
+		document.getElementById("butts").style.display = "";
+		}
+	}
+
+function boot() {
+	bootlvlsuccess();
+	bootlvlsel();
+	bootbutts();
+	load_lvl();
+	change_opts();
+	}
+
+</script>
+<style>
+.melt:hover {
+	background-color: #DDDDDD;
+	}
+</style>
+</head>
+<body onload="boot()" style="font-size:x-large;">
+<div style="display:flex; flex-flow:column; height:calc(100vh - 16px)">
+ <div style="flex:0 1 auto">
+  Options:<select id="opts" onchange="change_opts()">
+  <option value=1>Popup Menu</option>
+  <option value=2>Sidebar</option>
+  <option value=3>Both</option>
+  </select><br>
+  Level select:<span id="lvlselspan"></span><br>
+  <span id="goal"></span> <span id="win" style="background-color:#CCEEFF"></span>
+ </div>
+ <div style="flex: 1 1 auto; overflow:auto">
+<div style="display:flex; overflow:auto; flex-direction:column-reverse; height:100%">
+<div id="history"></div>
+</div>
+</div>
+</div>
+
+
+
+<span id="butts" style="position:fixed;right:0px;bottom:0px"></span>
+</body>
+</html>

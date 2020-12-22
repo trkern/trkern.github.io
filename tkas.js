@@ -1,3 +1,18 @@
+function tkas_ptree_equiv(T1,T2) {
+	if (T1.op != T2.op) {return(false);}
+	if (("c" in T1) != ("c" in T2)) {return(false);}
+	if (("c" in T1) && (T1.c != T2.c)) {return(false);}
+	if (("subs" in T1) != ("subs" in T2)) {console.log("tkas_ptree_equiv:should never happen happened"); return(false);} //should never happen
+	if ("subs" in T1) {
+		if (T1.subs.length != T2.subs.length) {return(false);}
+		var i;
+		for (i = 0; i < T1.subs.length; i++) {
+			if (! tkas_ptree_equiv(T1.subs[i],T2.subs[i])) {return(false);}
+			}
+		}
+	return(true);
+	}
+
 function tkas_ptree_copy(T) {
 	var rval = {};
 	var i;
@@ -481,7 +496,7 @@ function tkas_render_LOGN(T,L,D) {
 			F = "\\ln";
 			}
 		else if (D.rendertype == "html") {
-			F = "ln"
+			F = "ln<span style='display:none'>" + subrendB + "</span>";
 			}
 		}
 	else if (T.subs[0].op == "NUM" && T.subs[0].c == "10") {
@@ -492,7 +507,7 @@ function tkas_render_LOGN(T,L,D) {
 			F = "\\log";
 			}
 		else if (D.rendertype == "html") {
-			F = "log"
+			F = "log<span style='display:none'>" + subrendB + "</span>";
 			}
 		}
 	else {
@@ -523,6 +538,17 @@ function tkas_render_ABS(T,L,D) {
 	}
 
 function tkas_render_DER(T,L,D) {
+	var subrend = tkas_subrend(T,L,D,0);
+	var v = T.c;
+	if (D.rendertype == "string") {
+		return("d/d"+v+subrend);
+		}
+	else if (D.rendertype == "tex") {
+		return("\\frac{d}{d"+v+"}"+subrend);
+		}
+	else if (D.rendertype == "html") {
+		return(tkas_render_html_fraction("d","d"+v) + subrend);
+		}
 	}
 
 function tkas_render_AND(T,L,D) {
@@ -548,14 +574,14 @@ function tkas_render_COMP(T,L,D) {
 		}
 	}
 
-var tkas_rel_lookup = {
-	"EQ":["=","=","="],
-	"LT":["<","<","<"],
-	"GT":[">",">",">"],
-	"GEQ":["≥","\\geq ","&ge;"],
-	"LEQ":["≤","\\leq ","&le;"],
-	"NEQ":["≠","\\neq ","&ne;"],
-	"APPROX":["≈","\\approx ","&asymp;"],
+var tkas_rel_lookup = { //string, tex, html, js
+	"EQ":["=","=","=","=="],
+	"LT":["<","<","<","<"],
+	"GT":[">",">",">",">"],
+	"GEQ":["≥","\\geq ","&ge;",">="],
+	"LEQ":["≤","\\leq ","&le;","<="],
+	"NEQ":["≠","\\neq ","&ne;","!="],
+	"APPROX":["≈","\\approx ","&asymp;"], //js slot intentionally left unfilled
 	}
 
 function tkas_render_REL(T,L,D) {
@@ -908,7 +934,50 @@ function tkas_highlight_mousemove(tagl,T) {
 		}
 	}
 
-function tkas_highlight(tagl,T) {
+function tkas_highlight_focus(tagl,T,e) {
+	var tag = tkas_tag_from_id(e.target.id);
+	var L = tkas_lix_from_id(e.target.id);
+	var i;
+	for (i = 0; i < tagl.length; i++) {
+		if (tagl[i] != tag && tagl[i][0] == "F") {
+			document.getElementById(tkas_id_from_tag_and_lix(tagl[i],L)).classList.add("tkas_formula_node_pair_focus")
+			}
+		else if (tagl[i] != tag && tagl[i][0] == "T") {
+			document.getElementById(tkas_id_from_tag_and_lix(tagl[i],L)).classList.add("tkas_formula_node_pair_focus")
+			}
+		}
+	}
+
+function tkas_highlight_blur(tagl,T,e) {
+	var tag = tkas_tag_from_id(e.target.id);
+	var L = tkas_lix_from_id(e.target.id);
+	var i;
+	for (i = 0; i < tagl.length; i++) {
+		if (tagl[i] != tag && tagl[i][0] == "F") {
+			document.getElementById(tkas_id_from_tag_and_lix(tagl[i],L)).classList.remove("tkas_formula_node_pair_focus")
+			}
+		else if (tagl[i] != tag && tagl[i][0] == "T") {
+			document.getElementById(tkas_id_from_tag_and_lix(tagl[i],L)).classList.remove("tkas_formula_node_pair_focus")
+			}
+		}
+	}
+
+function tkas_highlight_get_selected(tagl) {
+	var el = tkas_get_selected_element_taglist(tagl);
+	return(tkas_lix_from_id(el.id));
+	}
+
+function tkas_get_selected_element_taglist(tagl) {
+	var l = document.querySelectorAll(":focus");
+	if (l.length == 0) {return(false);}
+	var minelt = l[0];
+	for (i = 0; i < l.length; i++) {
+		if (l[i].id && tagl.includes(tkas_tag_from_id(l[i].id)) && minelt.contains(l[i])) {minelt = l[i];}
+		}
+	return(minelt);
+	}
+
+function tkas_highlight(tagl,T,opts) {
 	var i,j;
 	var l = tkas_lix_list(T);
 	for (i = 0; i < tagl.length; i++) {
@@ -927,6 +996,25 @@ function tkas_highlight(tagl,T) {
 				}
 			}
 		}
+	if (opts && "select" in opts && opts.select) {
+		for (i = 0; i < tagl.length; i++) {
+			if (tagl[i][0] == "F") {
+				for (j = 0; j < l.length; j++) {
+					document.getElementById(tkas_id_from_tag_and_lix(tagl[i],l[j])).tabIndex = 0;
+					document.getElementById(tkas_id_from_tag_and_lix(tagl[i],l[j])).addEventListener("focus",function(e){tkas_highlight_focus(tagl,T,e)});
+					document.getElementById(tkas_id_from_tag_and_lix(tagl[i],l[j])).addEventListener("blur",function(e){tkas_highlight_blur(tagl,T,e)});
+					}
+				}
+			else if (tagl[i][0] == "T") {
+				for (j = 0; j < l.length; j++) {
+					document.getElementById(tkas_id_from_tag_and_lix(tagl[i],l[j])).tabIndex = 0;
+					document.getElementById(tkas_id_from_tag_and_lix(tagl[i],l[j])).addEventListener("focus",function(e){tkas_highlight_focus(tagl,T,e)});
+					document.getElementById(tkas_id_from_tag_and_lix(tagl[i],l[j])).addEventListener("blur",function(e){tkas_highlight_blur(tagl,T,e)});
+					}
+				}
+			}
+		}
+
 	}
 
 function tkas_colorify(tagl,T) {
@@ -987,7 +1075,6 @@ function tkas_print_lexlist(LL) {
 	return(rstr);
 	}
 
-
 var tkas_re_add = ["+",/\+/];
 var tkas_re_mul = ["*",/\*/];
 var tkas_re_neg = ["-",/-/];
@@ -995,7 +1082,7 @@ var tkas_re_div = ["/",/\//];
 var tkas_re_pow = ["^",/\^/];
 var tkas_re_lparen = ["(",/\(/];
 var tkas_re_rparen = [")",/\)/];
-var tkas_re_funs = ["F",/sqrt|root|ln|log|sin|cos|tan|sec|csc|abs/];
+var tkas_re_funs = ["F",/sqrt|root|ln|log|(a?(sin|cos|tan|cot|sec|csc)h?)|abs|cbrt|ceil|exp|floor|max|min|round|sign/];
 var tkas_re_consts = ["C",/pi|e/];
 var tkas_re_number = ["N",/\d+\.\d*|\d+|\.\d*/];
 var tkas_re_var = ["V",/[A-Za-z]/];
@@ -1324,22 +1411,40 @@ function tkas_pemdas(L) {
 		);
 	}
 
-function tkas_parse_cleanup(T) {
+function tkas_parse_cleanup(T,opts) {
 	var rval = {};
 	var i;
+	if (T.op == "NUM" && T.c == "e" && opts && "vare" in opts && opts.vare) {
+		return({op:"VAR", c:"e"});
+		}
 	if (T.op == "APP" && T.subs[0].op == "FUN" && T.subs[0].c == "sqrt") {
 		rval.op = "ROOT"
-		rval.subs = [{op:"NUM",c:2}, tkas_parse_cleanup(T.subs[1])];
+		rval.subs = [{op:"NUM",c:2}, tkas_parse_cleanup(T.subs[1],opts)];
 		return(rval);
 		}
 	if (T.op == "APP" && T.subs[0].op == "FUN" && T.subs[0].c == "root") {
 		rval.op = "ROOT"
-		rval.subs = [tkas_parse_cleanup(T.subs[1]),tkas_parse_cleanup(T.subs[2])];
+		rval.subs = [tkas_parse_cleanup(T.subs[1],opts),tkas_parse_cleanup(T.subs[2],opts)];
 		return(rval);
 		}
 	if (T.op == "APP" && T.subs[0].op == "FUN" && T.subs[0].c == "abs") {
 		rval.op = "ABS"
-		rval.subs = [tkas_parse_cleanup(T.subs[1])];
+		rval.subs = [tkas_parse_cleanup(T.subs[1],opts)];
+		return(rval);
+		}
+	if (T.op == "APP" && T.subs[0].op == "FUN" && T.subs[0].c == "ln") {
+		rval.op = "LOGN"
+		rval.subs = [{op:"NUM", c:"e"},tkas_parse_cleanup(T.subs[1],opts)];
+		return(rval);
+		}
+	if (T.op == "APP" && T.subs[0].op == "FUN" && T.subs[0].c == "log" && T.subs.length == 2) {
+		rval.op = "LOGN"
+		rval.subs = [{op:"NUM", c:10},tkas_parse_cleanup(T.subs[1],opts)];
+		return(rval);
+		}
+	if (T.op == "APP" && T.subs[0].op == "FUN" && T.subs[0].c == "log" && T.subs.length == 3) {
+		rval.op = "LOGN"
+		rval.subs = [tkas_parse_cleanup(T.subs[1],opts),tkas_parse_cleanup(T.subs[2],opts)];
 		return(rval);
 		}
 	for (i in T) {
@@ -1348,13 +1453,13 @@ function tkas_parse_cleanup(T) {
 	if ("subs" in T) {
 		rval.subs = [];
 		for (i = 0; i < T.subs.length; i++) {
-			rval.subs.push(tkas_parse_cleanup(T.subs[i]));
+			rval.subs.push(tkas_parse_cleanup(T.subs[i],opts));
 			}
 		}
 	return(rval);
 	}
 
-function tkas_parse(str) {
+function tkas_parse(str,opts) {
 	var p = tkas_lex(str);
 	var lastgood = p;
 	var o = tkas_pemdas(p);
@@ -1362,7 +1467,177 @@ function tkas_parse(str) {
 		lastgood = o;
 		o = tkas_pemdas(o);
 		}
-	return(tkas_parse_cleanup(lastgood[0][1]));
+	return(tkas_parse_cleanup(lastgood[0][1],opts));
+	}
+
+function tkas_composition_list(T) { //assumes T is a COMP or FUN node. produces a list of FUN nodes from left to right
+	if (T.op == "FUN") {return([T]);}
+	if (T.op == "COMP") {
+		var rval = [];
+		var i;
+		for (i = 0; i < T.subs.length; i++) {
+			rval.push(tkas_composition_list(T.subs[i]));
+			}
+		return(rval);
+		}
+	}
+
+function tkas_js_from_funname(str) {
+	if (/^(sin|cos|tan|cot|sec|csc)$/.test(str)) {return("Math."+str);} //redundant, please leave
+	if (/^a?(sin|cos|tan|cot|sec|csc)h?$/.test(str)) {return("Math."+str);}
+	if (/cbrt|ceil|exp|floor|max|min|round|sign|sqrt/) {return("Math."+str);}
+	return(str);
+	}
+
+function tkas_js_from_ptree(T,opts) {
+	var sublist = [];
+	var i;
+	var rstr = "";
+	if ("subs" in T) {
+		for (i = 0; i < T.subs.length; i++) {
+			sublist.push("("+tkas_js_from_ptree(T.subs[i],opts)+")");
+			}
+		}
+	if (T.op == "ADD") {
+		for (i = 0; i < sublist.length; i++) {
+			if (i > 0 && T.subs[i].op != "NEG") {rstr += " + " + sublist[i];}
+			else if (i > 0 && T.subs[i].op == "NEG") {rstr += " - " + tkas_js_from_ptree(T.subs[i].subs[0],opts);}
+			else {rstr += sublist[i]}
+			}
+		}
+	if (T.op == "MUL") {
+		for (i = 0; i < sublist.length; i++) {
+			if (i > 0) {rstr += " * ";}
+			rstr += sublist[i];
+			}
+		}
+	if (T.op == "NEG") {
+		rstr = "-" + sublist[i];
+		}
+	if (T.op == "DIV") {
+		rstr = sublist[0] + "/" + sublist[1];
+		}
+	if (T.op == "POW") {
+		if (opts && "smartpow" in opts && opts.smartpow && T.subs[1].op == "NUM" && Number.isInteger(T.subs[1].c)) {
+			if (T.subs[1].c == 0) {rstr = "1";}
+			if (T.subs[1].c > 0) {
+				for (i = 0; i < T.subs[1].c; i++) {
+					if (i > 0) {rstr += "*"}
+					rstr += sublist[0];
+					}
+				}
+			if (T.subs[1].c < 0) {
+				for (i = 0; i < -T.subs[1].c; i++) {
+					if (i > 0) {rstr += "*"}
+					rstr += sublist[0];
+					}
+				rstr = "1/("+rstr+")";
+				}
+			}
+		else {
+			rstr = "Math.pow("+sublist[0]+","+sublist[1]+")";
+			}
+		}
+	if (T.op == "ROOT") {
+		if (T.subs[0].op == "NUM" && T.subs[0].c == "2") {
+			rstr = "Math.sqrt("+sublist[1]+")";
+			}
+		else {
+			rstr = "Math.pow("+sublist[1]+",1/"+sublist[0]+")";
+			}
+		}
+	if (T.op == "LOGN") {
+		if (T.subs[0].op == "NUM" && T.subs[0].c == "e") {
+			rstr = "Math.log("+sublist[1]+")";
+			}
+		else if (T.subs[0].op == "NUM" && T.subs[0].c == "10") {
+			rstr = "Math.log10("+sublist[1]+")";
+			}
+		else {
+			rstr = "Math.log("+sublist[1]+")/Math.log("+sublist[0]+")";
+			}
+		}
+	if (T.op == "ABS") {
+		rstr = "Math.abs("+sublist[0]+")";
+		}
+	if (T.op == "REL") {
+		rstr = sublist[0] + tkas_rel_lookup(T.c)[3] + sublist[1];
+		}
+	if (T.op == "VAR") {
+		rstr = T.c;
+		}
+	if (T.op == "NUM") {
+		if (T.c == "pi") {rstr = "Math.PI";}
+		if (T.c == "e") {rstr = "Math.E";}
+		rstr = T.c;
+		}
+	if (T.op == "APP") {
+		var l = tkas_composition_list(T.subs[0]);
+		for (i = 0; i < l.length; i++) {
+			rstr += tkas_js_from_funname(l[i].c) + "(";
+			}
+		for (i = 1; i < T.subs.length; i++) {
+			if (i > 1) {rstr += ","}
+			rstr += sublist[i];
+			}
+		for (i = 0; i < l.length; i++) {
+			rstr += ")";
+			}
+		}
+	if (T.op == "AND") {
+		for (i = 0; i < T.subs.length; i++) {
+			if (i > 0) {rstr += "&&";}
+			rstr += sublist[i];
+			}
+		}
+	if (T.op == "OR") {
+		for (i = 0; i < T.subs.length; i++) {
+			if (i > 0) {rstr += "||";}
+			rstr += sublist[i];
+			}
+		}
+	if (T.op == "NOT") {
+		rstr = "!" + sublist[0];
+		}
+	return(rstr);
+	}
+
+var tkas_restriction_polynomial = {
+	ADD:true,
+	MUL:true,
+	NEG:true,
+	POW:true,
+	natexp:true,
+	VAR:true,
+	NUM:true,
+	}
+
+var tkas_restriction_diophantine = {
+	ADD:true,
+	MUL:true,
+	NEG:true,
+	POW:true,
+	natexp:true,
+	VAR:true,
+	NUM:true,
+	intonly:true,
+	}
+
+function tkas_restriction_test(T,al) {
+	if (!(T.op in al) || !(al[T.op])) {return(false);}
+	var i;
+	if ("natexp" in al && al.natexp && T.op == "POW") {
+		if (T.subs[1].op != "NUM" || !Number.isInteger(T.subs[1].c) || T.subs[1].c < 0) {return(false);}
+		}
+	if ("intonly" in al && al.intonly && T.op == "NUM") {
+		if (!Number.isInteger(T.c)) {return(false);}
+		}
+	if ("subs" in T) {
+		for (i = 0; i < T.subs.length; i++) {
+			if (!tkas_restriction_test(T.subs[i],al)) {return(false);}
+			}
+		}
+	return(true);
 	}
 
 function tkas_rule_left_distributivity(T,L) {
@@ -1493,10 +1768,6 @@ function tkas_rule_immediately_applicable_srules(T,L) {
 	}
 
 var tkas_css = `
-.tkas_formula_node {
-	display:inline-block;
-	margin:2px;
-	}
 .tkas_svg_parens {
 	border-left: .5em solid;
 	border-right: .5em solid;
@@ -1574,12 +1845,32 @@ var tkas_css = `
 	border-right: 2px solid black;
 	display:inline-block;
 	}
+.tkas_formula_node {
+	display:inline-block;
+	margin:2px;
+	}
 .tkas_tree_node {
 	background-color: white;
-	border: 1px solid black;
+	border: 1px solid;
 	}
 .tkas_hi {
 	background-color: #CCDDAA;
+	}
+.tkas_tree_node:focus {
+	background-color: #BBCCEE;
+	outline: 2px solid #225522;
+	}
+.tkas_formula_node:focus {
+	background-color: #BBCCEE;
+	outline: 2px solid #225522;
+	}
+.tkas_formula_node_pair_focus {
+	background-color: #BBCCEE;
+	outline: 2px solid #225522;
+	}
+.tkas_tree_node_pair_focus {
+	background-color: #BBCCEE;
+	outline: 2px solid #225522;
 	}
 `
 

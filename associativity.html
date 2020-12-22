@@ -367,15 +367,15 @@ function change_opts() {
 	var k = document.getElementById("opts").value;
 	if (k == 1) {
 		g_popup_menus = true;
-		document.getElementById("butts").style.display = "none";
+		document.getElementById("sidebar").style.display = "none";
 		}
 	else if (k == 2) {
 		g_popup_menus = false;
-		document.getElementById("butts").style.display = "";
+		document.getElementById("sidebar").style.display = "";
 		}
 	else if (k == 3) {
 		g_popup_menus = true;
-		document.getElementById("butts").style.display = "";
+		document.getElementById("sidebar").style.display = "";
 		}
 	}
 
@@ -392,15 +392,31 @@ function boot() {
 .melt:hover {
 	background-color: #DDDDDD;
 	}
+summary:hover {
+	background-color: #CCDDAA;
+	}
+details[open] > summary {
+	border: 2px solid #225522;
+	background-color: #BBCCEE;
+	}
 </style>
 </head>
 <body onload="boot()" style="font-size:x-large;">
 <div style="display:flex; flex-flow:column; height:calc(100vh - 16px)">
  <div style="flex:0 1 auto">
-  Options:<select id="opts" onchange="change_opts()">
+
+  <details> <summary> Help (Show/Hide) </summary>
+<p>
+The goal of this interactive is to see how the more general versions of rules are connected with their binary versions. For instance, you can see that the general version of associativity (the ability to freely shuffle parentheses around sums) follows from the binary version (a+b)+c = a+(b+c) and a convention regarding long sums. Here we use the left-associativity convention that abc means (ab)c, the same as lambda calculus.
+</p>
+<p>
+To get started, click on a subexpression of the formula at the bottom of the screen. If there are rules you can apply, a menu should pop up with a list of possibilities. You can also see a full list of rules this interactive knows about by changing the "show rules" option to include the "sidebar". Your first move should be to select the entire expression a+b+c below and apply the left-associativity "convention" to rewrite it as (a+b)+c. You can try problems that require a sequence of moves by using the "level select" menu below.
+</p>
+  </details>
+  Show rules:<select id="opts" onchange="change_opts()">
   <option value=1>Popup Menu</option>
-  <option value=2>Sidebar</option>
-  <option value=3>Both</option>
+  <option value=3>Popup Menu and Sidebar</option>
+  <option value=2>Sidebar Only</option>
   </select><br>
   Level select:<span id="lvlselspan"></span><br>
   <span id="goal"></span> <span id="win" style="background-color:#CCEEFF"></span>
@@ -412,8 +428,8 @@ function boot() {
 </div>
 </div>
 
-
-
+<div id="sidebar" style="position:fixed;right:0px;bottom:0px;top:0px;width:400px;">
 <span id="butts" style="position:fixed;right:0px;bottom:0px"></span>
+</div>
 </body>
 </html>

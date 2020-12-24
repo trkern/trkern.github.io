@@ -1,0 +1,76 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<meta name=description content="Pointers Are bad">
+<title> Pointers are Bad </title>
+<script src="underscore-min.js"></script>
+<script src="kas.js"></script>
+<script src="katex.min.js"></script>
+<script>
+
+function modtex(k) {
+	if (!k || !(typeof k === "object") || !("tex" in k)) {return(k);}
+	k.oldtex = k.tex;
+	k.tex = function() {return("\\boxed{"+k.oldtex()+"}");}
+	var i;
+	for (i in k.args()) {
+		modtex(k.args()[i]);
+		}
+	return(k);
+	}
+
+function doall() {
+	var k = KAS.parse("sqrt(x+y)").expr;
+	document.getElementById("out").innerHTML = katex.renderToString(k.exp.tex());
+	var j = KAS.parse("sqrt(2)").expr;
+	modtex(j);
+	document.getElementById("out").innerHTML += katex.renderToString(k.exp.tex());
+	}
+
+</script>
+<link rel="stylesheet" href="katex.min.css">
+</head>
+<body>
+<p>
+This interactive is meant to demonstrate an issue I encountered while trying to modify and navigate the KAS expr structures manually as part of an interactive meant to draw parse trees (hence needing to navigate the expr structure) and draw boxes around subexpressions in a formula (hence needing to recursively modify the .tex() function of the KAS exprs). Remarkably, recursively modifying the .tex() function actually does work.
+</p>
+<p>
+But, within the code of KAS.js is the line:
+<pre><code>
+Num.Sqrt = new Rational(1, 2).addHint("root");
+</code></pre>
+And Num.Sqrt is used to turn square roots into powers (so that simplification only has to deal with pow, as opposed to pow and sqrt).
+<pre><code>
+sqrt: function(arg) {return new Pow(arg, Num.Sqrt);},
+</code></pre>
+So within each expr representing a square root is a pointer to Num.Sqrt, instead of a freshly created Rational(1,2). So iterating a change through one square root expr permanently changes Num.Sqrt, thus permanently changing the exponent expr in all exprs representing square roots!
+</p>
+<p>
+Click the button below to execute the following code:
+<pre><code>
+function modtex(k) { //iterates through a KAS expr object changing its .tex() function
+	if (!k || !(typeof k === "object") || !("tex" in k)) {return(k);}
+	k.oldtex = k.tex;
+	k.tex = function() {return("\\boxed{"+k.oldtex()+"}");}
+	var i;
+	for (i in k.args()) {
+		modtex(k.args()[i]);
+		}
+	return(k);
+	}
+
+function doall() {
+	var k = KAS.parse("sqrt(x+y)").expr;
+	document.getElementById("out").innerHTML = katex.renderToString(k.exp.tex());
+	var j = KAS.parse("sqrt(2)").expr;
+	modtex(j); //change an unrelated square root expr
+	document.getElementById("out").innerHTML += katex.renderToString(k.exp.tex());
+	}
+</code></pre>
+</p>
+<button onclick="doall()">go</button>
+<div id="out"></div>
+</body>
+</html>

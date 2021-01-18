@@ -168,6 +168,8 @@ function regeo_c() {
 	c_scene.add(c_sphere_mesh);
 
 	update_c();
+
+	document.getElementById("c_eqn").innerHTML = katex.renderToString("x^{"+a+"}-y^{"+b+"} = 0");
 	}
 
 function update_c() {
@@ -518,6 +520,8 @@ Let's take a look at the solutions to the equation:
 <p>
 If we let x and y be complex, the solutions lie in 4 dimensional space (2 for x and 2 for y), and our equation becomes two equations: Real parts are equal and Imaginary parts are equal to each other, so the solution set itself should be 2 dimensional. We can visualize this solution set by taking cross sections of the four dimensional space.
 </p>
+
+<h1 id="c_eqn"></h1>
 
 <canvas id="c" width=500 height=500 style="border:1px solid"></canvas><br>
 <select id="c_dim" onchange="regeo_c()">

@@ -20,7 +20,24 @@ function updateURI() {
 function loaduri() {
 	var str = document.URL;
 	if (str.indexOf("?") == -1) {return;}
-	g_calc.setState(JSON.parse(decodeURI(str.slice(str.indexOf("?")+1))));
+	var s2 = decodeURI(str.slice(str.indexOf("?")+1));
+	if (s2[0] == "{") {
+		g_calc.setState(JSON.parse(s2));
+		}
+	else if(s2[0] == "[") {
+		var l = JSON.parse(s2);
+		var l2 = [];
+		var i;
+		for (i = 0; i < l.length; i++) {
+			if (typeof l[i] == "string") {
+				l2.push({id:"i"+i,latex:l[i]});
+				}
+			else {
+				l2.push(l[i]);
+				}
+			}
+		g_calc.setExpressions(l2);
+		}
 	}
 
 function onresize() {

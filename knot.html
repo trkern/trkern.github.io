@@ -1,0 +1,572 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<meta name=description content="">
+<title> Singular Points of Complex Hypersurfaces </title>
+<script src="three.js"></script>
+<script src="OrbitControls.js"></script>
+<script src="math.min.js"></script>
+<script src="katex.min.js"></script>
+<script src="tgr.js"></script>
+<link rel="stylesheet" href="katex.min.css">
+<script>
+
+
+
+function bootkatex() {
+	var l = document.getElementsByClassName("k");
+	var k = l.length;
+	var i;
+	for (i = 0; i < k; i++) {
+		katex.render(l[i].title,l[i],{});
+		}
+	}
+
+function projector(rex,imx,rey,imy) {
+	return([rex/(1-rey),imx/(1-rey),imy/(1-rey)]);
+	//return([rex*(tr+rey),imx*(tr+rey),imy]);
+	}
+
+function ygivenx(rex,imx,a,b,branch) {
+	//x^a-y^b=0, so y = (x^a)^(1/b)
+	var l = Math.pow(rex*rex+imx*imx,a/(2*b)); //length of the answer
+	var oth = Math.atan2(imx,rex);
+	var th = (a*oth+branch*2*Math.PI)/b;
+	return([l*Math.cos(th),l*Math.sin(th)]);
+	}
+
+function params(a,b,n,i,s,br) { // n: which canvas, i: graphing parameter value, s: slider value
+	if (n == 1) {
+		return(ygivenx(s,i,a,b,br));
+		}
+	if (n == 2) {
+		return(ygivenx(i,s,a,b,br));
+		}
+	if (n == 3) {
+		return(ygivenx(s,i,b,a,br));
+		}
+	if (n == 4) {
+		return(ygivenx(i,s,b,a,br));
+		}
+	}
+
+function test() { //just to make sure ygivenx works correctly
+	var re, im, a, b, branch;
+	var x,y;
+	for (re = -2; re <= 2; re += 1) {
+		for (im = -2; im <= 2; im += 1) {
+			for (a = 1; a < 6; a++) {
+				for (b = 1; b < 6; b++) {
+					for (branch = 0; branch < b; branch++) {
+						x = math.complex(re,im);
+						y = math.complex(...ygivenx(re,im,a,b,branch));
+						console.log(re,im,a,b,branch,math.eval("x^a/y^b",{x:x,y:y,a:a,b:b}));
+						}
+					}
+				}
+			}
+		}
+	}
+
+var c_controls;
+var c_nu;
+var c_proj_mesh;
+var c_cross_geo;
+var c_sphere_geo;
+var c_sphere_mesh;
+var c_scene;
+
+function boot_c() {
+	var c_camera;
+	var c_renderer;
+
+	c_scene = new THREE.Scene();
+	c_camera = new THREE.OrthographicCamera(-4,4,4,-4,-40,40);
+	c_renderer = new THREE.WebGLRenderer({canvas:document.getElementById("c"),antialias:true});
+	c_controls = new THREE.OrbitControls(c_camera,c_renderer.domElement);
+	c_controls.addEventListener("change",function(){c_nu = true;});
+	c_controls.enableKeys = false;
+	
+	c_scene.background = new THREE.Color("white");
+
+	c_camera.position.set(10,10,10);
+	c_camera.lookAt(0,0,0);
+
+	var animate = function () {
+		requestAnimationFrame(animate);
+		if (c_nu) {
+			c_nu = c_controls.autoRotate;
+			c_renderer.render(c_scene, c_camera);
+			c_controls.update();
+			}
+		};
+
+	animate();
+
+	regeo_c();
+
+	}
+
+function regeo_c() {
+	//called any time the number of vertices of any geometry MUST change.
+	//specifically, if a,b change.
+	//this routine should only *set up* dynamic geometry
+	//update_c() (called at the end) will fill in the details.
+
+	var n = 200;
+	var i,j,k;
+
+	var a = Number(document.getElementById("in_c_a").value);
+	var b = Number(document.getElementById("in_c_b").value);
+	var dim = Number(document.getElementById("c_dim").value);
+
+	var multiplicity;
+	if (dim == 1 || dim == 2) {multiplicity = b;}
+	if (dim == 3 || dim == 4) {multiplicity = a;}
+
+	c_scene.remove.apply(c_scene, c_scene.children);
+
+	var c_light = new THREE.DirectionalLight(0xFFFFFF);
+	c_light.position.set(10,10,10);
+	c_scene.add(c_light);
+
+	c_cross_geo = new THREE.Geometry();
+	for (i = 0; i < n*multiplicity; i++) {
+		c_cross_geo.vertices.push(new THREE.Vector3(0,0,0));
+		c_cross_geo.colors.push(new THREE.Color(0,0,0));
+		}
+	var c_cross_mat = new THREE.PointsMaterial({size:4,vertexColors:THREE.VertexColors});
+	var c_cross_mesh = new THREE.Points(c_cross_geo,c_cross_mat);
+	c_scene.add(c_cross_mesh);
+
+	var c_proj_geo = new THREE.Geometry();
+	var t;
+	for (k = 0; k < multiplicity; k++) {
+		for (i = 0; i < n; i++) {
+			for (j = 0; j < n; j++) {
+				t = params(a,b,dim,i/50-2,j/50-2,k);
+				c_proj_geo.vertices.push(new THREE.Vector3(t[0],i/50-2,t[1]));
+				if (i > 0 && j > 0 && i != 100 && j != 100) {
+					c_proj_geo.faces.push(new THREE.Face3(k*n*n+i*n+j,k*n*n+(i-1)*n+j,k*n*n+(i-1)*n+(j-1)));
+					c_proj_geo.faces.push(new THREE.Face3(k*n*n+i*n+j,k*n*n+i*n+(j-1),k*n*n+(i-1)*n+(j-1)));
+					}
+				}
+			}
+		}
+	var c_proj_mat = new THREE.MeshNormalMaterial({side:THREE.DoubleSide,transparent:true,opacity:.5});
+	c_proj_mesh = new THREE.Mesh(c_proj_geo,c_proj_mat);
+	c_scene.add(c_proj_mesh);
+	c_proj_geo.computeFaceNormals();
+	
+
+	c_sphere_geo = new THREE.SphereGeometry(1,32,32);
+	var c_sphere_mat = new THREE.MeshLambertMaterial({transparent:true,opacity:.7});
+	c_sphere_mesh = new THREE.Mesh(c_sphere_geo,c_sphere_mat);
+	c_scene.add(c_sphere_mesh);
+
+	update_c();
+	}
+
+function update_c() {
+	var n = 200;
+	var i,j,k;
+	var t;
+
+	var a = Number(document.getElementById("in_c_a").value);
+	var b = Number(document.getElementById("in_c_b").value);
+	var dim = Number(document.getElementById("c_dim").value);
+	var sl = Number(document.getElementById("c_sl").value);
+	document.getElementById("c_sln").innerHTML = sl;
+
+	var multiplicity;
+	if (dim == 1 || dim == 2) {multiplicity = b;}
+	if (dim == 3 || dim == 4) {multiplicity = a;}
+
+	for (i = 0; i < n; i++) {
+		for (k = 0; k < multiplicity; k++) {
+			t = params(a,b,dim,i/50-2,sl,k);
+			c_cross_geo.vertices[k*n+i].copy(new THREE.Vector3(t[0],i/50-2,t[1]));
+			c_cross_geo.colors[k*n+i] = new THREE.Color("hsl("+90*k+",100%,50%)");
+			}
+		}
+
+	c_cross_geo.verticesNeedUpdate = true;
+	c_cross_geo.colorsNeedUpdate = true;
+
+	var r = Number(document.getElementById("c_r").value);
+	if (Math.abs(r) >= Math.abs(sl) && document.getElementById("chk_c_sph").checked) {
+		c_sphere_mesh.visible = true;
+		var sc = Math.sqrt(r*r-sl*sl);
+		c_sphere_mesh.scale.set(sc,sc,sc);
+		}
+	else {
+		c_sphere_mesh.visible = false;
+		}
+
+	c_proj_mesh.visible = document.getElementById("chk_c_proj").checked;
+
+	c_controls.autoRotate = document.getElementById("chk_c_rot").checked;
+
+	c_nu = true;
+
+	}
+
+
+var k_controls;
+var k_nu;
+var k_cross_geo;
+var k_sphere_geo;
+var k_sphere_mesh;
+var k_scene;
+var k_torus_geo;
+var k_torus_mesh;
+var k_nbd_geo;
+var k_nbd_mesh;
+var k_meta_geo;
+var k_meta_mesh;
+
+function boot_k() {
+	var k_camera;
+	var k_renderer;
+
+	k_scene = new THREE.Scene();
+	k_camera = new THREE.OrthographicCamera(-4,4,4,-4,-40,40);
+	k_renderer = new THREE.WebGLRenderer({canvas:document.getElementById("k"),antialias:true});
+	k_controls = new THREE.OrbitControls(k_camera,k_renderer.domElement);
+	k_controls.addEventListener("change",function(){k_nu = true;});
+	k_controls.enableKeys = false;
+	
+	k_scene.background = new THREE.Color("white");
+
+	k_camera.position.set(10,10,10);
+	k_camera.lookAt(0,0,0);
+
+	var animate = function () {
+		requestAnimationFrame(animate);
+		if (k_nu) {
+			k_nu = k_controls.autoRotate;
+			k_renderer.render(k_scene, k_camera);
+			k_controls.update();
+			}
+		};
+
+	animate();
+
+	regeo_k();
+	}
+
+function regeo_k() {
+	var a = Number(document.getElementById("in_k_a").value);
+	var b = Number(document.getElementById("in_k_b").value);
+	var c = Number(document.getElementById("in_k_c").value);
+	var d = Number(document.getElementById("in_k_d").value);
+
+	var th,t;
+
+	k_scene.remove.apply(k_scene, k_scene.children);
+
+	k_cross_geo = new THREE.Geometry();
+	var thmax = 2*Math.PI/math.gcd(a,b);
+	if (math.gcd(a,b) == 0) {return;}
+	for (th = 0; th < thmax; th += .001) {
+		for (k = 0; k < math.gcd(a,b); k++) {
+			k_cross_geo.vertices.push(new THREE.Vector3(0,0,0));
+			k_cross_geo.colors.push(new THREE.Color(0,0,0));
+			}
+		}
+	
+	var k_cross_mesh = new THREE.Points(k_cross_geo, new THREE.PointsMaterial({size:4,vertexColors:THREE.VertexColors}));
+	k_scene.add(k_cross_mesh);
+
+	k_torus_geo = new THREE.Geometry();
+	var k_torus_mat = new THREE.MeshNormalMaterial({side:THREE.DoubleSide,transparent:true,opacity:.5});
+	var i,j;
+	for (i = 0; i < 100; i++) {
+		for (j = 0; j < 100; j++) {
+			k_torus_geo.vertices.push(new THREE.Vector3(0,0,0));
+			if (i != 99 && j != 99) {
+				k_torus_geo.faces.push(new THREE.Face3(100*i+j,100*i+j+1,100*(i+1)+(j+1)));
+				k_torus_geo.faces.push(new THREE.Face3(100*i+j,100*(i+1)+j,100*(i+1)+(j+1)));
+				}
+			}
+		}
+	k_torus_mesh = new THREE.Mesh(k_torus_geo,k_torus_mat);
+	k_scene.add(k_torus_mesh);
+
+	k_nbd_geo = new THREE.Geometry();
+	var k_nbd_mat = new THREE.MeshNormalMaterial({side:THREE.DoubleSide,transparent:true,opacity:.5});
+	var i,j;
+	for (i = 0; i < 300; i++) {
+		for (j = 0; j < 100; j++) {
+			k_nbd_geo.vertices.push(new THREE.Vector3(0,0,0));
+			if (i != 299 && j != 99) {
+				k_nbd_geo.faces.push(new THREE.Face3(100*i+j,100*i+j+1,100*(i+1)+(j+1)));
+				k_nbd_geo.faces.push(new THREE.Face3(100*i+j,100*(i+1)+j,100*(i+1)+(j+1)));
+				}
+			}
+		}
+	k_nbd_mesh = new THREE.Mesh(k_nbd_geo,k_nbd_mat);
+	k_scene.add(k_nbd_mesh);
+
+	k_meta_geo = new THREE.Geometry();
+	for (th = 0; th < 2*Math.PI*d/math.gcd(c,d); th += .001) {
+		for (k = 0; k < math.gcd(a,b); k++) {
+			for (k2 = 0; k2 < math.gcd(c,d); k2++) {
+				k_meta_geo.vertices.push(new THREE.Vector3(0,0,0));
+				k_meta_geo.colors.push(new THREE.Color(0,0,0));
+				}
+			}
+		}
+	k_meta_mesh = new THREE.Points(k_meta_geo, new THREE.PointsMaterial({size:2, vertexColors:THREE.VertexColors}));
+	k_scene.add(k_meta_mesh);
+
+	update_k();
+	}
+
+function knotty(a,b,r,th,k) { //for cross
+	var s = solvie(a,b,r);
+	var p = s[0];
+	var q = s[1];
+	return([p*Math.cos(b*th),p*Math.sin(b*th),q*Math.cos(a*th+2*k*Math.PI/b),q*Math.sin(a*th+2*k*Math.PI/b)]);
+	}
+
+function torusknotty(a,b,r,i,j) { //for torus
+	var s = solvie(a,b,r);
+	var p = s[0];
+	var q = s[1];
+	return([p*Math.cos(i),p*Math.sin(i),q*Math.cos(j),q*Math.sin(j)]);
+	}
+
+function torustorusknotty(a,b,r,th,k,i,tr) { //for nbd
+	var s = solvie(a,b,r);
+	var p = s[0];
+	var q = s[1];
+	return([p*Math.cos(b*th),p*Math.sin(b*th),q*Math.cos(a*th+2*k*Math.PI/b)+tr*Math.cos(i),q*Math.sin(a*th+2*k*Math.PI/b)+tr*Math.sin(i)]);
+	}
+
+function knottyknotty(a,b,r,k,c,d,eps,k2,th) { //for meta
+	var s = solvie(a,b,r);
+	var p = s[0];
+	var q = s[1];
+	var tt = a*th+2*k*Math.PI/b;
+	var ttt = (c*th + 2*k2*Math.PI)/d;
+	return([p*Math.cos(b*th),p*Math.sin(b*th),q*Math.cos(tt)+eps*Math.cos(ttt),q*Math.sin(tt)+eps*Math.sin(ttt)]);
+	}
+
+function knottytest() {
+	var a, b, r, th, k;
+	var t,x,y;
+	for (a = 1; a < 5; a++) {
+		for (b = 1; b < 5; b++) {
+			for (r = .1; r < 2; r+= .1) {
+				for (th = 0; th < 6; th++) {
+					for (k = 0; k < 3; k++) {
+						t = knotty(a,b,r,th,k);
+						x = math.complex(t[0],t[1]);
+						y = math.complex(t[2],t[3]);
+						console.log(a,b,r,th,k,math.eval("x^a/y^b",{x:x,y:y,a:a,b:b}));
+						}
+					}
+				}
+			}
+		}
+	}
+
+function update_k() {
+	var a = Number(document.getElementById("in_k_a").value);
+	var b = Number(document.getElementById("in_k_b").value);
+	var c = Number(document.getElementById("in_k_c").value);
+	var d = Number(document.getElementById("in_k_d").value);
+	var r = Number(document.getElementById("in_k_r").value);
+	var tr = Number(document.getElementById("in_k_tr").value);
+
+	var th,t;
+
+	var j = 0;
+	var thmax = 2*Math.PI/math.gcd(a,b);
+	for (th = 0; th < thmax; th += .001) {
+		for (k = 0; k < math.gcd(a,b); k++) {
+			k_cross_geo.vertices[j].copy(new THREE.Vector3(...projector(...knotty(a,b,r,th,k))));
+			//k_cross_geo.colors[j] = new THREE.Color("hsl("+th*180*b/Math.PI+",100%,50%)");
+			if (math.gcd(a,b) == 1) {
+				k_cross_geo.colors[j] = new THREE.Color("hsl("+th*180/Math.PI+",100%,50%)");
+				}
+			else {
+				var g = math.gcd(a,b);
+				k_cross_geo.colors[j] = new THREE.Color("hsl("+(360*k/g)+",100%,50%)");
+				}
+			j++;
+			}
+		}
+	k_cross_geo.verticesNeedUpdate = true;
+	k_cross_geo.colorsNeedUpdate = true;
+
+
+	var i;
+	for (i = 0; i < 100; i++) {
+		for (j = 0; j < 100; j++) {
+			k_torus_geo.vertices[100*i+j].copy(new THREE.Vector3(...projector(...torusknotty(a,b,r,6.283*i/99,6.283*j/99))));
+			}
+		}
+	k_torus_geo.verticesNeedUpdate = true;
+	k_torus_geo.computeFaceNormals();
+
+	for (i = 0; i < 300; i++) {
+		for (j = 0; j < 100; j++) {
+			k_nbd_geo.vertices[100*i+j].copy(new THREE.Vector3(...projector(...torustorusknotty(a,b,r,thmax*i/299,0,6.283*j/99,tr))));
+			}
+		}
+	k_nbd_geo.verticesNeedUpdate = true;
+	k_nbd_geo.computeFaceNormals();
+
+	var k, k2;
+
+	j = 0;
+	for (th = 0; th < 2*Math.PI*d/math.gcd(c,d); th += .001) {
+		for (k = 0; k < math.gcd(a,b); k++) {
+			for (k2 = 0; k2 < math.gcd(c,d); k2++) {
+				k_meta_geo.vertices[j].copy(new THREE.Vector3(...projector(...knottyknotty(a,b,r,k,c,d,tr,k2,th))));
+				k_meta_geo.colors[j] = new THREE.Color(0,0,0);
+				j++;
+				}
+			}
+		}
+	k_meta_geo.verticesNeedUpdate = true;
+	k_meta_geo.colorsNeedUpdate = true;
+
+	k_torus_mesh.visible = document.getElementById("chk_k_tor").checked;
+	k_nbd_mesh.visible = document.getElementById("chk_k_nbd").checked;
+	k_meta_mesh.visible = document.getElementById("chk_k_meta").checked;
+
+	k_nu = true;
+
+	var s = solvie(a,b,r);
+	var str = "";
+	str = "K = \\{(x,y) : |x|^2 + |y|^2 = " + r + "\\} \\cap \\{(x,y) : x^{"+a+"}-y^{"+b+"}=0\\} = ";
+	str += "\\{(pe^{"+b+"i\\theta}, qe^{"+a+"i\\theta} z_{"+b+"}): 0 \\leq \\theta < ";
+	if (math.gcd(a,b) > 1) {
+		str += "\\frac{2 \\pi}{"+math.gcd(a,b)+"}";
+		}
+	else {
+		str += "2 \\pi"
+		}
+	str += ", (z_{"+b+"})^{"+b+"} = 1\\}";
+	str = katex.renderToString(str);
+	str += "<br>Where " + katex.renderToString("p \\approx " + s[0].toFixed(3));
+	str += " and " + katex.renderToString("q \\approx " + s[1].toFixed(3));
+	//str += " . See <a href='desmos.html?[\"x^2+y^2=1\",\"x^a-y^b=0\",{\"id\":\"i2\",\"latex\":\"a="+a+"\",\"sliderBounds\":{\"min\":1,\"step\":1}},{\"id\":\"i3\",\"latex\":\"b="+b+"\",\"sliderBounds\":{\"min\":1,\"step\":1}}]'>Desmos</a> for calculations<br>";
+	str += " . See <a href='desmos.html?" + JSON.stringify(["x^2+y^2=1","x^a-y^b=0",{latex:"a=" + a,sliderBounds:{min:1,step:1}},{latex:"b="+b,sliderBounds:{min:1,step:1}}]) + "'>Desmos</a>";
+	document.getElementById("k_parm").innerHTML = str;
+	
+	//<div class="k" title="(p e^{b i \theta},q e^{a i \theta} \zeta_b + \varepsilon e^{\frac{c}{d} i \theta} \zeta_d)"></div>
+	str = "K = \\{(p e^{" + b + "i\\theta}, q e^{"+a+"i\\theta} z_{"+b+"} + \\varepsilon e^{\\frac{"+c+"}{"+d+"} i \\theta} z_{"+d+"})\\}"
+	str = katex.renderToString(str);
+	document.getElementById("k_meta_parm").innerHTML = str;
+
+	}
+
+
+function boot_gr1() {
+	tgr_grapher("gr1",[
+		{type:"plot", linewidth:3, fct:function(x){return(Math.sqrt(x*x*x))}},
+		{type:"plot", linewidth:3, fct:function(x){return(-Math.sqrt(x*x*x))}}
+		])
+	}
+
+function boot() {
+	bootkatex();
+	boot_c();
+	boot_k();
+	boot_gr1();
+	}
+
+window.boot = boot;
+
+function solvie(a,b,r) { //numerically solves the equation x^2+y^2=r^2 and x^a-y^b = 0 [POSITIVE REAL] using binary search
+	var xmin = 0;
+	var xmax = r;
+	var xmid,y;
+	var i;
+	for (i = 0; i < 20; i++) {
+		xmid = (xmin + xmax)/2;
+		y = Math.pow(Math.pow(xmid,a),1/b);
+		if (xmid*xmid + y*y < r*r) {
+			xmin = xmid;
+			}
+		else {
+			xmax = xmid;
+			}
+		}
+	return([xmid,y]);
+	}
+
+</script>
+
+<style>
+</style>
+
+</head>
+<body onload="boot()">
+Let's take a look at the solutions to the equation:
+<h1 class="k" title="x^3 - y^2 = 0">
+</h1>
+<div id="gr1"></div>
+
+<p>
+If we let x and y be complex, the solutions lie in 4 dimensional space (2 for x and 2 for y), and our equation becomes two equations: Real parts are equal and Imaginary parts are equal to each other, so the solution set itself should be 2 dimensional. We can visualize this solution set by taking cross sections of the four dimensional space.
+</p>
+
+<canvas id="c" width=500 height=500 style="border:1px solid"></canvas><br>
+<select id="c_dim" onchange="regeo_c()">
+<option value=1 selected>Re(x) cross sections</option>
+<option value=2>Im(x) cross sections</option>
+<option value=3>Re(y) cross sections</option>
+<option value=4>Im(y) cross sections</option>
+</select> <input type="range" min=-2 max=2 step=.001 value=1 id="c_sl" oninput="update_c()"> <span id="c_sln"> </span> <br>
+<input type="checkbox" id="chk_c_proj" onchange="update_c()"> Show Projection <br>
+<input type="checkbox" id="chk_c_rot" onchange="update_c()"> Auto-rotate around conjugate axis <br>
+<input type="checkbox" id="chk_c_sph" onchange="update_c()"> Show hypersphere of radius <input type = "number" id="c_r" min=0 value=1 step=.05 style="width:4em" oninput="update_c()"><br>
+<div class="k" title="x^a - y^b = 0"></div>
+a: <input id="in_c_a" type="number" value=3 min=1 step=1 style="width:2em" onchange="regeo_c()"><br>
+b: <input id="in_c_b" type="number" value=2 min=1 step=1 style="width:2em" onchange="regeo_c()"><br>
+
+<p>
+Something really interesting happens if we take spherical cross sections around the origin. That is, we take the 3-dimensional surface of a 4-dimensional sphere around the origin and find its intersection with the solution set. We can solve this explicitly to get:
+</p>
+<div id="k_parm"></div>
+
+We can then project this intersection to 3 dimensional space via the <a href="https://en.wikipedia.org/wiki/Stereographic_projection">stereographic projection</a> map:
+<div class="k" title="F: \left[\begin{array}{c} a+bi\\c+di \end{array}\right] \mapsto \left[\begin{array}{c} \frac{a}{1-c}\\\frac{b}{1-c}\\\frac{d}{1-c}\end{array}\right]"></div>
+
+Use hypersphere of radius <input id="in_k_r" style="width:3em" type="number" min=0 value=1 step=.01 oninput="update_k()"><br>
+a: <input id="in_k_a" style="width:2em" onchange="regeo_k()" type="number" value=3 min=1 step=1><br>
+b: <input id="in_k_b" style="width:2em" onchange="regeo_k()" type="number" value=2 min=1 step=1><br>
+<input type="checkbox" id="chk_k_tor" onchange="update_k()"> Show Torus <br>
+
+<canvas id="k" width=500 height=500 style="border:1px solid"></canvas><br>
+
+
+<div id="k_meta_parm"></div>
+<input type="checkbox" id="chk_k_nbd" onchange="update_k()"> Show Neighborhood <br>
+Neighborhood Radius <input id="in_k_tr" style="width:3em" type="number" min=0 value=.1 step=.01 oninput="update_k()"><br>
+<input type="checkbox" id="chk_k_meta" onchange="update_k()"> Show Second-Order Knot <br>
+c: <input id="in_k_c" style="width:3em" onchange="regeo_k()" type="number" value=3 min=1 step=1><br>
+d: <input id="in_k_d" style="width:3em" onchange="regeo_k()" type="number" value=2 min=1 step=1><br>
+
+<p>
+A question we might ask is what knots/links can be obtained by intersecting the solution set of a polynomial equation with the surface of a small 4-dimensional sphere. These knots are the "Compound Cable Knots": (see, for instance, <a href="https://arxiv.org/abs/1706.04386">Topology of hypersurface singularities</a> Neumann, Walter D)
+<ul>
+<li>Start with the unknot
+<li>Produce a knot by spiralling around lower order compound cable knots at a small distance
+</ul>
+One can see that both coordinates in this formula are polynomials in e to a fraction of i &theta;, and thus have a <a href="https://mathoverflow.net/questions/189181/how-to-prove-that-two-univariate-polynomials-are-always-algebraically-dependent/189191#189191">polynomial relationship</a>.
+</p>
+<p>
+Our construction above leaves the unit hypersphere, but provided epsilon is small enough, we may deform our way back to the unit hypersphere without changing topology (i.e. crossing a singular point).
+</p>
+</body>
+
+</html>

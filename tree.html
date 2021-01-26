@@ -13,7 +13,11 @@
 <script src="katex.min.js"></script>
 <script src="treant/vendor/raphael.js"></script>
 <script src="treant/Treant.js"></script>
+<link rel="stylesheet" href="mathquill_mod.css"/>
+<script src="jquery-3.3.1.min.js"></script>
+<script src="mathquill.js"></script>
 <script>
+var MQ = MathQuill.getInterface(2);
 
 function deepcopy(x) {
 	if (null == x || "object" != typeof x) { return(x);}
@@ -38,9 +42,7 @@ function deepcopy(x) {
 
 function boxify(k) {
 	var s = katex.renderToString(k.tex());
-	if (document.getElementById("chk_name").checked) {
-		return("<table><tr><td>"+k.name()+"</td></tr><tr><td>"+s+"</td></tr></table>");
-		}
+		return("<textarea></textarea><table><tr><td>"+k.name()+"</td></tr><tr><td>"+s+"</td></tr></table>");
 	return(s);
 	}
 
@@ -1206,9 +1208,22 @@ function deriv_ttree_do_everything() {
 	g_latex = "&" + ttree_to_tex(tt) + "&\\qquad&";
 	}
 
-function html_do_everything() {
+var g_old_i = 0;
+
+function html_do_everything(i) {
+	if (!isFinite(i)) {
+		i = g_old_i;
+		}
+	else {
+		g_old_i = i;
+		}
 	tk_division_backdoor = true;
-	var s = document.getElementById("inp").value;
+	if (i == 0) {
+		var s = document.getElementById("inp").value;
+		}
+	else {
+		var s = MQ(document.getElementById("mq")).latex();
+		}
 	var fs = getfuns();
 	var tt = myparse(s,{functions:fs});
 	tt = ttree_explicitify(tt);
@@ -1371,6 +1386,7 @@ function colorify() {
 	}
 
 function loaduri() {
+	MQ.MathField(document.getElementById("mq"),{autoCommands:"sqrt pi nthroot pm int"});
 	var str = document.URL;
 	if (str.indexOf("?") == -1) {return;}
 	str = str.slice(str.indexOf("?")+1);
@@ -1537,7 +1553,8 @@ blockquote.caution {
 <body onload="loaduri()">
 
 Type a math formula in the box below and push "Draw Tree":<br>
-<input id="inp" value="x^2+2x+1"> <button onclick="html_do_everything()">Draw Tree</button> <br>
+Normal Text: <input id="inp" value="x^2+2x+1"> <button onclick="html_do_everything(0)">Draw</button> <br>
+Mathquill: <span id="mq"></span> <button onclick="html_do_everything(1)">Draw</button><br>
 
 Hover your mouse over subexpressions below to highlight them:
 <div id="htmltarg" style='font-size:200%;user-select:none;'></div>

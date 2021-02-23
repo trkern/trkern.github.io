@@ -268,6 +268,7 @@ function maketgr(pl,n,gg) {
 	for (i = 0; i < n; i++) {
 		s = pl[i].style;
 		f = kasfct(pl[i].fun);
+		console.log(f);
 		if (s != 0) {
 			tobj = {type:"plot", fct:f, color:pl[i].color, linewidth:lw};
 			if("linewidth" in pl[i]) {
@@ -288,7 +289,7 @@ function maketgr(pl,n,gg) {
 			fillpts.push([pl[i].lbound,f(pl[i].lbound),pl[i].color]);
 			}
 		if (s == 1 || s == 2 || s == 4 || s == 5) {
-			holepts.push([pl[i].ubound,f(pl[i].ubound),pl[i].color]);
+			holepts.push([pl[i].ubound,f(pl[i].ubound+.000000001),pl[i].color]);
 			}
 		if (s == 3 || s == 6 || s == 7) {
 			fillpts.push([pl[i].ubound,f(pl[i].ubound),pl[i].color]);

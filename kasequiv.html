@@ -1,0 +1,69 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<meta name=description content="Plugging in Points">
+<title> Equivalence Checker </title>
+<script src="underscore-min.js"></script>
+<script src="kas.js"></script>
+<script src="katex.min.js"></script>
+<link rel="stylesheet" href="katex.min.css">
+<script>
+
+var tests = [
+	["(sqrt(b^2-4c)/2)^2", "b^2/4-c"],
+	["(sqrt(b^2-4)/2)^2", "b^2/4-1"],
+	];
+
+function go() {
+	var s1 = document.getElementById("i1").value;
+	var s2 = document.getElementById("i2").value;
+	var n = document.getElementById("n").value;
+	var i, j;
+	j = 0;
+	var e1 = KAS.parse(s1).expr;
+	var e2 = KAS.parse(s2).expr;
+	for (i = 0; i < n; i++) {
+		if (KAS.compare(e1, e2).equal) {j++;}
+		}
+	var str;
+	str = "Testing " + katex.renderToString(e1.tex() + "=" + e2.tex()) + ":<br>"
+	str += "Tests where KAS.compare().equal returns true: " + j + "<br>";
+	str += "Total tests: " + n + "<br>";
+	str += "Fraction equal: " + (j/n) + "<br>";
+	document.getElementById("out").innerHTML = str;
+	}
+
+function su(e) {
+	var i = e.target.value;
+	document.getElementById("i1").value = tests[i][0];
+	document.getElementById("i2").value = tests[i][1];
+	}
+
+function boot() {
+	var str = "<select oninput='su(event)'>";
+	var i;
+	for (i = 0; i < tests.length; i++) {
+		str += "<option value="+i+">"+tests[i][0] + " = " + tests[i][1] + "</option>";
+		}
+	str += "</select>";
+	document.getElementById("st").outerHTML = str;
+	}
+
+</script>
+</head>
+<body onload="boot()">
+Khan Academy's kas.js uses (in addition to other techniques) plugging in random points to determine equivalence of formulas. This produces, in some circumstances, nondeterministic results.<br>
+
+Number of Tests:<input id="n" type="number" style="width:5em" value = 1000><br>
+
+<span id="st">
+</span><br>
+
+<input id="i1" value = "(sqrt(b^2-4c)/2)^2">
+<input id="i2" value = "b^2/4-c">
+<button onclick="go()">Go!</button>
+<span id="out"></span>
+</body>

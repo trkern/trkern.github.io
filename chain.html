@@ -63,19 +63,25 @@ function updatecarnivalfun() {
 	var x;
 	var l = [{type:"plot", fct:f}];
 	var l2 = [{type:"plot", fct:g}];
+	var l3 = [{type:"plot", fct:function(x){return(f(g(x)))}}];
 	for (i = 0; i <= r; i++) {
 		x = i*(padxmax-padxmin)/r + padxmin;
 		l.push({type:"line", x:x, y:-Infinity, x2:x, y2:f(x), color:"rgba(255,0,0,.1)"});
 		l.push({type:"line", x:x, y:f(x), x2:Infinity, y2:f(x), color:"rgba(0,0,255,.1)"});
 		l2.push({type:"line", x:f(x), y:-Infinity, x2:f(x), y2:g(f(x)), color:"rgba(0,0,255,.1)"});
 		l2.push({type:"line", x:f(x), y:g(f(x)), x2:Infinity, y2:g(f(x)), color:"rgba(0,255,0,.1)"});
+		l3.push({type:"line", x:x, y:-Infinity, x2:x, y2:f(g(x)), color:"rgba(255,0,0,.1)"});
+		l3.push({type:"line", x:x, y:f(g(x)), x2:Infinity, y2:f(g(x)), color:"rgba(0,255,0,.1)"});
 		}
 	l.push({type:"line", x:xo, y:-Infinity, x2:xo, y2:f(xo), color:"black", linewidth:2});
 	l.push({type:"line", x:xo, y:f(xo), x2:Infinity, y2:f(xo), color:"black", linewidth:2});
 	l2.push({type:"line", x:f(xo), y:-Infinity, x2:f(xo), y2:g(f(xo)), color:"black", linewidth:2});
-	l2.push({type:"line", x:f(xo), y:g(f(xo)), x2:Infinity, y2:g(f(xo)), color:"black", linewidth:2}); 
+	l2.push({type:"line", x:f(xo), y:g(f(xo)), x2:Infinity, y2:g(f(xo)), color:"black", linewidth:2});
+	l.push({type:"line", x:xo, y:-Infinity, x2:xo, y2:f(g(xo)), color:"black", linewidth:2});
+	l.push({type:"line", x:xo, y:f(g(xo)), x2:Infinity, y2:f(g(xo)), color:"black", linewidth:2});
 	tgr_update_grapher_objs("gr2", l);
 	tgr_update_grapher_objs("gr3", l2);
+	tgr_update_grapher_objs("gr4", l3);
 	}
 
 function drawpaddle() {
@@ -172,22 +178,37 @@ function bootgrs() {
 	updxo();
 	tgr_grapher("gr2", [],{width:500, height:500, ctarg:"ct", on_redraw:drawpaddle});
 	tgr_grapher("gr3", [],{width:500, height:500, ctarg:"ct3"});
+	tgr_grapher("gr4", [],{width:500, height:500, ctarg:"ct4"});
 	updatecarnivalfun();
+	}
+
+function chkchk() {
+	var s1 = "none";
+	var s2 = "none";
+	if (document.getElementById("chk_g").checked) {s1 = ""};
+	if (document.getElementById("chk_c").checked) {s2 = ""};
+	document.getElementById("t11").style.display = s1;
+	document.getElementById("t12").style.display = s1;
+	document.getElementById("t21").style.display = s2;
+	document.getElementById("t22").style.display = s2;
 	}
 
 function boot() {
 	bootgrs();
+	chkchk();
 	}
+
 
 </script>
 </head>
 <body onload="boot()">
-
 <table>
 <tr> <td>
 <div id="gr2"></div>
-</td><td>
+</td><td id="t11">
 <div id="gr3"></div>
+</td><td id="t21">
+<div id="gr4"></div>
 </td><td style='vertical-align:top;'>
 Enter a function: <br>
 f:<input type="text" id="carnivalfun" value="x^2" onchange="updatecarnivalfun()"></input><br>
@@ -196,14 +217,16 @@ a:<input type="number" id="a" value=1 step=.1 oninput="updatecarnivalfun()"></in
 b:<input type="number" id="b" value=1 step=.1 oninput="updatecarnivalfun()"></input><br>
 c:<input type="number" id="c" value=1 step=.1 oninput="updatecarnivalfun()"></input><br>
 x0: <input type="number" id="xo" value=2 step=.05 oninput="updxo();updatecarnivalfun()"></input><br>
-Resolution:<input type="number" id="res" value=500 onchange="updatecarnivalfun()"></input>
+Resolution:<input type="number" id="res" value=500 onchange="updatecarnivalfun()"></input><br>
+<input type="checkbox" id="chk_g" onchange=chkchk()> Show g <br>
+<input type="checkbox" id="chk_c" onchange=chkchk()> Show composition <br>
 </td></tr>
 <tr> <td style='vertical-align:top;'>
 <canvas width=500 height=20 style="border:1px solid;" id="xbar" onmousedown="xbarmdown(event)" onmousemove="xbarmmove(event)"
 onmouseup="xbarmup(event)" onmouseleave="xbarmleave(event)"> </canvas>
 </td><td>
 </td></tr>
-<tr><td><span id="ct"></span></td><td><span id="ct3"></span></td></tr>
+<tr><td><span id="ct"></span></td><td id="t12"><span id="ct3"></span></td><td id="t22"><span id="ct4"></span></td></tr>
 </table>
 
 </body>

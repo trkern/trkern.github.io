@@ -77,8 +77,8 @@ function updatecarnivalfun() {
 	l.push({type:"line", x:xo, y:f(xo), x2:Infinity, y2:f(xo), color:"black", linewidth:2});
 	l2.push({type:"line", x:f(xo), y:-Infinity, x2:f(xo), y2:g(f(xo)), color:"black", linewidth:2});
 	l2.push({type:"line", x:f(xo), y:g(f(xo)), x2:Infinity, y2:g(f(xo)), color:"black", linewidth:2});
-	l.push({type:"line", x:xo, y:-Infinity, x2:xo, y2:f(g(xo)), color:"black", linewidth:2});
-	l.push({type:"line", x:xo, y:f(g(xo)), x2:Infinity, y2:f(g(xo)), color:"black", linewidth:2});
+	l3.push({type:"line", x:xo, y:-Infinity, x2:xo, y2:f(g(xo)), color:"black", linewidth:2});
+	l3.push({type:"line", x:xo, y:f(g(xo)), x2:Infinity, y2:f(g(xo)), color:"black", linewidth:2});
 	tgr_update_grapher_objs("gr2", l);
 	tgr_update_grapher_objs("gr3", l2);
 	tgr_update_grapher_objs("gr4", l3);

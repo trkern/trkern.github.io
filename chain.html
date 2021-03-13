@@ -211,15 +211,15 @@ function boot() {
 <div id="gr4"></div>
 </td><td style='vertical-align:top;'>
 Enter a function: <br>
-f:<input type="text" id="carnivalfun" value="x^2" onchange="updatecarnivalfun()"></input><br>
-g:<input type="text" id="g" value="1/x" onchange="updatecarnivalfun()"></input><br>
+g:<input type="text" id="carnivalfun" value="x^2" onchange="updatecarnivalfun()"></input><br>
+f:<input type="text" id="g" value="1/x" onchange="updatecarnivalfun()"></input><br>
 a:<input type="number" id="a" value=1 step=.1 oninput="updatecarnivalfun()"></input><br>
 b:<input type="number" id="b" value=1 step=.1 oninput="updatecarnivalfun()"></input><br>
 c:<input type="number" id="c" value=1 step=.1 oninput="updatecarnivalfun()"></input><br>
 x0: <input type="number" id="xo" value=2 step=.05 oninput="updxo();updatecarnivalfun()"></input><br>
 Resolution:<input type="number" id="res" value=500 onchange="updatecarnivalfun()"></input><br>
-<input type="checkbox" id="chk_g" onchange=chkchk()> Show g <br>
-<input type="checkbox" id="chk_c" onchange=chkchk()> Show composition <br>
+<input type="checkbox" id="chk_g" onchange=chkchk()> Show f <br>
+<input type="checkbox" id="chk_c" onchange=chkchk()> Show composition f(g(x))<br>
 </td></tr>
 <tr> <td style='vertical-align:top;'>
 <canvas width=500 height=20 style="border:1px solid;" id="xbar" onmousedown="xbarmdown(event)" onmousemove="xbarmmove(event)"

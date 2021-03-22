@@ -1,0 +1,42 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<meta name=description content="">
+<title> Pretty-print to Inline </title>
+<script src="katex.min.js"></script>
+<script src="underscore-min.js"></script>
+<script src="kas.js"></script>
+<link rel="stylesheet" href="mathquill.css"/>
+<script src="jquery-3.3.1.min.js"></script>
+<script src="mathquill.js"></script>
+<script>
+
+var MQ = MathQuill.getInterface(2);
+
+var tk_division_backdoor = true;
+
+function mqedit(m) {
+	try {
+		document.getElementById("out").innerHTML = KAS.parse(m.latex()).expr.print();
+		}
+	catch(e) {
+		console.log(e);
+		}
+	}
+
+function boot() {
+	MQ.MathField(document.getElementById("mq"), {
+		handlers : { edit: mqedit }
+		});
+	}
+
+</script>
+</head>
+<body onload="boot()">
+<div id="mq"></div>
+<div id="out"></div>
+</body>
+</html>

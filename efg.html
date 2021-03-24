@@ -486,9 +486,6 @@ function drawvertex(ctx,g,i) {
 		var str = "";
 		if (numb) {str += g_graphs_labels[g][i];}
 		if (keyb && g_graphs_labels[g][i] == "") {str += shkey(g,i);}
-		if (keyb && numb) {
-			ctx.font = "20px sans-serif";
-			}
 		ctx.fillText(str,pt[0],pt[1]);
 		}
 	}

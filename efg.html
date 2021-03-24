@@ -485,7 +485,7 @@ function drawvertex(ctx,g,i) {
 		ctx.font = "30px sans-serif";
 		var str = "";
 		if (numb) {str += g_graphs_labels[g][i];}
-		if (keyb) {str += shkey(g,i);}
+		if (keyb && g_graphs_labels[g][i] == "") {str += shkey(g,i);}
 		if (keyb && numb) {
 			ctx.font = "20px sans-serif";
 			}

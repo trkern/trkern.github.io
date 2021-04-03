@@ -24,7 +24,7 @@
 //- of omega*, an index (negative, ending at 0)
 //- of shuffles, an index list (0 = left, 1 = right)
 
-var g_shuffle_const_1 = .2; //fraction of shuffle taken up by center LO
+var g_shuffle_const_1 = .1; //fraction of shuffle taken up by center LO
 var g_shuffle_const_2 = (1-g_shuffle_const_1)/2; //2*g_shuffle_const_2 + g_shuffle_const_1 MUST equal 1
 var g_omega_const = .2; //fraction of omega(*) products taken up by first element.
 var g_w = 1000;
@@ -61,7 +61,9 @@ var g_built_in_nslos = [
 	["w","w*"],["w","w"],["w*","w"],["w*","w*"],
 	["+","w","w"],["+","w","w","w"],
 	["+",["w","w"],"w"],
-	["+",1,"q"],["+",1,"q",1],["+","q",1]
+	["+",1,"q"],["+",1,"q",1],["+","q",1],
+	["+","q","q"],
+	["+","q","q","q"],
 	];
 
 function recursivelistcompare(L1,L2) {

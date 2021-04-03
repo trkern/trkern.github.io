@@ -129,7 +129,8 @@ function makegraphsuri() {
 	str = str.replaceAll("'",'"');
 	str = str.replaceAll("(","[").replaceAll(")","]");
 	console.log(str);
-	var j = JSON.parse(str);
+	var jj = JSON.parse(str);
+	console.log(j);
 	g_graphs_n = [0,0];
 	g_graphs_vc = [[],[]];
 	g_graphs_am = [[],[]];
@@ -138,8 +139,8 @@ function makegraphsuri() {
 	var minn = Number(document.getElementById("minn").value);
 	var maxn = Number(document.getElementById("maxn").value);
 	var numshp = Number(document.getElementById("numshp").value);
-	var ln = j.n[0];
-	var rn = j.n[1];
+	var ln = jj.n[0];
+	var rn = jj.n[1];
 	g_graphs_n = [ln,rn];
 	var i,j,k;
 	vertexcircle();
@@ -151,8 +152,8 @@ function makegraphsuri() {
 		}
 	for (i = 0; i < ln; i++) {
 		for (j = 0; j < i; j++) {
-			g_graphs_am[0][i][j] = j.am[0][i][j];
-			g_graphs_am[0][j][i] = j.am[0][j][i];
+			g_graphs_am[0][i][j] = jj.am[0][i][j];
+			g_graphs_am[0][j][i] = jj.am[0][j][i];
 			}
 		}
 	for (i = 0; i < rn; i++) {
@@ -163,16 +164,16 @@ function makegraphsuri() {
 		}
 	for (i = 0; i < rn; i++) {
 		for (j = 0; j < i; j++) {
-			g_graphs_am[1][i][j] = j.am[1][i][j];
-			g_graphs_am[1][j][i] = j.am[1][j][i];
+			g_graphs_am[1][i][j] = jj.am[1][i][j];
+			g_graphs_am[1][j][i] = jj.am[1][j][i];
 			}
 		}
 	for (i = 0; i < ln; i++) {
-		g_graphs_shapes[0].push(ribet(0,numshp-1));
+		g_graphs_shapes[0].push(jj.shapes[0][i]);
 		g_graphs_labels[0].push("");
 		}
 	for (i = 0; i < rn; i++) {
-		g_graphs_shapes[1].push(ribet(0,numshp-1));
+		g_graphs_shapes[1].push(jj.shapes[1][i]);
 		g_graphs_labels[1].push("");
 		}
 	for (i = 0; i < ln; i++) {

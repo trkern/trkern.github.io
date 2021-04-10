@@ -1,0 +1,72 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<meta name=description content="Hudson River Undergraduate Mathematics Conference talk Spring 2021">
+<title> What is Model Theory? </title>
+<script src="pdf.js"></script>
+<script>
+
+var p = 1;
+var pdf;
+
+function r(k) {
+	if (k) {p = k}
+	if (p <= -1) {
+		g();
+		}
+	else if (p <= 5) {
+		s(p);
+		}
+	else {
+		l();
+		}
+	}
+
+function g() {
+	document.getElementById("if").src = `efg.html?%27n%27:(6,4),%27am%27:(((0,1,1,1,1,1),(1,0,1,0,1,1),(1,1,0,1,1,1),(1,0,1,0,1,1),(1,1,1,1,0,0),(1,1,1,1,0,0)),((0,1,0,1),(1,0,0,1),(0,0,0,1),(1,1,1,0))),%27shapes%27:((0,0,0,0,0,0),(0,0,0,0))`;
+	}
+
+function s(i) {
+	if (!i) {i = 0;}
+	document.getElementById("if").src = "HRUMC.pdf#zoom=Fit&view=Fit&pagemode=none&toolbar=0&navpanes=0&page="+i
+	document.getElementById("if").focus();
+	}
+
+function l() {
+	document.getElementById("if").src = "ll.html"
+	}
+
+function k(e) {
+	alert(e);
+//	if (e.key == "ArrowLeft") {p--; r();}
+//	if (e.key == "ArrowRight") {p++; r();}
+	}
+
+function boot() {
+	pdfjsLib.getDocument("HRUMC.pdf").promise.then(function(t) {pdf=t;})
+	}
+
+</script>
+<style>
+@font-face {
+	font-family:"qu";
+	src:url("Questrial-Regular.ttf"); //see questrial.zip
+	}
+</style>
+</head>
+<body style="margin:0;" onload="s()" onkeydown="k(event)">
+<div style="background: #CCDDAA">
+<span style="font-family: 'qu', sans-serif; font-size:300%">What is Model Theory?</span>
+<button onclick="g()">Graphs</button>
+<button onclick="s()">Slides</button>
+<button onclick="l()">Linear Orderings</button>
+<span style="font-family: 'qu', sans-serif; font-size:300%; float:right"> trkern.github.io/hrumc</span>
+</div>
+<div id="ifc">
+<iframe id="if" src="" style="position: fixed; border:1px solid; top:50px; left:0px; right: 0px; bottom:0px; width:100%; height:100%">
+</iframe>
+</body>
+</html>

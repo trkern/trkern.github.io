@@ -29,7 +29,7 @@ var g_drag_y_offset = 0;
 var g_game_tree = []; //The game tree is a dictionary matching: Game state strings TO Ideal number of half-turns remaining
 var g_spoiler_hints = [];
 
-var g_players = [0,1]; //0 = human, 1 = AI
+var g_players = [0,0]; //0 = human, 1 = AI
 var g_st = []; //current game history
 var g_lt = []; //left-taken vertices
 var g_rt = []; //right-taken vertices
@@ -863,7 +863,7 @@ Clicking: <select id="lc_select">
 <option value=1> AI </option>
 </select> Duplicator (Player II): <select id="p1s" onchange="playerchange(1)">
 <option value=0> Human </option>
-<option value=1 selected> AI </option>
+<option value=1> AI </option>
 </select> Show: <select id="colnum" onchange="colnumchange()">
 <option value=0> Colors </option>
 <option value=1> Numbers </option>

@@ -6,28 +6,39 @@
 <link rel="image_src" href="icon.png">
 <meta name=description content="Hudson River Undergraduate Mathematics Conference talk Spring 2021">
 <title> What is Model Theory? </title>
-<script>
-
-function g() {
-	document.getElementById("if").src = `efg.html?%27n%27:(6,4),%27am%27:(((0,1,1,1,1,1),(1,0,1,0,1,1),(1,1,0,1,1,1),(1,0,1,0,1,1),(1,1,1,1,0,0),(1,1,1,1,0,0)),((0,1,0,1),(1,0,0,1),(0,0,0,1),(1,1,1,0))),%27shapes%27:((0,0,0,0,0,0),(0,0,0,0))`;
+<style>
+@font-face {
+	font-family:"qu";
+	src:url("Questrial-Regular.ttf"); //see questrial.zip
 	}
-
-function s() {
-	document.getElementById("if").src = "HRUMC.pdf#zoom=Fit&pagemode=none&view=FitV&toolbar=0&navpanes=0"
+body {
+	font-family: "qu", sans-serif;
+	font-size: large;
 	}
-
-function l() {
-	document.getElementById("if").src = "ll.html"
+h1, h2, h3 { font-family: "qu", serif;
 	}
-
-function k(e) {
-	if (document.getElementById("if").src[0] != "h") {return;}
-	if (e.key == "ArrowLeft") {document.getElementById("if").contentWindow.PDFViewerApplication.page--}
-	if (e.key == "ArrowRight") {document.getElementById("if").contentWindow.PDFViewerApplication.page++}
-	console.log(e);
-	}
-
-</script>
+</style>
+</head>
+<body style="margin-left:20"><svg width=1000 height=160>
+<g fill="green">
+<circle cx=35 cy=57 r=30> </circle>
+<circle cx=60 cy=32 r=30> </circle>
+<circle cx=110 cy=32 r=30> </circle>
+</g>
+<g style="stroke:black;stroke-width:2">
+<line x1=63 y1=85 x2=57 y2=79></line>
+<line x1=57 y1=85 x2=63 y2=79></line>
+<line x1=55 y1=77 x2=40 y2=62></line>
+<line x1=65 y1=77 x2=80 y2=62></line>
+<line x1=85 y1=53 x2=85 y2=61></line>
+<line x1=81 y1=57 x2=89 y2=57></line>
+<line x1=80 y1=52 x2=65 y2=37></line>
+<line x1=90 y1=52 x2=105 y2=37></line>
+<line x1=60 y1=88 x2=60 y2=147></line>
+</g>
+<text x=87 y=95 fill="#005480" style="font-family:qu;font-size:48px;"> trkern.github.io/hrumc </text>
+<text x=87 y=144 style="font-family:qu;font-size:64px;"> HRUMC Spring 2021</text>
+</svg>
 <style>
 @font-face {
 	font-family:"qu";
@@ -35,15 +46,16 @@ function k(e) {
 	}
 </style>
 </head>
-<body style="margin:0;" onload="s()" onkeydown="k(event)">
-<div style="background: #CCDDAA">
-<span style="font-family: 'qu', sans-serif; font-size:300%">What is Model Theory?</span>
-<button onclick="g()">Graphs</button>
-<button onclick="s()">Slides</button>
-<button onclick="l()">Linear Orderings</button>
-<span style="font-family: 'qu', sans-serif; font-size:300%; float:right"> trkern.github.io/hrumc</span>
-</div>
-<iframe id="if" src="" style="position: fixed; border:1px solid; top:50px; left:0px; right: 0px; bottom:0px; width:100%; height:100%">
-</iframe>
+<body>
+<h1>HRUMC Spring 2021: What is Model Theory?</h1>
+<ul>
+<li> <a href="hrumc.pdf">Beamer Presentation</a>
+<li> <a href="efg.html?%27n%27:(6,4),%27am%27:(((0,1,1,1,1,1),(1,0,1,0,1,1),(1,1,0,1,1,1),(1,0,1,0,1,1),(1,1,1,1,0,0),(1,1,1,1,0,0)),((0,1,0,1),(1,0,0,1),(0,0,0,1),(1,1,1,0))),%27shapes%27:((0,0,0,0,0,0),(0,0,0,0))">Ehrenfeucht-Fraisse Game on Finite Graphs</a>
+<li> More Ehrenfeucht-Fraisse Games here:
+<ul>
+<li> <a href="ll.html">Infinite Linear Orderings</a>
+<li> <a href="https://trkern.itch.io/efglo">Finite Linear Orderings</a> (with AI)
+</ul>
+</ul>
 </body>
 </html>

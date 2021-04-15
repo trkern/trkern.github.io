@@ -1,0 +1,117 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<meta name=description content="Guessing Game for Transformed Functions">
+<title> Transformation Guessing Game </title>
+<script src="https://www.desmos.com/api/v1.4/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6"></script>
+<script>
+
+var g_desmos;
+
+function ribet(mn,mx) {
+	return(Math.floor(Math.random()*(mx-mn+1))+mn);
+	}
+
+function relt(L) {
+	return(L[ribet(0,L.length-1)]);
+	}
+
+var funlist = [
+	["\\left(","\\right) "],
+	["\\left(","\\right)^2 "],
+	["\\left(","\\right)^3 "],
+	["\\frac{1}{","} "],
+	["\\left|","\\right|"],
+	[" \\sqrt{","}"],
+	];
+
+function makefunction() {
+	var L = [];
+	if (document.getElementById("chk_allbase").checked) {L.push("allbase");}
+	if (document.getElementById("chk_1shift").checked) {L.push("hshift"); L.push("vshift")}
+	if (document.getElementById("chk_2shift").checked) {L.push("2shift");}
+	if (document.getElementById("chk_0ss").checked) {L.push("0ss");}
+	if (document.getElementById("chk_1ss").checked) {L.push("hss"); L.push("vss")}
+	if (document.getElementById("chk_2ss").checked) {L.push("2ss");}
+	if (L.length == 0) {
+		alert("Please select a type of problem!");
+		return;
+		}
+	var k = relt(L);
+	var i;
+	if (k == "allbase") {
+		i = ribet(0,5);
+		return(funlist[i][0]+"x"+funlist[i][1]);
+		}
+	var LL = [];
+	for (i = 0; i <= 5; i++) {
+		if(document.getElementById("chk_"+i).checked) {LL.push(i)};
+		}
+	if (LL.length == 0) {
+		alert("Please select some base functions!");
+		return;
+		}
+	var bf = relt(LL);
+	var str = "x";
+	if (k == "hshift" || k == "2shift" || k == "hss" || k == "2ss") {
+		str += relt(["+4","+3","+2","+1","-1","-2","-3","-4"]);
+		}
+	str = funlist[bf][0] + str + funlist[bf][1];
+	if (k == "vshift" || k == "2shift" || k == "vss" || k == "2ss") {
+		str += relt(["+4","+3","+2","+1","-1","-2","-3","-4"]);
+		}
+	if (k == "0ss" || k == "vss" || k == "hss" || k == "2ss") {
+		str = relt(["4","3","2","-1","-2","-3","-4","\\frac12","\\frac13","-\\frac12","-\\frac13"]) + str;
+		}
+	return(str);
+	}
+
+function boot() {
+	var e = document.getElementById("desmos");
+	g_desmos = Desmos.GraphingCalculator(e);
+	go();
+	}
+
+function go() {
+	var s = makefunction();
+	g_desmos.setExpression({id:"gg",latex:s,secret:true});
+	onresize();
+	}
+
+function ans() {
+	g_desmos.setExpression({id:"gg",secret:false});
+	}
+
+function onresize() {
+	document.getElementById("desmos").style.height = "700px";
+	document.getElementById("desmos").style.width = (window.innerWidth-50) + "px";
+	g_desmos.resize();
+	}
+
+</script>
+</head>
+<body onload="boot()" onresize="onresize()">
+Base functions:<br>
+<input type="checkbox" id="chk_0"> x <br>
+<input type="checkbox" checked id="chk_1"> x^2 <br>
+<input type="checkbox" checked id="chk_2"> x^3 <br>
+<input type="checkbox" id="chk_3"> 1/x <br>
+<input type="checkbox" checked id="chk_4"> |x| <br>
+<input type="checkbox" id="chk_5"> sqrt(x) <br>
+Types of problems:<br>
+<input type="checkbox" checked id="chk_allbase"> All base functions (untransformed) <br>
+<input type="checkbox" checked id="chk_1shift"> One shift <br>
+<input type="checkbox" checked id="chk_2shift"> Two shifts <br>
+<input type="checkbox" checked id="chk_0ss"> Stretch <br>
+<input type="checkbox" id="chk_1ss"> One shift, stretch <br>
+<input type="checkbox" id="chk_2ss"> Two shifts, stretch <br>
+
+<button onclick="go()">Generate Problem</button> <button onclick="ans()">Show Answer</button>
+
+<div id="desmos" style="width:200px; height:200px;"></div>
+
+</body>
+</html>

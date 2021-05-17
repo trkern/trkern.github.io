@@ -528,7 +528,7 @@ function boot_checkboxes() {
 	
 	for (i = 0; i < ll.length; i++) {
 		str += "<tr><td>";
-		k = 0;
+		//k = 0;
 		for (j = 0; j < 120; j++) {
 			if (Math.abs(ll[i]-cs[j][3])<.1) {
 				//layerlookup[j] = [i,k];
@@ -536,6 +536,8 @@ function boot_checkboxes() {
 				str += "<input type='checkbox' id='c"+j+"' oninput='cup("+j+")'>";
 				}
 			}
+		str += "</td><td>";
+		str += "<button onclick='cupall(1,"+i+")'>All</button><button onclick='cupall(0,"+i+")'>None</button>"
 		str += "</td></tr>";
 		}
 
@@ -1219,6 +1221,16 @@ function cup(i) {
 		}
 
 	c_nu = true;
+	}
+
+function cupall(k,i) {
+	var j;
+	for (j = 0; j < 120; j++) {
+		if (layerlookup[j][0] == i) {
+			document.getElementById("c"+j).checked=k;
+			cup(j);
+			}
+		}
 	}
 
 function upd_ctrans() {

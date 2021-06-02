@@ -359,9 +359,11 @@ Wobble: <input type="range" min="0" max="1" value=".6" step =.01 id="ws" oninput
 Repulsion: <input type="range" min="0" max="200" value="100" step =1 id="fs" oninput="ufs()" style="width:50em"> <input type="number" id="fn" oninput="ufn()" value=100 step=1 style="width:4em"> <br>
 Click and drag vertices to move them around!
 <button onclick="randomgraph()">Random Graph!</button><br>
+Press Space while dragging to fix/unfix vertex
+<br>
 <canvas id = "graph"  onmousedown="mdown(event)" onmousemove="mmove(event)" onmouseup="mup(event)" width = 500 height = 500 style="border:1px solid #c3c3c3;"> </canvas>
 <br>
-Modify Vertex: <input type="number" id="vmod" value=0 style="width:2em"> <button onclick="vm(-1)">Delete</button> <button onclick = "vm(0)">No Repulsion</button> <button onclick="vm(1)">Repulsion</button> <button onclick="vm(2)">Fixes</button>
+Modify Vertex: <input type="number" id="vmod" value=0 style="width:2em"> <button onclick="vm(-1)">Delete</button> <button onclick = "vm(0)">No Repulsion</button> <button onclick="vm(1)">Repulsion</button> <button onclick="vm(2)">Fixed</button>
 <br>
 <button onclick="addv()">Add Vertex</button>
 <br>

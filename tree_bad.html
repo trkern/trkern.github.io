@@ -13,6 +13,8 @@
 <script src="treant/Treant.js"></script>
 <script>
 
+//skip ahead to the modtex function, where the fun begins:
+
 function boxify(k) {
 	var s = katex.renderToString(k.tex());
 		return("<table border=1><tr><td>"+k.name()+"</td></tr><tr><td>"+s+"</td></tr></table>");
@@ -41,6 +43,10 @@ var cht = {
 	rootOrientation: "SOUTH",
 	connectors: {type:"straight"}
 	};
+
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+//FUN BEGINS HERE
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function modtex(k) {
 	if (!k || !(typeof k === "object") || !("tex" in k) || ("oldtex" in k)) {return(k);}
@@ -74,6 +80,11 @@ function drawbox() {
 		});
 	}
 
+function modifyonehalf() {
+	var k = KAS.parse("sqrt(x)").expr.exp;
+	k.d = 3;
+	}
+
 </script>
 <link rel="stylesheet" href="katex.min.css">
 <link rel="stylesheet" href="treant/Treant.css" type="text/css"/>
@@ -81,7 +92,8 @@ function drawbox() {
 <body>
 
 Type a math formula in the box below and push "Draw Tree":<br>
-Normal Text: <input id="inp" value="sqrt(x+y)"> <button onclick="draw()">Draw</button> <button onclick="drawbox()">Draw With Boxes</button>
+Normal Text: <input id="inp" value="sqrt(x+y)"> <button onclick="draw()">Draw</button> <button onclick="drawbox()">Draw with Boxes</button>
+<button onclick="modifyonehalf()">Make it Worse</button>
 <br>
 To get the full modtex experience:
 <ol>

@@ -1,0 +1,99 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="parsetree.png">
+<meta name=description content="Parse Tree Generator">
+<title> Parse Tree Generator </title>
+<script src="underscore-min.js"></script>
+<script src="kas.js"></script>
+<script src="katex.min.js"></script>
+<script src="treant/vendor/raphael.js"></script>
+<script src="treant/Treant.js"></script>
+<script>
+
+function boxify(k) {
+	var s = katex.renderToString(k.tex());
+		return("<table border=1><tr><td>"+k.name()+"</td></tr><tr><td>"+s+"</td></tr></table>");
+	return(s);
+	}
+
+function kas_to_treant(k) {
+	if (!k || !(typeof k === "object") || !("args" in k)) {return(false);}
+	var t = {
+		innerHTML: boxify(k),
+		children: []
+		}
+	var i,j,l;
+	j = k.args();
+	for (i = 0; i < j.length; i++) {
+		var l = kas_to_treant(j[i]);
+		if (l) {
+			t.children.push(l);
+			}
+		}
+	return(t);
+	}
+
+var cht = {
+	container: "#treetarg",
+	rootOrientation: "SOUTH",
+	connectors: {type:"straight"}
+	};
+
+function modtex(k) {
+	if (!k || !(typeof k === "object") || !("tex" in k) || ("oldtex" in k)) {return(k);}
+	k.oldtex = k.tex;
+	k.tex = function() {return("\\boxed{"+k.oldtex()+"}");}
+	var i;
+	for (i in k.args()) {
+		modtex(k.args()[i]);
+		}
+	return(k);
+	}
+
+function draw() {
+	var i = document.getElementById("inp").value;
+	var k = KAS.parse(i).expr;
+	document.getElementById("htmltarg").innerHTML = katex.renderToString(k.tex());
+	new Treant({
+		chart:cht,
+		nodeStructure: kas_to_treant(KAS.parse(i).expr)
+		});
+	}
+
+function drawbox() {
+	var i = document.getElementById("inp").value;
+	var k = KAS.parse(i).expr;
+	modtex(k);
+	document.getElementById("htmltarg").innerHTML = katex.renderToString(k.tex());
+	new Treant({
+		chart:cht,
+		nodeStructure: kas_to_treant(KAS.parse(i).expr)
+		});
+	}
+
+</script>
+<link rel="stylesheet" href="katex.min.css">
+<link rel="stylesheet" href="treant/Treant.css" type="text/css"/>
+</head>
+<body>
+
+Type a math formula in the box below and push "Draw Tree":<br>
+Normal Text: <input id="inp" value="sqrt(x+y)"> <button onclick="draw()">Draw</button> <button onclick="drawbox()">Draw With Boxes</button>
+<br>
+To get the full modtex experience:
+<ol>
+<li>Enter "sqrt(x+y)" and push "draw"
+<li>Enter "sqrt(x+y)" and push "draw with boxes"
+<li>Enter "sqrt(2)" and push "draw"
+</ol>
+<br>
+
+<div id="htmltarg" style='font-size:200%;user-select:none;'></div>
+<br>
+<div id="treetarg"></div>
+
+</body>
+</html>

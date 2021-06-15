@@ -159,7 +159,7 @@ function avg(L1,L2) {
 function mini_applyperm(p,v) {
 	var rval = [];
 	var i;
-	for (i = 0; i < 4; i++) {
+	for (i = 0; i < p.length; i++) {
 		rval.push(v[p[i]-1]);
 		}
 	return(rval);
@@ -689,11 +689,28 @@ function diaghunt(x) {
 var e_controls;
 var e_nu;
 var e_scene;
+var e_geo;
+var e_mesh;
 
 var bbverts = [];
 var zomeverts = [];
 var zomefaces = [];
 var soccerfaces = [];
+
+var tetraverts = [[1,0,-1/Math.sqrt(2)],[-1,0,-1/Math.sqrt(2)],[0,1,1/Math.sqrt(2)],[0,-1,1/Math.sqrt(2)]];
+var tetrafaces = [[0,1,2],[0,1,3],[0,2,3],[1,2,3]];
+
+var octaverts = [[1,0,0],[0,1,0],[0,0,1],[-1,0,0],[0,-1,0],[0,0,-1]];
+var octafaces = [[0,1,2],[0,1,5],[3,1,2],[3,1,5],[3,4,5],[3,4,2],[0,4,2],[0,4,5]];
+
+var icosaverts = [[0,1,p],[0,-1,p],[0,1,-p],[0,-1,-p],[p,0,1],[-p,0,1],[p,0,-1],[-p,0,-1],[1,p,0],[-1,p,0],[1,-p,0],[-1,-p,0]];
+var icosafaces = [[0,8,9],[2,8,9],[0,8,4],[0,4,1],[0,5,1],[0,5,9],[1,4,10],[1,10,11],[1,11,5],[4,6,8],[4,6,10],[8,2,6],[6,2,3],[6,3,10],[3,10,11],[7,3,11],[7,3,2],[7,2,9],[7,9,5],[7,5,11]];
+
+var cubeverts = [[.5,.5,.5],[-.5,.5,.5],[.5,-.5,.5],[-.5,-.5,.5],[.5,.5,-.5],[-.5,.5,-.5],[.5,-.5,-.5],[-.5,-.5,-.5]];
+var cubefaces = [[0,1,3,2],[0,4,5,1],[0,4,6,2],[7,3,1,5],[7,5,4,6],[7,3,2,6]];
+
+var dodecaverts = [[-1, -1, -1], [-1, -1, 1], [-1, 1, -1], [-1, 1, 1], [1, -1, -1], [1, -1, 1], [1, 1, -1], [1, 1, 1], [0, -p, 1-p], [0, -p, p-1], [0, p, 1-p], [0, p, p-1], [1-p, 0, -p], [p-1, 0, -p], [1-p, 0, p], [p-1, 0, p], [-p, 1-p, 0], [-p, p-1, 0], [p, 1-p, 0], [p, p-1, 0]];
+var dodecafaces = [[0,9,8,0,16],[1,9,5,15,14],[1,14,3,17,16],[3,14,15,7,11],[3,17,2,10,11],[17,16,0,12,2],[16,1,9,8,0],[6,19,7,11,10],[19,18,5,15,7],[18,4,8,9,5],[4,13,12,0,8],[6,13,12,2,10],[6,13,4,18,19]];
 
 function ehunt() {
 	bbverts = [];
@@ -808,6 +825,7 @@ function boot_e() {
 	e_controls = new THREE.OrbitControls(e_camera,e_renderer.domElement);
 	e_controls.addEventListener("change",function(){e_nu = true;});
 	e_controls.enableKeys = false;
+	e_controls.autoRotate = true;
 	
 	e_scene.background = new THREE.Color("white");
 
@@ -823,12 +841,12 @@ function boot_e() {
 			}
 		};
 
-	var e_axes = new THREE.Group();
+/*	var e_axes = new THREE.Group();
 	e_axes.add(new THREE.AxesHelper(2));
 	e_axes.add(makeText("x",2,0,0));
 	e_axes.add(makeText("y",0,2,0));
 	e_axes.add(makeText("z",0,0,2));
-	e_scene.add(e_axes);
+	e_scene.add(e_axes);*/
 
 	animate();
 
@@ -836,60 +854,144 @@ function boot_e() {
 	}
 
 function regeo_e() {
+	e_scene.remove.apply(e_scene, e_scene.children);
 
-	var geo = new THREE.Geometry();
+	e_geo = new THREE.Geometry();
 	var i,j;
-	for (i = 0; i < zomeverts.length; i++) {
-		geo.vertices.push(new THREE.Vector3(...zomeverts[i]));
-		e_scene.add(makeText(i,...zomeverts[i]));
+
+	var vertlist = [];
+	var facelist = [];
+
+	var k = document.getElementById("e_sel").value;
+	if (k == 0) {//tetrahedron
+		vertlist = tetraverts;
+		facelist = tetrafaces;
 		}
-	for (i = 0; i < soccerfaces.length; i++) {
-		geo.faces.push(...ngon(soccerfaces[i])); 
+	if (k == 1) {//octagon
+		vertlist = octaverts;
+		facelist = octafaces;
 		}
-/*	for (i = 0; i < bbverts.length; i++) {
-		geo.vertices.push(new THREE.Vector3(...bbverts[i]));
+	if (k == 2) {//icosahedron
+		vertlist = icosaverts;
+		facelist = icosafaces;
 		}
-	for (i = 0; i < 4; i++) {
-		for (j = 0; j < 3; j++) {
-			geo.faces.push(...ngon([20*j+i,20*j+i+12,20*j+i+4,20*j+i+8,20*j+i+16]));
-			}
+	if (k == 3) {//cube
+		vertlist = cubeverts;
+		facelist = cubefaces;
 		}
-	for (j = 0; j < 3; j++) {
-		geo.faces.push(...ngon([20*j,20*j+2,20*j+14,(20*j+48)%60,(20*j+44)%60,20*j+12]));
-		geo.faces.push(...ngon([20*j,20*j+2,20*j+18,(20*j+49)%60,(20*j+45)%60,20*j+16]));
-		geo.faces.push(...ngon([20*j+1,20*j+3,20*j+15,(20*j+50)%60,(20*j+46)%60,20*j+13]));
-		geo.faces.push(...ngon([20*j+1,20*j+3,20*j+19,(20*j+51)%60,(20*j+47)%60,20*j+17]));
-		geo.faces.push(...ngon([20*j+5,20*j+13,(20*j+46)%60,(20*j+54)%60,(20*j+28)%60,(20*j+36)%60]));
-		geo.faces.push(...ngon([20*j+9,20*j+17,(20*j+47)%60,(20*j+55)%60,(20*j+30)%60,(20*j+38)%60]));
+	if (k == 4) {//dodecahedron
+		vertlist = dodecaverts;
+		facelist = dodecafaces;
 		}
-	geo.faces.push(...ngon([4,12,44,52,24,32]));
-	geo.faces.push(...ngon([19,11,39,31,59,51]));*/
-/*	var k = Math.pow(5,-.25);
-	geo.vertices.push(new THREE.Vector3(0,0,0));
-	geo.vertices.push(new THREE.Vector3(0,1,k));
-	geo.vertices.push(new THREE.Vector3(1,0,-k));
-	geo.vertices.push(new THREE.Vector3(0,-1,k));
-	geo.vertices.push(new THREE.Vector3(-1,0,-k));
-	geo.vertices.push(new THREE.Vector3(1,p,(p-1)*k))
-	geo.vertices.push(new THREE.Vector3(p,1,(1-p)*k))
-	geo.vertices.push(new THREE.Vector3(-1,p,(p-1)*k))
-	geo.vertices.push(new THREE.Vector3(-p,1,(1-p)*k))
-	geo.vertices.push(new THREE.Vector3(-1,-p,(p-1)*k))
-	geo.vertices.push(new THREE.Vector3(-p,-1,(1-p)*k))
-	geo.vertices.push(new THREE.Vector3(1,-p,(p-1)*k))
-	geo.vertices.push(new THREE.Vector3(p,-1,(1-p)*k))
-	geo.faces.push(...pentagon([0,1,5,6,2]));
-	geo.faces.push(...pentagon([0,1,7,8,4]));
-	geo.faces.push(...pentagon([0,3,11,12,2]));
-	geo.faces.push(...pentagon([0,3,9,10,4]));*/
-	geo.verticesNeedUpdate = true;
-	geo.computeFaceNormals();
+
+	if (k == 5) {//zome ball
+		vertlist = zomeverts;
+		facelist = zomefaces;
+		}
+
+	if (k == 6) {//soccer ball
+		vertlist = zomeverts;
+		facelist = soccerfaces;
+		}
+
+	for (i = 0; i < vertlist.length; i++) {
+		e_geo.vertices.push(new THREE.Vector3(...vertlist[i]));
+		//e_scene.add(makeText(i,...vertlist[i]));
+		}
+	for (i = 0; i < facelist.length; i++) {
+		e_geo.faces.push(...ngon(facelist[i]));
+		}
+
+	e_geo.verticesNeedUpdate = true;
+	e_geo.computeFaceNormals();
 	var mat = new THREE.MeshNormalMaterial({side:THREE.DoubleSide,transparent:true,opacity:1});
-	var mesh = new THREE.Mesh(geo,mat);
-	e_scene.add(mesh);
+	e_mesh = new THREE.Mesh(e_geo,mat);
+	e_scene.add(e_mesh);
 	e_nu = true;
 	}
 
+function mycross(v1,v2) {
+	return([v1[1]*v2[2]-v1[2]*v2[1],
+		v1[2]*v2[0]-v1[0]*v2[2],
+		v1[0]*v2[1]-v1[1]*v2[0]]);
+	}
+
+function mysub(v1,v2) {
+	return([v1[0]-v2[0],v1[1]-v2[1],v1[2]-v2[2]]);
+	}
+
+function myadd(v1,v2) {
+	return([v1[0]+v2[0],v1[1]+v2[1],v1[2]+v2[2]]);
+	}
+
+function mycomb(a1,v1,a2,v2) {
+	return([a1*v1[0]+a2*v2[0],
+		a1*v1[1]+a2*v2[1],
+		a1*v1[2]+a2*v2[2]
+		]);
+	}
+
+function mylen(v1) {
+	return(Math.sqrt(v1[0]*v1[0]+v1[1]*v1[1]+v1[2]*v1[2]));
+	}
+
+function mynorm(v1) {
+	var l = Math.sqrt(v1[0]*v1[0]+v1[1]*v1[1]+v1[2]*v1[2]);
+	if (l == 0) {return(l);}
+	return([v1[0]/l,v1[1]/l,v1[2]/l]);
+	}
+
+function makepolystart(n) {
+	var i;
+	var th;
+	var rval = [];
+	for (i = 0; i < n; i++) {
+		th = i*2*Math.PI/n;
+		rval.push([Math.cos(th),0,Math.sin(th)]);
+		}
+	return(rval);
+	}
+
+function makepolyfold(op,e1,e2,n,ang) {
+	//op = original polygon
+	//[e1, e2] are indices defining the original edge of op to add onto
+	//n = number of sides of the new polygon
+	//ang = angle between the two polygons
+
+	var x = mynorm(mysub(op[e1],op[e2])); //along the edge
+	var z = mynorm(mycross(mysub(op[0],op[1]),mysub(op[1],op[2]))); //perpendicular to op
+	var y = mynorm(mycross(x,z)); //into/out of edge
+	var w = mycomb(Math.cos(ang),y,Math.sin(ang),z);
+
+	var l = mylen(mysub(op[e1],op[e2]));
+	var d = (1/Math.tan(Math.PI/n))*l/2;
+	var newc = myadd(mycomb(.5,op[e1],.5,op[e2]),mycomb(-d,w,0,w));
+	var r = (1/Math.sin(Math.PI/n))*l/2;
+
+	var rval = [];
+	var i;
+	var th;
+	for (i = 0; i < n; i++) {
+		th = (i*2+1)*Math.PI/n;
+		
+		rval.push(myadd(newc,mycomb(Math.cos(th),w,Math.sin(th),x)));
+		}
+	return(rval);
+	
+	}
+
+function makecylinder(v1,v2) {
+	var l = v1.distanceTo(v2);
+	var c = v1.clone().add(v2).divideScalar(2);
+	var rval = new THREE.CylinderGeometry(.1,.1,l,10,10,false);
+	var or = new THREE.Matrix4().lookAt(v1,v2,new THREE.Vector3(0,1,0));
+	var of = new THREE.Matrix4().makeRotationX(Math.PI/2);
+	var t = new THREE.Matrix4().makeTranslation(c.x,c.y,c.z);
+	rval.applyMatrix4(of);
+	rval.applyMatrix4(or);
+	rval.applyMatrix4(t);
+	return(rval);
+	}
 
 var f_controls;
 var f_nu;
@@ -928,10 +1030,88 @@ function boot_f() {
 	regeo_f();
 	}
 
-function regeo_f() {
-	f_geo = new THREE.Geometry();
+function addvertstof(l) {
+	var geo = new THREE.Geometry();
+	var i;
+	var ll = [];
+	for (i = 0; i < l.length; i++) {
+		ll.push(i);
+		geo.vertices.push(new THREE.Vector3(...l[i]));
+		}
+	geo.faces.push(...ngon(ll));
 	
-	var i,j;
+	var mat = new THREE.MeshNormalMaterial({side:THREE.DoubleSide,transparent:true,opacity:1});
+
+	geo.verticesNeedUpdate = true;
+	geo.computeFaceNormals();
+
+	var mesh = new THREE.Mesh(geo,mat);
+	f_scene.add(mesh);
+
+	mat = new THREE.MeshBasicMaterial({color:"black"});
+
+	for (i = 0; i < l.length; i++) {
+		var cyl = makecylinder(new THREE.Vector3(...l[i]),new THREE.Vector3(...l[(i+1)%l.length]));
+		mesh = new THREE.Mesh(cyl,mat);
+		f_scene.add(mesh);
+		}
+
+	}
+
+var f_anim;
+
+function f_animframe() {
+	if (document.getElementById("f_th").value >= 1) {
+		clearInterval(f_anim);
+		return;
+		}
+	document.getElementById("f_th").value -= -.01;
+	regeo_f();
+	}
+
+function f_go() {
+	f_anim = setInterval(f_animframe,50);
+	}
+
+function regeo_f() {
+	
+	f_scene.remove.apply(f_scene, f_scene.children);
+
+
+	var th = (Math.PI-2*Math.atan(p))*Number(document.getElementById("f_th").value);
+
+	var mat = new THREE.MeshNormalMaterial({side:THREE.DoubleSide,transparent:true,opacity:1});
+	var i;
+
+	var f1 = makepolystart(5);
+	addvertstof(f1);
+	var f2 = makepolyfold(f1,0,1,5,th);
+	addvertstof(f2);
+	var f3 = makepolyfold(f1,1,2,5,th);
+	addvertstof(f3);
+	var f4 = makepolyfold(f1,2,3,5,th);
+	addvertstof(f4);
+	var f5 = makepolyfold(f1,3,4,5,th);
+	addvertstof(f5);
+	var f6 = makepolyfold(f1,4,0,5,th);
+	addvertstof(f6);
+	var f7 = makepolyfold(f6,2,3,5,th);
+	addvertstof(f7);
+	var f8 = makepolyfold(f7,1,2,5,th);
+	addvertstof(f8);
+	var f9 = makepolyfold(f8,0,1,5,th);
+	addvertstof(f9);
+	var f10 = makepolyfold(f8,1,2,5,th);
+	addvertstof(f10);
+	var f11 = makepolyfold(f8,2,3,5,th);
+	addvertstof(f11);
+	var f12 = makepolyfold(f8,3,4,5,th);
+	addvertstof(f12);
+
+	f_nu = true;
+	
+	
+/*	var i,j;
 	for (i = 0; i < 5; i++) {
 		for (j = 0; j < 5; j++) {
 			f_geo.vertices.push(new THREE.Vector3(0,0,0));
@@ -963,11 +1143,12 @@ function regeo_f() {
 		}
 
 	f_nu = true;
-	upd_f();
+	upd_f();*/
 	}
 
 function upd_f() {
-	var i,j;
+
+/*	var i,j;
 	var d = .25*(1+Math.sqrt(5)); //inradius of pentagon of radius 1
 	var pi = Math.PI;
 	var th = document.getElementById("f_th").value;
@@ -994,7 +1175,8 @@ function upd_f() {
 			x*Math.sin(2*pi*j/5) + y*Math.cos(2*pi*j/5),
 			z);
 		f_wf[j].verticesNeedUpdate = true;
-		}
+		}*/
+
 	f_geo.verticesNeedUpdate = true;
 	f_geo.computeFaceNormals();
 	f_geo_mesh.visible = document.getElementById("f_ch").checked;
@@ -1297,16 +1479,26 @@ Cross sections:<br>
 <canvas id="d" width=500 height=500 style="border:1px solid"></canvas><br>
 <input type="range" id="d_r" min=.81 max=1 step=.01 value=.81 oninput="upd_d()">
 
+<br>
+<canvas id="f" width=500 height=500 style="border:1px solid"></canvas>
+<br>
+<input type="range" id="f_th" min=0 max=1 step=.01 value=0 oninput="regeo_f()">
+
+<button onclick="f_go()">Animate</button>
+
 
 <br>
 <canvas id="e" width=500 height=500 style="border:1px solid"></canvas>
 
-<br>
-<canvas id="f" width=500 height=500 style="border:1px solid"></canvas>
-<br>
-<input type="range" id="f_th" min=0 max=1.12 step=.01 value=0 oninput="upd_f()">
-
-<input type="checkbox" id="f_ch" checked oninput="upd_f()">
+<select id="e_sel" onchange="regeo_e()">
+<option value=0>Tetrahedron</option>
+<option value=1>Octahedron</option>
+<option value=2>Icosahedron</option>
+<option value=3>Cube</option>
+<option value=4>Dodecahedron</option>
+<option value=5>Zome Ball</option>
+<option value=6>Irregular Tetracontadihedron</option>
+</select>
 
 </body>
 </html>

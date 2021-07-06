@@ -1,0 +1,87 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<meta name=description content="">
+<title> Polar and Cartesian graphs are the same</title>
+<script src="https://www.desmos.com/api/v1.6/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6"></script>
+<script>
+
+var gc;
+
+var n;
+
+function oldf(x,y) {
+	return(x**2 + y**2 < 1);
+	}
+
+function f(x,y){
+		if (x<0) {return(false);}
+		if (y<0) {return(false);}
+		var xnew = x;
+		var ynew = y;
+		for (i = 0; i < 3; i++) {
+			xold = xnew;
+			yold = ynew;
+			xnew = yold*Math.cos(xold);
+			ynew = yold*Math.sin(xold);
+			if (xold < xnew) {return(false);}
+			if (xnew < 0) {return(false);}
+			if (ynew < 0) {return(false);}
+			}
+		return(true);
+		};
+
+/*function f(n) {
+	return(function(x,y){
+		var xnew = x;
+		var ynew = y;
+		for (i = 0; i < 3; i++) {
+			xold = xnew;
+			yold = ynew;
+			xnew = yold*Math.cos(xold);
+			ynew = yold*Math.sin(xold);
+			if (xold < xnew) {return(false);}
+			}
+		return(true);
+		});
+	}*/
+
+function boot() {
+	gc = Desmos.GraphingCalculator(document.getElementById("gr"), {border:false});
+	gc.setExpression({latex:"\\left(a_{0},b_{0}\\right)"});
+	gc.setExpression({latex:"a_{0}=1.01"});
+	gc.setExpression({latex:"b_{0}=1.78"});
+	var i;
+	for (i = 1; i < 20; i++) {
+		gc.setExpression({latex:"a_{"+i+"}=\\arctan\\left(\\frac{b_{"+(i-1)+"}}{a_{"+(i-1)+"}}\\right)"});
+		gc.setExpression({latex:"b_{"+i+"}=\\sqrt{a_{"+(i-1)+"}^{2}+b_{"+(i-1)+"}^{2}}"});
+		gc.setExpression({latex:"\\left(a_{"+i+"},b_{"+i+"}\\right)"});
+		}
+	gc.setExpression({latex:"c_{0}=a_{0}"});
+	gc.setExpression({latex:"d_{0}=b_{0}"});
+	for (i = 1; i < 20; i++) {
+		gc.setExpression({latex:"c_{"+i+"}=d_{"+(i-1)+"}\\cos\\left(c_{"+(i-1)+"}\\right)"});
+		gc.setExpression({latex:"d_{"+i+"}=d_{"+(i-1)+"}\\sin\\left(c_{"+(i-1)+"}\\right)"});
+		gc.setExpression({latex:"\\left(c_{"+i+"},d_{"+i+"}\\right)"});
+		}
+	}
+
+</script>
+<style>
+html, body {
+	width:100%;
+	height:100%;
+	margin:0;
+	padding:0;
+	}
+</style>
+</head>
+<body onload="boot()">
+<div id="gr" style="width:100%; height:100%"></div>
+<div id="tgr">
+</body>
+
+</html>

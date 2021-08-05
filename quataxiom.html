@@ -1,0 +1,240 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<meta name=description content="">
+<title> Quaternion Axiomatization </title>
+<script src="tkas.js"></script>
+<script>
+
+
+
+var ruleinputlist = [];
+var rulenamelist = [];
+
+var historyconnectoroptions = {};
+
+var currentformulaholder = false;
+var historylist = [];
+//an element of historylist has:
+//T: the tkas ast
+//rulename: the name of the rule applied
+//connectiontype: type of svg connector to the formula above (srule, calc) or not present 
+//connectiondata: data to create the svg connector
+//expander: historylist you could replace this element of the historylist with to produce an expanded historylist
+//expanded: keeps track of if this historylist node is expanded
+
+function applyrule(R,L,rname) {
+	if (!L) {L = []};
+	var currentT = historylist[historylist.length-1].T;
+	console.log(R,currentT,L);
+	var newT = tkas_rule_simple_rule(R,currentT,L);
+	if (!newT) {
+		//can't apply rule, maybe throw an error message?
+		return; 
+		}
+	historylist.push({
+		T:newT,
+		rulename:rname,
+		connectiontype:"srule",
+		connectiondata:{R:R,L:L},
+		});
+	update_html_from_historylist();
+	}
+
+function update_html_from_historylist() {
+	var i;
+	var str = "<table style='border-spacing:10px'>";
+	for (i = 0; i < historylist.length; i++) {
+		str += "<tr><td>"
+		str += tkas_render(historylist[i].T,{id:"history"+i});
+		str += "</td><td>";
+		str += historylist[i].rulename;
+		str += "</td></tr>";
+		if (historylist[i].connectiontype == "srule") {
+			tkas_delay_rule_connect(historylist[i-1].T,"Fhistory"+(i-1),historylist[i].T,"Fhistory"+i,historylist[i].connectiondata.R,historylist[i].connectiondata.L,historyconnectoroptions,"history");
+			}
+		} 
+	str += "</table>";
+	document.getElementById("history").innerHTML = str;
+	i = historylist.length-1;
+	currentformulaholder="Fhistory"+i;
+	tkas_highlight(["Fhistory"+i],historylist[i].T,{select:true});
+	}
+
+function donewform() {
+	var str = document.getElementById("newform").value;
+	historylist.push({
+		T:tkas_parse(str),
+		rulename:"start"
+		});
+	update_html_from_historylist();
+	}
+
+function rulekeydown(e,i) { //exclusively for handling pressing special keys.
+	//console.log(e);
+	if (e.key == "Enter") {
+		addrule(i,1);
+		}
+	if (e.key == "ArrowUp" && i > 0) {
+		var s = e.target.selectionStart;
+		document.getElementById("r"+(i-1)).setSelectionRange(s,s);
+		document.getElementById("r"+(i-1)).focus();
+		e.preventDefault();
+		}
+	if (e.key == "ArrowDown" && i < ruleinputlist.length-1) {
+		var s = e.target.selectionStart;
+		document.getElementById("r"+(i+1)).setSelectionRange(s,s);
+		document.getElementById("r"+(i+1)).focus();
+		e.preventDefault();
+		}
+	if (e.key == "Backspace" && e.target.value == "" && ruleinputlist.length != 1) {
+		delrule(i,1);
+		}
+	}
+
+function rulenkeydown(e,i) {
+	//console.log(e);
+	if (e.key == "Enter") {
+		addrule(i,1);
+		}
+	if (e.key == "ArrowUp" && i > 0) {
+		var s = e.target.selectionStart;
+		document.getElementById("rn"+(i-1)).setSelectionRange(s,s);
+		document.getElementById("rn"+(i-1)).focus();
+		e.preventDefault();
+		}
+	if (e.key == "ArrowDown" && i < ruleinputlist.length-1) {
+		var s = e.target.selectionStart;
+		document.getElementById("rn"+(i+1)).setSelectionRange(s,s);
+		document.getElementById("rn"+(i+1)).focus();
+		e.preventDefault();
+		}
+	//if (e.key == "Backspace" && e.target.value == "" && ruleinputlist.length != 1) {
+	//	delrule(i,1);
+	//	}	
+	}
+
+function newformkeypress(e) {
+	if (e.key == "Enter") {
+		donewform();
+		}
+	}
+
+function delrule(i,j) {
+	ruleinputlist.splice(i,1);
+	rulenamelist.splice(i,1);
+	update_html_from_ruleinputlist();
+	if (j) {
+		var k = i-1;
+		if (i == 0) {k = 0}
+		var s = ruleinputlist[k].length;
+		document.getElementById("r"+k).setSelectionRange(s,s);
+		requestAnimationFrame(function() {document.getElementById("r"+k).focus()});		
+		}
+	}
+
+function addrule(i,j) {
+	ruleinputlist.splice(i+1,0,"");
+	rulenamelist.splice(i+1,0,"");
+	update_html_from_ruleinputlist();
+	if (j) {
+		requestAnimationFrame(function() {document.getElementById("r"+(i+1)).focus()});
+		}
+	}
+
+function ruleinput(e,i) {
+	ruleinputlist[i] = e.target.value;
+	}
+
+function ruleninput(e,i) {
+	rulenamelist[i] = e.target.value;
+	}
+
+function rulebutt(i) {
+	if (!currentformulaholder) {return;}
+	var rt = ruleinputlist[i];
+	var rn = rulenamelist[i];
+	if (rt == "calculator") {
+		//calculator code goes here
+		}
+	var R = tkas_parse(rt);
+	var L = tkas_highlight_get_selected([currentformulaholder]);
+	applyrule(R,L,rn);
+	}
+
+function update_html_from_ruleinputlist() {
+	var i;
+	var str = "<table border=1>";
+	for (i = 0; i < ruleinputlist.length; i++) {
+		str += "<tr><td>";
+		str += "<button class='rulebutt' onmousedown='rulebutt("+i+")'>Apply</button>";
+		str += "<input class='ruletext' id='r"+i+"' onkeydown='rulekeydown(event,"+i+")' oninput='ruleinput(event,"+i+")' value='"+ruleinputlist[i]+"'>";
+		str += "<input class='rulename' id='rn"+i+"' onkeydown='rulenkeydown(event,"+i+")' oninput='ruleninput(event,"+i+")' value='"+rulenamelist[i]+"'>";
+		str += "</td></tr>";
+		}
+	str += "</table>";
+	document.getElementById("rulebar").innerHTML = str;
+	}
+
+function newrule() {
+	ruleinputlist.push("");
+	rulenamelist.push("");
+	update_html_from_ruleinputlist();
+	}
+
+function boot() {
+	newrule();
+	}
+
+</script>
+<style>
+.melt:hover {
+	background-color: #DDDDDD;
+	}
+.ruletext, .newform {
+	width:200px;
+	font-size:20px;
+	}
+.rulename {
+	width:200px;
+	}
+.hov:hover {
+	background-color: red;
+	}
+</style>
+</head>
+<body onload="boot()" style="font-size:x-large;">
+
+<div style="display:flex; flex-flow:column; height:calc(100vh - 16px)">
+ <div style="flex:0 1 auto">
+
+  <details> <summary> Help (Show/Hide) </summary>
+<p>
+The goal of this interactive is to see how the more general versions of rules are connected with their binary versions. For instance, you can see that the general version of associativity (the ability to freely shuffle parentheses around sums) follows from the binary version (a+b)+c = a+(b+c) and a convention regarding long sums. Here we use the left-associativity convention that abc means (ab)c, the same as lambda calculus.
+</p>
+<p>
+To get started, click on a subexpression of the formula at the bottom of the screen. If there are rules you can apply, a menu should pop up with a list of possibilities. You can also see a full list of rules this interactive knows about by changing the "show rules" option to include the "sidebar". Your first move should be to select the entire expression a+b+c below and apply the left-associativity "convention" to rewrite it as (a+b)+c. You can try problems that require a sequence of moves by using the "level select" menu below.
+</p>
+ </div>
+ <div style="flex: 1 1 auto; overflow:auto">
+<div style="display:flex; overflow:auto; flex-direction:column-reverse; height:100%">
+<div>
+<input id="newform" onkeypress="newformkeypress(event)" class="newform">
+<button onclick="donewform()">New Start</button>
+</div>
+<div id="history" style="position:relative"></div>
+
+
+</div>
+</div>
+</div>
+
+
+<div id="rulebar" style="position:fixed; right:0px; top:0px; width:auto;">
+</div>
+
+</body>
+</html>

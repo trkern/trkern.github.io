@@ -14,7 +14,7 @@
 var hist = [];
 
 var lvls = [
-	"x+y+z = (x+y)+z",
+	"(x+y)+z = x+y+z",
 	"x+y+z = x+(y+z)",
 	"x+y+z = x+z+y",
 	"x+y+z = y+z+x",
@@ -226,8 +226,9 @@ function rule_i(i,T) {
 	return(r);
 	}
 
-function butt_rule(i) {
+function butt_rule(e,i) {
 	var L = tkas_highlight_get_selected(["Fh"+(hist.length-1)]);
+	console.log("buttrule:", L);
 	if (!L) {
 		//maybe alert the user that they failed?
 		return;
@@ -290,7 +291,7 @@ function bootbutts() {
 	var str = "<table border=1 style='border-collapse:collapse' class='butts'>";
 	for (i = 0; i < rules.length; i++) {
 		str += "<tr style='background-color:"+butt_colors[i]+"'><td>";
-		str += "<button onclick='butt_rule("+i+")'> &rarr; </button>";
+		str += "<button onmousedown='butt_rule(event,"+i+")'> &rarr; </button>";
 		str += "</td><td>";
 		str += rules[i].EQ;
 		str += "</td><td>";
@@ -415,14 +416,14 @@ To get started, click on a subexpression of the formula at the bottom of the scr
   </details>
   Show rules:<select id="opts" onchange="change_opts()">
   <option value=1>Popup Menu</option>
-  <option value=3>Popup Menu and Sidebar</option>
+  <option value=3 selected>Popup Menu and Sidebar</option>
   <option value=2>Sidebar Only</option>
   </select><br>
   Level select:<span id="lvlselspan"></span><br>
   <span id="goal"></span> <span id="win" style="background-color:#CCEEFF"></span>
  </div>
  <div style="flex: 1 1 auto; overflow:auto">
-<div style="display:flex; overflow:auto; flex-direction:column-reverse; height:100%">
+<div style="display:flex; overflow:auto; flex-direction:column-reverse; height:100%; width:500px">
 <div id="history"></div>
 </div>
 </div>

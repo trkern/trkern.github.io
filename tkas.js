@@ -202,7 +202,7 @@ var tkas_ptree_op_associativity = { //0 = N/A, 1 = left to right, -1 = right to 
 	"LOGN": 1,
 	"ABS": 1,
 	"POW": -1,
-	"MUL": 1,
+	"MUL": 0, //changed from 1 to make (ab)(cd) display correctly
 	"DIV": 1,
 	"NEG": 0,
 	"ADD": 0,
@@ -427,7 +427,7 @@ function tkas_render_POW(T,L,D) {
 		return("{"+subrendB+"}^{"+subrendE+"}");
 		}
 	else if (D.rendertype == "html") {
-		return(subrendB+"<sup class='tkas_superscript'>"+subrendE+"</sup>");
+		return(subrendB+"<span class='tkas_superscript'>"+subrendE+"</span>");
 		}
 	}
 
@@ -1319,7 +1319,7 @@ function tkas_pemdas_exponent(L,fz) {
 	}
 
 function tkas_merge_md(L) {
-	var rval = L[0][1];
+	var rval = {op:"MUL",subs:[L[0][1]]};
 	var i;
 	for (i = 1; i < L.length; i++) {
 		if (L[i][0] == "S") {//implicit multiplication or fall through *-multiplication
@@ -1467,6 +1467,7 @@ function tkas_parse(str,opts) {
 		lastgood = o;
 		o = tkas_pemdas(o);
 		}
+	if (lastgood.length == 0) {return(false)}
 	return(tkas_parse_cleanup(lastgood[0][1],opts));
 	}
 
@@ -1734,6 +1735,90 @@ function tkas_rule_simple_rule(R,T,L) {
 	return(tkas_ptree_deep_replace(T, L, newS));
 	}
 
+function tkas_rule_calculate(T,L) { //only does exact natural number calculations: don't want users proving 0=1
+	var S = tkas_ptree_deep_sub(T,L);
+	if (!("subs" in S)) {return(false);}
+	var vallist = [];
+	var i;
+	for (i = 0; i < S.subs.length; i++) {
+		if (S.subs[i].op != "NUM") {return(false);}
+		if (!Number.isInteger(S.subs[i].c)) {return(false);}
+		vallist.push(S.subs[i].c);
+		}
+	var outnum;
+	if (S.op == "ADD") {
+		outnum = 0;
+		for (i = 0; i < vallist.length; i++) {
+			outnum += vallist[i];
+			}
+		}
+	if (S.op == "MUL") {
+		outnum = 1;
+		for (i = 0; i < vallist.length; i++) {
+			outnum *= vallist[i];
+			}
+		}
+	//TODO: add more
+	var outT = {op:"NUM", c:outnum};
+	return(tkas_ptree_deep_replace(T,L,outT));
+	}
+
+function tkas_locate_variables(T) { 
+	//locates all the variables in T
+	//rval[vname] is a list of lixes in T where the variable vname occurs
+	//prepends L onto the beginning (optional)
+	var rval = {};
+	var temp;
+	var tv;
+	var i,j;
+	if (T.op == "VAR") {
+		rval[T.c]=[[]];
+		return(rval);
+		}
+	if ("subs" in T) {
+		for (i = 0; i < T.subs.length; i++) {
+			temp = tkas_locate_variables(T.subs[i]);
+			for (tv in temp) {
+				if (!(tv in rval)) {
+					rval[tv] = [];
+					}
+				for (j = 0; j < temp[tv].length; j++) {
+					rval[tv].push([i].concat(temp[tv][j]));
+					}
+				}
+			}
+		}
+	return(rval);
+	}
+
+function tkas_rule_matching_lixes(R,L) {
+	L = L || [];
+	//returns an object of pairs of lists of lixes
+	//rval[vname][0(1)] is a list of lixes in the LHS(RHS) of R which correspond to the variable vname (with L tacked onto the beginning, for deep rule matching)
+	var rval = {};
+	var tlvLHS = tkas_locate_variables(R.subs[0]);
+	var tlvRHS = tkas_locate_variables(R.subs[1]);
+	var v;
+	var i;
+	for (v in tlvLHS) {
+		rval[v] = [[],[]];
+		}
+	for (v in tlvRHS) {
+		rval[v] = [[],[]];
+		}
+	for (v in tlvLHS) {
+		for (i = 0; i < tlvLHS[v].length; i++) {
+			rval[v][0].push(L.concat(tlvLHS[v][i]));
+			}
+		}
+	for (v in tlvRHS) {
+		for (i = 0; i < tlvRHS[v].length; i++) {
+			rval[v][1].push(L.concat(tlvRHS[v][i]));
+			}
+		}
+	return(rval);
+	}
+
 var tkas_simple_rules = [
 	{EQ:"(a+b)+c=a+(b+c)",fname:"additive associativity",aname:"shuffle sum"},
 	{EQ:"a+(b+c)=(a+b)+c",fname:"additive associativity",aname:"shuffle sum"},
@@ -1766,6 +1851,248 @@ function tkas_rule_immediately_applicable_srules(T,L) {
 	
 	return(rval);
 	}
+
+var tkas_connector_colors = [//muted scheme from https://personal.sron.nl/~pault/
+	"#CC6677","#332288","#DDCC77","#117733","#88CCEE","#882255","#44AA99","#999933","#AA4499"
+	];
+
+function tkas_svg_polylineify(l,options) {
+	options = options || "";
+	var i;
+	var str = "<polyline points='";
+	for (i = 0; i < l.length; i++) {
+		if (i > 0) {
+			str += " ";
+			}
+		str += l[i][0] + "," + l[i][1];
+		}
+	str += "' ";
+	str += options;
+	str += "/>";
+	return(str);
+	}
+
+function tkas_svg_bezier(l,options) {
+	//currently only does 4 points, but feel free to expand using S
+	options = options || "";
+	var i;
+	var str = "<path d='";
+	str += "M " + l[0][0] + "," + l[0][1] + " ";
+	str += "C " + l[1][0] + "," + l[1][1] + " ";
+	str += l[2][0] + "," + l[2][1] + " ";
+	str += l[3][0] + "," + l[3][1] + " ";
+	str += "' " + options + "/>";
+	return(str); 
+	}
+
+function tkas_rule_connector(T1,tg1,T2,tg2,R,L,o,holder) {
+	o = Object.assign({},o,{base:"brackets",connectors:"bezier",bezierconst:0,bracketconst:.1,linewidth:2});
+	holder = document.getElementById(holder) || document.body;
+	//given trees T1, T2, (augmented with first character) tags tg1 tg2, and simple rule equality R being applied at depth L, produces svg string that can be appended to the html to connect the trees.
+	//holder is the id of an html element that is used to set up positioning for the svg
+	//options 
+	//o.base = "brackets","rects","lines"
+	//o.connectors = "zigzag","bezier"
+	//o.bezierconst: intensity of vertical tangency
+	//o.bracketconst: length of brackets
+	var e1 = document.getElementById(tkas_id_from_tag_and_lix(tg1,[]));
+	var e2 = document.getElementById(tkas_id_from_tag_and_lix(tg2,[]));
+	var r1 = e1.getBoundingClientRect();
+	var r2 = e2.getBoundingClientRect();
+	var minx = Math.min(r1.left,r2.left);
+	var maxx = Math.max(r1.right,r2.right);
+	var miny = Math.min(r1.top,r2.top);
+	var maxy = Math.max(r1.bottom,r2.bottom);
+	var hr = holder.getBoundingClientRect();
+	var hstyl = window.getComputedStyle(holder);
+	var etop = miny-hr.top+Number(hstyl.marginTop.slice(0,-2));
+	var eleft = minx-hr.left+Number(hstyl.marginLeft.slice(0,-2));
+	var str = "<svg style='pointer-events:none;position:absolute;top:"+etop+"px;left:"+eleft+"px' width="+(maxx-minx)+"px height="+(maxy-miny)+"px>";
+	var v,i,j,e,r,rx,ry,rw,rh;
+	var trml = tkas_rule_matching_lixes(R,L);
+	var colorindex = -1;
+	var currentvarnum = -1;
+	var numvars = 0;
+	for (v in trml) {
+		numvars++;
+		}
+	for (v in trml) {
+		currentvarnum++;
+		colorindex++;
+		var color = tkas_connector_colors[colorindex%tkas_connector_colors.length];
+		var opts = "fill='none' stroke='"+color+"' stroke-width='"+o.linewidth+"px'";
+		for (i = 0; i < trml[v][0].length; i++) {
+			e = document.getElementById(tkas_id_from_tag_and_lix(tg1,trml[v][0][i]));
+			r = e.getBoundingClientRect();
+			rx = r.left-minx;
+			ry = r.top-miny;
+			rw = r.width;
+			rh = r.height;
+			if (o.base == "rects") {
+				str += "<rect id='yooo' x='"+rx+"' y='"+ry+"' width='"+rw+"' height='"+rh+"' " + opts + "/>";
+				}
+			if (o.base == "brackets") {
+				str += tkas_svg_polylineify([[rx,ry+(1-o.bracketconst)*rh],[rx,ry+rh],[rx+rw,ry+rh],[rx+rw,ry+(1-o.bracketconst)*rh]], opts);
+				}
+			if (o.base == "lines") {
+				str += tkas_svg_polylineify([[rx,ry+rh],[rx+rw,ry+rh]], opts);
+				}
+			}
+		for (i = 0; i < trml[v][1].length; i++) {
+			e = document.getElementById(tkas_id_from_tag_and_lix(tg2,trml[v][1][i]));
+			r = e.getBoundingClientRect();
+			rx = r.left-minx;
+			ry = r.top-miny;
+			rw = r.width;
+			rh = r.height;
+			if (o.base == "rects") {
+				str += "<rect x='"+rx+"' y='"+ry+"' width='"+rw+"' height='"+rh+"' " + opts + "/>";
+				}
+			if (o.base == "brackets") {
+				str += tkas_svg_polylineify([[rx,ry+o.bracketconst*rh],[rx,ry],[rx+rw,ry],[rx+rw,ry+o.bracketconst*rh]], opts);
+				}
+			if (o.base == "lines") {
+				str += tkas_svg_polylineify([[rx,ry],[rx+rw,ry]], opts);
+				}
+			}
+		if (o.connectors == "zigzag") {
+			var connectxmax = -Infinity;
+			var connectxmin = Infinity;
+			var topbot = r1.bottom-etop+window.scrollY;
+			var bottop = r2.top-etop+window.scrollY;
+			var vary = topbot + ((3+currentvarnum)/(5+numvars))*(bottop-topbot);
+			for (i = 0; i < trml[v][0].length; i++) {
+				e = document.getElementById(tkas_id_from_tag_and_lix(tg1,trml[v][0][i]));
+				r = e.getBoundingClientRect();
+				rx = r.left-minx;
+				ry = r.top-miny;
+				rw = r.width;
+				rh = r.height;
+				var midx = rx+rw/2;
+				connectxmax = Math.max(midx, connectxmax);
+				connectxmin = Math.min(midx, connectxmin);
+				str += tkas_svg_polylineify([[midx,ry+rh],[midx,vary]],opts);
+				}
+			for (i = 0; i < trml[v][1].length; i++) {
+				e = document.getElementById(tkas_id_from_tag_and_lix(tg2,trml[v][1][i]));
+				r = e.getBoundingClientRect();
+				rx = r.left-minx;
+				ry = r.top-miny;
+				rw = r.width;
+				rh = r.height;
+				var midx = rx+rw/2;
+				connectxmax = Math.max(midx, connectxmax);
+				connectxmin = Math.min(midx, connectxmin);
+				str += tkas_svg_polylineify([[midx,ry],[midx,vary]],opts);
+				}
+			str += tkas_svg_polylineify([[connectxmin,vary],[connectxmax,vary]],opts);
+			}
+		if (o.connectors == "bezier") {
+			for (i = 0; i < trml[v][0].length; i++) {
+				for (j = 0; j < trml[v][1].length; j++) {
+					var e0 = document.getElementById(tkas_id_from_tag_and_lix(tg1,trml[v][0][i]));
+					var r0 = e0.getBoundingClientRect();
+					var rx0 = r0.left-minx;
+					var ry0 = r0.top-miny;
+					var rw0 = r0.width;
+					var rh0 = r0.height;
+					var e1 = document.getElementById(tkas_id_from_tag_and_lix(tg2,trml[v][1][j]));
+					var r1 = e1.getBoundingClientRect();
+					var rx1 = r1.left-minx;
+					var ry1 = r1.top-miny;
+					var rw1 = r1.width;
+					var rh1 = r1.height;
+					var hd = r1.top - r0.bottom;
+					str += tkas_svg_bezier([[rx0+rw0/2,ry0+rh0],[rx0+rw0/2,ry0+rh0+o.bezierconst*hd],[rx1+rw1/2,ry1-o.bezierconst*hd],[rx1+rw1/2,ry1]], opts);
+					}
+				}
+			}
+		if (o.connectors == "bezierstack") {
+			var topbot = r1.bottom-etop+window.scrollY;
+			var bottop = r2.top-etop+window.scrollY;
+			var vary = topbot + ((3+currentvarnum)/(5+numvars))*(bottop-topbot);
+			for (i = 0; i < trml[v][0].length; i++) {
+				for (j = 0; j < trml[v][1].length; j++) {
+					var e0 = document.getElementById(tkas_id_from_tag_and_lix(tg1,trml[v][0][i]));
+					var r0 = e0.getBoundingClientRect();
+					var rx0 = r0.left-minx;
+					var ry0 = r0.top-miny;
+					var rw0 = r0.width;
+					var rh0 = r0.height;
+					var e1 = document.getElementById(tkas_id_from_tag_and_lix(tg2,trml[v][1][j]));
+					var r1 = e1.getBoundingClientRect();
+					var rx1 = r1.left-minx;
+					var ry1 = r1.top-miny;
+					var rw1 = r1.width;
+					var rh1 = r1.height;
+					var hd = r1.top - r0.bottom;
+					str += tkas_svg_bezier([[rx0+rw0/2,ry0+rh0],[rx0+rw0/2,ry0+rh0+o.bezierconst*hd+(currentvarnum-2)*10],[rx1+rw1/2,ry1-o.bezierconst*hd+(currentvarnum-2)*10],[rx1+rw1/2,ry1]], opts);
+					}
+				}
+			}
+		}
+	str += "</svg>";
+	return(str);
+	}
+
+var tkas_overdraw_registry = [];
+//each entry has:
+//type: "rule_connector" (eventually "tree", other types of rule connectors that don't call tkas_rule_connector
+//id: if adding an entry with the same id, overwrites that entry
+//rule_connector has:
+//T1,tg1,T2,tg2,R,L,o
+
+function tkas_fulfill_overdraw_registry() {
+	var i, e;
+	if (!(document.getElementById("tkas_overdraw_holder"))) {
+		var toh = document.createElement("div");
+		toh.id = "tkas_overdraw_holder";
+		document.body.appendChild(toh);
+		}
+	var toh = document.getElementById("tkas_overdraw_holder");
+	for (i = 0; i < tkas_overdraw_registry.length; i++) {
+		e = tkas_overdraw_registry[i];
+		if (e.type == "rule_connector") {
+			if (e.holder) {toh = document.getElementById(e.holder);}
+			toh.innerHTML += tkas_rule_connector(e.T1,e.tg1,e.T2,e.tg2,e.R,e.L,e.o,e.holder);
+			}
+		}
+	}
+
+function tkas_trc(T1,tg1,T2,tg2,R,L,o,holder) {
+	tkas_overdraw_registry.push({type:"rule_connector",T1:T1,tg1:tg1,T2:T2,tg2:tg2,R:R,L:L,o:o,holder:holder});
+	}
+
+function tkas_delay_rule_connect(T1,tg1,T2,tg2,R,L,o,holder) {
+	requestAnimationFrame(function(){
+		var e = document.createElement("span");
+		e.innerHTML = tkas_rule_connector(T1,tg1,T2,tg2,R,L,o,holder);
+		document.getElementById(holder).append(e);
+		});
+	}
+
+function tkas_rule_sequence_drawer(T,RL,tag) {
+	//RL is a list of objects with type
+	//type:"srule" has R:string equation representing rule* L:(lix)
+	//tag is a unique tag identifier
+	//returns a string and updates the overdraw registry
+	// *note: this is wrong since it's 'harder' to unparse than to parse
+	var i = 0;
+	var TL = [T];
+	const CL = [];
+	var str = "<span id='tkas_rsd_holder_"+tag+"'>";
+	str += tkas_render(TL[0],{id:"tkas_rsd_"+tag+0});
+	for (i = 0; i < RL.length; i++) {
+		str += "<br><br>";
+		TL.push(tkas_rule_simple_rule(tkas_parse(RL[i].R),TL[i],RL[i].L));
+		str += tkas_render(TL[i+1],{id:"tkas_rsd_"+tag+(i+1)});
+		tkas_delay_rule_connect(TL[i],"Ftkas_rsd_"+tag+i,TL[i+1],"Ftkas_rsd_"+tag+(i+1),tkas_parse(RL[i].R),RL[i].L,{},"tkas_rsd_holder_"+tag);
+		//tkas_trc(TL[i],"Ftkas_rsd_"+tag+i,TL[i+1],"Ftkas_rsd_"+tag+(i+1),tkas_parse(RL[i].R),RL[i].L,{},"tkas_rsd_holder_"+tag);
+		}
+	str += "</span>";
+	return(str);
+	}
+
 
 var tkas_css = `
 .tkas_svg_parens {
@@ -1830,13 +2157,13 @@ var tkas_css = `
 	}
 .tkas_squareroot_index {
 	font-size: 60%;
-	vertical-align: .8em;
+	vertical-align: top;
 	margin-right: -1.7ch;
 	display:inline-block;
 	}
 .tkas_superscript {
 	font-size: calc(2px + 60%);
-	vertical-align: .8em;
+	vertical-align: top;
 	display:inline-block;
 	margin-left: -.2em;
 	}

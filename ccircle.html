@@ -5,22 +5,12 @@
 <link rel="icon" href="icon.png">
 <link rel="image_src" href="icon.png">
 <meta name=description content="">
-<title> Singular Points of Complex Hypersurfaces </title>
+<title> Complex "Unit Circle" </title>
 <script src="three.js"></script>
 <script src="OrbitControls.js"></script>
 <script src="math.min.js"></script>
-<script src="katex.min.js"></script>
-<link rel="stylesheet" href="katex.min.css">
 <script>
 
-function bootkatex() {
-	var l = document.getElementsByClassName("k");
-	var k = l.length;
-	var i;
-	for (i = 0; i < k; i++) {
-		katex.render(l[i].title,l[i],{});
-		}
-	}
 
 function ygivenx(rex,imx,a,b,branch) {
 	//x^2+y^2=1, so y = pm sqrt(1-x^2)
@@ -67,8 +57,8 @@ function axlab(n,ax) {
 function test() { //just to make sure ygivenx works correctly
 	var re, im, a, b, branch;
 	var x,y;
-	for (re = -2; re <= 2; re += 1) {
-		for (im = -2; im <= 2; im += 1) {
+	for (re = -2; re <= 2; re += .1) {
+		for (im = -2; im <= 2; im += .1) {
 					for (branch = 0; branch < 2; branch++) {
 						x = math.complex(re,im);
 						y = math.complex(...ygivenx(re,im,2,2,branch));
@@ -255,19 +245,15 @@ function update_c() {
 	}
 
 function boot() {
-	bootkatex();
 	boot_c();
 	}
 
 </script>
 
-<style>
-</style>
-
 </head>
 <body onload="boot()">
-Let's take a look at the solutions to the equation:
-<h1 class="k" title="x^2 + y^2 = 1"></h1>
+
+Let's look at solutions to x<sup>2</sup>+y<sup>2</sup> = 1 for x and y complex.
 
 <p>
 Move the slider below to set the value of one of Re(x), Im(x), Re(y), or Im(y) (choose which one using the drop down menu) to see a portion of that cross-section of the 3d shape in 4d.

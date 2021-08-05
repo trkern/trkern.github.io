@@ -1,0 +1,287 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<meta name=description content="">
+<title> Singular Points of Complex Hypersurfaces </title>
+<script src="three.js"></script>
+<script src="OrbitControls.js"></script>
+<script src="math.min.js"></script>
+<script src="katex.min.js"></script>
+<link rel="stylesheet" href="katex.min.css">
+<script>
+
+function bootkatex() {
+	var l = document.getElementsByClassName("k");
+	var k = l.length;
+	var i;
+	for (i = 0; i < k; i++) {
+		katex.render(l[i].title,l[i],{});
+		}
+	}
+
+function ygivenx(rex,imx,a,b,branch) {
+	//x^2+y^2=1, so y = pm sqrt(1-x^2)
+	var x = math.complex(rex,imx);
+	if (branch == 0) {
+		var y = math.eval("sqrt(1-x^2)",{x:x});
+		}
+	if (branch == 1) {
+		var y = math.eval("-sqrt(1-x^2)",{x:x});
+		}
+	return([y.re,y.im]);
+	}
+
+function params(a,b,n,i,s,br) { // n: which canvas, i: graphing parameter value, s: slider value
+	if (n == 1) {
+		return(ygivenx(s,i,a,b,br));
+		}
+	if (n == 2) {
+		return(ygivenx(i,s,a,b,br));
+		}
+	if (n == 3) {
+		return(ygivenx(s,i,b,a,br));
+		}
+	if (n == 4) {
+		return(ygivenx(i,s,b,a,br));
+		}
+	}
+
+function axlab(n,ax) {
+	if (n == 1) {
+		return(["Re(y)","Im(x)","Im(y)"][ax]);
+		}
+	if (n == 2) {
+		return(["Re(y)","Re(x)","Im(y)"][ax]);
+		}
+	if (n == 3) {
+		return(["Re(x)","Im(y)","Im(x)"][ax]);
+		}
+	if (n == 4) {
+		return(["Re(x)","Re(y)","Im(x)"][ax]);
+		}
+	}
+
+function test() { //just to make sure ygivenx works correctly
+	var re, im, a, b, branch;
+	var x,y;
+	for (re = -2; re <= 2; re += 1) {
+		for (im = -2; im <= 2; im += 1) {
+					for (branch = 0; branch < 2; branch++) {
+						x = math.complex(re,im);
+						y = math.complex(...ygivenx(re,im,2,2,branch));
+						console.log(re,im,2,2,branch,math.eval("x^2+y^2",{x:x,y:y}));
+						}
+					}
+		}
+	}
+
+function makeText(str,x,y,z) {
+	var canvas = document.createElement("canvas");
+	canvas.style.border = "1px solid";
+	canvas.height = 20;
+
+	var ctx = canvas.getContext("2d");
+	ctx.fillStyle = "black";
+	ctx.textBaseline = "middle";
+	ctx.textAlign = "center";
+	ctx.font = "20px serif";
+	var r = ctx.measureText(str);
+	canvas.width = r.width;
+
+	ctx = canvas.getContext("2d");
+	ctx.fillStyle = "black";
+	ctx.textBaseline = "middle";
+	ctx.textAlign = "center";
+	ctx.font = "20px serif";
+
+	ctx.fillText(str,canvas.width/2,canvas.height/2);
+	var texture = new THREE.Texture(canvas);
+	texture.needsUpdate = true;
+	var sprite_mat = new THREE.SpriteMaterial({map:texture});
+	var sprite = new THREE.Sprite(sprite_mat);
+	sprite.position.set(x,y,z);
+	sprite.scale.set(.01*r.width,.01*20);
+	//document.getElementById("x").appendChild(canvas);
+	return(sprite);
+	}
+
+var c_controls;
+var c_nu;
+var c_proj_mesh;
+var c_cross_geo;
+var c_sphere_geo;
+var c_sphere_mesh;
+var c_scene;
+var c_axes;
+
+function boot_c() {
+	var c_camera;
+	var c_renderer;
+
+	c_scene = new THREE.Scene();
+	c_camera = new THREE.OrthographicCamera(-4,4,4,-4,-40,40);
+	c_renderer = new THREE.WebGLRenderer({canvas:document.getElementById("c"),antialias:true});
+	c_controls = new THREE.OrbitControls(c_camera,c_renderer.domElement);
+	c_controls.addEventListener("change",function(){c_nu = true;});
+	c_controls.enableKeys = false;
+	
+	c_scene.background = new THREE.Color("white");
+
+	c_camera.position.set(10,10,10);
+	c_camera.lookAt(0,0,0);
+
+	var animate = function () {
+		requestAnimationFrame(animate);
+		if (c_nu) {
+			c_nu = c_controls.autoRotate;
+			c_renderer.render(c_scene, c_camera);
+			c_controls.update();
+			}
+		};
+
+	animate();
+
+	regeo_c();
+
+	}
+
+function regeo_c() {
+	//called any time the number of vertices of any geometry MUST change.
+	//specifically, if a,b change.
+	//this routine should only *set up* dynamic geometry
+	//update_c() (called at the end) will fill in the details.
+
+	var n = 200;
+	var i,j,k;
+
+	var dim = Number(document.getElementById("c_dim").value);
+
+	var multiplicity = 2;
+
+	c_scene.remove.apply(c_scene, c_scene.children);
+
+	var c_light = new THREE.DirectionalLight(0xFFFFFF);
+	c_light.position.set(10,10,10);
+	c_scene.add(c_light);
+
+	c_cross_geo = new THREE.Geometry();
+	for (i = 0; i < n*multiplicity; i++) {
+		c_cross_geo.vertices.push(new THREE.Vector3(0,0,0));
+		c_cross_geo.colors.push(new THREE.Color(0,0,0));
+		}
+	var c_cross_mat = new THREE.PointsMaterial({size:4,vertexColors:THREE.VertexColors});
+	var c_cross_mesh = new THREE.Points(c_cross_geo,c_cross_mat);
+	c_scene.add(c_cross_mesh);
+
+	var c_proj_geo = new THREE.Geometry();
+	var t;
+	for (k = 0; k < multiplicity; k++) {
+		for (i = 0; i < n; i++) {
+			for (j = 0; j < n; j++) {
+				t = params(2,2,dim,i/50-2,j/50-2,k);
+				c_proj_geo.vertices.push(new THREE.Vector3(t[0],i/50-2,t[1]));
+				if (i > 0 && j > 0 && i != 100 && j != 100) {
+					c_proj_geo.faces.push(new THREE.Face3(k*n*n+i*n+j,k*n*n+(i-1)*n+j,k*n*n+(i-1)*n+(j-1)));
+					c_proj_geo.faces.push(new THREE.Face3(k*n*n+i*n+j,k*n*n+i*n+(j-1),k*n*n+(i-1)*n+(j-1)));
+					}
+				}
+			}
+		}
+	var c_proj_mat = new THREE.MeshNormalMaterial({side:THREE.DoubleSide,transparent:true,opacity:.5});
+	c_proj_mesh = new THREE.Mesh(c_proj_geo,c_proj_mat);
+	c_scene.add(c_proj_mesh);
+	c_proj_geo.computeFaceNormals();
+	
+
+	c_sphere_geo = new THREE.SphereGeometry(1,32,32);
+	var c_sphere_mat = new THREE.MeshLambertMaterial({transparent:true,opacity:.7});
+	c_sphere_mesh = new THREE.Mesh(c_sphere_geo,c_sphere_mat);
+	c_scene.add(c_sphere_mesh);
+
+	c_axes = new THREE.Group();
+	c_axes.add(new THREE.AxesHelper(1));
+	c_axes.add(makeText(axlab(dim,0),1,0,0));
+	c_axes.add(makeText(axlab(dim,1),0,1,0));
+	c_axes.add(makeText(axlab(dim,2),0,0,1));
+	c_scene.add(c_axes);
+
+	update_c();
+
+	}
+
+function update_c() {
+	var n = 200;
+	var i,j,k;
+	var t;
+
+	var dim = Number(document.getElementById("c_dim").value);
+	var sl = Number(document.getElementById("c_sl").value);
+	document.getElementById("c_sln").innerHTML = sl;
+
+	var multiplicity = 2;
+
+	for (i = 0; i < n; i++) {
+		for (k = 0; k < multiplicity; k++) {
+			t = params(2,2,dim,i/50-2,sl,k);
+			c_cross_geo.vertices[k*n+i].copy(new THREE.Vector3(t[0],i/50-2,t[1]));
+			c_cross_geo.colors[k*n+i] = new THREE.Color("hsl("+90*k+",100%,50%)");
+			}
+		}
+
+	c_cross_geo.verticesNeedUpdate = true;
+	c_cross_geo.colorsNeedUpdate = true;
+
+	var r = Number(document.getElementById("c_r").value);
+	if (Math.abs(r) >= Math.abs(sl) && document.getElementById("chk_c_sph").checked) {
+		c_sphere_mesh.visible = true;
+		var sc = Math.sqrt(r*r-sl*sl);
+		c_sphere_mesh.scale.set(sc,sc,sc);
+		}
+	else {
+		c_sphere_mesh.visible = false;
+		}
+
+	c_proj_mesh.visible = document.getElementById("chk_c_proj").checked;
+
+	c_axes.visible = document.getElementById("chk_c_axes").checked;
+
+	c_controls.autoRotate = document.getElementById("chk_c_rot").checked;
+
+	c_nu = true;
+
+	}
+
+function boot() {
+	bootkatex();
+	boot_c();
+	}
+
+</script>
+
+<style>
+</style>
+
+</head>
+<body onload="boot()">
+Let's take a look at the solutions to the equation:
+<h1 class="k" title="x^2 + y^2 = 1"></h1>
+
+<canvas id="c" width=500 height=500 style="border:1px solid"></canvas><br>
+<select id="c_dim" onchange="regeo_c()">
+<option value=1 selected>Re(x) cross sections</option>
+<option value=2>Im(x) cross sections</option>
+<option value=3>Re(y) cross sections</option>
+<option value=4>Im(y) cross sections</option>
+</select> <input type="range" style="width:200px" min=-2 max=2 step=.001 value=1 id="c_sl" oninput="update_c()"> <span id="c_sln"> </span> <br>
+<input type="checkbox" id="chk_c_proj" onchange="update_c()"> Show Projection (union of all cross sections) <br>
+<input type="checkbox" id="chk_c_rot" onchange="update_c()"> Auto-rotate around conjugate axis <br>
+<input type="checkbox" id="chk_c_sph" onchange="update_c()"> Show hypersphere of radius <input type = "number" id="c_r" min=0 
+value=1 step=.05 style="width:4em" oninput="update_c()"><br>
+<input type="checkbox" id="chk_c_axes" onchange="update_c()"> Show and label axes </br>
+
+</body>
+
+</html>

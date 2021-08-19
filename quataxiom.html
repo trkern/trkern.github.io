@@ -9,7 +9,10 @@
 <script src="tkas.js"></script>
 <script>
 
+var parseopts = {consts:["i","j","k"],vare:true,negmagic:true}
+var ruleopts = {consts:["i","j","k"],realmatches:["r"],vare:true,negmagic:true}
 
+var gpopup;
 
 var ruleinputlist = [];
 var rulenamelist = [];
@@ -18,6 +21,7 @@ var historyconnectoroptions = {};
 
 var currentformulaholder = false;
 var historylist = [];
+var protohistorylist = [];
 //an element of historylist has:
 //T: the tkas ast
 //rulename: the name of the rule applied
@@ -25,17 +29,18 @@ var historylist = [];
 //connectiondata: data to create the svg connector
 //expander: historylist you could replace this element of the historylist with to produce an expanded historylist
 //expanded: keeps track of if this historylist node is expanded
+//contracter: after historylist has been expanded, marks the last entry of an expanded bit
+//lix: only for after historylist has been expanded, used to refer to the original historylist
 
 function applyrule(R,L,rname) {
 	if (!L) {L = []};
-	var currentT = historylist[historylist.length-1].T;
-	console.log(R,currentT,L);
+	var currentT = protohistorylist[protohistorylist.length-1].T;
 	var newT = tkas_rule_simple_rule(R,currentT,L);
 	if (!newT) {
 		//can't apply rule, maybe throw an error message?
 		return; 
 		}
-	historylist.push({
+	protohistorylist.push({
 		T:newT,
 		rulename:rname,
 		connectiontype:"srule",
@@ -44,16 +49,228 @@ function applyrule(R,L,rname) {
 	update_html_from_historylist();
 	}
 
-function update_html_from_historylist() {
+function applyrulecalc(L) {
+	if (!L) {L = []}
+	var currentT = protohistorylist[protohistorylist.length-1].T;
+	var newT = tkas_rule_calculate(currentT,L);
+	if (!newT) {
+		return;
+		}
+	protohistorylist.push({
+		T:newT,
+		rulename:"calc",
+		connectiontype:"calc",
+		connectiondata:{R:"calc",L:L},
+		});
+	update_html_from_historylist();
+	}
+
+function applyrulercalc(L,S) {
+	if (!L) {L = []}
+	var currentT = protohistorylist[protohistorylist.length-1].T;
+	var newT = tkas_ptree_deep_replace(currentT,L,S.subs[1]);
+	if (!newT) {
+		return;
+		}
+	protohistorylist.push({
+		T:newT,
+		rulename:"uncalc",
+		connectiontype:"uncalc",
+		connectiondata:{R:"uncalc",L:L},
+		});
+	update_html_from_historylist();
+	}
+
+function applyruleassoc(R,L) {
+	if (!L) {L = []};
+	var currentT = protohistorylist[protohistorylist.length-1].T;
+	var pa = pathassoc(R.subs[0],R.subs[1]);
+	if (!pa) {return;}
+	var minihlist = [];
 	var i;
-	var str = "<table style='border-spacing:10px'>";
+	for (i = 0; i < pa.length; i++) {
+		minihlist.push({
+			T:pa[i].result,
+			rulename:pa[i].rn,
+			connectiontype:"srule",
+			connectiondata:{R:pa[i].rule,L:pa[i].lix},
+			});
+		}
+	var overallrule = fakecombinerules(R);
+	console.log(tstfy(overallrule));
+	protohistorylist.push({
+		T:R.subs[1],
+		rulename:"Additive Associativity",
+		connectiontype:"srule",
+		connectiondata:{R:overallrule,L:L},
+		expanded:false,
+		expander:minihlist,
+		});
+	update_html_from_historylist();
+	}
+
+function commrule(R) {
+	var lhs = R.subs[0];
+	var rhs = R.subs[1];
+	if (lhs.op != "ADD" || rhs.op != "ADD") {return(false);}
+	if (lhs.subs.length != rhs.subs.length) {return(false);}
+	var rmatches = [];
+	var lmatches = [];
+	var i,j;
+	for (i = 0; i < lhs.subs.length; i++) {
+		for (j = 0; j < rhs.subs.length; j++) {
+			if (tkas_ptree_equiv(lhs.subs[i],rhs.subs[j]) && !(j in rmatches)) {
+				rmatches[j] = i;
+				lmatches[i] = j;
+				break;
+				}
+			}
+		if (!(i in lmatches)) {return(false);}
+		}
+	for (j = 0; j < rhs.subs.length; j++) {
+		if (!(j in rmatches)) {return(false);}
+		}
+	var rval = {op:"REL",c:"EQ",subs:[{op:"ADD",subs:[]},{op:"ADD",subs:[]}]};
+	for (i = 0; i < lhs.subs.length; i++) {
+		rval.subs[0].subs.push(dummyvar(i));
+		rval.subs[1].subs.push(dummyvar(rmatches[i]));
+		}
+	return(rval);
+	}
+
+function applyrulecomm(R,L) {
+	if (!L) {L = []};
+	var currentT = protohistorylist[protohistorylist.length-1].T;
+	var R1 = commrule(R);
+	if (!R1) {return;}
+	var newT = tkas_rule_simple_rule(R1,currentT,L);
+	if (!newT) {
+		//can't apply rule, maybe throw an error message?
+		return; 
+		}
+	protohistorylist.push({
+		T:newT,
+		rulename:"comm",
+		connectiontype:"srule",
+		connectiondata:{R:R1,L:L},
+		});
+	update_html_from_historylist();
+	}
+
+function applyrulemult(L) {
+	if (!L) {L = []};
+	var currentT = protohistorylist[protohistorylist.length-1].T;
+	var i;
+	var newT = false;
+	for (i = 0; i < qmrs.length; i++) {
+		if (tkas_rule_simple_rule(tkas_parse(qmrs[i],parseopts),currentT,L)) {
+			newT = tkas_rule_simple_rule(tkas_parse(qmrs[i],parseopts),currentT,L);
+			}
+		}
+	if (!newT) {
+		//can't apply rule, maybe throw an error message?
+		return; 
+		}
+	protohistorylist.push({
+		T:newT,
+		rulename:"Multiplication Table",
+		connectiontype:"calc",
+		connectiondata:{R:"calc",L:L},
+		});
+	update_html_from_historylist();
+	}
+
+function fakeadditivevarify(T,i) {
+	if (T.op != "ADD") {return([i+1,dummyvar(i)])}
+	var j;
+	var rval = {op:"ADD", subs:[]}
+	for (j = 0; j < T.subs.length; j++) {
+		var k = fakeadditivevarify(T.subs[j],i);
+		i = k[0];
+		rval.subs.push(k[1]);
+		}
+	return([i,rval]);
+	}
+
+function fakecombinerules(R) {
+	var r0 = fakeadditivevarify(R.subs[0],0)[1];
+	var r1 = fakeadditivevarify(R.subs[1],0)[1];
+	return({op:"REL",c:"EQ",subs:[r0,r1]});
+	}
+
+function expandertoggle(e,six) {
+	var L = tkas_lix_from_six(six);
+	var i;
+	var pointer = protohistorylist;
+	console.log(six);
+	console.log(L);
+	console.log(pointer);
+	for (i = 0; i < L.length-1; i++) {
+		pointer = pointer[L[i]].expander;
+		console.log(pointer);
+		}
+	pointer[L[L.length-1]].expanded = !pointer[L[L.length-1]].expanded;
+	update_html_from_historylist();
+	}
+
+var ehltest = [
+	{c:"a"},
+	{c:"b"},
+	{c:"c"},
+	{c:"d",expanded:true,expander:[
+		{c:"e"},
+		{c:"f"},
+		{c:"g",expanded:true,expander:[
+			{c:"h"}
+			]},
+		{c:"i"},
+		]},
+	{c:"j"}
+	];
+
+function expand_historylist(hl,L) { 
+	if (!L) {L = []};
+	//expands historylist hl based on what has .expanded=true
+	//adds a new property .lix indicating how to get there
+	var j,v;
+	var rval = [];
+	for (j = 0; j < hl.length; j++) {
+		if (hl[j].expanded) {
+			var r = expand_historylist(hl[j].expander,L.concat([j]));
+			r[r.length-1].contracter = true;
+			rval = rval.concat(r);
+			}
+		else {
+			var a = Object.assign({lix:L.concat([j])},hl[j]);
+			rval.push(a);
+			}
+		}
+	return(rval);
+	}
+
+function update_html_from_historylist() {
+	historylist = expand_historylist(protohistorylist);
+	if (historylist.length == 0) {return;}
+	var i;
+	var str = "<table style='border-spacing:10px "+historyconnectoroptions.linespacing+"px'>";
 	for (i = 0; i < historylist.length; i++) {
 		str += "<tr><td>"
 		str += tkas_render(historylist[i].T,{id:"history"+i});
 		str += "</td><td>";
 		str += historylist[i].rulename;
+		if ("expander" in historylist[i]) {
+			str += "<button onclick='expandertoggle(event,\""+tkas_six_from_lix(historylist[i].lix)+"\")'>";
+			if (historylist[i].expanded) {str += "-"} //???????????
+			else {str += "+"}
+			str += "</button>";
+			}
+		if ("contracter" in historylist[i]) {
+			str += "<button onclick='expandertoggle(event,\""+tkas_six_from_lix(historylist[i].lix.slice(0,-1))+"\")'>";
+			str += "-";
+			str += "</button>";
+			}
 		str += "</td></tr>";
-		if (historylist[i].connectiontype == "srule") {
+		if (historylist[i].connectiontype == "srule" || historylist[i].connectiontype == "calc" || historylist[i].connectiontype == "uncalc") {
 			tkas_delay_rule_connect(historylist[i-1].T,"Fhistory"+(i-1),historylist[i].T,"Fhistory"+i,historylist[i].connectiondata.R,historylist[i].connectiondata.L,historyconnectoroptions,"history");
 			}
 		} 
@@ -62,15 +279,216 @@ function update_html_from_historylist() {
 	i = historylist.length-1;
 	currentformulaholder="Fhistory"+i;
 	tkas_highlight(["Fhistory"+i],historylist[i].T,{select:true});
+	requestAnimationFrame(activate_popup_menu);
 	}
 
 function donewform() {
 	var str = document.getElementById("newform").value;
-	historylist.push({
-		T:tkas_parse(str),
+	protohistorylist.push({
+		T:tkas_parse(str,parseopts),
 		rulename:"start"
 		});
 	update_html_from_historylist();
+	}
+
+function activate_popup_menu() {
+	var i;
+	var hi = historylist.length-1;
+	var T = historylist[hi].T;
+	var l = tkas_lix_list(T);
+	var id;
+	for (i = 0; i < l.length; i++) {
+		id = tkas_id_from_tag_and_lix("Fhistory"+hi,l[i]);
+		document.getElementById(id).addEventListener("focus", popup_menu);
+		document.getElementById(id).addEventListener("blur", remove_popup_menu);
+		}
+	}
+
+function remove_popup_menu(e) {
+	var l = e.target.getElementsByClassName("menu");
+	if (l[0]) {l[0].remove()}
+	}
+
+function get_applicable_rules(T) {
+	var i;
+	var rval = [];
+	for (i = 0; i < ruleinputlist.length; i++) {
+		if (ruleinputlist[i] == "calc") {
+			if (tkas_rule_calculate(T,[])) {
+				rval.push(i);
+				}
+			}
+		else if (ruleinputlist[i] == "assoc") {
+			if (isassocapplicable(T)) {
+				rval.push(i);
+				}
+			}
+		else if (ruleinputlist[i] == "Multiplication Table") {
+			if (ismultapplicable(T)) {
+				rval.push(i);
+				}
+			}
+		else {
+			if (tkas_parse(ruleinputlist[i],ruleopts) && tkas_rule_simple_rule(tkas_parse(ruleinputlist[i],ruleopts),T,[])) {
+				rval.push(i);
+				}
+			}
+		}
+	return(rval);
+	}
+
+function get_applicable_rulers(T) {
+	var i;
+	var rval = [];
+	for (i = 0; i < ruleinputlist.length; i++) {
+		if (ruleinputlist[i] == "calc") {
+			if (T.op == "NUM") {
+				rval.push(i);
+				}
+			}
+		else {
+			if (tkas_parse(ruleinputlist[i],ruleopts)) {
+				var R = tkas_parse(ruleinputlist[i],ruleopts);
+				if (R.op == "REL" && R.c == "EQ") {
+					var R2 = {op:"REL", c:"EQ", subs:[R.subs[1],R.subs[0]]};
+					if (tkas_rule_simple_rule(R2,T,[])) {
+						if (tstfy(tkas_rule_simple_rule(R2,T,[])) != tstfy(tkas_rule_simple_rule(R,T,[]))) {
+							rval.push(i);
+							}
+						}
+					}
+				}
+			}
+		}
+	return(rval);
+	}
+
+function popup_menu(e) {
+	if (gpopup == 0) {return;}
+	var hi = historylist.length-1;
+	var L = tkas_highlight_get_selected(["Fhistory"+hi]);
+	var T = historylist[hi].T;
+	var S = tkas_ptree_deep_sub(T,L);
+	var gar = get_applicable_rules(S);
+	var str = "<table border=1 class='popup'>";
+	var newT;
+	for (i = 0; i < gar.length; i++) {
+		var j = gar[i];
+		if (ruleinputlist[j] == "calc") {
+			newT = tkas_rule_calculate(T,L);
+			str += "<tr class='melt'><td>";
+			str += "<span style='display:block' onclick='rulebutt("+j+",\""+e.target.id+"\")'>";
+			str += tkas_render(tkas_ptree_deep_sub(newT,L),{rendertype:"string"});
+			str += "</span>";
+			str += "</td><td>";
+			str += "<span style='display:block' onclick='rulebutt("+j+",\""+e.target.id+"\")'>";
+			str += rulenamelist[j];
+			str += "</span>";
+			str += "</td></tr>";
+			}
+		else if (ruleinputlist[j] == "assoc") {
+			//newT = tkas_rule_calculate(T,L);
+			str += "<tr class='melt'><td>";
+			str += "<span style='display:block' onclick='rulebutt("+j+",\""+e.target.id+"\")'>";
+			str += "assoc"
+			str += "</span>";
+			str += "</td><td>";
+			str += "<span style='display:block' onclick='rulebutt("+j+",\""+e.target.id+"\")'>";
+			str += rulenamelist[j];
+			str += "</span>";
+			str += "</td></tr>";
+			}
+		else if (ruleinputlist[j] == "comm") {
+			//newT = tkas_rule_calculate(T,L);
+			str += "<tr class='melt'><td>";
+			str += "<span style='display:block' onclick='rulebutt("+j+",\""+e.target.id+"\")'>";
+			str += "comm"
+			str += "</span>";
+			str += "</td><td>";
+			str += "<span style='display:block' onclick='rulebutt("+j+",\""+e.target.id+"\")'>";
+			str += rulenamelist[j];
+			str += "</span>";
+			str += "</td></tr>";
+			}
+		else if (ruleinputlist[j] == "Multiplication Table") {
+			var i;
+			var newT = false;
+			for (i = 0; i < qmrs.length; i++) {
+				if (tkas_rule_simple_rule(tkas_parse(qmrs[i],parseopts),T,L)) {
+					newT = tkas_rule_simple_rule(tkas_parse(qmrs[i],parseopts),T,L);
+					}
+				}
+			str += "<tr class='melt'><td>";
+			str += "<span style='display:block' onclick='rulebutt("+j+",\""+e.target.id+"\")'>";
+			str += tkas_render(tkas_ptree_deep_sub(newT,L),{rendertype:"string"});
+			str += "</span>";
+			str += "</td><td>";
+			str += "<span style='display:block' onclick='rulebutt("+j+",\""+e.target.id+"\")'>"
+			str += rulenamelist[j];
+			str += "</span>";
+			str += "</td></tr>";	
+			}
+		else {
+			newT = tkas_rule_simple_rule(tkas_parse(ruleinputlist[j],ruleopts),T,L);
+			str += "<tr class='melt'><td>";
+			str += "<span style='display:block' onclick='rulebutt("+j+",\""+e.target.id+"\")'>";
+			str += tkas_render(tkas_ptree_deep_sub(newT,L),{rendertype:"string"});
+			str += "</span>";
+			str += "</td><td>";
+			str += "<span style='display:block' onclick='rulebutt("+j+",\""+e.target.id+"\")'>"
+			str += rulenamelist[j];
+			str += "</span>";
+			str += "</td></tr>";
+			}
+		}
+	var garr = get_applicable_rulers(S);
+	console.log(garr);
+	for (i = 0; i < garr.length; i++) {
+		var j = garr[i];
+		if (ruleinputlist[j] == "calc") {
+			str += "<tr class='melt'><td>";
+			str += "<span style='display:block' onclick='rulerbutt("+j+",\""+e.target.id+"\")'>";
+			str += "calc";
+			str += "</span>";
+			str += "</td><td>";
+			str += "<span style='display:block' onclick='rulerbutt("+j+",\""+e.target.id+"\")'>";
+			str += "Break Apart";
+			str += "</span>";
+			str += "</td></tr>";
+			}
+		else {
+			var R = tkas_parse(ruleinputlist[j],ruleopts);
+			var R2 = {op:"REL", c:"EQ", subs:[R.subs[1],R.subs[0]]};
+			console.log(tstfy(R),tstfy(R2));
+			newT = tkas_rule_simple_rule(R2,T,L);
+			str += "<tr class='melt'><td>";
+			str += "<span style='display:block' onclick='rulerbutt("+j+",\""+e.target.id+"\")'>";
+			str += tkas_render(tkas_ptree_deep_sub(newT,L),{rendertype:"string"});
+			str += "</span>";
+			str += "</td><td>";
+			str += "<span style='display:block' onclick='rulerbutt("+j+",\""+e.target.id+"\")'>"
+			str += rulenamelist[j];
+			str += "</span>";
+			str += "</td></tr>";
+			}
+
+		}
+
+	str += "</table>";
+	var rect = e.target.getBoundingClientRect();
+	ephemeral_element(rect.left+window.scrollX,rect.top+window.scrollY,str,e.target);
+	}
+
+function ephemeral_element(x,y,str,el) {
+	var menu = document.createElement("span");
+	menu.classList.add("menu");
+	menu.style.position = "fixed";
+	menu.style.bottom = "calc(100vh - " + y + "px)";
+	menu.style.left = x + "px";
+	menu.style.backgroundColor = "white";
+	menu.style.zIndex = 2;
+	menu.innerHTML = str;
+	el.appendChild(menu);
 	}
 
 function rulekeydown(e,i) { //exclusively for handling pressing special keys.
@@ -153,16 +571,76 @@ function ruleninput(e,i) {
 	rulenamelist[i] = e.target.value;
 	}
 
-function rulebutt(i) {
+function rulebutt(i,id) {
 	if (!currentformulaholder) {return;}
 	var rt = ruleinputlist[i];
 	var rn = rulenamelist[i];
-	if (rt == "calculator") {
-		//calculator code goes here
+	var L
+	if (!id) {
+		L = tkas_highlight_get_selected([currentformulaholder]);
 		}
-	var R = tkas_parse(rt);
-	var L = tkas_highlight_get_selected([currentformulaholder]);
-	applyrule(R,L,rn);
+	else {
+		
+		L = tkas_lix_from_id(id);
+		}
+	if (rt == "calc") {
+		//calculator code goes here
+		applyrulecalc(L);
+		}
+	else if (rt == "assoc") {
+		var currentT = historylist[historylist.length-1].T;
+		var R = askruleassoc(currentT,L);
+		applyruleassoc(R,L);
+		}
+	else if (rt == "comm") {
+		var currentT = historylist[historylist.length-1].T;
+		var R = askrulecomm(currentT,L);
+		applyrulecomm(R,L);
+		}
+	else if (rt == "Multiplication Table") {
+		applyrulemult(L);
+		}
+	else {
+		var R = tkas_parse(rt,ruleopts);
+		applyrule(R,L,rn);
+		}
+	}
+
+function rulerbutt(i,id) {
+	if (!currentformulaholder) {return;}
+	var rt = ruleinputlist[i];
+	var rn = rulenamelist[i];
+	var L
+	if (!id) {
+		L = tkas_highlight_get_selected([currentformulaholder]);
+		}
+	else {
+		
+		L = tkas_lix_from_id(id);
+		}
+	if (rt == "calc") {
+		var currentT = historylist[historylist.length-1].T;
+		var S = askruleuncalc(currentT,L);
+		applyrulercalc(L,S);
+		}
+	else if (rt == "assoc") {
+		var currentT = historylist[historylist.length-1].T;
+		var R = askruleassoc(currentT,L);
+		applyruleassoc(R,L);
+		}
+	else if (rt == "Multiplication Table") {
+		applyrulemult(L);
+		}
+	else if (rt == "comm") {
+		var currentT = historylist[historylist.length-1].T;
+		var R = askrulecomm(currentT,L);
+		applyrulecomm(R,L);
+		}
+	else {
+		var R = tkas_parse(rt,ruleopts);
+		var R2 = {op:"REL",c:"EQ",subs:[R.subs[1],R.subs[0]]};
+		applyrule(R2,L,rn);
+		}
 	}
 
 function update_html_from_ruleinputlist() {
@@ -170,7 +648,8 @@ function update_html_from_ruleinputlist() {
 	var str = "<table border=1>";
 	for (i = 0; i < ruleinputlist.length; i++) {
 		str += "<tr><td>";
-		str += "<button class='rulebutt' onmousedown='rulebutt("+i+")'>Apply</button>";
+		str += "<button class='rulebutt' onmousedown='rulebutt("+i+")'>&rarr;</button>";
+		str += "<button class='rulebutt' onmousedown='rulerbutt("+i+")'>&larr;</button>";
 		str += "<input class='ruletext' id='r"+i+"' onkeydown='rulekeydown(event,"+i+")' oninput='ruleinput(event,"+i+")' value='"+ruleinputlist[i]+"'>";
 		str += "<input class='rulename' id='rn"+i+"' onkeydown='rulenkeydown(event,"+i+")' oninput='ruleninput(event,"+i+")' value='"+rulenamelist[i]+"'>";
 		str += "</td></tr>";
@@ -185,12 +664,304 @@ function newrule() {
 	update_html_from_ruleinputlist();
 	}
 
+function ismultapplicable(T) {
+	var i;
+	for (i = 0; i < qmrs.length; i++) {
+		if (tkas_rule_simple_rule(tkas_parse(qmrs[i],parseopts),T,[])) {return(true);}
+		}
+	return(false);
+	}
+
+function isassocapplicable(T) {
+	var k = T.op;
+	if (k == "ADD" || k == "MUL") {
+		var i;
+		if (T.subs.length > 2) {return(true);}
+		for (i = 0; i < T.subs.length; i++) {
+			if (T.subs[i].op == k) {
+				return(true);
+				}
+			}
+		}
+	return(false);
+	}
+
+function askruleassoc(T,L) {
+	var S = tkas_ptree_deep_sub(T,L);
+	var sstr = tkas_render(S,{rendertype:"string"});
+	var r = window.prompt("Please associate:\n"+sstr,sstr);
+	return(tkas_parse(sstr+"="+r,parseopts));
+	}
+
+function askruleuncalc(T,L) {
+	var S = tkas_ptree_deep_sub(T,L);
+	var sstr = tkas_render(S,{rendertype:"string"});
+	var r = window.prompt("Please break apart:\n"+sstr,sstr);
+	return(tkas_parse(sstr+"="+r,parseopts));
+	}
+
+function askrulecomm(T,L) {
+	var S = tkas_ptree_deep_sub(T,L);
+	var sstr = tkas_render(S,{rendertype:"string"});
+	var r = window.prompt("Please commute:\n"+sstr,sstr);
+	return(tkas_parse(sstr+"="+r,parseopts));
+	}
+
+function MONAD(f) { //TODO: add to tkas.js as tkas_text_monad. Is this a monad?
+	return(function(x){return(tkas_render(f(tkas_parse(x,parseopts)),{rendertype:"string"}))});
+	}
+
+function tstfy(T) {
+	return(tkas_render(T,{rendertype:"string"}));
+	}
+
+function dummyvar(i) {
+	return({op:"VAR",c:"v"+i});
+	}
+
+function leftassociaterule(op,n,k) {
+	var i;
+	var rvall = {op:op, subs:[dummyvar(0),dummyvar(1)]};
+	var rvalr = {op:op, subs:[dummyvar(0),dummyvar(1)]};
+	for (i = 2; i < n; i++) {
+		rvall.subs.push(dummyvar(i));
+		rvalr = {op:op, subs:[rvalr,dummyvar(i)]};
+		}
+	if (k) {
+		return({op:"REL",c:"EQ",subs:[rvall,rvalr]});
+		}
+	else {
+		return({op:"REL",c:"EQ",subs:[rvalr,rvall]});
+		}
+	}
+
+function leftassociate(T) {
+	T = tkas_ptree_copy(T);
+	if (T.subs.length < 2) {return(T)}
+	var i;
+	var rval = {op:T.op, subs:[T.subs[0],T.subs[1]]};
+	for (i = 2; i < T.subs.length; i++) {
+		rval = {op:T.op, subs:[rval,T.subs[i]]};
+		}
+	return([rval,leftassociaterule(T.op,T.subs.length,1)]);
+	}
+
+function deleftassociatedepth(T) {
+	T = tkas_ptree_copy(T);
+	if (!("subs" in T)) {return(0);}
+	var op = T.op;
+	var rsubs = [];
+	var zoomT = T;
+	var i = 0;
+	while (true) {
+		i++;
+		if (zoomT.op != op) {rsubs = [zoomT].concat(rsubs); break;}
+		if (zoomT.subs.length != 2) {rsubs = [zoomT].concat(rsubs); break};
+		rsubs = [zoomT.subs[1]].concat(rsubs);
+		zoomT = zoomT.subs[0];
+		}
+	return(i);
+	}
+
+function deleftassociate(T,intensity) {
+	T = tkas_ptree_copy(T);
+	if (!("subs" in T)) {return([T,tkas_parse("x=x",parseopts)]);}
+	var op = T.op;
+	var rsubs = [];
+	var zoomT = T;
+	var i;
+	for (i = 0; i < intensity; i++) {
+		if (zoomT.op != op) {break;}
+		if (zoomT.subs.length != 2) {break;}
+		rsubs = [zoomT.subs[1]].concat(rsubs);
+		zoomT = zoomT.subs[0];
+		}
+	rsubs = [zoomT].concat(rsubs);
+	if (rsubs.length <= 1) {return([T,tkas_parse("x=x",parseopts)]);}
+	var rval = {op:op, subs:rsubs};
+	return([rval,leftassociaterule(T.op,i,0)]);
+	}
+
+function strictassociafrob(T) { //only for additive associativity for now
+	var rval = [];
+	var r1 = tkas_parse("(x+y)+z = x+(y+z)",parseopts);
+	var r2 = tkas_parse("x+(y+z) = (x+y)+z",parseopts);
+	var k;
+	var r;
+	k = tkas_rule_simple_rule(r1,T,[]);
+	if (k) {
+		rval.push({result:k,rule:r1,lix:[],rn:"(x+y)+z &rarr; x+(y+z)"});
+		}
+	k = tkas_rule_simple_rule(r2,T,[]);
+	if (k) {
+		rval.push({result:k,rule:r2,lix:[],rn:"x+(y+z) &rarr; (x+y)+z"});
+		}
+	if (T.op == "ADD" && T.subs.length > 2) {
+		k = leftassociate(T);
+		rval.push({result:k[0],rule:k[1],lix:[],rn:"x+y+...+z &rarr; (...(x+y)+...)+z"});
+		}
+	var d = deleftassociatedepth(T);
+	var i;
+	for (i = 2; i < d; i++) {
+		k = deleftassociate(T,i);
+		rval.push({result:k[0],rule:k[1],lix:[],rn:"(...(x+y)+...)+z &rarr; x+y+...+z"});
+		}
+	return(rval);
+	}
+
+function associafrob(T) { //only for additive associativity for now
+	var rval = [];
+	var r1 = tkas_parse("(x+y)+z = x+(y+z)",parseopts);
+	var r2 = tkas_parse("x+(y+z) = (x+y)+z",parseopts);
+	var Llist = tkas_lix_list(T);
+	var L;
+	var k;
+	var r;
+	var i,j;
+	for (i = 0; i < Llist.length; i++) {
+		L = Llist[i];
+		var S = tkas_ptree_deep_sub(T,L);
+		var r = strictassociafrob(S);
+		for (j = 0; j < r.length; j++) {
+			rval.push({
+				original: T,
+				str: tstfy(T),
+				result: tkas_ptree_deep_replace(T,L,r[j].result),
+				resultstr: tstfy(tkas_ptree_deep_replace(T,L,r[j].result)),
+				rule: r[j].rule,
+				lix: L,
+				rn: r[j].rn
+				});
+			}
+		}
+	return(rval);
+	}
+
+function pathassoc(startT,endT) {
+	var reachables = {};
+	var oldedge = [];
+	var newedge = [startT];
+	var s;
+	var ctr = 0;
+	var i,j;
+	while (ctr < 10000) {
+		ctr++;
+		oldedge = [];
+		for (i = 0; i < newedge.length; i++) {
+			console.log(ctr,tstfy(newedge[i]));
+			oldedge.push(newedge[i]);
+			}
+		newedge = [];
+		for (i = 0; i < oldedge.length; i++) {
+			var r = associafrob(oldedge[i]);
+			for (j = 0; j < r.length; j++) {
+				var s = tstfy(r[j].result);
+				if (!(s in reachables)) {
+					reachables[s] = r[j];
+					newedge.push(r[j].result);
+					}
+				if (s == tstfy(endT)) { //done -- must return correct path
+					var rval = [];
+					var current = endT;
+					while (ctr < 10000) {
+						ctr++;
+						rval = [(reachables[tstfy(current)])].concat(rval);
+						//rval = [tstfy(current)].concat(rval);
+						current = reachables[tstfy(current)].original;
+						if (tstfy(current) == tstfy(startT)) {return(rval);}
+						}
+					}
+				}
+			}
+		}
+	}
+
+var qmrs = [
+	"ii=-1",
+	"ij=k",
+	"ik=-j",
+	"ji=-k",
+	"jj=-1",
+	"jk=i",
+	"ki=j",
+	"kj=-i",
+	"kk=-1"
+	];
+
+function mt() {
+	var i;
+	for (i = 0; i < qmrs.length; i++) {
+		ruleinputlist.push(qmrs[i]);
+		rulenamelist.push("Quaternion Multiplication");
+		}
+	update_html_from_ruleinputlist();
+	}
+
+function opts() {
+	var bracketconst = document.getElementById("bracketconst").value;
+	var base = document.getElementById("base").value;
+	var connectors = document.getElementById("connectors").value;
+	var bezierconst = document.getElementById("bezierconst").value;
+	var linewidth = document.getElementById("linewidth").value;
+	var bottomgap = document.getElementById("bottomgap").value;
+	var linespacing = document.getElementById("linespacing").value;
+	var fontsize = document.getElementById("fontsize").value;
+	var calcbezierconst = document.getElementById("calcbezierconst").value;
+	historyconnectoroptions = {base:base,connectors:connectors,bezierconst:bezierconst,bracketconst:bracketconst,linewidth:linewidth,bottomgap:bottomgap,linespacing:linespacing,calcbezierconst:calcbezierconst};
+	document.getElementById("history").style.fontSize=fontsize+"%";
+	update_html_from_historylist();
+	gpopup = document.getElementById("popup").value;
+	}
+
+function makecam(id) {
+	const cam = document.getElementById("cam");
+	navigator.mediaDevices.getUserMedia({video: {deviceId: id}}).then(
+		function(stream) {
+			cam.srcObject = stream;
+			cam.play();
+			}
+		);
+	}
+
+function getids() {
+	navigator.mediaDevices.enumerateDevices().then(
+		function(devices) {
+			var i;
+			console.log(devices);
+			for (i = 0; i < devices.length; i++) {
+				if (devices[i].kind == "videoinput") {makecam(devices[i].groupId);}
+				}
+			}
+		)
+	}
+
+function bootcam() {
+	el = document.getElementById("cam");
+	el.innerHTML = "";
+	const cam = document.createElement("video");
+	el.insertAdjacentElement("beforeend",cam);
+		navigator.mediaDevices.getUserMedia({video:true, audio: false}).then(
+			function(stream) {
+				cam.style.width = "320px";
+				cam.style.height = "240px";
+				cam.srcObject = stream;
+				cam.play();
+				}
+			).catch(function(err) {
+			console.log(err);
+			});
+	}
+
 function boot() {
+	opts();
 	newrule();
 	}
 
 </script>
 <style>
+body {
+	font-family: sans-serif;
+	}
 .melt:hover {
 	background-color: #DDDDDD;
 	}
@@ -204,20 +975,44 @@ function boot() {
 .hov:hover {
 	background-color: red;
 	}
+input[type=number] {
+	width:3em;
+	}
+.qt {
+	border-collapse: collapse;
+	font-size: x-large;
+	}
+.qt tr:nth-child(1) td {
+	border-bottom: 3px solid;
+	}
+.qt td {
+	border: 1px solid gray;
+	text-align: center;
+	padding: 2px;
+	}
+.qt td:nth-child(1) {
+	border-right: 3px solid;
+	}
+.popup {
+	border:2px solid;
+	border-collapse:collapse;
+	}
+.popup td:nth-child(1) span {
+	padding-right:10px;
+	}
+.popup td {
+	border:1px solid gray;
+	}
 </style>
 </head>
-<body onload="boot()" style="font-size:x-large;">
+<body onload="boot()">
 
 <div style="display:flex; flex-flow:column; height:calc(100vh - 16px)">
  <div style="flex:0 1 auto">
 
-  <details> <summary> Help (Show/Hide) </summary>
-<p>
-The goal of this interactive is to see how the more general versions of rules are connected with their binary versions. For instance, you can see that the general version of associativity (the ability to freely shuffle parentheses around sums) follows from the binary version (a+b)+c = a+(b+c) and a convention regarding long sums. Here we use the left-associativity convention that abc means (ab)c, the same as lambda calculus.
-</p>
-<p>
-To get started, click on a subexpression of the formula at the bottom of the screen. If there are rules you can apply, a menu should pop up with a list of possibilities. You can also see a full list of rules this interactive knows about by changing the "show rules" option to include the "sidebar". Your first move should be to select the entire expression a+b+c below and apply the left-associativity "convention" to rewrite it as (a+b)+c. You can try problems that require a sequence of moves by using the "level select" menu below.
-</p>
+<h1>Quaternion Rules</h1>
+
+
  </div>
  <div style="flex: 1 1 auto; overflow:auto">
 <div style="display:flex; overflow:auto; flex-direction:column-reverse; height:100%">
@@ -235,6 +1030,32 @@ To get started, click on a subexpression of the formula at the bottom of the scr
 
 <div id="rulebar" style="position:fixed; right:0px; top:0px; width:auto;">
 </div>
+
+<div id="optsbar" style="position:fixed; right:0px; bottom:0px;">
+
+<button onclick="mt()">Multiplication Table</button>
+<table style='border: 1px solid' class='qt'>
+<tr><td>&times;</td><td>i</td><td>j</td><td>k</td></tr>
+<tr><td>i</td><td>-1</td><td>k</td><td>-j</td></tr>
+<tr><td>j</td><td>-k</td><td>-1</td><td>i</td></tr>
+<tr><td>k</td><td>j</td><td>-i</td><td>-1</td></tr>
+</table>
+
+<button onclick="bootcam()">Camera</button><br><br>
+Bracket height: <input id="bracketconst" type="number" oninput="opts()" value=.1 min=0 max=1 step=.02>
+<br>Brackets: <select id="base" oninput="opts()"><option value="brackets">Brackets</option><option value="rects">Rects</option><option value="lines">Lines</option></select>
+<br>Connectors: <select id="connectors" oninput="opts()"><option value="bezier">Bezier</option><option value="zigzag">Subway</option><option value="line">Line</option></select>
+<br>Bezier Constant: <input id="bezierconst" type="number" oninput="opts()" value=.4 step=.05>
+<br>Linewidth: <input id="linewidth" type="number" oninput="opts()" value=2 min=0 step=.5>
+<br>Calc connector length: <input id="bottomgap" type="number" oninput="opts()" value=.5 min=0 max=1 step=.1>
+<br>Calc Bezier Constant: <input id="calcbezierconst" type="number" oninput="opts()" value=.4 step=.05>
+<br>Line Spacing <input id="linespacing" type="number" oninput="opts()" value=10 min=0>
+<br>Font Size <input id="fontsize" type="number" oninput="opts()" value=200 step=20>
+<br>Popup Menu <select id="popup" oninput="opts()"><option value=2>Complex</option><option value=1>Simple</option><option value=0>None</option></select>
+
+</div>
+
+<span id="cam" style="position:fixed; width:320px; height:240px; bottom:0; right:0; z-index:1; pointer-events:none"></span>
 
 </body>
 </html>

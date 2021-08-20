@@ -19,6 +19,8 @@ var rulenamelist = [];
 
 var historyconnectoroptions = {};
 
+//(3+2i)(4+5j-2k)
+
 var currentformulaholder = false;
 var historylist = [];
 var protohistorylist = [];
@@ -89,17 +91,18 @@ function applyruleassoc(R,L) {
 	var minihlist = [];
 	var i;
 	for (i = 0; i < pa.length; i++) {
+		var newT = tkas_ptree_deep_replace(currentT,L,pa[i].result);
 		minihlist.push({
-			T:pa[i].result,
+			T:newT,
 			rulename:pa[i].rn,
 			connectiontype:"srule",
 			connectiondata:{R:pa[i].rule,L:pa[i].lix},
 			});
 		}
 	var overallrule = fakecombinerules(R);
-	console.log(tstfy(overallrule));
+	var newT = tkas_ptree_deep_replace(currentT,L,R.subs[1]);
 	protohistorylist.push({
-		T:R.subs[1],
+		T:newT,
 		rulename:"Additive Associativity",
 		connectiontype:"srule",
 		connectiondata:{R:overallrule,L:L},

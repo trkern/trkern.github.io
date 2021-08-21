@@ -9,8 +9,8 @@
 <script src="tkas.js"></script>
 <script>
 
-var parseopts = {consts:["i","j","k"],vare:true,negmagic:true}
-var ruleopts = {consts:["i","j","k"],realmatches:["r"],vare:true,negmagic:true}
+var parseopts = {consts:["i","j","k"],vare:true}
+var ruleopts = {consts:["i","j","k"],realmatches:["r"],vare:true}
 
 var gpopup;
 
@@ -19,7 +19,10 @@ var rulenamelist = [];
 
 var historyconnectoroptions = {};
 
-//(3+2i)(4+5j-2k)
+//(3+4i+5j+6k)(2+3i+4j+5k)+(2+3i+4j+5k)
+//(3+2i)(j-5k)
+//quaternion multiplication should show up as a calc rule???
+//tkas_parse("3k+10j+-15k") is wrong!
 
 var currentformulaholder = false;
 var historylist = [];
@@ -34,20 +37,61 @@ var protohistorylist = [];
 //contracter: after historylist has been expanded, marks the last entry of an expanded bit
 //lix: only for after historylist has been expanded, used to refer to the original historylist
 
+function huntvariables(T) {
+	var rval = {};
+	var i;
+	if ("subs" in T) {
+		for (i = 0; i < T.subs.length; i++) {
+			rval = Object.assign(rval,huntvariables(T.subs[i]));
+			}
+		return(rval);
+		}
+	else {
+		if (T.op == "VAR") {
+			rval[T.c] = true;
+			return(rval);
+			}
+		return({});
+		}
+	}
+
 function applyrule(R,L,rname) {
 	if (!L) {L = []};
 	var currentT = protohistorylist[protohistorylist.length-1].T;
-	var newT = tkas_rule_simple_rule(R,currentT,L);
+	var lvlist = huntvariables(R.subs[0]);
+	var rvlist = huntvariables(R.subs[1]);
+	var v;
+	var VM = {};
+	console.log(rvlist,lvlist);
+	for (v in rvlist) {
+		if (!(v in lvlist)) {
+			var str = window.prompt("Please enter a value for " + v + " in the rule " + tstfy(R) + ":");
+			var tT = tkas_parse(str,parseopts);
+			VM[v] = tT;
+			}
+		}
+	console.log(VM);
+	var newT = tkas_rule_simple_rule(R,currentT,L,VM);
 	if (!newT) {
 		//can't apply rule, maybe throw an error message?
 		return; 
 		}
-	protohistorylist.push({
-		T:newT,
-		rulename:rname,
-		connectiontype:"srule",
-		connectiondata:{R:R,L:L},
-		});
+	if (rname == "Quaternion Multiplication") {
+		protohistorylist.push({
+			T:newT,
+			rulename:rname,
+			connectiontype:"calc",
+			connectiondata:{R:"calc",L:L},
+			});
+		}
+	else {
+		protohistorylist.push({
+			T:newT,
+			rulename:rname,
+			connectiontype:"srule",
+			connectiondata:{R:R,L:L},
+			});
+		}
 	update_html_from_historylist();
 	}
 
@@ -113,6 +157,7 @@ function applyruleassoc(R,L) {
 	}
 
 function commrule(R) {
+	console.log(R);
 	var lhs = R.subs[0];
 	var rhs = R.subs[1];
 	if (lhs.op != "ADD" || rhs.op != "ADD") {return(false);}
@@ -177,6 +222,72 @@ function applyrulemult(L) {
 	protohistorylist.push({
 		T:newT,
 		rulename:"Multiplication Table",
+		connectiontype:"calc",
+		connectiondata:{R:"calc",L:L},
+		});
+	update_html_from_historylist();
+	}
+
+function coeff(T) {
+	console.log(T);
+	if (T.op == "NEG") {
+		return(-coeff(T.subs[0]));
+		}
+	if (T.op == "NUM") {
+		return(T.c);
+		}
+	if (T.op == "MUL") {
+		return(T.subs[0].c);
+		}
+	return(false);
+	}
+
+function getqcoeffs(T) {
+	var rval = [coeff(T.subs[0]),coeff(T.subs[1]),coeff(T.subs[2]),coeff(T.subs[3])];
+	return(rval);
+	}
+
+function coeffstotree(l) {
+	var rval = {op:"ADD", subs:[]};
+	rval.subs.push(tkas_parse(l[0].toString()));
+	rval.subs.push(tkas_parse(l[1].toString()+"i",{consts:["i"]}));
+	rval.subs.push(tkas_parse(l[2].toString()+"j",{consts:["j"]}));
+	rval.subs.push(tkas_parse(l[3].toString()+"k",{consts:["k"]}));
+	return(rval);
+	}
+
+function applyruleqcalc(L) {
+	if (!L) {L = [];}
+	var currentT = protohistorylist[protohistorylist.length-1].T;
+	var S = tkas_ptree_deep_sub(currentT,L);
+	var op = S.op;
+	var i0 = getqcoeffs(S.subs[0]);
+	var i1 = getqcoeffs(S.subs[1]);
+	var ir = [];
+	var i;
+	if (op == "ADD") {
+		for (i = 0; i < 4; i++) {
+			ir.push(i0[i]+i1[i]);
+			}
+		}
+	else if (op == "MUL") {
+		var a1 = i0[0];
+		var a2 = i1[0];
+		var b1 = i0[1];
+		var b2 = i1[1];
+		var c1 = i0[2];
+		var c2 = i1[2];
+		var d1 = i0[3];
+		var d2 = i1[3];
+		ir.push(a1*a2-b1*b2-c1*c2-d1*d2);
+		ir.push(a1*b2+b1*a2+c1*d2-d1*c2);
+		ir.push(a1*c2-b1*d2+c1*a2+d1*b2);
+		ir.push(a1*d2+b1*c2-c1*b2+d1*a2);
+		}
+	var newT = tkas_ptree_deep_replace(currentT,L,coeffstotree(ir));
+	protohistorylist.push({
+		T:newT,
+		rulename:"Quaternion Calculation",
 		connectiontype:"calc",
 		connectiondata:{R:"calc",L:L},
 		});
@@ -431,6 +542,19 @@ function popup_menu(e) {
 			str += "</span>";
 			str += "</td></tr>";	
 			}
+		else if (ruleinputlist[j] == "Quaternion Calculation") {
+			var i;
+			var newT = false;
+			str += "<tr class='melt'><td>";
+			str += "<span style='display:block' onclick='rulebutt("+j+",\""+e.target.id+"\")'>";
+			str += "Quaternion Calculation"
+			str += "</span>";
+			str += "</td><td>";
+			str += "<span style='display:block' onclick='rulebutt("+j+",\""+e.target.id+"\")'>"
+			str += rulenamelist[j];
+			str += "</span>";
+			str += "</td></tr>";	
+			}
 		else {
 			newT = tkas_rule_simple_rule(tkas_parse(ruleinputlist[j],ruleopts),T,L);
 			str += "<tr class='melt'><td>";
@@ -603,6 +727,9 @@ function rulebutt(i,id) {
 	else if (rt == "Multiplication Table") {
 		applyrulemult(L);
 		}
+	else if (rt == "qcalc") {
+		applyruleqcalc(L);
+		}
 	else {
 		var R = tkas_parse(rt,ruleopts);
 		applyrule(R,L,rn);
@@ -618,7 +745,6 @@ function rulerbutt(i,id) {
 		L = tkas_highlight_get_selected([currentformulaholder]);
 		}
 	else {
-		
 		L = tkas_lix_from_id(id);
 		}
 	if (rt == "calc") {
@@ -910,10 +1036,28 @@ function opts() {
 	var linespacing = document.getElementById("linespacing").value;
 	var fontsize = document.getElementById("fontsize").value;
 	var calcbezierconst = document.getElementById("calcbezierconst").value;
-	historyconnectoroptions = {base:base,connectors:connectors,bezierconst:bezierconst,bracketconst:bracketconst,linewidth:linewidth,bottomgap:bottomgap,linespacing:linespacing,calcbezierconst:calcbezierconst};
+	historyconnectoroptions = {base:base,connectors:connectors,bezierconst:bezierconst,bracketconst:bracketconst,linewidth:linewidth,bottomgap:bottomgap,linespacing:linespacing,calcbezierconst:calcbezierconst,fontsize:fontsize};
 	document.getElementById("history").style.fontSize=fontsize+"%";
 	update_html_from_historylist();
 	gpopup = document.getElementById("popup").value;
+	}
+
+function reverseopts() {
+	var h = historyconnectoroptions;
+	var bracketconst = document.getElementById("bracketconst").value = h.bracketconst;
+	var base = document.getElementById("base").value = h.base;
+	var connectors = document.getElementById("connectors").value = h.connectors;
+	var bezierconst = document.getElementById("bezierconst").value = h.bezierconst;
+	var linewidth = document.getElementById("linewidth").value = h.linewidth;
+	var bottomgap = document.getElementById("bottomgap").value = h.bottomgap;
+	var linespacing = document.getElementById("linespacing").value = h.linespacing;
+	var fontsize = document.getElementById("fontsize").value = h.fontsize;
+	var calcbezierconst = document.getElementById("calcbezierconst").value = h.calcbezierconst;
+	}
+
+function undo() {
+	protohistorylist = protohistorylist.slice(0,-1);
+	update_html_from_historylist();
 	}
 
 function makecam(id) {
@@ -955,9 +1099,32 @@ function bootcam() {
 			});
 	}
 
-function boot() {
+function updateURI() {
+	var base = document.URL.split("?")[0];
+	var str = encodeURI(JSON.stringify([ruleinputlist,rulenamelist,protohistorylist,historyconnectoroptions]));
+	history.pushState({},"",base+"?"+str);
+	}
+
+function loadURI() {
+	var str = document.URL;
+	if (str.indexOf("?") == -1) {
+		opts();
+		newrule();
+		return;
+		}
+	var s2 = decodeURI(str.slice(str.indexOf("?")+1));
+	var p = JSON.parse(s2);
+	ruleinputlist = p[0];
+	rulenamelist = p[1];
+	update_html_from_ruleinputlist();
+	protohistorylist = p[2];
+	historyconnectoroptions = p[3];
+	reverseopts();
 	opts();
-	newrule();
+	}
+
+function boot() {
+	loadURI();
 	}
 
 </script>
@@ -1021,7 +1188,7 @@ input[type=number] {
 <div style="display:flex; overflow:auto; flex-direction:column-reverse; height:100%">
 <div>
 <input id="newform" onkeypress="newformkeypress(event)" class="newform">
-<button onclick="donewform()">New Start</button>
+<button onclick="donewform()">New Start</button><button onclick="undo()">Undo</button>
 </div>
 <div id="history" style="position:relative"></div>
 
@@ -1044,13 +1211,14 @@ input[type=number] {
 <tr><td>k</td><td>j</td><td>-i</td><td>-1</td></tr>
 </table>
 
-<button onclick="bootcam()">Camera</button><br><br>
+<button onclick="bootcam()">Camera</button><br>
+<button onclick="updateURI()">Permalink</button><br>
 Bracket height: <input id="bracketconst" type="number" oninput="opts()" value=.1 min=0 max=1 step=.02>
-<br>Brackets: <select id="base" oninput="opts()"><option value="brackets">Brackets</option><option value="rects">Rects</option><option value="lines">Lines</option></select>
+<br>Brackets: <select id="base" oninput="opts()"><option value="brackets">Brackets</option><option value="rects">Rects</option><option value="lines" selected>Lines</option></select>
 <br>Connectors: <select id="connectors" oninput="opts()"><option value="bezier">Bezier</option><option value="zigzag">Subway</option><option value="line">Line</option></select>
 <br>Bezier Constant: <input id="bezierconst" type="number" oninput="opts()" value=.4 step=.05>
 <br>Linewidth: <input id="linewidth" type="number" oninput="opts()" value=2 min=0 step=.5>
-<br>Calc connector length: <input id="bottomgap" type="number" oninput="opts()" value=.5 min=0 max=1 step=.1>
+<br>Calc connector length: <input id="bottomgap" type="number" oninput="opts()" value=.3 min=0 max=1 step=.1>
 <br>Calc Bezier Constant: <input id="calcbezierconst" type="number" oninput="opts()" value=.4 step=.05>
 <br>Line Spacing <input id="linespacing" type="number" oninput="opts()" value=10 min=0>
 <br>Font Size <input id="fontsize" type="number" oninput="opts()" value=200 step=20>

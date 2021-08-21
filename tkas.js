@@ -1713,6 +1713,7 @@ function tkas_rule_right_distributivity(T,L) {
 	}
 
 function tkas_combine_variable_maps(VM1, VM2) {
+	if (!VM1 || !VM2) {return(false);}
 	var rval = {};
 	var i;
 	for (i in VM1) {
@@ -1775,10 +1776,11 @@ function tkas_plugin_variables(R,VM) {
 	return(rval);
 	}
 
-function tkas_rule_simple_rule(R,T,L) {
+function tkas_rule_simple_rule(R,T,L,extraVM) {
 	var S = tkas_ptree_deep_sub(T,L);
 	var VM = tkas_rule_grab_variables(R.subs[0],S);
 	if (!VM) {return(false);}
+	VM = Object.assign(VM,extraVM);
 	var newS = tkas_plugin_variables(R.subs[1],VM);
 	return(tkas_ptree_deep_replace(T, L, newS));
 	}
@@ -1815,7 +1817,8 @@ function tkas_rule_calculate(T,L) { //only does exact natural number calculation
 			}
 		}
 	//TODO: add more
-	var outT = {op:"NUM", c:outnum};
+	//var outT = {op:"NUM", c:outnum};
+	var outT = tkas_parse(outnum.toString());
 	return(tkas_ptree_deep_replace(T,L,outT));
 	}
 

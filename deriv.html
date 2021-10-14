@@ -289,9 +289,16 @@ function ttree_to_tex(tt,ix) {
 		var v = tt.c[1];
 		if (n == 1) {n = "";}
 		else {n = "^{"+n+"}";}
-		t = "\\frac{d"+n+"}{d" + n + v + "}\\left["
+		t = "\\frac{d"+n+"}{d" + n + v + "}"
+		if (document.getElementById("chk_blue").checked) {
+			t += "\\colorbox{#BBCCEE}{$"
+			}
+		t += "\\left["
 		t += ttree_to_tex(tt.subs[0],ix.concat([0]));
 		t += "\\right]";
+		if (document.getElementById("chk_blue").checked) {
+			t += "$}";
+			}
 		if (tt.subs[0].op == "var") {
 			t = "\\frac{d"+n+tt.subs[0].c+"}{d"+n+v+"}";
 			}
@@ -299,7 +306,6 @@ function ttree_to_tex(tt,ix) {
 	else if (tt.op == "force_paren") {
 		t = " \\left( " + ttree_to_tex(tt.subs[0],ix.concat([0])) + " \\right) ";
 		}
-
 
 	if (ix.length==0 || ix[0] != "d") {
 		return("\\htmlId{"+ixify(ix)+"}{"+t+"}");
@@ -822,11 +828,18 @@ function parenify(s,id) {
 		}
 	}
 
-function brackify(s,id) {
+function brackify(s,id,blueq) {
+	var bluestr = "";
+	var blueclass = "";
+	if (blueq) {
+		//bluestr = "style='background-color:#BBCCEE'";
+		bluestr = "class='blue'"
+		blueclass = " blue ";
+		}
 	switch(Number(document.getElementById("sel_bracbackup").value)) {
-		case 0: return("<span class='brack' id='"+id+"'>" + s + "</span>");
-		case 1: return("<span class='backup_brackets' id='"+id+"'><span style='margin:4px'>" + s + "</span></span>");
-		case 2: return("<span id='"+id+"'>[" + s + "]</span>"); 
+		case 0: return("<span class='brack "+blueclass+"' id='"+id+"'>" + s + "</span>");
+		case 1: return("<span class='backup_brackets "+blueclass+"' id='"+id+"'><span style='margin:4px'>" + s + "</span></span>");
+		case 2: return("<span id='"+id+"'"+bluestr+">[" + s + "]</span>"); 
 		}
 	}
 
@@ -948,7 +961,8 @@ function ttree_to_html(tt,ix,opts) {
 		return(parenify(t,ixify(ix)));
 		}
 	else if (opts == "brack") {
-		return(brackify(t,ixify(ix)));
+		console.log(brackify(t,ixify(ix),document.getElementById("chk_blue").checked));
+		return(brackify(t,ixify(ix),document.getElementById("chk_blue").checked));
 		}
 	else if (opts == "abs") {
 		return(absify(t,ixify(ix)));
@@ -1489,7 +1503,7 @@ blockquote.caution {
 	margin-left: 4px;
 	}
 .backup_brackets {
-	border-radius: 7px / 1px;
+	border-radius: 20px / 2px;
 	border-left: 2px solid black;
 	border-right: 2px solid black;
 	display:inline-block;
@@ -1522,6 +1536,9 @@ blockquote.caution {
 	border-left: 2px solid black;
 	border-right: 2px solid black;
 	display:inline-block;
+	}
+.blue {
+	background-color:#BBCCEE;
 	}
 
 </style>
@@ -1559,6 +1576,7 @@ This interactive is a useful tool to develop an understanding of how derivatives
 <input type="checkbox" id="chk_smartcmul" checked onchange="upd_form()"> Use constant multiple rule when possible<br>
 <input type="checkbox" id="chk_smartvar" checked onchange="upd_form()"> Automatically handle derivatives of variables<br>
 <input type="checkbox" id="chk_smartconst" onchange="upd_form()"> Automatically handle derivatives of constants<br>
+<input type="checkbox" id="chk_blue" onchange="upd_form()"> Highlight derivatives in blue<br>
 <input type="checkbox" id="chk_treeshow" onchange="upd_tree()"> Show tree<br>
 <input type="checkbox" id="chk_treename" onchange="upd_tree()"> Show node names in tree (for debugging)<br>
 <input type="checkbox" id="chk_treehi"> Highlight hovered subexpressions<br>

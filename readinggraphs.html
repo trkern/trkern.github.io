@@ -273,6 +273,84 @@ function rfun() {
 	updatecarnivalfun();
 	}
 
+var tries;
+
+function lerp(t,a,b) {
+	return((1-t)*a+t*b);
+	}
+
+function unlerp(x,a,b) {
+	return((x-a)/(b-a));
+	}
+
+function rabs() {
+	var xmid = ribet(-3,3);
+	var ymid = ribet(-4,4);
+	var xl = ribet(-4,xmid);
+	var xr = ribet(xmid,4);
+	var yl = ribet(-4,4);
+	var yr = ribet(-4,4);
+	if (xl == xmid && xmid == xr) {xr++;}
+	g_rand_minx = xl;
+	g_rand_maxx = xr;
+	g_rand_func = function(x) {
+		if (x < xl) {return(NaN);}
+		if (x > xr) {return(NaN);}
+		if (x == xmid) {return(ymid);}
+		if (x == xl) {return(yl);}
+		if (x == xr) {return(yr);}
+		if (x < xmid) {
+			return(lerp(unlerp(x,xl,xmid),yl,ymid));
+			}
+		else {
+			return(lerp(unlerp(x,xr,xmid),yr,ymid));
+			}
+		};
+	document.getElementById("carnivalfun").value = "f(x)";
+	justrand = true;
+	updatecarnivalfun();
+	}
+
+function closetonice(x) {
+	if (x < -5) {return(false);}
+	if (x > 5) {return(false);}
+	return(Math.abs(x-Math.round(x)) < .001);
+	}
+
+function rcub() {
+	var done = false;
+	var a = ribet(-5,5);
+	var b = ribet(-5,5);
+	var c = ribet(-6,6);
+	g_rand_minx = ribet(-4,3);
+	g_rand_maxx = ribet(g_rand_minx+1,4);
+	g_rand_func = function(x) {
+		if (x < g_rand_minx) {return(NaN);}
+		if (x > g_rand_maxx) {return(NaN);}
+		return(x*x*x/3 - x*x*(a+b)/2 + a*b*x + c/6);
+		}
+	document.getElementById("carnivalfun").value = "f(x)";
+	justrand = true;
+	updatecarnivalfun();
+	}
+
+function nicerange() {
+	rfun();
+	//rcub();
+	tries++;
+	if (tries > 10) {rabs();}
+	var maxy = -Infinity;
+	var miny = Infinity;
+	var i, k;
+	for (i = g_rand_minx; i <= g_rand_maxx; i += .01) {
+		k = g_rand_func(i);
+		maxy = Math.max(k,maxy);
+		miny = Math.min(k,miny);
+		}
+	if (!closetonice(maxy)) {return(nicerange())}
+	if (!closetonice(miny)) {return(nicerange())}
+	}
+
 var g_animframe = "NOPE";
 
 function resetsquish() {
@@ -336,6 +414,10 @@ You can also squash the graph onto the x-axis to find the domain or squash the g
 <button onclick="resetsquish();ysquish();">Squash onto x-axis (domain)</button>
 <button onclick="resetsquish();xsquish()">Squash onto y-axis (range)</button>
 <button onclick="resetsquish()">Undo Squashing</button><br>
+
+<br>
+<button onclick="tries=0;nicerange()"> Random Function with Nice Domain/Range </button>
+
 
 
 </body>

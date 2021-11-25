@@ -1,0 +1,506 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<script>
+
+//var zany = [0, 1, 3, 2, 9, 4, 6, 2, 27, 4, 12, 7, 18, 10, 6, 8, 81, 2, 12, 3, 36, 4, 21, 23, 54, 16, 30, 8, 18, 29, 24, 31, 243];
+var zany = [0, 1, 5, 2, 25,"π",10, 2, 125, 4,"5π", 7, 50, -1, 10, "2π", 625, 3, 20,"½","25π", 4, 35, 23, 250,"π²",-5, 8, 50, 4,"10π",10,3125]
+
+//2:5
+//3:2
+//5:π
+//7:2
+//11: 7
+//13: -1
+//17: 3
+//19: .5
+//23: 23
+//29: 4
+//31: 10
+
+
+function drawrule() {
+	var i = 0;
+	var ctx = document.getElementById("rule").getContext("2d");
+	ctx.textAlign="center";
+	ctx.beginPath();
+	ctx.fillStyle = "#FFFFFF";
+	ctx.fillRect(0,0,1250,100);
+	ctx.beginPath();
+	var h = 1;
+	var j = 0;
+	var lab = "";
+	var onehundred = 240;
+	var offset = Number(document.getElementById("loffset").value);
+	var redline = Number(document.getElementById("lredline").value);
+	var mode = document.getElementById("lsel").value;
+	var cil = document.getElementById("cil").checked;
+	ctx.strokeStyle = "black";
+	for (i = 0; i <= 5; i++) {
+		ctx.font="20px Arial";
+		if(document.getElementById("ci").checked) {
+			if (mode == "add" && i < 5) {
+				for (j = 0; j < 1; j += .1) {
+					ctx.moveTo(grounder((i+j)*onehundred+8),49);
+					ctx.lineTo(grounder((i+j)*onehundred+8),38);
+					ctx.stroke();
+					ctx.moveTo(grounder((i+j+offset)*onehundred+8),51);
+					ctx.lineTo(grounder((i+j+offset)*onehundred+8),62);
+					ctx.stroke();
+					}
+				}
+			if (mode =="base10" && i < 5) {
+				for (j = 2; j < 10; j++) {
+					lab = (j*Math.pow(10,i));
+					ctx.fillStyle="black";
+					ctx.font = Math.ceil(14/(i+1))+"px Arial";
+					ctx.textBaseline="bottom"; 
+					if(cil) {ctx.fillText(lab, grounder((i+Math.log(j)/Math.log(10))*onehundred+8), 34);}
+					ctx.moveTo(grounder((i+Math.log(j)/Math.log(10))*onehundred+8),49);
+					ctx.lineTo(grounder((i+Math.log(j)/Math.log(10))*onehundred+8),38);
+					ctx.stroke();
+					ctx.textBaseline="top"; 
+					if(cil) {ctx.fillText(lab, grounder((offset+i+Math.log(j)/Math.log(10))*onehundred+8), 66);}
+					ctx.moveTo(grounder((offset+i+Math.log(j)/Math.log(10))*onehundred+8),51);
+					ctx.lineTo(grounder((offset+i+Math.log(j)/Math.log(10))*onehundred+8),62);
+					ctx.stroke();
+					}
+				}
+			if (mode =="base2" && i < 5) {
+				for (j = Math.pow(2,i); j < Math.pow(2,(i+1)); j++) {
+					lab = j;
+					ctx.fillStyle="black";
+					ctx.font = Math.ceil(36/(i+1))+"px Arial";
+					ctx.textBaseline="bottom"; 
+					if(cil && j > Math.pow(2,i)) {ctx.fillText(lab, grounder((Math.log(j)/Math.log(2))*onehundred+8), 34);}
+					ctx.moveTo(grounder((Math.log(j)/Math.log(2))*onehundred+8),49);
+					ctx.lineTo(grounder((Math.log(j)/Math.log(2))*onehundred+8),38);
+					ctx.stroke();
+					ctx.textBaseline="top"; 
+					if(cil && j >Math.pow(2,i)) {ctx.fillText(lab, grounder((offset+Math.log(j)/Math.log(2))*onehundred+8), 66);}
+					ctx.moveTo(grounder((offset+Math.log(j)/Math.log(2))*onehundred+8),51);
+					ctx.lineTo(grounder((offset+Math.log(j)/Math.log(2))*onehundred+8),62);
+					ctx.stroke();
+					}
+				}
+			//if (mode =="base2" && i == 7) {
+			//	ctx.beginPath();
+			//	ctx.fillStyle="black";
+			//	ctx.fillRect(7*onehundred+8,38,onehundred,11);
+			//	ctx.fillRect((offset+7)*onehundred+8,51,onehundred,11);
+			//	}
+			if (mode =="zany" && i < 5) {
+				for (j = Math.pow(2,i); j < Math.pow(2,(i+1)); j++) {
+					lab = zany[j];
+					ctx.fillStyle="black";
+					ctx.font = Math.ceil(36/(i+1))+"px Arial";
+					ctx.textBaseline="bottom"; 
+					if(cil && j > Math.pow(2,i)) {ctx.fillText(lab, grounder((Math.log(j)/Math.log(2))*onehundred+8), 34);}
+					ctx.moveTo(grounder((Math.log(j)/Math.log(2))*onehundred+8),49);
+					ctx.lineTo(grounder((Math.log(j)/Math.log(2))*onehundred+8),38);
+					ctx.stroke();
+					ctx.textBaseline="top"; 
+					if(cil && j > Math.pow(2,i)) {ctx.fillText(lab, grounder((offset+Math.log(j)/Math.log(2))*onehundred+8), 66);}
+					ctx.moveTo(grounder((offset+Math.log(j)/Math.log(2))*onehundred+8),51);
+					ctx.lineTo(grounder((offset+Math.log(j)/Math.log(2))*onehundred+8),62);
+					ctx.stroke();
+					}
+				}
+			}
+		ctx.font = "20px Arial";
+		if(mode == "add") {
+			lab = i;
+			}
+		if (mode == "base10") {
+			ctx.font = (21-i) + "px Arial";
+			lab = Math.pow(10,i);
+			}
+		if (mode == "base2") {
+			lab = Math.pow(2,i);
+			}
+		if (mode == "zany") {
+			lab = zany[Math.pow(2,i)];
+			}
+		ctx.fillStyle = "black";
+		ctx.textBaseline="middle"; 
+		ctx.fillText(lab,i*onehundred+8,22);
+		ctx.beginPath();
+		ctx.moveTo(grounder(i*onehundred+8),49);
+		ctx.lineTo(grounder(i*onehundred+8),30);
+		ctx.stroke();
+		ctx.fillText(lab,grounder((i+offset)*onehundred+8),78);
+		ctx.beginPath();
+		ctx.moveTo(grounder((i+offset)*onehundred+8),51);
+		ctx.lineTo(grounder((i+offset)*onehundred+8),70);
+		ctx.stroke();
+		}
+	ctx.beginPath();
+	ctx.moveTo(0,50);
+	ctx.lineTo(1250,50);
+	ctx.stroke();
+	ctx.lineWidth=2;
+	ctx.strokeStyle = "green";
+	ctx.beginPath();
+	ctx.moveTo(grounder((offset+redline) * onehundred+8),0);
+	ctx.lineTo(grounder((offset+redline) * onehundred+8),50);
+	ctx.stroke();
+	ctx.strokeStyle = "red";
+	ctx.beginPath();
+	ctx.moveTo(grounder((offset+redline) * onehundred+8),50);
+	ctx.lineTo(grounder((offset+redline) * onehundred+8),100);
+	ctx.stroke();
+	ctx.strokeStyle = "blue";
+	ctx.beginPath();
+	ctx.moveTo(grounder(offset*onehundred+8),51);
+	ctx.lineTo(grounder(offset*onehundred+8),100);
+	ctx.stroke();
+	ctx.lineWidth=1;
+	}
+
+function lrounder(x) {
+	if(x < 7) {return(Math.round(100*x)/100);} else {
+		return(Math.round(20*x)/20);
+		}
+	}
+
+function rounder(x) {
+	return(Math.round(100*x)/100);
+	}
+function orounder(x) {
+	return(Math.round(50*x)/50);
+	}
+function urounder(x) {
+	return(Math.round(100*x)/100);
+	}
+function trounder(x) {
+	var pow = Math.pow(10,(Math.floor(Math.log(x)/Math.log(10))));
+	return(Math.round(100*x/pow)*pow/100);
+	}
+function grounder(x) {
+	return(Math.round(x)+.5); //why should drawing lines be easy?
+	}
+
+function drawroundadder() {
+	var i = 0;
+	var ctx = document.getElementById("roundrule").getContext("2d");
+	ctx.textAlign="center";
+	ctx.textBaseline="middle"; 
+	var offset = Number(document.getElementById("offset").value);
+	var redline = Number(document.getElementById("redline").value);
+	ctx.beginPath();
+	ctx.fillStyle = "#FFFFFF";
+	ctx.fillRect(0,0,600,600);
+	ctx.beginPath();
+	var h = 1;
+	var lab = "";
+	var th = 0;
+	var xi = 0;
+	var yi = 0;
+	var xo = 0;
+	var yo = 0;
+	for (i = 0; i < 1000; i+= 1) {
+		if (i%100 == 0) {
+			lab = (i/100);
+			ctx.fillStyle = "black";
+			ctx.font="30px Arial";
+			th = (i/1000) * 2* Math.PI;
+			xo = 300 + 290 * Math.cos(th);
+			yo = 300 - 290 * Math.sin(th);
+			ctx.fillText(lab, xo, yo);
+			th += offset;
+			xi = 300 + 110 * Math.cos(th);
+			yi = 300 - 110 * Math.sin(th);
+			ctx.fillText(lab, xi, yi); 
+			h = 7;
+			} else if (i%50 == 0) {
+			h = 5;
+			} else if (i%10 == 0) {
+			h = 3;
+			} else {
+			h = 1;
+			}
+		th = (i/1000) * 2* Math.PI;
+		xi = 300 + 200 * Math.cos(th);
+		yi = 300 - 200 * Math.sin(th);
+		xo = 300 + (200 + h * 10) * Math.cos(th);
+		yo = 300 - (200 + h * 10) * Math.sin(th);
+		ctx.beginPath();
+		ctx.moveTo(xi, yi);
+		ctx.lineTo(xo, yo);
+		ctx.stroke();
+		th = th + offset;
+		xo = 300 + 195 * Math.cos(th);
+		yo = 300 - 195 * Math.sin(th);
+		xi = 300 + (195 - h * 10) * Math.cos(th);
+		yi = 300 - (195 - h * 10) * Math.sin(th);
+		ctx.beginPath();
+		ctx.moveTo(xi, yi);
+		ctx.lineTo(xo, yo);
+		ctx.stroke();	
+		}
+	ctx.beginPath();
+	ctx.lineWidth =2;
+	ctx.moveTo(300,300);
+	ctx.lineTo(300+ 200*Math.cos(redline+offset), 300 - 200*Math.sin(redline+offset));
+	ctx.strokeStyle= "red";
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.strokeStyle="green";
+	ctx.moveTo(300+ 200*Math.cos(redline+offset), 300 - 200*Math.sin(redline+offset));
+	ctx.lineTo(300+ 300*Math.cos(redline+offset), 300 - 300*Math.sin(redline+offset));
+	ctx.stroke();	
+	ctx.strokeStyle = "blue";
+	ctx.beginPath();
+	ctx.moveTo(300,300);
+	ctx.lineTo(300 + 195*Math.cos(offset), 300 - 195 * Math.sin(offset));
+	ctx.stroke();
+	ctx.strokeStyle = "black";
+	ctx.lineWidth =1;
+	}
+
+function drawroundrule() {
+	var i = 0;
+	var ctx = document.getElementById("roundrule").getContext("2d");
+	ctx.textAlign="center";
+	ctx.textBaseline="middle";
+	var offset = Number(document.getElementById("offset").value);
+	var redline = Number(document.getElementById("redline").value);
+	ctx.beginPath();
+	ctx.fillStyle = "#FFFFFF";
+	ctx.fillRect(0,0,600,600);
+	ctx.beginPath();
+	var h = 1;
+	var lab = "";
+	var th = 0;
+	var xi = 0;
+	var yi = 0;
+	var xo = 0;
+	var yo = 0;
+	for (i = 100; i < 1000; i+= 1) {
+		if (i%100 == 0) {
+			lab = (i/100);
+			ctx.fillStyle = "black";
+			ctx.font="30px Arial";
+			th = Math.log(i/10)/Math.log(100) * 4* Math.PI;
+			xo = 300 + 290 * Math.cos(th);
+			yo = 300 - 290 * Math.sin(th);
+			ctx.fillText(lab, xo, yo);
+			th += offset;
+			xi = 300 + 110 * Math.cos(th);
+			yi = 300 - 110 * Math.sin(th);
+			ctx.fillText(lab, xi, yi); 
+			h = 7;
+			} else if (i%50 == 0) {
+			h = 5;
+			} else if (i%10 == 0) {
+			h = 3;
+			} else {
+			h = 1;
+			}
+		th = (Math.log(i)/Math.log(100)) * 4* Math.PI;
+		xi = 300 + 200 * Math.cos(th);
+		yi = 300 - 200 * Math.sin(th);
+		xo = 300 + (200 + h * 10) * Math.cos(th);
+		yo = 300 - (200 + h * 10) * Math.sin(th);
+		ctx.beginPath();
+		ctx.moveTo(xi, yi);
+		ctx.lineTo(xo, yo);
+		ctx.stroke();
+		th = th + offset;
+		xo = 300 + 195 * Math.cos(th);
+		yo = 300 - 195 * Math.sin(th);
+		xi = 300 + (195 - h * 10) * Math.cos(th);
+		yi = 300 - (195 - h * 10) * Math.sin(th);
+		ctx.beginPath();
+		ctx.moveTo(xi, yi);
+		ctx.lineTo(xo, yo);
+		ctx.stroke();	
+		}
+	ctx.beginPath();
+	ctx.lineWidth =2;
+	ctx.moveTo(300,300);
+	ctx.lineTo(300+ 200*Math.cos(redline+offset), 300 - 200*Math.sin(redline+offset));
+	ctx.strokeStyle= "red";
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.strokeStyle="green";
+	ctx.moveTo(300+ 200*Math.cos(redline+offset), 300 - 200*Math.sin(redline+offset));
+	ctx.lineTo(300+ 300*Math.cos(redline+offset), 300 - 300*Math.sin(redline+offset));
+	ctx.stroke();	
+	ctx.strokeStyle = "blue";
+	ctx.beginPath();
+	ctx.moveTo(300,300);
+	ctx.lineTo(300 + 195*Math.cos(offset), 300 - 195 * Math.sin(offset));
+	ctx.stroke();
+	ctx.strokeStyle = "black";
+	ctx.lineWidth = 1;
+	}
+
+function Updln() { //update the linear slide rule's numeric inputs
+	var m = Number(document.getElementById("lm").value);
+	var r = Number(document.getElementById("lr").value);
+	var mode = document.getElementById("lsel").value;
+	if (mode == "add") {
+		document.getElementById("loffset").value = m;
+		document.getElementById("lredline").value = r;
+		document.getElementById("leq").innerHTML = "<font color='blue'>" + m + "</font>+<font color='red'>" +  r + "</font>=<font color='green'>" + rounder(m+r) + "</font>";
+		}
+	else if (mode == "base10") {
+		document.getElementById("loffset").value = m;
+		document.getElementById("lredline").value = r;
+		document.getElementById("leq").innerHTML = "<font color='blue'> 10<sup>" + m + "</sup></font> * <font color='red'> 10<sup>" +  r + "</sup></font> <br>&asymp;<font color='blue'>" + trounder(Math.pow(10,m)) + "</font>*<font color='red'>" + trounder(Math.pow(10,r)) + "</font><br>&asymp;<font color='green'>" + trounder(Math.pow(10,(m+r))) + "</font><br>= <font color='green'>10<sup>" + rounder(m+r) + "</sup></font>";
+		} 
+	else if (mode == "base2") {
+		document.getElementById("loffset").value = m;
+		document.getElementById("lredline").value = r;
+		document.getElementById("leq").innerHTML = "<font color='blue'> 2<sup>" + m + "</sup></font> * <font color='red'> 2<sup>" +  r + "</sup></font> <br>&asymp;<font color='blue'>" + trounder(Math.pow(2,m)) + "</font>*<font color='red'>" + trounder(Math.pow(2,r)) + "</font><br>&asymp;<font color='green'>" + trounder(Math.pow(2,(m+r))) + "</font><br>= <font color='green'>2<sup>" + rounder(m+r) + "</sup></font>";
+		}
+	else if (mode == "zany") {
+		document.getElementById("loffset").value = m;
+		document.getElementById("lredline").value = r;
+		document.getElementById("leq").innerHTML = "<font color='blue'>" + zany[Math.round(Math.pow(2,m))] + "</font>*<font color='red'>" + zany[Math.round(Math.pow(2,r))] + "</font><br>=<font color='green'>" + (zany[Math.round(Math.pow(2,m))*Math.round(Math.pow(2,r))]) + "</font>";
+		}
+	drawrule();
+	}
+
+function Updls() { //update the linear slide rule's slider inputs
+	var mode = document.getElementById("lsel").value;
+	document.getElementById("lm").value = urounder(Number(document.getElementById("loffset").value));
+	document.getElementById("lr").value = urounder(Number(document.getElementById("lredline").value));
+	Updln();
+	}
+
+function Upds() {
+	document.getElementById("m").value = document.getElementById("offset").value;
+	document.getElementById("r").value = document.getElementById("redline").value;
+
+/*	if (document.getElementById("sel").value == "add") {
+		document.getElementById("m").value = orounder(Number(document.getElementById("offset").value) * 10/6.28);
+		document.getElementById("r").value = orounder(Number(document.getElementById("redline").value) * 10/6.28);
+		} else {
+		document.getElementById("m").value = lrounder(Math.exp(Math.log(100)*Number(document.getElementById("offset").value)/(4*Math.PI)));
+		document.getElementById("r").value = lrounder(Math.exp(Math.log(100)*Number(document.getElementById("redline").value)/(4*Math.PI)));
+		}*/
+	//Updn();
+	drawroundrule();
+	}
+
+function truemod(n,m) { //get your act together javascript
+	if (n >= 0) {
+		return(n%m);
+		} else {
+		return(n%m + m);
+		}
+	}
+function Updn() {
+	var m = Number(document.getElementById("m").value);
+	var r = Number(document.getElementById("r").value);
+	if (document.getElementById("sel").value == "add") {
+		document.getElementById("offset").value = truemod(m,10) * 6.28/10;
+		document.getElementById("redline").value = truemod(r,10) * 6.28/10;	
+		drawroundadder();
+		document.getElementById("eq").innerHTML = "<font color='blue'>" +  m + "</font> + <font color='red'>" + r + "</font>=<font color='green'>" + rounder(m+r) + "</font>";
+		} else {
+		document.getElementById("offset").value = truemod(4*Math.PI*Math.log(Math.abs(m))/Math.log(100),2*Math.PI);
+		document.getElementById("redline").value = truemod(4*Math.PI*Math.log(Math.abs(r))/Math.log(100),2*Math.PI);
+		drawroundrule();
+		document.getElementById("eq").innerHTML = "<font color='blue'>" +  m + "</font> * <font color='red'>" + r + "</font>&asymp;<font color='green'>" + rounder(m*r) + "</font>";
+		}
+	}
+</script>
+</head>
+<body onload="Updn(); Updln();">
+<h1> Slide Rule </h1>
+We can use rulers to add together numbers.
+<ol>
+<li> Set the mode to "n".
+<li> Move the first slider or input a value in the box next to it so that the 0 on the lower ruler lines up with one of the numbers you want to add on the upper ruler.
+<li> Move the second slider or input a value in the box next to it so that the red line lines up with the other number you want to add on the lower ruler.
+<li> The green line will line up with their sum on the upper ruler.
+<li> The corresponding addition fact will show up below.
+</ol>
+Change the mode to 10<sup>n</sup> to replace the number n with the number 10<sup>n</sup>.
+<ol>
+<li> Multiplying two powers of 10 is the same as adding their number of zeroes, so this rule will effectively allow us to multiply numbers.
+<li> Move the first slider or input a value in the box next to it so that the 1 on the lower rule lines up with one of the numbers you want to multiply on the upper ruler.
+<li> Move the second slider or input a value in the box next to it so that the red line lines up with the other number you want to multiply on the lower ruler.
+<li> The green line will line up with their product on the upper ruler.
+<li> The corresponding multiplication fact will show up below.
+<li> Check "Draw interpolating lines" to draw lines at round integer values.
+<li> Check "Label integer lines" to label these lines.
+</ol>
+Change the mode to 2<sup>n</sup> to replace the number n with the number 2<sup>n</sup>.
+<ul>
+<li> Same as the above, but it's easier to see what's going on, and we can label more integer values.
+</ul>
+Finally, if you dare, change the mode to "zany" to get a ruler that also works as a slide rule, but for unusual reasons.
+<ul>
+<li> Be sure to check "Draw interpolating lines" and "Label integer lines" or it will be just a boring 3<sup>n</sup> ruler.
+</ul>
+<canvas id="rule" width=1250 height=100 style="border:1px solid #c3c3c3;">
+</canvas> <br>
+Mode: <select oninput="Updln();" id="lsel" size=4 style="overflow-y:auto">
+<option value = "add"> n </option>
+<option value = "base10"> 10ⁿ </option>
+<option value = "base2"> 2ⁿ </option>
+<option value = "zany" selected> zany </option>
+</select> <input type="checkbox" id="ci" onchange="Updln()" checked> Draw interpolating lines
+<input type="checkbox" id="cil" onchange="Updln()" checked> Label integer interpolating lines <br>
+
+<table border = 0>
+<tr> <td> <font color="blue"> Blue </font> line: </td> <td> <input type="range" min=0 max=7 value=0 step=.02 id="loffset" oninput="Updls()" style="width:40em"> <input type="number" id="lm" oninput="Updln()" value=0 step=.05 style="width:4em"> </td> </tr>
+<tr> <td> <font color="red"> Red </font> line: </td> <td> <input type="range" min=0 max=7 value=0 step=.02 id="lredline" oninput="Updls()" style="width:40em"> <input type="number" id="lr" oninput="Updln()" value=0 step=.05 style="width:4em"> </td> </tr>
+</table>
+<p id="leq" style="height:100px"> </p>
+<h1> Circular Slide Rule </h1>
+We can also use circular rulers to add or multiply numbers. <br>
+To add together two numbers:
+<ol>
+<li> Set the mode to "Addition".
+<li> Move the first slider or input a value in the box next to it so that the 0 on the inner wheel lines up with one of the numbers you want to add on the outer wheel.
+<li> Move the second slider or input a value in the box next to it so that the red line lines up with the other number you want to add on the inner wheel.
+<li> The green line will line up with their sum on the outer wheel.
+<li> The corresponding addition fact will show up below.
+</ol>
+To multiply together two numbers:
+<ol>
+<li> Set the mode to "Multiplication". This will replace n by k<sup>n</sup> where k is the tenth root of ten (about 1.26).
+<li> Move the first slider or input a value in the box next to it so that the 0 on the inner wheel lines up with one of the numbers you want to multiply on the outer wheel.
+<li> Move the second slider or input a value in the box next to it so that the red line lines up with the other number you want to multiply on the inner wheel.
+<li> The green line will line up with their product on the outer wheel.
+<li> The corresponding multiplication fact will show up below.
+</ol>
+<p style="display:inline-table">
+<canvas id="roundrule" width = 600 height = 600 style="border:1px solid #c3c3c3;"> </canvas>
+<table style="display:inline-table" border = 0> <tr> <td>
+Mode: <select oninput="Updn()" id = "sel" size=2 style="overflow-y:auto">
+<option value = "add"> Addition </option>
+<option value = "mult" selected> Multiplication </option>
+</select> <br>
+<input type="range" min="0" max="6.28" value="0" step =.05 id="offset" oninput="Upds()" style="width:40em"> <input type="number" id="m" oninput="Updn()" value=1 step=.05 style="width:4em"> <br>
+<input type="range" min="0" max="6.28" value="0" step =.05 id="redline" oninput="Upds()" style="width:40em"> <input type="number" id="r" oninput="Updn()" value=1 step=.05 style="width:4em">
+<p id = "eq"> </p>
+</td> </tr> </table>
+</p>
+<h1> Questions to ponder</h1>
+<ol>
+<li> Don't forget the important fact that makes this work! x<sup>n</sup> * x<sup>m</sup> = x<sup>n+m</sup>. Using the fact that x<sup>n</sup> is just x multiplied by itself n times, convince yourself that this equation holds when n and m are whole numbers.
+<li> Can you work out how to use the rulers to subtract? To divide?
+<li> If the circular slide rule "overflows" (wraps around past the start), it still tells you something about the answer. In the case of addition, what does the circular slide rule tell you about the answer? What about in the case of multiplication? </li>
+<li> You may have run into problems entering exact values into these interactives. Sorry! You can enter exact values by typing them into the textboxes. What did you notice when you entered values that were almost the ones you wanted? For instance, if I multiply a number that's about 2 by a number that's about 3, what result will I get?
+</ol>
+<h1> Explorations elsewhere </h1>
+<ol>
+<li> <a href = "http://www.antiquark.com/sliderule/sim/n909es/virtual-n909-es.html">Antiquark</a> has virtualizations of various real world slide rules. Real world slide rules were able to perform most of the computations required by engineers, not just multiplication. Here is a <a href = "http://www.antiquark.com/sliderule/sim/sr-calcs-by-example.html">list</a> of various computations that can be performed.
+For example, very often engineers needed to calculate the sine of a number and then multiply the result by another number. The S scale allows them to calculate the sine of a number and directly sets up the result to be multiplied by another number.
+<li> The Slide Rule Museum provides a <a href = "http://sliderulemuseum.com/SR_Class/Was_There_Life_Before_Computer_en_by_NicolaMarras.pdf">history</a> of computation devices.
+<li> <a href = "https://www.youtube.com/watch?v=xRpR1rmPbJE">Numberphile</a> has a video on the use of slide rules and circular slide rules.
+<li> <a href = "https://www.youtube.com/watch?v=VRzH4xB0GdM">Numberphile</a> also has a video on the use of log tables, which allow you to multiply numbers using the same principle.
+<li> Exploring powers of 10:
+<ol>
+<li> Wikipedia has a number of useful articles on powers of ten for <a href="https://en.wikipedia.org/wiki/Orders_of_magnitude_(length)">Distance</a>, <a href="https://en.wikipedia.org/wiki/Orders_of_magnitude_(time)">Time</a>, and <a href="https://en.wikipedia.org/wiki/Power_of_10#/media/File:Visualisation_1_billion.svg"> Number </a>.
+<li> The 1977 video <a href="https://www.youtube.com/watch?v=0fKBhvDjuy0">"Powers of Ten"</a> shows both zooming out and zooming in and the corresponding powers of ten.
+</ol>
+</ol>
+</body>
+</html>

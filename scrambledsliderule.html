@@ -35,6 +35,14 @@ function drawrule() {
 	var redline = Number(document.getElementById("lredline").value);
 	var mode = document.getElementById("lsel").value;
 	var cil = document.getElementById("cil").checked;
+
+	ctx.beginPath();
+	ctx.fillStyle="#CCCCCC";
+	ctx.fillRect(0,0,8,50);
+	ctx.beginPath();
+	ctx.fillRect(0,50,offset*onehundred+8,100);
+	ctx.beginPath();
+
 	ctx.strokeStyle = "black";
 	for (i = 0; i <= 5; i++) {
 		ctx.font="20px Arial";

@@ -20,6 +20,7 @@ uniform float b;
 uniform float p;
 uniform sampler2D c;
 uniform float[9] k;
+uniform float m;
 vec4 hsobel;
 vec4 vsobel;
 vec4 rval;
@@ -42,7 +43,7 @@ void main() {
 			vsobel = vsobel + k[3*j+i]*texture(c,uvpass.xy+vec2(p*newi,p*newj));
 			}
 		}
-	rval = vec4(1,1,1,1);
+	rval = mix(vec4(1,1,1,1),texture(c,uvpass.xy),m);
 	if (length(vsobel*vsobel+hsobel*hsobel) > b) {rval = vec4(0,0,0,1);}
 	//gl_FragColor = vec4(normpass.xy,b,1);
 	//gl_FragColor = vec4(uvpass.x,normpass.y,b,1);
@@ -57,6 +58,7 @@ var g_mat;
 function change_b() {
 	g_mat.uniforms.b.value = Number(document.getElementById("b").value);
 	g_mat.uniforms.p.value = Number(document.getElementById("p").value);
+	g_mat.uniforms.m.value = Number(document.getElementById("m").value);
 	//g_mat.uniformsNeedUpdate = true;
 	}
 
@@ -91,6 +93,7 @@ function boot() {
 			c: {value: cat},
 			k: {value: [-.125,-.25,-.125,0,0,0,.125,.25,.125]},
 			p: {value: .005},
+			m: {value: .3},
 			},
 		});
 	var box = new THREE.Mesh(box_geo,g_mat);
@@ -104,5 +107,6 @@ function boot() {
 <br>
 <input id="b" type="range" min=0 max=.1 value=.01 step=.001 oninput="change_b()">
 <input id="p" type="number" min=0 max=1 value=.005 step=.001 oninput="change_b()">
+<input id="m" type="range" min=0 max=1 value=.3 step=.01 oninput="change_b()">
 </body>
 </html>

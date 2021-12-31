@@ -1,0 +1,108 @@
+<!doctype html>
+<html>
+<head>
+<script src="three.min.js"></script>
+<script src="OrbitControls.js"></script>
+<script id="vertexShader" type="x-shader/x-vertex">
+varying vec3 normpass;
+varying vec2 uvpass;
+void main() {
+	normpass = (normalMatrix*normal).zyx;
+	uvpass = uv;
+	//gl_Position = projectionMatrix * modelViewMatrix * vec4(position.x, position.y, position.z, 1.0);
+	gl_Position = vec4(position.x,position.y,position.z,1.0);
+	}
+</script>
+<script id="fragmentShader" type="x-shader/x-fragment">
+varying vec3 normpass;
+varying vec2 uvpass;
+uniform float b;
+uniform float p;
+uniform sampler2D c;
+uniform float[9] k;
+vec4 hsobel;
+vec4 vsobel;
+vec4 rval;
+int i;
+int j;
+void main() {
+	hsobel = vec4(0,0,0,0);
+	for (i = 0; i < 3; i++) {
+		for (j = 0; j < 3; j++) {
+			float newi = float(i);
+			float newj = float(j);
+			hsobel = hsobel + k[3*i+j]*texture(c,uvpass.xy+vec2(p*newi,p*newj));
+			}
+		}
+	vsobel = vec4(0,0,0,0);
+	for (i = 0; i < 3; i++) {
+		for (j = 0; j < 3; j++) {
+			float newi = float(i);
+			float newj = float(j);
+			vsobel = vsobel + k[3*j+i]*texture(c,uvpass.xy+vec2(p*newi,p*newj));
+			}
+		}
+	rval = vec4(1,1,1,1);
+	if (length(vsobel*vsobel+hsobel*hsobel) > b) {rval = vec4(0,0,0,1);}
+	//gl_FragColor = vec4(normpass.xy,b,1);
+	//gl_FragColor = vec4(uvpass.x,normpass.y,b,1);
+	//gl_FragColor = mix(vec4(normpass,1),vec4(uvpass,0,1),b);
+	gl_FragColor = vec4(rval.xyz,1);
+	//gl_FragColor = mix(vec4(normpass,1),texture(c,mod(vec2(1,10)*uvpass.yx,1.0)),b);
+	}
+</script>
+<script>
+
+var g_mat;
+function change_b() {
+	g_mat.uniforms.b.value = Number(document.getElementById("b").value);
+	g_mat.uniforms.p.value = Number(document.getElementById("p").value);
+	//g_mat.uniformsNeedUpdate = true;
+	}
+
+function boot() {
+	var cat = new THREE.TextureLoader().load("https://trkern.github.io/lion.jpg");
+	
+	var c_scene = new THREE.Scene();
+	var c_camera = new THREE.OrthographicCamera(-1,1,1,-1,-40,40);
+	var c_renderer = new THREE.WebGLRenderer({canvas:document.getElementById("c"),antialias:true});
+	//c_controls = new THREE.OrbitControls(c_camera,c_renderer.domElement);	
+
+	c_renderer.setClearColor(0xDDDDDD,1);
+	
+	//c_camera.position.set(0,0,1);
+	//c_camera.lookAt(0,0,0);
+
+	c_scene.add(c_camera);
+
+	var animate = function () {
+		requestAnimationFrame(animate);
+		c_renderer.render(c_scene,c_camera);
+		//c_controls.update();
+		}
+	animate();
+
+	var box_geo = new THREE.PlaneGeometry(2,2);
+	g_mat = new THREE.ShaderMaterial({
+		vertexShader: document.getElementById("vertexShader").textContent,
+		fragmentShader: document.getElementById("fragmentShader").textContent,
+		uniforms: {
+			b: {value: .01},
+			c: {value: cat},
+			k: {value: [-.125,-.25,-.125,0,0,0,.125,.25,.125]},
+			p: {value: .005},
+			},
+		});
+	var box = new THREE.Mesh(box_geo,g_mat);
+	box.rotation.set(0.5,0.2,0);
+	c_scene.add(box);
+	}
+</script>
+</head>
+<body onload="boot()">
+<canvas id="c" width=500 height=500 style="border:1px solid"></canvas>
+<br>
+<input id="b" type="range" min=0 max=.1 value=.01 step=.001 oninput="change_b()">
+<input id="p" type="number" min=0 max=1 value=.005 step=.001 oninput="change_b()">
+</body>
+</html>

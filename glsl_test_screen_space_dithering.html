@@ -1,0 +1,140 @@
+<!doctype html>
+<html>
+<head>
+<script src="three.min.js"></script>
+<script src="OrbitControls.js"></script>
+<script id="vertexShader" type="x-shader/x-vertex">
+varying vec3 normpass;
+varying vec2 uvpass;
+varying vec4 positionpass;
+void main() {
+	normpass = (normalMatrix*normal).zyx;
+	uvpass = uv;
+	gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+	positionpass = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+	}
+</script>
+<script id="fragmentShader" type="x-shader/x-fragment">
+varying vec3 normpass;
+varying vec2 uvpass;
+varying vec4 positionpass;
+uniform float b;
+uniform sampler2D c;
+uniform float[64] k;
+void main() {
+	//gl_FragColor = vec4(normpass.xy,b,1);
+	//gl_FragColor = vec4(uvpass.x,normpass.y,b,1);
+	//gl_FragColor = mix(vec4(normpass,1),vec4(uvpass,0,1),b);
+	//gl_FragColor = mix(vec4(normpass,1),texture(c,positionpass.xy),b);
+	//gl_FragColor = mix(vec4(normpass,1),texture(c,mod(vec2(1,10)*uvpass.yx,1.0)),b);
+	int i;
+	int j;
+	i = int(mod(floor(positionpass.x*125.0),8.0));
+	j = int(mod(floor(positionpass.y*125.0),8.0));
+	vec3 dither = vec3(k[8*i+j]-0.5,k[8*i+j]-0.5,k[8*i+j]-0.5) + vec3(normpass.xy,b);
+	dither = vec3(0.1,0.1,0.1)*floor(vec3(10,10,10)*dither);
+	gl_FragColor = vec4(dither,1);
+	}
+</script>
+<script>
+
+var g_mat;
+function change_b() {
+	g_mat.uniforms.b.value = Number(document.getElementById("b").value);
+	//g_mat.uniformsNeedUpdate = true;
+	}
+
+var bayermatrix = [
+	[00, 32, 08, 40, 02, 34, 10, 42],
+	[48, 16, 56, 24, 50, 18, 58, 26],
+	[12, 44, 04, 36, 14, 46, 06, 38],
+	[60, 28, 52, 20, 62, 30, 54, 22],
+	[03, 35, 11, 43, 01, 33, 09, 41],
+	[51, 19, 59, 27, 49, 17, 57, 25],
+	[15, 47, 07, 39, 13, 45, 05, 37],
+	[63, 31, 55, 23, 61, 29, 53, 21]
+	];
+
+var spiralmatrix = [
+	[00, 01, 02, 03, 04, 05, 06, 07],
+	[27, 28, 29, 30, 31, 32, 33, 08],
+	[26, 47, 48, 49, 50, 51, 34, 09],
+	[25, 46, 59, 60, 61, 52, 35, 10],
+	[24, 45, 58, 63, 62, 53, 36, 11],
+	[23, 44, 57, 56, 55, 54, 37, 12],
+	[22, 43, 42, 41, 40, 39, 38, 13],
+	[21, 20, 19, 18, 17, 16, 15, 14]
+	];
+
+var spiralmatrix2 = [
+	[00, 01, 02, 03, 04, 05, 06, 07],
+	[63, 62, 61, 60, 59, 58, 57, 08],
+	[26, 27, 28, 29, 30, 31, 56, 09],
+	[25, 44, 43, 42, 41, 32, 55, 10],
+	[24, 45, 38, 39, 40, 33, 54, 11],
+	[23, 46, 37, 36, 35, 34, 53, 12],
+	[22, 47, 48, 49, 50, 51, 52, 13],
+	[21, 20, 19, 18, 17, 16, 15, 14]
+	];
+
+function ribet(mn,mx) {
+	return(Math.floor(Math.random()*(mx-mn+1))+mn);
+	}
+
+function preprocessmatrix() {
+	var m = bayermatrix;
+	var rval = [];
+	var i,j;
+	for (i = 0; i < m.length; i++) {
+		for (j = 0; j < m[0].length; j++) {
+			//rval.push(ribet(0,63)/64);
+			rval.push(m[i][j]/64);
+			}
+		}
+	return(rval);
+	}
+
+function boot() {
+	var cat = new THREE.TextureLoader().load("https://trkern.github.io/lion.jpg");
+	
+	var c_scene = new THREE.Scene();
+	var c_camera = new THREE.OrthographicCamera(-20,20,20,-20,-40,40);
+	var c_renderer = new THREE.WebGLRenderer({canvas:document.getElementById("c"),antialias:true});
+	c_controls = new THREE.OrbitControls(c_camera,c_renderer.domElement);	
+
+	c_renderer.setClearColor(0xDDDDDD,1);
+	
+	c_camera.position.set(0,0,-1);
+	c_camera.lookAt(0,0,0);
+
+	c_scene.add(c_camera);
+
+	var animate = function () {
+		requestAnimationFrame(animate);
+		c_renderer.render(c_scene,c_camera);
+		c_controls.update();
+		}
+	animate();
+
+	var box_geo = new THREE.TorusKnotGeometry(10,3,100,16);
+	g_mat = new THREE.ShaderMaterial({
+		vertexShader: document.getElementById("vertexShader").textContent,
+		fragmentShader: document.getElementById("fragmentShader").textContent,
+		uniforms: {
+			b: {value: .5},
+			c: {value: cat},
+			k: {value: preprocessmatrix()},
+			},
+		});
+	var box = new THREE.Mesh(box_geo,g_mat);
+	box.rotation.set(0.5,0.2,0);
+	c_scene.add(box);
+	}
+</script>
+</head>
+<body onload="boot()">
+<canvas id="c" width=500 height=500 style="border:1px solid"></canvas>
+<br>
+<input id="b" type="range" min=0 max=1 value=.5 step=.01 oninput="change_b()">
+</body>
+</html>

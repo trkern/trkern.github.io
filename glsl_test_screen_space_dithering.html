@@ -31,7 +31,8 @@ void main() {
 	int j;
 	i = int(mod(floor(positionpass.x*125.0),8.0));
 	j = int(mod(floor(positionpass.y*125.0),8.0));
-	vec3 dither = vec3(k[8*i+j]-0.5,k[8*i+j]-0.5,k[8*i+j]-0.5) + vec3(normpass.xy,b);
+	vec3 dither = vec3(b,b,b)*vec3(k[8*i+j]-0.5,k[8*i+j]-0.5,k[8*i+j]-0.5) + vec3(normpass.xy,1);
+	//vec3 dither = vec3(normpass.xy,b);
 	dither = vec3(0.1,0.1,0.1)*floor(vec3(10,10,10)*dither);
 	gl_FragColor = vec4(dither,1);
 	}

@@ -21,6 +21,7 @@ varying vec4 positionpass;
 uniform float b;
 uniform sampler2D c;
 uniform float[64] k;
+uniform float p;
 void main() {
 	//gl_FragColor = vec4(normpass.xy,b,1);
 	//gl_FragColor = vec4(uvpass.x,normpass.y,b,1);
@@ -29,8 +30,10 @@ void main() {
 	//gl_FragColor = mix(vec4(normpass,1),texture(c,mod(vec2(1,10)*uvpass.yx,1.0)),b);
 	int i;
 	int j;
-	i = int(mod(floor(positionpass.x*125.0),8.0));
-	j = int(mod(floor(positionpass.y*125.0),8.0));
+	//i = int(mod(floor(positionpass.x*125.0),8.0));
+	i = int(mod(floor(gl_FragCoord.x/p),8.0));
+	//j = int(mod(floor(positionpass.y*125.0),8.0));
+	j = int(mod(floor(gl_FragCoord.y/p),8.0));
 	vec3 dither = vec3(b,b,b)*vec3(k[8*i+j]-0.5,k[8*i+j]-0.5,k[8*i+j]-0.5) + vec3(normpass.xy,1);
 	//vec3 dither = vec3(normpass.xy,b);
 	dither = vec3(0.1,0.1,0.1)*floor(vec3(10,10,10)*dither);
@@ -42,6 +45,7 @@ void main() {
 var g_mat;
 function change_b() {
 	g_mat.uniforms.b.value = Number(document.getElementById("b").value);
+	g_mat.uniforms.p.value = Number(document.getElementById("p").value);
 	//g_mat.uniformsNeedUpdate = true;
 	}
 
@@ -125,6 +129,7 @@ function boot() {
 			b: {value: .5},
 			c: {value: cat},
 			k: {value: preprocessmatrix()},
+			p: {value: 2},
 			},
 		});
 	var box = new THREE.Mesh(box_geo,g_mat);
@@ -137,5 +142,6 @@ function boot() {
 <canvas id="c" width=500 height=500 style="border:1px solid"></canvas>
 <br>
 <input id="b" type="range" min=0 max=1 value=.5 step=.01 oninput="change_b()">
+<input id="p" type="number" min=1 value=2 step=1 oninput="change_b()">
 </body>
 </html>

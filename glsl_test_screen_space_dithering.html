@@ -22,6 +22,7 @@ uniform float b;
 uniform sampler2D c;
 uniform float[64] k;
 uniform float p;
+uniform float r;
 void main() {
 	//gl_FragColor = vec4(normpass.xy,b,1);
 	//gl_FragColor = vec4(uvpass.x,normpass.y,b,1);
@@ -36,7 +37,7 @@ void main() {
 	j = int(mod(floor(gl_FragCoord.y/p),8.0));
 	vec3 dither = vec3(b,b,b)*vec3(k[8*i+j]-0.5,k[8*i+j]-0.5,k[8*i+j]-0.5) + vec3(normpass.xy,1);
 	//vec3 dither = vec3(normpass.xy,b);
-	dither = vec3(0.1,0.1,0.1)*floor(vec3(10,10,10)*dither);
+	dither = vec3(1.0/r,1.0/r,1.0/r)*floor(vec3(r,r,r)*dither);
 	gl_FragColor = vec4(dither,1);
 	}
 </script>
@@ -46,6 +47,7 @@ var g_mat;
 function change_b() {
 	g_mat.uniforms.b.value = Number(document.getElementById("b").value);
 	g_mat.uniforms.p.value = Number(document.getElementById("p").value);
+	g_mat.uniforms.r.value = Number(document.getElementById("r").value);
 	//g_mat.uniformsNeedUpdate = true;
 	}
 
@@ -93,7 +95,7 @@ function preprocessmatrix() {
 	for (i = 0; i < m.length; i++) {
 		for (j = 0; j < m[0].length; j++) {
 			//rval.push(ribet(0,63)/64);
-			rval.push(m[i][j]/64);
+			rval.push((m[i][j]+1)/64);
 			}
 		}
 	return(rval);
@@ -130,6 +132,7 @@ function boot() {
 			c: {value: cat},
 			k: {value: preprocessmatrix()},
 			p: {value: 2},
+			r: {value: 10},
 			},
 		});
 	var box = new THREE.Mesh(box_geo,g_mat);
@@ -143,5 +146,6 @@ function boot() {
 <br>
 <input id="b" type="range" min=0 max=1 value=.5 step=.01 oninput="change_b()">
 <input id="p" type="number" min=1 value=2 step=1 oninput="change_b()">
+<input id="r" type="number" min=1 value=10 step=1 oninput="change_b()">
 </body>
 </html>

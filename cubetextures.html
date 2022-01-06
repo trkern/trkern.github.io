@@ -165,7 +165,7 @@ function solvesquare(v1,v2,v3,v4,x,y) {
 	return(vecans);
 	}
 
-var g_mat = [[1,0,0],[0,1,0],[0,0,1]];
+var g_mat = rotation_matrix_y(.8);
 var g_mousestate = 0;
 
 function mm(e) {
@@ -223,7 +223,7 @@ function draw_cube() {
 			}
 		ctx.lineTo(...to_canvas(project(verts[faces[i][0]])));
 		if (visible_square(verts[faces[i][0]],verts[faces[i][1]],verts[faces[i][2]],verts[faces[i][3]])) {
-			if (i == 0) {var x,y;
+			if (i == 1) {var x,y;
 			for (x = 0; x < 275; x+= 5) {
 				for (y = 0; y < 275; y+= 5) {
 					var coord3 = triplelinearcomb(1,verts[faces[i][0]],x/275,subtract_vectors(verts[faces[i][1]],verts[faces[i][0]]),y/275,subtract_vectors(verts[faces[i][3]],verts[faces[i][0]]));
@@ -231,9 +231,9 @@ function draw_cube() {
 					}
 				}
 			}
-			if (i == 1) {var x,y;
-			for (x = -1; x < 1; x+=.01) {
-				for (y = -1; y < 1; y+=.01) {
+			if (i == 4) {var x,y;
+			for (x = -1; x < 1; x+=.025) {
+				for (y = -1; y < 1; y+=.025) {
 					var vecans = solvesquare(verts[faces[i][0]],verts[faces[i][1]],verts[faces[i][2]],verts[faces[i][3]],x,y);
 					if (vecans[0] > 0 && vecans[0] < 1 && vecans[1] > 0 && vecans[1] < 1) { 
 						drawpixel(ctx,readpixel(cat1,vecans[0]*275,vecans[1]*275), ...to_canvas([x,y]))

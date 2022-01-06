@@ -292,6 +292,11 @@ function boot() {
 </script>
 </head>
 <body onload="boot()" onmousedown="g_mousestate=1" onmouseup="g_mousestate=0">
+
+The fluffy cat is drawn by iterating over pixels in the texture image
+<br>The scratching post cat is drawn by iterating over pixels in the canvas using nearest neighbor
+<br>Click and drag in the canvas to rotate
+
 <canvas id="canvas" width=500 height=500 style='border:1px solid' onmousemove="mm(event)"></canvas>
 <br>
 <input id="pd" type="number" oninput="draw_cube()" value=1 step=.01>

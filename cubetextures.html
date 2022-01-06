@@ -232,8 +232,8 @@ function draw_cube() {
 				}
 			}
 			if (i == 4) {var x,y;
-			for (x = -1; x < 1; x+=.025) {
-				for (y = -1; y < 1; y+=.025) {
+			for (x = -1; x < 1; x+=.01) {
+				for (y = -1; y < 1; y+=.01) {
 					var vecans = solvesquare(verts[faces[i][0]],verts[faces[i][1]],verts[faces[i][2]],verts[faces[i][3]],x,y);
 					if (vecans[0] > 0 && vecans[0] < 1 && vecans[1] > 0 && vecans[1] < 1) { 
 						drawpixel(ctx,readpixel(cat1,vecans[0]*275,vecans[1]*275), ...to_canvas([x,y]))

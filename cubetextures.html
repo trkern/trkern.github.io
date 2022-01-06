@@ -1,0 +1,308 @@
+<!doctype html>
+<html>
+<head>
+<script src="three.min.js"></script>
+<script>
+
+function matrix_vector_multiply(M,v) {
+	var rval = [];
+	var i, j;
+	var sum;
+	for (i = 0; i < M.length; i++) {
+		sum = 0;
+		for (j = 0; j < v.length; j++) {
+			sum += M[i][j] * v[j];
+			}
+		rval.push(sum);
+		}
+	return(rval);
+	}
+
+function matrix_matrix_multiply(M1,M2) {
+	var rval = [];
+	var i;
+	if (M2.length != M1[0].length) {console.log("matrix dimension error");}
+	for (i = 0; i < M1.length; i++) {
+		var trow = [];
+		for (j = 0; j < M2[0].length; j++) {
+			var sum = 0;
+			for (k = 0; k < M2.length; k++) {
+				sum += M1[i][k] * M2[k][j];
+				}
+			trow.push(sum);
+			}
+		rval.push(trow);
+		}
+	return(rval);
+	}
+
+function project(v) {
+	var k = Number(document.getElementById("pd").value)
+	return([v[0]/(k*v[2]),v[1]/(k*v[2])]);
+	//return([v[0],v[1]]);
+	}
+
+function to_canvas(v) {
+	return([250+v[0]*100,250-v[1]*100]);
+	}
+
+function add_vectors(v1,v2) {
+	var i;
+	var rval = [];
+	for (i = 0; i < v1.length; i++) {
+		rval.push(v1[i]+v2[i]);
+		}
+	return(rval);
+	}
+
+function subtract_vectors(v1,v2) {
+	var i;
+	var rval = [];
+	for (i = 0; i < v1.length; i++) {
+		rval.push(v1[i]-v2[i]);
+		}
+	return(rval);
+	}
+
+function scalar_multiply(s,v1) {
+	var i;
+	var rval = [];
+	for (i = 0; i < v1.length; i++) {
+		rval.push(s*v1[i]);
+		}
+	return(rval);
+	}
+
+function rotation_matrix_y(theta) {
+	return([
+		[Math.cos(theta),0,-Math.sin(theta)],
+		[0,1,0],
+		[Math.sin(theta),0,Math.cos(theta)],
+		]);
+	}
+
+function rotation_matrix_x(theta) {
+	return([
+		[1,0,0],
+		[0,Math.cos(theta),-Math.sin(theta)],
+		[0,Math.sin(theta),Math.cos(theta)],
+		]);
+	}
+
+function cross_product(a,b) {
+	return([
+		a[1]*b[2]-a[2]*b[1],
+		a[2]*b[0]-a[0]*b[2],
+		a[0]*b[1]-a[1]*b[0]
+		]);
+	}
+
+function dot_product(a,b) {
+	var sum = 0;
+	var i;
+	for (i = 0; i < a.length; i++) {
+		sum += a[i]*b[i];
+		}
+	return(sum);
+	}
+
+function vector_length(a) {
+	var sum = 0;
+	var i;
+	for (i = 0; i < a.length; i++) {
+		sum += a[i]*a[i];
+		}
+	return(Math.sqrt(sum));
+	}
+
+function triplelinearcomb(a,v1,b,v2,c,v3) {
+	var rval = [];
+	var i;
+	for (i = 0; i < v1.length; i++) {
+		rval.push(a*v1[i]+b*v2[i]+c*v3[i]);
+		}
+	return(rval);
+	}
+
+function normalize(a) {
+	return(scalar_multiply(1/vector_length(a),a));
+	}
+
+function visible_square(v1,v2,v3,v4) {
+	var center = scalar_multiply(.5,add_vectors(v1,v3));
+	var normal = cross_product(subtract_vectors(v1,v2),subtract_vectors(v3,v2));
+	var chat = normalize(center);
+	var nhat = normalize(normal);
+	if (dot_product(chat,nhat) < 0) {return(false);}
+	return(true);
+	}
+
+function invertmatrix(m) {
+	var a = m[0][0];
+	var b = m[0][1];
+	var c = m[0][2];
+	var d = m[1][0];
+	var e = m[1][1];
+	var f = m[1][2];
+	var g = m[2][0];
+	var h = m[2][1];
+	var i = m[2][2];
+	var dr = 1/(a*e*i+b*f*g+c*d*h-g*e*c-h*f*a-i*d*b);
+	return([[dr*(e*i-f*h),dr*(c*h-b*i),dr*(b*f-c*e)],
+		[dr*(f*g-d*i),dr*(a*i-c*g),dr*(c*d-a*f)],
+		[dr*(d*h-e*g),dr*(b*g-a*h),dr*(a*e-b*d)]]);
+	}
+
+function solvesquare(v1,v2,v3,v4,x,y) {
+	//solve when project(v1+b*(v2-v1)+c*(v4-v1)) = (x,y);
+	var k = Number(document.getElementById("pd").value)
+	//return([v[0]/(k*v[2]),v[1]/(k*v[2])]);
+	var m = [
+		[v2[0]-v1[0],v4[0]-v1[0],x*k],
+		[v2[1]-v1[1],v4[1]-v1[1],y*k],
+		[v2[2]-v1[2],v4[2]-v1[2],1]];
+	var vecans = matrix_vector_multiply(invertmatrix(m),scalar_multiply(-1,v1));
+	return(vecans);
+	}
+
+var g_mat = [[1,0,0],[0,1,0],[0,0,1]];
+var g_mousestate = 0;
+
+function mm(e) {
+	if (g_mousestate) {
+		g_mat = matrix_matrix_multiply(rotation_matrix_y(.01*e.movementX),g_mat);
+		g_mat = matrix_matrix_multiply(rotation_matrix_x(-.01*e.movementY),g_mat);
+		draw_cube();
+		}
+	}
+
+function draw_cube() {
+	var i,j;
+	var ctx = document.getElementById("canvas").getContext("2d");
+	ctx.strokeStyle = "black";
+	ctx.lineWidth = 4;
+	ctx.clearRect(0,0,500,500);
+	ctx.lineCap = "round";
+	ctx.lineJoin = "round";
+	var verts = [
+		[1,1,1], //0
+		[1,1,-1], //1
+		[1,-1,-1], //2
+		[1,-1,1], //3
+		[-1,1,1], //4
+		[-1,1,-1], //5
+		[-1,-1,-1], //6
+		[-1,-1,1], //7
+		];
+	for (i = 0; i < verts.length; i++) {
+		verts[i] = matrix_vector_multiply(g_mat,verts[i]);	
+		verts[i] = add_vectors(verts[i],[0,-.5,3]);
+		}
+	var faces = [
+		[3,2,1,0],
+		[4,5,6,7],
+		[0,1,5,4],
+		[7,6,2,3],
+		[1,2,6,5],
+		[4,7,3,0]
+		];
+	var colors = [
+		"hsla(0,100%,50%,.5)",
+		"hsla(60,100%,50%,.5)",
+		"hsla(120,100%,50%,.5)",
+		"hsla(180,100%,50%,.5)",
+		"hsla(240,100%,50%,.5)",
+		"hsla(300,100%,50%,.5)",
+		];
+
+	for (i = 0; i < faces.length; i++) {
+		ctx.beginPath();
+		ctx.moveTo(...to_canvas(project(verts[faces[i][0]])));
+		for (j = 0; j < faces[i].length; j++) {
+			ctx.lineTo(...to_canvas(project(verts[faces[i][j]])));
+			}
+		ctx.lineTo(...to_canvas(project(verts[faces[i][0]])));
+		if (visible_square(verts[faces[i][0]],verts[faces[i][1]],verts[faces[i][2]],verts[faces[i][3]])) {
+			if (i == 0) {var x,y;
+			for (x = 0; x < 275; x+= 5) {
+				for (y = 0; y < 275; y+= 5) {
+					var coord3 = triplelinearcomb(1,verts[faces[i][0]],x/275,subtract_vectors(verts[faces[i][1]],verts[faces[i][0]]),y/275,subtract_vectors(verts[faces[i][3]],verts[faces[i][0]]));
+					drawpixel(ctx,readpixel(cat0,x,y), ...to_canvas(project(coord3)));
+					}
+				}
+			}
+			if (i == 1) {var x,y;
+			for (x = -1; x < 1; x+=.01) {
+				for (y = -1; y < 1; y+=.01) {
+					var vecans = solvesquare(verts[faces[i][0]],verts[faces[i][1]],verts[faces[i][2]],verts[faces[i][3]],x,y);
+					if (vecans[0] > 0 && vecans[0] < 1 && vecans[1] > 0 && vecans[1] < 1) { 
+						drawpixel(ctx,readpixel(cat1,vecans[0]*275,vecans[1]*275), ...to_canvas([x,y]))
+						}
+					}
+				}
+			}}
+		}
+	for (i = 0; i < faces.length; i++) {
+		ctx.beginPath();
+		ctx.moveTo(...to_canvas(project(verts[faces[i][0]])));
+		for (j = 0; j < faces[i].length; j++) {
+			ctx.lineTo(...to_canvas(project(verts[faces[i][j]])));
+			}
+		ctx.lineTo(...to_canvas(project(verts[faces[i][0]])));
+		if (visible_square(verts[faces[i][0]],verts[faces[i][1]],verts[faces[i][2]],verts[faces[i][0]])) {
+			ctx.stroke();
+			}
+		}
+	}
+
+var cat0;
+var cat1;
+
+function readpixel(data,x,y) {
+	var i = ((Math.floor(y)%275)*275+(Math.floor(x)%275))*4;
+	var r = data[i];
+	var g = data[i+1];
+	var b = data[i+2];
+	var a = data[i+3];
+	return([r,g,b]);
+	}
+
+function drawpixel(ctx,color,x,y) {
+	ctx.fillStyle = "rgba("+color[0]+","+color[1]+","+color[2]+",1)";
+	ctx.fillRect(x-2,y-2,4,4);
+	}
+
+function bootcat0() {
+	var ctx = document.getElementById("cat0canv").getContext("2d");
+	ctx.fillStyle = ctx.createPattern(document.getElementById("cat0"),"repeat");
+	ctx.fillRect(0,0,275,275);
+	cat0 = ctx.getImageData(0,0,275,275).data;
+	var ctx = document.getElementById("cat1canv").getContext("2d");
+	ctx.fillStyle = ctx.createPattern(document.getElementById("cat1"),"repeat");
+	ctx.fillRect(0,0,275,275);
+	cat1 = ctx.getImageData(0,0,275,275).data;
+	}
+
+function boot() {
+	bootcat0();
+	draw_cube();
+	}
+
+
+</script>
+</head>
+<body onload="boot()" onmousedown="g_mousestate=1" onmouseup="g_mousestate=0">
+<canvas id="canvas" width=500 height=500 style='border:1px solid' onmousemove="mm(event)"></canvas>
+<br>
+<input id="pd" type="number" oninput="draw_cube()" value=1 step=.01>
+
+<img src = "https://trkern.github.io/cat275x275.png" id="cat0" crossorigin="">
+
+<canvas id="cat0canv" width=275 height=275></canvas>
+
+<img src = "https://trkern.github.io/lion.jpg" id="cat1" crossorigin="">
+
+<canvas id="cat1canv" width=275 height=275></canvas>
+
+</body>
+</html>

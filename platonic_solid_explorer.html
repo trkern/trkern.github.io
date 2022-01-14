@@ -1,0 +1,231 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<meta name=description content="Platonic Solid Visualizer">
+<title> Platonic Solid Visualizer </title>
+<script src="https://trkern.github.io/three.js"></script>
+<script src="https://trkern.github.io/OrbitControls.js"></script>
+<script>
+
+var p = (1+Math.sqrt(5))/2;
+
+function coostr(l) {
+	var i;
+	var str = "("
+	for (i = 0; i < l.length; i++) {
+		if (i > 0) {str += ","}
+		str += xtostring(l[i]);
+		}
+	str += ")";
+	return(str);
+	}
+
+function xtostring(x) {
+	if (Number.isInteger(x)) {return(x);}
+	if (a(x,s(5))) {return("2φ-1");}
+	if (a(x,-s(5))) {return("1-2φ");}
+	if (a(x,p)) {return("φ");}
+	if (a(x,-p)) {return("-φ");}
+	if (a(x,p**(-2))) {return("2-φ");}
+	if (a(x,-(p**(-2)))) {return("φ-2");}
+	if (a(x,p**(-1))) {return("φ-1");}
+	if (a(x,-(p**(-1)))) {return("1-φ");}
+	if (a(x,p*p)) {return("φ+1");}
+	if (a(x,-p*p)) {return("-φ-1");}
+	return(x);
+	}
+
+function makeText(str,x,y,z) {
+	var canvas = document.createElement("canvas");
+	canvas.style.border = "1px solid";
+	canvas.height = 20;
+
+	var ctx = canvas.getContext("2d");
+	ctx.fillStyle = "black";
+	ctx.textBaseline = "middle";
+	ctx.textAlign = "center";
+	ctx.font = "20px serif";
+	var r = ctx.measureText(str);
+	canvas.width = r.width;
+
+	ctx = canvas.getContext("2d");
+	ctx.fillStyle = "black";
+	ctx.textBaseline = "middle";
+	ctx.textAlign = "center";
+	ctx.font = "20px serif";
+
+	ctx.fillText(str,canvas.width/2,canvas.height/2);
+	var texture = new THREE.Texture(canvas);
+	texture.needsUpdate = true;
+	var sprite_mat = new THREE.SpriteMaterial({map:texture});
+	var sprite = new THREE.Sprite(sprite_mat);
+	sprite.position.set(x,y,z);
+	sprite.scale.set(.01*r.width,.01*20);
+	//document.getElementById("x").appendChild(canvas);
+	return(sprite);
+	}
+
+var e_controls;
+var e_nu;
+var e_scene;
+var e_geo;
+var e_mesh;
+
+var tetraverts = [[1,0,-1/Math.sqrt(2)],[-1,0,-1/Math.sqrt(2)],[0,1,1/Math.sqrt(2)],[0,-1,1/Math.sqrt(2)]];
+var tetrafaces = [[0,1,2],[0,1,3],[0,2,3],[1,2,3]];
+
+var octaverts = [[1,0,0],[0,1,0],[0,0,1],[-1,0,0],[0,-1,0],[0,0,-1]];
+var octafaces = [[0,1,2],[0,1,5],[3,1,2],[3,1,5],[3,4,5],[3,4,2],[0,4,2],[0,4,5]];
+
+var icosaverts = [[0,1,p],[0,-1,p],[0,1,-p],[0,-1,-p],[p,0,1],[-p,0,1],[p,0,-1],[-p,0,-1],[1,p,0],[-1,p,0],[1,-p,0],[-1,-p,0]];
+var icosafaces = [[0,8,9],[2,8,9],[0,8,4],[0,4,1],[0,5,1],[0,5,9],[1,4,10],[1,10,11],[1,11,5],[4,6,8],[4,6,10],[8,2,6],[6,2,3],[6,3,10],[3,10,11],[7,3,11],[7,3,2],[7,2,9],[7,9,5],[7,5,11]];
+
+var cubeverts = [[.5,.5,.5],[-.5,.5,.5],[.5,-.5,.5],[-.5,-.5,.5],[.5,.5,-.5],[-.5,.5,-.5],[.5,-.5,-.5],[-.5,-.5,-.5]];
+var cubefaces = [[0,1,3,2],[0,4,5,1],[0,4,6,2],[7,3,1,5],[7,5,4,6],[7,3,2,6]];
+
+var dodecaverts = [[-1, -1, -1], [-1, -1, 1], [-1, 1, -1], [-1, 1, 1], [1, -1, -1], [1, -1, 1], [1, 1, -1], [1, 1, 1], [0, -p, 1-p], [0, -p, p-1], [0, p, 1-p], [0, p, p-1], [1-p, 0, -p], [p-1, 0, -p], [1-p, 0, p], [p-1, 0, p], [-p, 1-p, 0], [-p, p-1, 0], [p, 1-p, 0], [p, p-1, 0]];
+var dodecafaces = [[0,9,8,0,16],[1,9,5,15,14],[1,14,3,17,16],[3,14,15,7,11],[3,17,2,10,11],[17,16,0,12,2],[16,1,9,8,0],[6,19,7,11,10],[19,18,5,15,7],[18,4,8,9,5],[4,13,12,0,8],[6,13,12,2,10],[6,13,4,18,19]];
+
+function ehunt() {
+	bbverts = [];
+	var i;
+	/*for (i = 0; i < P3.length; i++) {
+		bbverts.push(...applyperm3(P3[i],[0,1,3*p]));
+		bbverts.push(...applyperm3(P3[i],[1,2+p,2*p]));
+		bbverts.push(...applyperm3(P3[i],[p,2,2*p+1]));
+		}*/
+	}
+
+function zhunt() {
+	zomeverts = [];
+	zomefaces = [];
+	var i;
+
+
+	}
+
+function boot_e() {
+	//ehunt();
+	//zhunt();
+	var e_camera;
+	var e_renderer;
+
+	e_scene = new THREE.Scene();
+	e_camera = new THREE.OrthographicCamera(-4,4,4,-4,-40,40);
+	e_renderer = new THREE.WebGLRenderer({canvas:document.getElementById("e"),antialias:true});
+	e_controls = new THREE.OrbitControls(e_camera,e_renderer.domElement);
+	e_controls.addEventListener("change",function(){e_nu = true;});
+	e_controls.enableKeys = false;
+	//e_controls.autoRotate = true;
+	
+	e_scene.background = new THREE.Color("white");
+
+	e_camera.position.set(10,10,10);
+	e_camera.lookAt(0,0,0);
+
+	var animate = function () {
+		requestAnimationFrame(animate);
+		if (e_nu) {
+			e_nu = e_controls.autoRotate;
+			e_renderer.render(e_scene, e_camera);
+			e_controls.update();
+			}
+		};
+
+/*	var e_axes = new THREE.Group();
+	e_axes.add(new THREE.AxesHelper(2));
+	e_axes.add(makeText("x",2,0,0));
+	e_axes.add(makeText("y",0,2,0));
+	e_axes.add(makeText("z",0,0,2));
+	e_scene.add(e_axes);*/
+
+	animate();
+
+	regeo_e();
+	}
+
+function regeo_e() {
+	e_scene.remove.apply(e_scene, e_scene.children);
+
+	e_geo = new THREE.Geometry();
+	var i,j;
+
+	var vertlist = [];
+	var facelist = [];
+
+	var k = document.getElementById("e_sel").value;
+	if (k == 0) {//tetrahedron
+		vertlist = tetraverts;
+		facelist = tetrafaces;
+		}
+	if (k == 1) {//octagon
+		vertlist = octaverts;
+		facelist = octafaces;
+		}
+	if (k == 2) {//icosahedron
+		vertlist = icosaverts;
+		facelist = icosafaces;
+		}
+	if (k == 3) {//cube
+		vertlist = cubeverts;
+		facelist = cubefaces;
+		}
+	if (k == 4) {//dodecahedron
+		vertlist = dodecaverts;
+		facelist = dodecafaces;
+		}
+
+	for (i = 0; i < vertlist.length; i++) {
+		e_geo.vertices.push(new THREE.Vector3(...vertlist[i]));
+		e_scene.add(makeText(coostr(vertlist[i]),...vertlist[i]));
+		}
+	for (i = 0; i < facelist.length; i++) {
+		e_geo.faces.push(...ngon(facelist[i]));
+		}
+
+	e_geo.verticesNeedUpdate = true;
+	e_geo.computeFaceNormals();
+	var mat = new THREE.MeshNormalMaterial({side:THREE.DoubleSide,transparent:true,opacity:1});
+	e_mesh = new THREE.Mesh(e_geo,mat);
+	e_scene.add(e_mesh);
+	e_nu = true;
+	}
+function boot() {
+	boot_e();
+	}
+
+function a(x,y) {
+	return(Math.abs(x-y) < .001);
+	}
+function s(x) {
+	return(Math.sqrt(x));
+	}
+function ngon(l) {
+	var rval = [];
+	var i;
+	for (i = 1; i < l.length - 1; i++) {
+		rval.push(new THREE.Face3(l[0],l[i],l[i+1]));
+		}
+	return(rval);	
+	}
+</script>
+</head>
+<body onload="boot()">
+
+<canvas id="e" width=500 height=500 style="border:1px solid"></canvas>
+<br>
+<select id="e_sel" onchange="regeo_e()">
+<option value=0>Tetrahedron</option>
+<option value=1>Octahedron</option>
+<option value=2>Icosahedron</option>
+<option value=3>Cube</option>
+<option value=4>Dodecahedron</option>
+</select>
+
+&phi; is the golden ratio, about 1.618033988749895.
+
+</body>
+</html>

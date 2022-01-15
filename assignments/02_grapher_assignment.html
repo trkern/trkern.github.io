@@ -1,0 +1,272 @@
+<!doctype html>
+<html>
+<head>
+<style>
+code {
+	background-color: #DDDDDD;
+	}
+.code {
+	font-family: monospace;
+	background-color: #DDDDDD;
+	}
+body {
+	font-family: sans-serif;
+	}
+.caution {
+	background-color: #EEEEBB;
+	padding: 20px;
+	border-left: 3px solid yellow;
+	}
+.caution:before {
+	font-size: xx-large;
+	content: "!"
+	}
+.instruction {
+	background-color: #BBCCEE;
+	}
+blockquote.instruction {
+	padding: 20px;
+	border-left: 3px solid #222255;
+	}
+</style>
+</head>
+<body>
+
+<h1> Graphing Calculator </h1>
+
+Assignment Goals:
+<ul>
+<li> Create an HTML file that draws graphs of functions on a <code>&lt;canvas&gt;</code> element.
+<li> Update the graphed function using a text box.
+<li> Update the graph window using number inputs.
+<li> Learn how to use third party code.
+</ul>
+
+<blockquote class="instruction">
+Instructions for you to follow in this document will be highlighted in blue.
+</blockquote>
+
+<blockquote class="caution">
+Don't forget to cite your sources!
+</blockquote>
+
+<h2>Overview</h2>
+
+While professional graphing calculators (such as <a href="https://www.desmos.com/">desmos</a>) have more advanced graphing algorithms, creating a simple graphing calculator is pretty simple, and based around converting between two coordinate systems:
+
+<ul>
+<li>The coordinate system of the graphing window:
+<ul>
+<li>x goes from -5 at the left end of the window to 5 at the right end
+<li>y goes from -5 at the bottom end of the window to 5 at the top end
+</ul>
+Or, replace the 5s with whatever bounds you want
+<li>Canvas coordinate system:
+<ul>
+<li>x goes from 0 at the left end of the window to 500 at the right end
+<li>y goes from 0 at the <b>top</b> end of the window to 500 at the bottom end
+</ul>
+Or, replace the 500s with the width and height of the canvas
+</ul>
+
+The graphing algorithm is as follows:
+
+<ul>
+<li> Working across our image from left to right:
+<ul>
+<li> Convert our canvas x-coordinate to a graphing window x-coordinate
+<li> Plug that value into our function to get a graphing window y-coordinate
+<li> Convert our graphing window y-coordinate to a canvas y-coordinate
+<li> Connect the previous point we drew to our new point 
+</ul>
+</ul>
+
+<h2>Converting from canvas coordinates to graph coordinates</h2>
+
+We need a function to convert from the x coordinate on our canvas (in pixels) to the x coordinate in our graphing calculator space. This should be a function f(x) satisfying:
+
+<ul>
+<li> f(x) is a linear function (f(x) = mx+b for some constants m and b)
+<li> f(0) = -5
+<li> f(500) = 5
+</ul>
+
+<blockquote class="instruction">
+<ol>
+<li> Solve for the function f(x)
+<li> Create a new html document with a <code>&lt;script&gt;</code> element in its <code>&lt;head&gt;</code>.
+<li> Implement the function f(x) you solved for in Javascript as <code>convert_x_canvas_to_graph</code>.
+<li> Check your answer (in the console) to see if it works correctly for 0, 250, 500, etc.
+</ol>
+</blockquote>
+
+<h2>Converting from graph coordinates to canvas coordinates</h2>
+
+We need a function to convert from the y coordinate on our graphing calculator space to the y coordinate in our canvas. This should be a function f(x) satisfying:
+
+<ul>
+<li> f(x) is a linear function (f(x) = mx+b for some constants m and b)
+<li> f(-5) = 500
+<li> f(5) = 0
+</ul>
+
+Note that the y-axis is backwards. In math, we typically have the y-axis going upwards, but in this case the y-axis is going downwards. I suspect this decision can be traced all the way back to the age of text-based terminals where lines were numbered from the top of the page downwards. Whenever you get started working with a new graphics system (particularly in 3d), be sure to check which way the axes go.
+
+<blockquote class="instruction">
+<ol>
+<li> Solve for the function f(x)
+<li> Implement the function f(x) you solved for in Javascript as <code>convert_y_graph_to_canvas</code>.
+<li> Check your answer to see if it works correctly for -5, 0, 5, etc.
+<li> You should also implement a <code>convert_x_graph_to_canvas</code> function, which we'll use in the next assignment.
+</ol>
+</blockquote>
+
+<h2>Creating the Graphing Calculator</h2>
+
+Hint: you'll want to reference the last assignment and the code you created for it.
+
+<blockquote class="instruction">
+Complete the following steps:
+</blockquote>
+
+Add a canvas to your webpage with <code>id="g"</code>. Create a function <code>draw_graph()</code> which does the following:
+<ol>
+<li> Get the canvas drawing context <code>ctx</code> for your canvas.
+<li> Clear the canvas drawing context.
+<li> Begin a path with <code>ctx.beginPath()</code>.
+<li> For each <code>i</code> from 0 to 500:
+<ol>
+<li> Convert i (the x-coordinate in the canvas space) to an x-coordinate in graphing calculator space.
+<li> Calculate <code>Math.sin</code> of that value to get the y-coordinate in graphing calculator space. Don't forget that <code>Math.sin</code> uses radians.
+<li> Convert the y-coordinate in graphing calculator space to a y-coordinate in canvas space.
+<li> If this is the first point, move the pen to it using <code>ctx.moveTo</code>
+<li> If this is a later point, add a line segment to the current path using <code>ctx.lineTo</code>
+</ol>
+<li> Draw the line using <code>ctx.stroke()</code>
+</ol>
+When you execute this function (either add <code>onload="draw_graph()"</code> to the <code>&lt;body&gt;</code> tag, or call it in the console), you should get an image that looks like: <br>
+<img src="02_grapher_assignment_sine.png" style="border:1px solid">
+
+<h2>General Conversion</h2>
+
+It would be nice to have a general conversion function so we can adjust the graph window. We need a function f(x) based on the variables <code>a_min, a_max, b_min, b_max</code> to convert from a coordinate system going from <code>a_min</code> to <code>a_max</code> to a coordinate system going from <code>b_min</code> to <code>b_max</code>. This should be a function f(x) satisfying:
+
+<ul>
+<li> f(x) is a linear function (f(x) = mx+b for some constants m and b, depending on <code>a_min, a_max, b_min, b_max</code>)
+<li> f(a_min) = b_min
+<li> f(a_max) = b_max
+</ul>
+
+<blockquote class="instruction">
+Solve for the function f(x). You can either solve it as a linear system with two equations and two unknowns (m and b) using row reduction, or by following the conversion process below:
+</blockquote>
+
+Conversion process:
+
+<ol>
+<li>Determine what fraction of the way between <code>a_min</code> and <code>a_max</code> the input value <code>x</code> is. This process is called an <b>inverse lerp</b>
+<li>Determine what number is that fraction of the way between <code>b_min</code> and <code>b_max</code>. This process is called a <b>lerp</b>, short for <a href="https://youtu.be/-Ii3MrJFBkQ?t=5622">linear interpolation</a>.
+</ol>
+
+<blockquote class="instruction">
+<ol>
+<li> Implement the function f(x) you found in Javascript as <code>convert_a_to_b(x,a_min,a_max,b_min,b_max)</code>.
+<li> Check your answer on a wide variety of inputs to see if it works correctly.
+</ol>
+</blockquote>
+
+Some values to test on, other than the obvious ones.
+<blockquote class="code">
+convert_a_to_b(-3,-7,-1,-3,2) = 0.33333333333333304
+<br>convert_a_to_b(0,-7,-2,-5,3) = 6.199999999999999
+<br>convert_a_to_b(-2,1,7,2,2) = 2
+<br>convert_a_to_b(4,-5,-4,-4,0) = 32
+<br>convert_a_to_b(2,-4,1,-2,2) = 2.8
+<br>convert_a_to_b(-4,1,4,2,4) = -1.3333333333333335
+<br>convert_a_to_b(5,-1,4,2,3) = 3.2
+<br>convert_a_to_b(-2,2,7,0,4) = -3.2
+<br>convert_a_to_b(-5,0,4,-5,1) = -12.5
+<br>convert_a_to_b(-2,3,5,-3,4) = -20.5
+<br>convert_a_to_b(1,-7,-2,-4,-4) = -4
+<br>convert_a_to_b(5,-6,0,-5,0) = 4.166666666666666
+<br>convert_a_to_b(-1,-7,3,4,4) = 4
+<br>convert_a_to_b(1,-7,2,3,5) = 4.777777777777778
+<br>convert_a_to_b(1,1,2,4,5) = 4
+<br>convert_a_to_b(-3,-9,-2,-6,-4) = -4.285714285714286
+</blockquote>
+
+Note that there's some <a href="https://en.wikipedia.org/wiki/Floating-point_arithmetic">floating point</a> nonsense going on here: if you implement your conversion function differently to how I did, your answers might be off by a tiny amount. This is perfectly okay.
+
+<blockquote class="instruction">
+Add text boxes to your webpage that let you enter a minimum and maximum x and y value for your graphing window.
+</blockquote>
+
+The following code may be helpful:
+
+<blockquote class="code">
+x min: &lt;input type="number" id="x_min" value=-5 step=.1 oninput="draw_graph()"&gt; &lt;br&gt;<br>
+x max: &lt;input type="number" id="x_max" value=5 step=.1 oninput="draw_graph()"&gt; &lt;br&gt;<br>
+y min: &lt;input type="number" id="y_min" value=-5 step=.1 oninput="draw_graph()"&gt; &lt;br&gt;<br>
+y max: &lt;input type="number" id="y_max" value=5 step=.1 oninput="draw_graph()"&gt; &lt;br&gt;
+</blockquote>
+
+<blockquote class="code">
+	var x_min = Number(document.getElementById("x_min").value);<br>
+	var x_max = Number(document.getElementById("x_max").value);<br>
+	var y_min = Number(document.getElementById("y_min").value);<br>
+	var y_max = Number(document.getElementById("y_max").value);
+</blockquote>
+
+<blockquote class="caution">
+It's important when reading the value of an <code>&lt;input type="number"&gt;</code> element to apply the <code>Number</code> function. The value is by default a string, and so addition will be interpreted as concatenation due to <a href="https://developer.mozilla.org/en-US/docs/Glossary/Type_coercion">type coercion</a>. For instance, if I call <code>convert_a_to_b(.5,"0","1","2","10")</code>, I get <code>'42'</code> (Your result will vary depending on how you implement <code>convert_a_to_b</code>).
+</blockquote>
+
+<h2>Evaluating functions with <code>kas.js</code> [Optional, but please read]</h2>
+
+Khan Academy provides a small javascript library for parsing and working with math formulas.
+
+<span class="instruction">Add <code>&lt;script src="https://trkern.github.io/kas.js"&gt;&lt;/script&gt;</code> to the <code>head</code> of your document.</span> This is a local backup I made of a third party library called <a href="https://github.com/Khan/KAS">KAS.js</a>.
+
+<blockquote class="caution">
+You should <b>never</b> use products made by other people in production (this includes third party code, programming languages, compilers, and hardware). Without having a complete understanding of how the third party code works, it can introduce hard to diagnose bugs or even malicious code!<br>
+Other things you need to be concerned with when using other people's code:
+<ul>
+<li> Licensing. KAS.js is provided under the <a href="https://github.com/Khan/KAS/blob/master/LICENSE.txt">MIT</a> License, which allows you to redistribute the code, provided you include a copy of the license with the code. Always read the licenses for third pary software to determine what you are legally allowed to do.
+<li> Updates. Later in this class we will be using a 3d library called THREE.js, which is regularly updated. Most of these changes are backwards-compatible, but some aren't, so your code will eventually break if you rely on the hosted version. In this class, we will be using the THREE.Geometry class which is no longer supported by THREE.js.
+<li> Downtime. The host may also experience downtime: I suggest you download a copy of KAS.js (from <a href="https://trkern.github.io/kas.js">https://trkern.github.io/kas.js</a>) to your computer. Place it in the same folder as your HTML files and replace <code>&lt;script src="https://trkern.github.io/kas.js"&gt;&lt;/script&gt;</code> with <code>&lt;script src="kas.js"&gt;&lt;/script&gt;</code>, or you risk not being able to run your code.
+<li> Dependencies. KAS.js depends on a completely different library called <a href="https://underscorejs.org/">underscore.js</a>, so you'll need to trust and depend on yet another third party. <blockquote class="instruction">Add <code>&lt;script src="https://trkern.github.io/underscore-min.js"&gt;&lt;/script&gt;</code> to the <code>head</code> of your document.</blockquote> You can easily fall into the trap of having a maze of dependencies with their own dependencies which are all constantly updating if you're not careful. This also makes your code harder to understand: to understand and make changes to KAS.js requires understanding some of the features of underscore.js first.
+</ul>
+</blockquote>
+
+<blockquote class="instruction">
+Modify your <code>draw_graph</code> function, replacing the use of <code>Math.sin</code>. Some steps:
+</blockquote>
+
+<ol>
+<li> First, create a new input box in your html: <code>&lt;input type="text" id="f" value="sin(x)" oninput="draw_graph()"&gt;</code>
+<li> You can get a string holding the text of the box with <code>var fstr = document.getElementById("f").value;</code>
+<li> You can tell KAS to plug in <code>30</code> for the variable x in your inputted formula with <code>KAS.parse(fstr).expr.eval({x: 30});</code>. Replace the <code>30</code> by whatever value you want to plug in.
+</ol>
+
+<code>{x:30}</code> is a javascript <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Working_with_Objects">object</a> whose <code>.x</code> value is <code>30</code>. Specifically if you ran the code:
+<code>var T = {x:30};</code> Then <code>T.x</code> would be <code>30</code>. This allows you to plug in multiple variables into the formula you entered, separating entries with commas: <code>{x:30,a:10}</code>. If you're feeling really fancy, you could add in a slider that lets you adjust the value of <code>a</code> and see how the graph of "sin(ax)" changes as you adjust a.
+
+<h2>Above and Beyond</h2>
+
+If you'd like to make your interactive fancier, you can:
+
+<ol>
+<li> Add in an x-axis and y-axis by converting when x = 0 and when y = 0 from graph window coordinates to pixel coordinates.
+<li> Add in a grid. You can find lower bounds on your for loops by rounding up <code>x_min, y_min</code> with the <code>Math.ceil</code> function and upper bounds with <code>Math.floor</code>. Use <code>ctx.strokeStyle = "gray"</code> to change the color of the pen.
+<li> Label the axes using:
+<blockquote class="code">
+		ctx.fillStyle = "black";<br>
+		ctx.textAlign = "center";<br>
+		ctx.textBaseline = "middle";<br>
+		ctx.font = "16 px sans-serif";<br>
+		ctx.fillText(i,x,y);
+</blockquote>
+</ol>
+
+</body>
+</html>

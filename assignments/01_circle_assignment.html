@@ -1,0 +1,276 @@
+<!doctype html>
+<html>
+<head>
+<style>
+code {
+	background-color: #DDDDDD;
+	}
+.code {
+	font-family: monospace;
+	background-color: #DDDDDD;
+	}
+body {
+	font-family: sans-serif;
+	}
+.caution {
+	background-color: #EEEEBB;
+	padding: 20px;
+	border-left: 3px solid yellow;
+	}
+.caution:before {
+	font-size: xx-large;
+	content: "!"
+	}
+.instruction {
+	background-color: #BBCCEE;
+	}
+blockquote.instruction {
+	padding: 20px;
+	border-left: 3px solid #222255;
+	}
+</style>
+</head>
+<body>
+
+<h1> Drawing a Circle </h1>
+
+Assignment Goals:
+<ul>
+<li> Create an HTML file that draws regular polygons on a <code>&lt;canvas&gt;</code> element.
+<li> Update the number of sides of the polygon based on user input.
+</ul>
+
+<blockquote class="instruction">
+Instructions for you to follow in this document will be highlighted in blue.
+</blockquote>
+
+<blockquote class="instruction">
+Please submit the HTML file you create according to the instructions in this assignment.
+</blockquote>
+
+<h2> Creating an HTML file </h2>
+
+<p>An HTML file is simply a text file containing code that gets parsed into a webpage. <span class="instruction">Create a new blank text document with a .html file extension and open it in your favorite text editor.</span></p>
+
+<p>We won't be doing anything fancy with HTML or CSS, just using them as a platform for calling javascript. Read through the <a href="https://developer.mozilla.org/en-US/docs/Learn/Getting_started_with_the_web/HTML_basics">MDN HTML basics</a> page to find a basic explanation of tags and attributes.</p>
+
+<blockquote class="caution">
+Remember to cite your sources! If you're copying code directly, working with classmates or tutor, or just using a source for reference (other than what I have provided you), you need to say where your code came from. Use a comment:
+
+<ul>
+<li> In the HTML portion of your document (outside of <code>&lt;script&gt;</code> tags) comments look like:
+<blockquote class="code"> &lt!-- Comment text goes here --&gt;
+</blockquote>
+<li> In the Javascript and GLSL portion of your document (inside of <code>&lt;script&gt;</code> tags) comments look like:
+<blockquote class="code">
+//single line comment
+<br>/* multi
+<br>line
+<br>comment */
+</blockquote>
+
+<p>
+Include both <b>who created/helped create the code</b> and <b>where you found it</b>.
+</p>
+
+<p>Example:</p>
+<blockquote class="code">
+<pre>
+&lt;!doctype html&gt;
+&lt;html&gt;
+&nbsp;&lt;head&gt;
+&nbsp;&nbsp;&lt;script&gt;
+&nbsp;&nbsp; function gcd(a,b) { return (!b)?a:gcd(b,a%b); };
+<b>&nbsp;&nbsp; /*
+&nbsp;&nbsp; user4174706,
+&nbsp;&nbsp; https://stackoverflow.com/questions/17445231/js-how-to-find-the-greatest-common-divisor
+&nbsp;&nbsp; modified to use function notation
+&nbsp;&nbsp; */</b>
+&nbsp;&nbsp; function lcm(a,b) {return(a*b/gcd(a,b));} <b>//Help from CS support</b>
+&nbsp;&lt;/head&gt;
+&nbsp;&lt;body&gt;
+&nbsp;&nbsp; &lt;button style="background: repeating-linear-gradient(
+		45deg,
+		white,
+		white 2px,
+		transparent 2px,
+		transparent 10px),
+		repeating-linear-gradient(
+		-45deg,
+		white,
+		white 2px,
+		#d80a17 2px,
+		#d80a17 10px);"&gt;hi&lt;/button&gt;
+<b>&nbsp;&nbsp; &lt;!-- button style from [classmate's name] --&gt;</b>
+&nbsp;&lt;/body&gt;<br>
+&lt;/html&gt;
+</pre>
+</blockquote>
+</ul>
+
+</blockquote>
+
+<h2> Minimal HTML Template </h2>
+
+<blockquote class="code">
+&lt;!doctype html&gt;<br>
+&lt;html&gt;<br>
+&nbsp;&lt;head&gt;<br>
+&nbsp;&lt;/head&gt;<br>
+&nbsp;&lt;body&gt;<br>
+&nbsp;&lt;/body&gt;<br>
+&lt;/html&gt;
+</blockquote>
+
+<ul>
+<li>The <code>&lt;!doctype html&gt;</code> line tells the browser that this webpage was created after the early 1990s, to preserve compatibility with webpages created before early web standards.
+<li>The <code>&lt;html&gt;</code> tag contains the entire document.
+<li>The <code>&lt;head&gt;</code> tag contains metadata (title, icon, programmatic data) and will also contain our Javascript code
+<li>The <code>&lt;body&gt;</code> tag contains the actual text and HTML content of the webpage.
+</ul>
+
+<h2> Canvas </h2>
+
+<p>
+Canvas elements can be drawn on using javascript code, and will be our primary way of creating graphics in this course.
+</p>
+
+<p class="instruction">Within the <code>&lt;body&gt;</code> tag of your document, add a <code>&lt;canvas&gt;</code> element with the following attributes:
+<ul>
+<li><code>id="canv"</code> This gives the element a name so we can refer to it in our javascript code.
+<li><code>style="border:1px solid"</code> The style attribute contains CSS code which modifies the appearance of the element. CSS code is in the form name:value; name:value; name:value; . In this case it's telling us that the "border" property of the element should be set to "1px solid". This is optional, but it is very helpful to know where the edge of your canvas element is and where it fits in on the page, and it is comforting to know that the element is there before we've drawn anything on it.
+<li><code>width=500</code> Sets the width of the canvas. You can set width and height using CSS, but this can break things.
+<li><code>height=500</code> Sets the height of the canvas.
+</ul>
+Be sure to close your canvas element with a closing <code>&lt;/canvas&gt;</code>! Anything between the tags is only displayed on browsers that don't support canvas elements.
+</p>
+
+<p class="instruction">Add some text such as "hello world" to your document (Either before or after the canvas. You can create a new line using <code>&lt;br&gt;</code>.) and save it. Then open it in a web browser.</p>
+
+<h2> Starting Javascript </h2>
+
+<blockquote class="instruction">
+Complete the following:
+</blockquote>
+
+<ol>
+<li>Open your browser's developer console.
+<ul>
+<li> On Firefox, this is under hamburger menu &gt; More Tools &gt; Web Developer Tools
+<li> On Chrome, this is under hamburger menu &gt; More Tools &gt; Developer Tools
+</ul>
+On Firefox or Chrome, this is <kbd>ctrl-shift-I</kbd><br>
+If there are errors in your Javascript code, or serious errors in your HTML, you'll see alerts in the developer console. Note that some HTML mistakes may be tolerated. This <a href="https://www.youtube.com/watch?v=-csXdj4WVwA">video</a> discusses HTML's tolerance for mistakes.
+</li>
+<li> Javascript is an interpreted language, and you can type javascript here to get executed. Type <code>6*7</code> and it will evaluate to <code>42</code>
+<li> Javascript has an all-purpose variable type var. Type <code>var x = 3;</code> to create a new variable <code>x</code> and assign the value 3 to it.
+<li> Note that failing to declare a variable might cause it to have an unexpected scope, such as behaving like a global variable when you want it to behave like a local variable, which can cause hard to diagnose bugs.
+<li> An early difficulty working with javascript is its <a href="https://developer.mozilla.org/en-US/docs/Glossary/Type_coercion">type coercion</a> with numbers and strings.
+<ul>
+<li> <code>+</code> means both addition of numbers and concatenation of strings. This can be very useful for creating procedural html code which can be inserted into your webpage. Evaluate <code>"ab"+"cd"</code> in the console.
+<li> If you try to add a number and a string, it will turn the number into a string and concatenate them. Evaluate <code>1+2</code>, <code>1+"2"</code> and <code>"1"+2</code> in the console.
+<li> We'll talk about how to deal with this later.
+</ul>
+<li> A useful tool for debugging is the <code>console.log();</code> function. Evaluate <code>console.log("the value of x is" + x);</code>.
+<li> You can access advanced math with the case sensitive prefix <code>Math.</code> . Evaluate <code>Math.sin(2*Math.PI/3)</code>. Note that this calculation is done in radians.
+<li> <code>console</code> and <code>Math</code> are examples of <a href="https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Objects/Basics">objects</a>. Objects are dictionaries whose entries (methods and attributes) you can access using <code>.</code>. For instance <code>sin</code> is an entry of the <code>Math</code> object, which is the function that calculates sines.
+<li> Evaluate <code>document.getElementById("canv")</code>. This returns a value that represents the canvas object that we created in our webpage.
+<li> Evaluate <code>var ctx = document.getElementById("canv").getContext("2d");</code>. This sets <code>ctx</code> to an object that provides a wide variety of methods for drawing on our canvas element.
+<li> Evaluate <code>ctx.fillText("hello world",200,200);</code>. This should draw some text on your canvas. <code>fillText</code> is one method for drawing on our canvas element.
+</ol>
+
+<h2> The <code>&lt;script&gt;</code> element </h2>
+
+The <code>&lt;script&gt;</code> element contains code that gets executed when the parser encounters it. <span class="instruction">Add a <code>&lt;script&gt;</code> element to your document within the <code>&lt;head&gt;</code> element.</span> It is common practice to write javascript in a separate .js file and then use <code>&lt;script src='yourjsfile.js'&gt;</code>, but you should include everything in a single file for this course.
+
+Let's create a function to draw a line from one point (x1,y1) to another (x2,y2). The syntax for creating a function is:
+<pre>
+<code>function draw_line(x1,y1,x2,y2) {
+	//code goes here
+	}
+</code>
+</pre>
+
+<blockquote class="instruction">
+Create the function <code>draw_line</code>:
+</blockquote>
+
+<ol>
+<li> First, we need to gain access to the drawing context for our canvas: <code>var ctx = document.getElementById("canv").getContext("2d");</code>
+<li> When drawing lines on the canvas, the canvas keeps track of a "pen location" that allows you to draw a long sequence of line segments. This sequence is called a path, and we can begin one with <code>ctx.beginPath();</code>
+<li> Let's move to our starting point with <code>ctx.moveTo(x1,y1);</code>
+<li> Then move to the end point with <code>ctx.lineTo(x2,y2);</code>
+<li> This won't actually draw the line, it simply tells the computer about the path. Draw the path with <code>ctx.stroke();</code>
+<li> Save your page and reload it in your browser.
+<li> Back in the developer console, evaluate <code>draw_line(100,200,300,400);</code>
+<li> Experiment with this line-drawing command. Something is strange with the coordinate system: what is it?
+</ol>
+
+<h2>Drawing Polygons</h2>
+
+<blockquote class="instruction">
+Create the function <code>draw_ngon</code>:
+</blockquote>
+
+<ol>
+<li>Using trigonometry, work out the coordinates of a point which:
+<ul>
+<li>Is on a circle of radius 200, centered at the point (250,250),
+<li>Is at an angle of <code>theta</code> measured counterclockwise from horizontal.
+<li>Be sure to account for the y-coordinate being backwards.
+</ul>
+<li>Our goal will be to create <code>n</code> of these points equally spaced around the circle.
+Remember that we're in radians, so the total angle of the circle is <code>2*Math.PI</code>. Work out the equation of the point <code>i/n</code> of the way around the circle.
+<li>Javascript supports <a href=https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/for><code>for</code> loops</a>. Write a function <code>draw_ngon(n)</code> which draws lines between each of these points around the circle. Test it out in the developer console.
+<li>You might want to clear your canvas before drawing the polygon. Once you have <code>ctx</code> set to the drawing context of the canvas, use: <code>ctx.clearRect(0,0,500,500);</code>
+<li>Bonus: for what <code>n</code> is the length of each edge of the polygon less than one pixel width?
+</ol>
+
+<h2>Interactivity</h2>
+
+<p>We want a way of allowing our html to interact with our javascript. To do this we will use an <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input"><code>&lt;input&gt;</code> element</a>. </p>
+
+<blockquote class="instruction">
+Complete the following:
+</blockquote>
+
+<ol>
+<li>Create an <code>&lt;input&gt;</code> element on your page with the following attributes:
+<ul>
+<li><code>type="number"</code> This is an element specifically designed to allow you to enter numbers.
+<li><code>id="inp"</code> This gives the element a name so we can refer to it in our javascript code.
+<li><code>value=7</code> This sets a starting value.
+<li><code>oninput="draw_polygon()"</code> This specifies javascript code to execute when the value changes (compare with onchange, which specifies javascript code to execute when you enter a value).
+</ul>
+<li>Create a function <code>draw_polygon</code> which:
+<ul>
+<li>Gets the value of the input box, namely <code>document.getElementById("inp").value</code>
+<li>Careful! The result of <code>document.getElementById("inp").value</code> is a string. Type coercion will usually take this value and turn it into a number when you treat it like a number, so your code will probably work correctly even if you don't type cast to a number using the <code>Number</code> function. However, forgetting to type cast inputs to numbers can lead to hard to diagnose bugs later on, and as long as you do type cast all of your numerical inputs to numbers, you should not run into type coercion issues later on.
+<li>Calls <code>draw_ngon</code> with the appropriate inputs.
+</ul>
+</ol>
+
+<h2>Above and Beyond</h2>
+
+<blockquote class="instruction">
+You <b>do not</b> need to do the following, but you might want to to make your program fancier:
+</blockquote>
+
+The following pieces of code will be useful cleaning up your program:
+<ul>
+<li> You can specify a title to your webpage using a <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/title"><code>&lt;title&gt;</code> element</a> in your html's <code>&lt;head&gt;</code> tag.
+<li> You can specify code to execute when the page is loaded by adding the <code>onload="draw_polygon()"</code> attribute to the <code>&lt;body&gt;</code> tag.
+<li> You can specify a color for your lines by setting <code>ctx.strokeStyle</code> to a <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/color_value">string</a> representing the color you want. This can be a color name or you can specify the color using one of a variety color spaces.
+<li> You can specify a width to your lines by setting <code>ctx.lineWidth</code> to a number which represents the width of lines you want in pixels.
+<ul>
+<li> If you change the line width you might also want to adjust <a href="https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/lineCap"><code>ctx.lineCap</code></a> and <a href="https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/lineJoin"><code>ctx.lineJoin</code></a>
+</ul>
+<li> You can replace your <code>&lt;input type="number"&gt;</code> element with an <code>&lt;input type="range"&gt;</code> element to turn it into a slider. 
+<ul>
+<li> If you do this, consider adding a <code>min=0</code> and <code>max=50</code> attribute to set the bounds on the slider.
+<li> You can display the value of the slider by creating a <code>&lt;span id="outp"&gt;</code> element and setting in javascript <code>document.getElementById("outp").innerHTML</code> to the value of the slider.
+</ul>
+</ul>
+
+</body>
+</html>

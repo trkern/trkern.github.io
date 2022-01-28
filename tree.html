@@ -1084,7 +1084,10 @@ function myparse(str,opts) {
 function ttree_to_treant(tt,ix) {
 	if (ix) {} else {ix = []};
 	s = "<table style='text-align:center' id='tabl_"+ixify(ix)+"'><tr><td>";
-	if (document.getElementById("chk_treename").checked) {
+//<input type="checkbox" id="chk_opname" onchange="upd_tree()" checked> Show operation names in tree <br>
+//<input type="checkbox" id="chk_leafname" onchange="upd_tree()"> Show atom names in tree <br>
+	var k = ("subs" in tt && document.getElementById("chk_opname").checked) || (!("subs" in tt) && document.getElementById("chk_leafname").checked);
+	if (k) {
 		s += tt.op;
 		if ("c" in tt) {
 			s += ": "+tt.c;
@@ -1566,7 +1569,8 @@ Hover your mouse over subexpressions below to highlight them:
 <h1>Options</h1>
 
 <input type="checkbox" id="chk_treeshow" onchange="upd_tree()" checked style='display:none'>
-<input type="checkbox" id="chk_treename" onchange="upd_tree()" checked> Show node names in tree <br>
+<input type="checkbox" id="chk_opname" onchange="upd_tree()" checked> Show operation names in tree <br>
+<input type="checkbox" id="chk_leafname" onchange="upd_tree()"> Show atom names in tree <br>
 <input type="checkbox" id="chk_treehi" checked> Highlight hovered subexpressions<br>
 <button onclick="colorify()">Colorize</button> (For debugging) <br>
 Names of functions: <input id="inp_funnames" value="f,g"> <br>

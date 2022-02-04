@@ -10,7 +10,7 @@
 <script src="tgr.js"></script>
 <script>
 
-var g_nprobs = 15;
+var g_nprobs = 17;
 
 function ribet(mn,mx) {
 	return(Math.floor(Math.random()*(mx-mn+1))+mn);
@@ -103,6 +103,8 @@ function generate_problem() {
 	else if (k == 12) {make_int_si_s();}
 	else if (k == 13) {make_int_s();}
 	else if (k == 14) {make_est();}
+	else if (k == 15) {make_gr_to_si_easy();}
+	else if (k == 16) {make_gr_to_si_hard();}
 	}
 
 var g_questions; //list of objects with .id, .label, .answer, .type
@@ -440,6 +442,54 @@ function make_gr_to_si() {
 	g_questions = [{id:"l",label:"", type:"si", answer:ans}];
 	make_problem();
 	}
+function make_gr_to_si_easy() {
+	var ans, gob;
+	do {
+		var x0 = 0;
+		var y0 = ribet(-4,4);
+		var x1 = 1;
+		var y1 = ribet(-4,4);
+		} while (x0 == x1 && y0 == y1);
+	if (x0 == x1) {
+		ans = [x0];
+		gob = {type:"vline",x:x0,linewidth:4};
+		}
+	else {
+		var m = (y0-y1)/(x0-x1);
+		var b = (-y0*x1+y1*x0)/(x0-x1);
+		ans = [(y0-y1)+"/"+(x0-x1),(-y0*x1+y1*x0)+"/"+(x0-x1)];
+		gob = {type:"plot", fct:function(x){return(m*x+b);}, linewidth:4};
+		}
+	var str = "Write the equation for the line shown below:<br>";
+	str += tgr_grapher_string("gr0", [gob]);
+	document.getElementById("problem").innerHTML = str;
+	g_questions = [{id:"l",label:"", type:"si", answer:ans}];
+	make_problem();
+	}
+function make_gr_to_si_hard() {
+	var ans, gob;
+	do {
+		var x0 = ribet(-4,4);
+		var y0 = ribet(-4,4);
+		var x1 = ribet(-4,4);
+		var y1 = ribet(-4,4);
+		} while (x0 == x1 || Math.abs(x0-x1) == 1 || Number.isInteger((-y0*x1+y1*x0)/(x0-x1)));
+	if (x0 == x1) {
+		ans = [x0];
+		gob = {type:"vline",x:x0,linewidth:4};
+		}
+	else {
+		var m = (y0-y1)/(x0-x1);
+		var b = (-y0*x1+y1*x0)/(x0-x1);
+		ans = [(y0-y1)+"/"+(x0-x1),(-y0*x1+y1*x0)+"/"+(x0-x1)];
+		gob = {type:"plot", fct:function(x){return(m*x+b);}, linewidth:4};
+		}
+	var str = "Write the equation for the line shown below:<br>";
+	str += tgr_grapher_string("gr0", [gob]);
+	document.getElementById("problem").innerHTML = str;
+	g_questions = [{id:"l",label:"", type:"si", answer:ans}];
+	make_problem();
+	}
 function make_int_si() {
 	var m1 = ribet(-10,10);
 	var m2 = ribet(-10,10);
@@ -637,6 +687,8 @@ Pick what types of problems you'd like to practice below, then click "Generate P
 <input type="checkbox" id="chk_problem_12"> Find the intersection of two lines in slope-intercept and "standard" forms <br>
 <input type="checkbox" id="chk_problem_13"> Find the intersection of two lines in "standard" form <br>
 <input type="checkbox" id="chk_problem_14" checked> Estimate the slope of a line given a graph <br>
+<input type="checkbox" id="chk_problem_15" checked> Find the equation of a line given the graph (easy) <br>
+<input type="checkbox" id="chk_problem_16" checked> Find the equation of a line given the graph (hard) <br>
 <br>
 <button onclick="checkna(0)">Check None</button>
 <button onclick="checkna(1)">Check All</button>

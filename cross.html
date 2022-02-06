@@ -15,16 +15,19 @@ var v = [0,1,0];
 var scene, camera, renderer, controls;
 var vec_u, vec_v, vec_cross;
 var pll;
+var rpll;
+var raycaster;
 
 function threee() {
 	scene = new THREE.Scene();
 	scene.background = new THREE.Color("white");
 	//camera = new THREE.PerspectiveCamera(75,1,.01, 10000);
 	camera = new THREE.OrthographicCamera(-4,4,4,-4,-40,40);
-	camera.position.set(2,2,2);
+	camera.position.set(10,10,10);
 	camera.lookAt(0,0,0);
 	renderer = new THREE.WebGLRenderer({canvas:document.getElementById("c")});
 	controls = new THREE.OrbitControls(camera,renderer.domElement);
+	raycaster = new THREE.Raycaster();
 
 	var animate = function() {
 		requestAnimationFrame(animate);
@@ -98,6 +101,24 @@ function vec2vec(v) {
 	return(new THREE.Vector3(v[0],v[1],v[2]));
 	}
 
+function triplelinearcomb(a,v1,b,v2,c,v3) {
+	var rval = [];
+	var i;
+	for (i = 0; i < v1.length; i++) {
+		rval.push(a*v1[i]+b*v2[i]+c*v3[i]);
+		}
+	return(rval);
+	}
+
+function vector_length(a) {
+	var sum = 0;
+	var i;
+	for (i = 0; i < a.length; i++) {
+		sum += a[i]*a[i];
+		}
+	return(Math.sqrt(sum));
+	}
+
 function bootgeo() {
 	scene.add(new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 1, 0xff0000));
 	scene.add(new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), 1, 0x00ff00));
@@ -141,9 +162,25 @@ function bootgeo() {
 	pll = new THREE.Mesh(pll_geo,pll_mat);
 	scene.add(pll);
 	
+	var rpll_geo = new THREE.Geometry();
+	rpll_geo.vertices.push(vec2vec(triplelinearcomb(-100,u,-100,v,0,v)));
+	rpll_geo.vertices.push(vec2vec(triplelinearcomb(100,u,-100,v,0,v)));
+	rpll_geo.vertices.push(vec2vec(triplelinearcomb(100,u,100,v,0,v)));
+	rpll_geo.vertices.push(vec2vec(triplelinearcomb(-100,u,100,v,0,v)));
+	rpll_geo.faces.push(new THREE.Face3(0,1,2));
+	rpll_geo.faces.push(new THREE.Face3(0,3,2));
+	rpll_geo.verticesNeedUpdate = true;
+	rpll_geo.facesNeedUpdate = true;
+	rpll_geo.computeFaceNormals();
+
+	var rpll_mat = new THREE.MeshNormalMaterial({side:THREE.DoubleSide,transparent:true,opacity:.7});	
+	
+	rpll = new THREE.Mesh(rpll_geo,rpll_mat);
+	//scene.add(rpll);
+
 	}
 
-function updgeo() {
+function updgeo(k) {
 	vec_u.geometry.copy(thickvector([0,0,0],u));
 	vec_v.geometry.copy(thickvector([0,0,0],v));
 	vec_cross.geometry.copy(thickvector([0,0,0],cross_product(u,v)));
@@ -169,6 +206,25 @@ function updgeo() {
 	pll.geometry.copy(pll_geo);
 	pll.geometry.verticesNeedUpdate = true;
 	pll.geometry.elementsNeedUpdate = true;
+
+	if (k != 3) {
+	var um = Math.max(100,100/vector_length(u));
+	var vm = Math.max(100,100/vector_length(v));
+	var rpll_geo = new THREE.Geometry();
+	rpll_geo.vertices.push(vec2vec(triplelinearcomb(-um,u,-vm,v,0,v)));
+	rpll_geo.vertices.push(vec2vec(triplelinearcomb(um,u,-vm,v,0,v)));
+	rpll_geo.vertices.push(vec2vec(triplelinearcomb(um,u,vm,v,0,v)));
+	rpll_geo.vertices.push(vec2vec(triplelinearcomb(-um,u,vm,v,0,v)));
+	rpll_geo.faces.push(new THREE.Face3(0,1,2));
+	rpll_geo.faces.push(new THREE.Face3(0,3,2));
+	rpll_geo.verticesNeedUpdate = true;
+	rpll_geo.facesNeedUpdate = true;
+	rpll_geo.computeFaceNormals();
+
+	rpll.geometry.copy(rpll_geo);
+	rpll.geometry.verticesNeedUpdate = true;
+	rpll.geometry.elementsNeedUpdate = true;
+	}
 	}
 
 function boot() {
@@ -176,17 +232,25 @@ function boot() {
 	bootgeo();
 	}
 
+function updatecontrols() {
+	var i;
+	for (i = 0; i < 3; i++) {
+		document.getElementById("u"+i).value = u[i].toFixed(2);
+		document.getElementById("u"+i+"r").value = u[i];
+		document.getElementById("v"+i).value = v[i].toFixed(2);
+		document.getElementById("v"+i+"r").value = v[i];
+		}
+	}
+
 function Updu(i,e) {
 	u[i] = Number(e.target.value);
-	document.getElementById("u"+i).value = u[i];
-	document.getElementById("u"+i+"r").value = u[i];
+	updatecontrols();
 	updgeo();
 	}
 
 function Updv(i,e) {
 	v[i] = Number(e.target.value);
-	document.getElementById("v"+i).value = v[i];
-	document.getElementById("v"+i+"r").value = v[i];
+	updatecontrols();
 	updgeo();
 	}
 
@@ -199,12 +263,69 @@ function AR() {
 		}
 	}
 
+var mousestate = 0; //can be 0 (nodrag), 1 (dragu), 2(dragv)
+
+function mooove(e) {
+/*	var ctx = document.getElementById("r").getContext("2d");
+	var i;
+	var j;
+	ctx.fillStyle="red";
+	ctx.clearRect(0,0,100,100);
+	var v = new THREE.Vector2();
+	for (i = 0; i < 100; i++) {
+		for (j = 0; j < 100; j++) {
+			v.x = i/50 - 1;
+			v.y = -(j/50 - 1);
+			raycaster.setFromCamera(v,camera);
+			if(raycaster.intersectObject(rpll).length > 0) {ctx.fillRect(i,j,1,1);}
+			}
+		}*/
+	var mx = 2*e.offsetX/e.target.width - 1;
+	var my = -(2*e.offsetY/e.target.height - 1);
+	raycaster.setFromCamera(new THREE.Vector2(mx,my), camera);
+	var k = raycaster.intersectObject(rpll);
+	if (k.length > 0) {
+		var vv = k[0].point;
+		if (mousestate == 1) {
+			u[0] = vv.x;
+			u[1] = vv.y;
+			u[2] = vv.z;
+			updatecontrols();
+			updgeo(3);
+			}
+		if (mousestate == 2) {
+			v[0] = vv.x;
+			v[1] = vv.y;
+			v[2] = vv.z;
+			updatecontrols();
+			updgeo(3);
+			}
+		}
+	}
+
+function pdown(e) {
+	var mx = 2*e.offsetX/e.target.width - 1;
+	var my = -(2*e.offsetY/e.target.height - 1);
+	raycaster.setFromCamera(new THREE.Vector2(mx,my), camera);
+	var k = raycaster.intersectObject(rpll);
+	if (k.length > 0) {
+		var vv = k[0].point;
+		if (vv.distanceToSquared(vec2vec(u)) < .01) {mousestate = 1; controls.enabled = false;}
+		if (vv.distanceToSquared(vec2vec(v)) < .01) {mousestate = 2; controls.enabled = false;}
+		}
+	}
+
+function pup() {
+	mousestate = 0;
+	controls.enabled = true;
+	}
+
 </script>
 </head>
 <body onload="boot();">
 
 <table border=1><tr><td>
-<canvas id="c" width=800 height=800> </canvas>
+<canvas id="c" width=800 height=800 onpointermove="mooove(event)" onpointerdown="pdown(event)" onpointerup="pup()"> </canvas>
 </td><td>
 
 <table border=1>
@@ -248,6 +369,7 @@ function AR() {
 
 </table>
 
+Click and drag vector endpoints to change them
 
 </body>
 </html>

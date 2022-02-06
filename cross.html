@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<meta name=description content="Vector Cross Product Visualizer">
+<script src = "three.js"></script>
+<script src = "OrbitControls.js"></script>
+<script>
+
+var u = [1,0,0];
+var v = [0,1,0];
+
+var scene, camera, renderer, controls;
+var vec_u, vec_v, vec_cross;
+var pll;
+
+function threee() {
+	scene = new THREE.Scene();
+	scene.background = new THREE.Color("white");
+	//camera = new THREE.PerspectiveCamera(75,1,.01, 10000);
+	camera = new THREE.OrthographicCamera(-4,4,4,-4,-40,40);
+	camera.position.set(2,2,2);
+	camera.lookAt(0,0,0);
+	renderer = new THREE.WebGLRenderer({canvas:document.getElementById("c")});
+	controls = new THREE.OrbitControls(camera,renderer.domElement);
+
+	var animate = function() {
+		requestAnimationFrame(animate);
+		controls.update();
+		renderer.render(scene,camera);
+		}
+	animate();
+	
+	}
+
+function thickvector(p1,p2) {
+	p3 = [(.05*p1[0]+.95*p2[0]),(.05*p1[1]+.95*p2[1]),(.05*p1[2]+.95*p2[2])];
+	var geo = new THREE.Geometry();
+	var tl = thickline(p1,p3,.05);
+	var ta = thickarrow(p3,p2,.1);
+	geo.merge(tl.geometry, tl.matrix);
+	geo.merge(ta.geometry, ta.matrix);
+	return(geo);
+	}
+
+function thickarrow(p1,p2,thk) {
+	if (p1[0] == p2[0] && p1[1] == p2[1] && p1[2] == p2[2]) {
+		p1[0] += .001;
+		}
+	var dif = [p1[0]-p2[0],p1[1]-p2[1],p1[2]-p2[2]];
+	var mid = [(p1[0]+p2[0])/2,(p1[1]+p2[1])/2,(p1[2]+p2[2])/2];
+	var lg = vec2vec(dif).length();
+	var cylgeo = new THREE.CylinderGeometry(thk,0,lg,8);
+	var cyl = new THREE.Mesh(cylgeo);
+	var axis = new THREE.Vector3(0,1,0);
+	cyl.position.copy(vec2vec(mid));
+	cyl.quaternion.setFromUnitVectors(axis, vec2vec(dif).normalize());
+	cyl.updateMatrix();
+	return(cyl);
+	}
+
+function thickline(p1,p2,thk) {
+	if (p1[0] == p2[0] && p1[1] == p2[1] && p1[2] == p2[2]) {
+		p1[0] += .001;
+		}
+	var dif = [p1[0]-p2[0],p1[1]-p2[1],p1[2]-p2[2]];
+	var mid = [(p1[0]+p2[0])/2,(p1[1]+p2[1])/2,(p1[2]+p2[2])/2];
+	var lg = vec2vec(dif).length();
+	var cylgeo = new THREE.CylinderGeometry(thk,thk,lg,4);
+	var cyl = new THREE.Mesh(cylgeo);
+	var axis = new THREE.Vector3(0,1,0);
+	cyl.position.copy(vec2vec(mid));
+	cyl.quaternion.setFromUnitVectors(axis, vec2vec(dif).normalize());
+	cyl.updateMatrix();
+	return(cyl);
+	}
+
+function cross_product(a,b) {
+	return([
+		a[1]*b[2]-a[2]*b[1],
+		a[2]*b[0]-a[0]*b[2],
+		a[0]*b[1]-a[1]*b[0]
+		]);
+	}
+
+function add_vectors(v1,v2) {
+	var i;
+	var rval = [];
+	for (i = 0; i < v1.length; i++) {
+		rval.push(v1[i]+v2[i]);
+		}
+	return(rval);
+	}
+
+function vec2vec(v) {
+	return(new THREE.Vector3(v[0],v[1],v[2]));
+	}
+
+function bootgeo() {
+	scene.add(new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 1, 0xff0000));
+	scene.add(new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), 1, 0x00ff00));
+	scene.add(new THREE.ArrowHelper(new THREE.Vector3(0,0,1), new THREE.Vector3(0,0,0), 1, 0x0000ff));
+	var gridXZ = new THREE.GridHelper(6,6,"gray","gray");
+	gridXZ.position.set(0,0,0);
+	scene.add(gridXZ);
+
+	var gridXY = new THREE.GridHelper(6,6,"gray","gray");
+	gridXY.position.set(0,0,0);
+	gridXY.rotation.x = Math.PI/2;
+	scene.add(gridXY);
+
+	var gridYZ = new THREE.GridHelper(6,6,"gray","gray");
+	gridYZ.position.set(0,0,0);
+	gridYZ.rotation.z = Math.PI/2;
+	scene.add(gridYZ);
+
+	vec_u = new THREE.Mesh(thickvector([0,0,0],u), new THREE.MeshBasicMaterial({color:"#33BBEE"}));
+	vec_v = new THREE.Mesh(thickvector([0,0,0],v), new THREE.MeshBasicMaterial({color:"#EE7733"}));
+	vec_cross = new THREE.Mesh(thickvector([0,0,0],cross_product(u,v)), new THREE.MeshBasicMaterial({color:"#000000"}));
+	
+	scene.add(vec_u);
+	scene.add(vec_v);
+	scene.add(vec_cross);
+
+	var pll_geo = new THREE.Geometry();
+	pll_geo.vertices.push(vec2vec([0,0,0]));
+	pll_geo.vertices.push(vec2vec(u));
+	pll_geo.vertices.push(vec2vec(add_vectors(u,v)));
+	pll_geo.vertices.push(vec2vec(v));
+	pll_geo.faces.push(new THREE.Face3(0,1,2));
+	pll_geo.faces.push(new THREE.Face3(0,3,2));
+	pll_geo.verticesNeedUpdate = true;
+	pll_geo.facesNeedUpdate = true;
+	pll_geo.computeFaceNormals();
+	//pll_geo.computeVertexNormals();
+	
+	var pll_mat = new THREE.MeshNormalMaterial({side:THREE.DoubleSide,transparent:true,opacity:.7});	
+	
+	pll = new THREE.Mesh(pll_geo,pll_mat);
+	scene.add(pll);
+	
+	}
+
+function updgeo() {
+	vec_u.geometry.copy(thickvector([0,0,0],u));
+	vec_v.geometry.copy(thickvector([0,0,0],v));
+	vec_cross.geometry.copy(thickvector([0,0,0],cross_product(u,v)));
+	
+	vec_u.geometry.verticesNeedUpdate = true;
+	vec_u.geometry.elementsNeedUpdate = true;
+	vec_v.geometry.verticesNeedUpdate = true;
+	vec_v.geometry.elementsNeedUpdate = true;
+	vec_cross.geometry.verticesNeedUpdate = true;
+	vec_cross.geometry.elementsNeedUpdate = true;
+
+	var pll_geo = new THREE.Geometry();
+	pll_geo.vertices.push(vec2vec([0,0,0]));
+	pll_geo.vertices.push(vec2vec(u));
+	pll_geo.vertices.push(vec2vec(add_vectors(u,v)));
+	pll_geo.vertices.push(vec2vec(v));
+	pll_geo.faces.push(new THREE.Face3(0,1,2));
+	pll_geo.faces.push(new THREE.Face3(0,3,2));
+	pll_geo.verticesNeedUpdate = true;
+	pll_geo.facesNeedUpdate = true;
+	pll_geo.computeFaceNormals();
+
+	pll.geometry.copy(pll_geo);
+	pll.geometry.verticesNeedUpdate = true;
+	pll.geometry.elementsNeedUpdate = true;
+	}
+
+function boot() {
+	threee();
+	bootgeo();
+	}
+
+function Updu(i,e) {
+	u[i] = Number(e.target.value);
+	document.getElementById("u"+i).value = u[i];
+	document.getElementById("u"+i+"r").value = u[i];
+	updgeo();
+	}
+
+function Updv(i,e) {
+	v[i] = Number(e.target.value);
+	document.getElementById("v"+i).value = v[i];
+	document.getElementById("v"+i+"r").value = v[i];
+	updgeo();
+	}
+
+function AR() {
+	if (document.getElementById("chk_ar").checked) {
+		controls.autoRotate = true;
+		}
+	else {
+		controls.autoRotate = false;
+		}
+	}
+
+</script>
+</head>
+<body onload="boot();">
+
+<table border=1><tr><td>
+<canvas id="c" width=800 height=800> </canvas>
+</td><td>
+
+<table border=1>
+<tr><td> <b style="color:#33BBEE">u</b> = </td><td>
+
+<table border = 0>
+<tr> <td rowspan=3 style="border-left:1px solid; border-top:1px solid; border-bottom:1px solid"> </td>
+<td> <input type ="number" id="u0" value="1" oninput="Updu(0,event)" style="width: 3em"> </td>
+<td rowspan=3 style="border-right:1px solid; border-top:1px solid; border-bottom:1px solid"> </td> 
+<td> <input type ="range" id="u0r" value="1" oninput="Updu(0,event)" min=-3 max=3 step=.01></td>
+</tr> 
+<tr> 
+<td> <input type ="number" id="u1" value="0" oninput="Updu(1,event)" style="width: 3em"> </td>
+<td> <input type ="range" id="u1r" value="0" oninput="Updu(1,event)" min=-3 max=3 step=.01></td>
+</tr> <tr>
+<td> <input type ="number" id="u2" value="0" oninput="Updu(2,event)" style="width: 3em"> </td>
+<td> <input type ="range" id="u2r" value="0" oninput="Updu(2,event)" min=-3 max=3 step=.01></td>
+</tr>
+</table>
+
+</td></tr>
+<tr><td> <b style="color:#EE7733">v</b> = </td><td>
+<table border = 0>
+<tr> <td rowspan=3 style="border-left:1px solid; border-top:1px solid; border-bottom:1px solid"> </td>
+<td> <input type ="number" id="v0" value="1" oninput="Updv(0,event)" style="width: 3em"> </td>
+<td rowspan=3 style="border-right:1px solid; border-top:1px solid; border-bottom:1px solid"> </td> 
+<td> <input type ="range" id="v0r" value="1" oninput="Updv(0,event)" min=-3 max=3 step=.01></td>
+</tr> 
+<tr> 
+<td> <input type ="number" id="v1" value="0" oninput="Updv(1,event)" style="width: 3em"> </td>
+<td> <input type ="range" id="v1r" value="0" oninput="Updv(1,event)" min=-3 max=3 step=.01></td>
+</tr> <tr>
+<td> <input type ="number" id="v2" value="0" oninput="Updv(2,event)" style="width: 3em"> </td>
+<td> <input type ="range" id="v2r" value="0" oninput="Updv(2,event)" min=-3 max=3 step=.01></td>
+</tr>
+</table>
+
+</td></tr></table>
+
+<input type="checkbox" id="chk_ar" oninput="AR()"> Auto-rotate
+
+</table>
+
+
+</body>
+</html>

@@ -33,6 +33,19 @@ blockquote.instruction {
 	padding: .4em;
 	}
 </style>
+<script>
+
+function gifswap(e) {
+	if (e.target.src.slice(-3) == "gif") {
+		e.target.src = e.target.src.slice(0,-3) + "png";
+		}
+	else if (e.target.src.slice(-3) == "png") {
+		e.target.src = e.target.src.slice(0,-3) + "gif";
+		}
+	}
+
+</script>
+
 </head>
 <body>
 
@@ -104,7 +117,8 @@ var bunfaces = [[0,1,2],[3,4,5],[6,7,8],[9,10,11],[12,8,7],[13,14,15],[9,11,16],
 
 <p>We now need to draw our bunny by projecting each vertex down into two dimensions, and then connecting those vertices with lines. The simplest projection is called an <a href="https://en.wikipedia.org/wiki/Orthographic_projection">orthographic projection</a>, which squashes a 3d object down flat into two dimensions via parallel light rays, which we can implement simply by setting the z coordinate to 0.</p>
 
-<img src="03_oproj3.gif">
+<img src="03_oproj3.png" onclick="gifswap(event)">
+<br> [Click to Toggle Animation]
 <p>In the image above, the plane corresponds to z = 0.</p>
 
 <p>
@@ -192,7 +206,8 @@ Javascript, like many higher level languages, incorrectly uses assign-by-referen
 
 <h2>THREE.Matrix3:</h2>
 <ul>
-<li> To create a Matrix3, use the code <code>new THREE.Matrix3(a,b,c,d,e,f,g,h,i)</code>. This creates the matrix:
+<li> To create a Matrix3 and store it in a variable m, use the code:
+ <blockquote class="code">var m = new THREE.Matrix3();<br>m.set(a,b,c,d,e,f,g,h,i);</blockquote>. This creates the matrix:
 <table border = 0 class="matrix"> 
 <tr> <td rowspan=3 style='border-left:1px solid; border-top:1px solid; border-bottom:1px solid'> </td> <td>a</td> <td>b</td> <td>c</td> <td rowspan=3 style='border-right:1px solid; border-top:1px solid; border-bottom:1px solid'> </td> </tr>
 <tr> <td>d</td> <td>e</td> <td>f</td> </tr> 

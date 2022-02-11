@@ -1,0 +1,128 @@
+<!doctype html>
+<html>
+<head>
+<style>
+code {
+	background-color: #DDDDDD;
+	}
+.code {
+	font-family: monospace;
+	background-color: #DDDDDD;
+	}
+body {
+	font-family: sans-serif;
+	}
+.caution {
+	background-color: #EEEEBB;
+	padding: 20px;
+	border-left: 3px solid yellow;
+	}
+.caution:before {
+	font-size: xx-large;
+	content: "!"
+	}
+.instruction {
+	background-color: #BBCCEE;
+	}
+blockquote.instruction {
+	padding: 20px;
+	border-left: 3px solid #222255;
+	}
+.matrix td{
+	text-align:center;
+	padding: .4em;
+	}
+</style>
+<script>
+
+function gifswap(e) {
+	if (e.target.src.slice(-3) == "gif") {
+		e.target.src = e.target.src.slice(0,-3) + "png";
+		}
+	else if (e.target.src.slice(-3) == "png") {
+		e.target.src = e.target.src.slice(0,-3) + "gif";
+		}
+	}
+
+</script>
+</head>
+<body>
+
+<h1> Perspective Projection </h1>
+
+Assignment Goals:
+<ul>
+<li> Convert your orthographic projection interactive to use perspective projection.
+</ul>
+
+<blockquote class="instruction">
+Instructions for you to follow in this document will be highlighted in blue.
+</blockquote>
+
+<blockquote class="caution">
+Don't forget to cite your sources!
+</blockquote>
+
+<h2>How Vision Works</h2>
+
+<p>Orthographic projection doesn't reflect how we see things here in three dimensional space. With orthographic projection, the light rays we see travel parallel to each other. In reality, the light rays we see all pass through what is roughly a single point in our eyes.</p>
+
+<img width="512" alt="Angle of view 2" src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Angle_of_view_2.png/512px-Angle_of_view_2.png">
+
+<p>You can see a comparison of orthographic and perspective cameras' view regions <a href="https://threejs.org/examples/#webgl_camera">here</a>. (use the O and P keys)</p>
+
+<p>This makes the math a little bit trickier, since this is no longer a linear transformation, but we can avoid most of the complication by locating the camera at the origin. However, we do need to introduce a new concept: the <a href="https://en.wikipedia.org/wiki/Image_plane">image plane</a> (or picture plane) </p>.
+
+<img src="04_pproj2.png" onclick="gifswap(event)">
+<br> [Click to Toggle Animation]
+<ol>
+<li>We locate our "eye" and the image plane within our 3d scene.
+<li>For each vertex, we draw a line between that vertex and our "eye".
+<li>Where that vertex strikes the image plane, we draw onto our canvas.
+</ol>
+
+<blockquote class="instruction">
+Complete the following:
+</blockquote>
+
+<ol>
+<li> Given a point at coordinates (x,y,z), what are the coordinates of points along the line between it and the origin?
+<li> Suppose our image plane is given by z = 1. What are the coordinates of the point along this line where it intersects our plane?
+<li> Copy your html file from the previous activity on orthogonal projection.
+<li> Write a function <code>project(v)</code> which takes in a THREE.Vector3 and returns a new THREE.Vector3 with the coordinates of the intersection point you figured out.
+
+<blockquote>Recall:
+
+<ul>
+<li> To create a Vector3, use the code <code>new THREE.Vector3(x,y,z)</code>
+<li> You can get the contents of a Vector3 <code>v</code> using <code>v.x</code>, <code>v.y</code>, and <code>v.z</code>, or get the whole thing as an array with 
+<code>v.toArray()</code>
+</ul>
+</blockquote>
+
+<li> Copy your <code>draw_ortho</code> function to create a <code>draw_persp</code> which applies <code>project</code> before drawing.
+<li> Replace any calls to <code>draw_ortho</code> with calls to <code>draw_persp</code> in your HTML.
+<li> At this point, your drawing (whether of the cube or the bunny) should look entirely incorrect. The issue is that our 3d models are centered around the origin, where our "eye" is, and we're actually seeing vertices that are "behind" our "eye" being projected onto the image plane.
+<li> Fix this by shifting every point in your model in the z direction. For the cube, you'll want to shift by at least 1.8 units. For the bunny, you'll want to shift by at least 7 units. If <code>v</code> is a THREE.Vector3, then you can add another vector <code>w</code> to it with <code>v.add(w)</code>. The more you shift, the less distorted the image will look, but it will also look smaller. You can make it larger by adjusting your <code>convert_x_graph_to_canvas</code> and <code>convert_y_graph_to_canvas</code> functions.
+</ol>
+
+<p>
+Real 3d renderers only draw lines and planes within a specific region. You can see these regions visualized 
+<a href="https://threejs.org/examples/#webgl_camera">here</a>. (Use the O and P keys to switch between orthographic and perspective projections.) These camera regions are called <a href="https://en.wikipedia.org/wiki/Viewing_frustum">viewing frustums</a>. While it's easy enough to detect if a vertex is within these regions or not, we would need to cut our lines and triangles off when they leave the camera region, which is easy but a nuisance.
+</p>
+
+<h2>Above and Beyond</h2>
+
+The following improvements are optional.
+<ol>
+<li> Add controls to adjust the z-coordinate of the image plane, the translation vector, and the scaling factor in <code>convert_x/y_graph_to_canvas</code>.
+<li> Implement the above mentioned cutting off of lines. Instead of drawing a line between two points P1 and P2, if P1 has a positive z coordinate and P2 has a negative z coordinate, solve for P3 where on the line z switches from positive to negative and only draw the line between the projections of P1 and P3.
+<li> Locate some small .obj files online and convert them into javascript lists to use in your interactive. If you open them with a text editor, the lines starting with v represent vertices and lines starting with f represent faces. You can ignore other lines such as those starting with vn which represent vertex normals: directional information used for lighting.
+<blockquote class="caution">
+Don't forget to cite your sources and be careful about licensing!
+</blockquote>
+</ol>
+
+
+</body>
+</html>

@@ -1,0 +1,402 @@
+<!doctype html>
+<html>
+<head>
+<style>
+code {
+	background-color: #DDDDDD;
+	}
+.code {
+	font-family: monospace;
+	background-color: #DDDDDD;
+	}
+body {
+	font-family: sans-serif;
+	}
+.caution {
+	background-color: #EEEEBB;
+	padding: 20px;
+	border-left: 3px solid yellow;
+	}
+.caution:before {
+	font-size: xx-large;
+	content: "!"
+	}
+.instruction {
+	background-color: #BBCCEE;
+	}
+blockquote.instruction {
+	padding: 20px;
+	border-left: 3px solid #222255;
+	}
+.matrix td{
+	text-align:center;
+	padding: .4em;
+	}
+</style>
+</head>
+<body>
+
+<h1>Color</h1>
+
+<p>In this interactive, we will explore various digital representations of color. The theory of color is an incredibly complicated combination of physics, art, biology, and chemistry. You can learn more about how color works through the resources below:</p>
+
+<ol>
+<li> Steve Mould has created a <a href="https://www.youtube.com/watch?v=HauiF_AQUIY">video</a> covering why red and green light together appear yellow and why red and blue light together appear violet.
+<li> Color blindness and tetrachromatism can affect the way that digital content is percieved. Paul Tol provides some <a href="https://personal.sron.nl/~pault/#sec:colour_blindness">resources</a> for simulating color blindness and creating accessible content.
+<li> Andrew Hanson has a <a href="https://www.youtube.com/watch?v=af78RPi6ayE">lecture</a> about the perception of color.
+<li> Minutephysics has a <a href="https://www.youtube.com/watch?v=LKnqECcg6Gw">video</a> on how gamma correction leads to incorrect blurring in many pieces of software.
+<li> John Novak has an <a href="https://blog.johnnovak.net/2016/09/21/what-every-coder-should-know-about-gamma/">article</a> about handling gamma correction correctly in software.
+<li> Computerphile has a <a href="https://www.youtube.com/watch?v=LFXN9PiOGtY">video</a> on YCbCr color space.
+</ol>
+
+However, for this assignment, we will focus on the various ways of specifying color data to a computer.
+</p>
+<p>
+Assignment Goals:
+</p>
+<ul>
+<li> Use transparency (alpha)
+<li> Visualize the RGB color space
+<li> Visualize the HSL color space
+<li> Explore how gamma correction affects image processing
+<li> Use <code>getImageData()</code> and <code>putImageData()</code> to draw directly to a <code>&lt;canvas&gt;</code>
+<li> Convert between RGB and HSL color spaces
+</ul>
+
+<blockquote class="instruction">
+Instructions for you to follow in this document will be highlighted in blue.
+</blockquote>
+
+<h2>Filling Paths and Transparency</h2>
+
+<blockquote class="instruction">
+Complete the following:
+</blockquote>
+
+<ol>
+<li> Create up a new HTML document with a 500x500 <code>&lt;canvas&gt;</code> in it.
+<li> Create a function <code>draw_triangles</code>
+<li> Get the drawing context for your canvas and stores it in a variable <code>ctx</code>.
+<li> Use <code>ctx.beginPath, ctx.moveTo</code>, <code>ctx.lineTo</code>, and <code>ctx.stroke</code> to draw a triangle between the points:
+<ul>
+<li>100,200
+<li>200,200
+<li>150,100
+</ul>
+Remember to close up the triangle!
+<li> Set <code>ctx.fillStyle = "red";</code>
+<li> Call <code>ctx.fill()</code> to fill the triangle in red
+<li> Create a new triangle between the points:
+<ul>
+<li>150,200
+<li>200,100
+<li>250,200
+</ul>
+<li>Fill in the triangle with <code>ctx.fillStyle = "rgba(0,255,0,.5)";</code> This specifies a color which has no red, is maximally blue, has no green, and has a transparency (alpha) value of .5 (halfway between invisible = 0 and opaque = 1).
+<li>Change <code>ctx.fillStyle</code> to <code>"rgba(0,0,255,.1)"</code>. This is a pure blue color which is almost entirely transparent.
+<li>Call <code>ctx.fillRect(150,175,200,100);</code>. This fills a rectangle with the current <code>ctx.fillStyle</code> whose top left corner is at 150,175, and has width 200 and height 100.
+</ol>
+
+The resulting image should look like:
+<br><img src="05_triangles.png" style="border:1px solid"><br>
+
+<h2>RGB</h2>
+
+<p>
+By default, we specify colors with an r, g, and b value, which specifies the intensity of the red, green, and blue lights that make up the pixels on a screen. In this interactive, these values will vary from 0 to 255.
+</p>
+
+<a title="Richard Bartz, München aka -- Makro Freak, Copyrighted free use, via Wikimedia Commons" href="https://commons.wikimedia.org/wiki/File:Lcd.jpg"><img width="512" alt="Lcd" src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Lcd.jpg/512px-Lcd.jpg"></a>
+
+<blockquote class="instruction">
+Complete the following:
+</blockquote>
+
+<ol>
+<li> Create a function <code>draw_rgb()</code> which does the following:
+<ol>
+<li> Get the drawing context for your canvas and stores it in a variable <code>ctx</code>
+<li> Use for loops to iterate through every x and y pixel on the canvas (from 0 to 500)
+<li> Set <a href="https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/fillStyle"><code>ctx.fillStyle</code></a> to <code>`rgb(${x},${y},0)`</code>. The backtick ` character creates a <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals">template literal</a>, which is a fancy type of string that you can insert expressions to be evaluated into. The <code>${x}</code> in the string gets translated to the value of the variable <code>x</code>.
+
+<p>
+Note: you can also use <code>"rgb(" + x + "," + y + ",0)"</code> to create the same string. In this case the variables x and y get <a href="https://developer.mozilla.org/en-US/docs/Glossary/Type_coercion">type coerced</a> into strings.
+</p>
+<li> Draw a single pixel on the canvas at position x,y using <code>ctx.fillRect(x,y,1,1)</code>. The 1s are the width and height of the rectangle to be filled.
+</ol>
+
+The result should look like:<br>
+
+<img src="05_mango1.png" style="border:1px solid">
+
+<li>Add in an <code>&lt;input type="range"&gt;</code> or <code>&lt;input type="range"&gt;</code> element to your body with an <code>onchange="draw_rgb()"</code>.
+<li>Add in to your <code>draw_rgb()</code> function code that grabs the value of this input element and uses it as the blue value for each pixel.
+</ol>
+
+You may notice a few issues with this program:
+<ul>
+<li> There's a substantial delay between moving the slider and when the canvas updates. This is because we're drawing 500x500 = 250,000 pixels. You can make this worse by changing <code>onchange="draw_rgb()"</code> to <code>oninput="draw_rgb()"</code> so it tries to redraw the image while you're moving the slider, as opposed to just when you've finished moving the slider.
+<li> All of the interesting spectrum of colors appears in the top left portion of the canvas. This is because we're using values from 0-500 when rgb only accepts values from 0-255. Values above are clamped to the 0-255 range. <blockquote class="instruction">Use your <code>convert_a_to_b</code> function from previous assignments to rescale the x and y values to go from 0-255 instead of 0-500.</blockquote>
+</ul>
+
+<h2>HSL</h2>
+
+<p>
+Instead of specifying a color in terms of its Red, Green, and Blue values, we can also specify it in terms of its Hue, Saturation, and Lightness.
+</p>
+
+<ol>
+<li> Hue is a value from 0 to 360 representing how far counterclockwise from the x-axis the color is along this color wheel:
+
+<br><img src="05_wheel.png" style="border:1px solid">
+
+<li> Saturation is a value from 0% to 100% representing how colorful a color is from fully gray at 0% (hue no longer matters) to fully colorful at 100%. The colors in the wheel above have saturation set to 100%. Below are two spectrums from 0% saturation to 100% saturation:
+
+<br><img src="05_saturation.png" style="border:1px solid">
+<br><img src="05_saturation2.png" style="border:1px solid">
+
+<li> Lightness is a value from 0% to 100% representing the perception of luminance of a color from fully black at 0% to fully white at 100%. In both extremes, both the hue and saturation do not matter, with full colors at 50% lightness, forming a double-cone-shaped space:
+
+<br><a title="SharkD, CC BY-SA 3.0 &lt;https://creativecommons.org/licenses/by-sa/3.0&gt;, via Wikimedia Commons" href="https://commons.wikimedia.org/wiki/File:HSL_color_solid_dblcone.png"><img width="512" alt="HSL color solid dblcone" src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/HSL_color_solid_dblcone.png/512px-HSL_color_solid_dblcone.png"></a>
+
+<p>All of the colors in the Hue color wheel above have saturation at 100% and lightness set to 50%. Notice, however, that they don't look perfectly the same brightness: the blues look darker than the yellows. A more faithful measure can be gotten by using a weighted average that more heavily weights green (to which our eyes are most sensitive) called <a href="https://en.wikipedia.org/wiki/Luma_(video)">luma</a>, denoted with the symbol Y.
+
+</ol>
+
+<blockquote class="instruction">
+Create a new function <code>draw_hsl</code> which is similar to <code>draw_rgb</code>, but sets <code>ctx.fillStyle</code> for each pixel to <code>`hsl(${x},${y}%,${k}%)`</code>, where:
+<ul>
+<li>x has been rescaled from 0 to 360, 
+<li>y has been rescaled from 0 to 100, (note the percent symbol! s and l are specified in terms of percentages) 
+<li>k (the input from your <code>&lt;input&gt;</code> element) has been rescaled from 0 to 100 
+</ul>
+</blockquote>
+
+
+<h2>Grayscale and Gamma</h2>
+
+<blockquote class="instruction">
+Create a new function <code>draw_grayscale</code> that sets the r, g, and b, values all to the rescaled x value. This should produce a grayscale spectrum.
+</blockquote>
+
+<p>
+This spectrum is perceptually linear: the difference between shades 10 pixels apart appears roughly the same across the spectrum. However it is not linear in terms of physics: the midpoint gray (127.5, 127.5, 127.5) is only creating about 22% as many photons of light as the full (255, 255, 255) white at the end of the spectrum, although the exact value depends on your device.
+</p>
+
+<p>
+Normally, this is what we want, but it means that any effect that averages colors will be incorrect. This includes:
+<ul>
+<li>Blur
+<li>Image resize (you can learn more about image resizing in this Computerphile <a href="https://www.youtube.com/watch?v=AqscP7rc8_M">video</a>)
+<li>Gradients
+</ul>
+</p>
+
+<blockquote class="instruction">
+Complete the following:
+</blockquote>
+<ol>
+<li>Update your <code>draw_grayscale</code> function so that:
+<ul>
+<li>if y < 100 and (x+y)%2 is 0, set <code>ctx.fillStyle</code> to <code>"black"</code>
+<li>if y < 100 and (x+y)%2 is 1, set <code>ctx.fillStyle</code> to <code>"white"</code>
+<li>if 100 <= y < 200, set <code>ctx.fillStyle</code> to <code>`rgb(${k},${k},${k})`</code>, where k is the value of your input slider
+</ul>
+<li>Adjust the slider until the top two regions of the image appear to be the same brightness. Use <code>console.log</code> to determine the value of k.
+<li>Leave a comment in your <code>draw_grayscale</code> function to indicate the number you found. This value will vary based on your monitor.
+<li>Most web browsers do not correctly handle image rescaling. Zoom in on your webpage to see if the checkerboard pattern changes brightness.
+</ol>
+
+<h2>Gradients and Gamma</h2>
+
+<blockquote class="instruction">
+Create a new function <code>draw_gradient</code> that uses <code>convert_a_to_b</code> to set:
+<ul>
+<li> r to vary from 255 to 0 as x goes from 0 to 500
+<li> g to vary from 0 to 255 as x goes from 0 to 500
+<li> b to always be 0
+</ul>
+</blockquote>
+
+<p>The result should be an image that looks like:
+<br><img src="05_bad_mango.png" style="border:1px solid"><br>
+This isn't great: the color in the middle is not a proper blur of the red and green, as we can see in the image below:
+<br><img src="05_bad_mango2.png" style="border:1px solid"><br>
+The rows of this image are:
+<ol>
+<li>The gradient we produced
+<li>Solid the middle color of the gradient
+<li>A checkerboard grid where every other pixel is red and every other pixel is green
+<li>A larger similar checkerboard grid
+<li>The raw red and green colors you can try to blur together using a lens or squinting
+</ol>
+Notice that the middle color of the gradient appears darker than the color we see below in the combination of the red and green. Also notice that the color of combining the red and green pixels doesn't give us the bright yellow from the color wheel above: in this mixture, the red lights in the green pixels are off and the green lights in the red pixels are off, so it's darker than if all of the red and green lights in all of the pixels were on.
+</p>
+
+<p>To fix our gradient we will want to:
+<ol>
+<li>Convert our rgb values from perceptual values to values that measure the amount of photons leaving the pixel.
+<li>Compute our gradient between these values
+<li>Convert back from photon measure to perceptual rgb values
+</ol>
+</p>
+
+<blockquote class="instruction">
+Complete the following:
+</blockquote>
+
+<ol>
+<li>Start by having r, g, and b vary between 0 and 1 as opposed to between 0 and 255, with 0 meaning no photons are emitted and 1 meaning the maximum number of photons are emitted. In this case, the representation of red is (1,0,0) and green is (0,1,0).
+<li>Use <code>convert_a_to_b</code> in your loop over each pixel to set:
+<ul>
+<li> r to vary from 1 to 0 as x goes from 0 to 500
+<li> g to vary from 0 to 1 as x goes from 0 to 500
+<li> b to always be 0
+</ul>
+<li>Convert these photon values back to perceptual rgb values by raising to the power of 1/2.2, and then multiplying by 255: <code>r = 255*(r)**(1/2.2)</code>
+<li>Use <code>ctx.fillStyle = `rgb(${r},${g},${b})`</code> to set the fill style of the pixel, then fill it with <code>ctx.fillRect(x,y,1,1);</code>
+</ol>
+
+<p>The resulting spectrum should look more like:
+<br><img src="05_good_mango.png" style="border:1px solid"><br>
+Notice the yellow in the middle more closely matches a true blend of green and red, as seen in our checkerboard comparison below:
+<br><img src="05_good_mango2.png" style="border:1px solid"><br>
+The rows of this image are:
+<ol>
+<li>The improved gradient we produced
+<li>Solid the middle color of the gradient
+<li>A checkerboard grid where every other pixel is red and every other pixel is green
+<li>A larger similar checkerboard grid
+<li>The raw red and green colors you can try to blur together using a lens or squinting
+</ol>
+</p>
+
+<h2>Image Representation</h2>
+
+<p>It's tempting to want to store each pixel as a three-element array of red, green, and blue values, and then each row of an image as an array of pixels, and then the entire image as an array of rows. However, this is somewhat wasteful: each array takes up a small amount of overhead and each time we look into an array it takes a small amount of time. But remember that our 500x500 image (which is only a small part of a modern 1920x1080 screen) has 250,000 pixels. These small overheads add up.</p>
+
+<p>Fortunately, we know exactly how big these arrays are, so we can flatten them into one single large array. Instead of:
+
+<blockquote class="code">
+[<br>
+[[pixel00.r,pixel00.g,pixel00.b],[pixel01.r,pixel01.g,pixel01.b],...], //row 0<br>
+[[pixel10.r,pixel10.g,pixel10.b],[pixel11.r,pixel11.g,pixel11.b],...], //row 1<br>
+...<br>
+]
+</blockquote>
+
+We represent our image as:
+<blockquote class="code">
+[<br>
+pixel00.r,pixel00.g,pixel00.b,pixel00.a,pixel01.r,pixel01.g,pixel01.b,pixel01.a,..., //row 0<br>
+pixel10.r,pixel10.g,pixel10.b,pixel10.a,pixel11.r,pixel11.g,pixel11.b,pixel11.a,..., //row 1<br>
+...<br>
+]
+</blockquote>
+
+Notice that we added a new value to each pixel (a for alpha). Since the number of numbers per pixel is now a power of 2, the math is faster and we get to store an extra piece of information, usually transparency information: how transparent a pixel is from 0 (fully transparent) to 255 (fully opaque). You can watch a Computerphile <a href="https://www.youtube.com/watch?v=06OHflWNCOE">video</a> that walks through this technique of storing an image as a single array.
+</p>
+
+<blockquote class="instruction">
+At the very end of your <code>draw_gradient</code> function, call <code>console.log(ctx.getImageData(0,0,500,500));</code>. The result should look like:
+</blockquote>
+
+<blockquote class="code">
+ImageData {data: Uint8ClampedArray(1000000), width: 500, height: 500, colorSpace: 'srgb'}<br>
+data: Uint8ClampedArray(1000000) [0, 255, 0, 255, 15, 255, 0, 255, 21, 255, 0, 255, 25, 254, 0, 255, 28, 254, 0, 255, 31, 254, 0, 255, 34, 254, 0, 255, 37, 253, 0, 255, 39, 253, 0, 255, 41, 253, 0, 255, 43, 253, 0, 255, 45, 252, 0, 255, 47, 252, 0, 255, 49, 252, 0, 255, 50, 252, 0, 255, 52, 251, 0, 255, 53, 251, 0, 255, 55, 251, 0, 255, 56, 251, 0, 255, 58, 251, 0, 255, 59, 250, 0, 255, 60, 250, 0, 255, 62, 250, 0, 255, 63, 250, 0, 255, 64, 249, 0, 255, ...]<br>
+colorSpace: "srgb"<br>
+height: 500<br>
+width: 500<br>
+[[Prototype]]: ImageData<br>
+</blockquote>
+
+<p>
+This <code>.data</code> array is the color data array. The first 4 numbers (0,255,0,255) represent the r, g, b, and a of the top left pixel. The next 4 numbers (15,255,0,255) represent the r, g, b, and a of the next pixel over, etc. All these pixels should have alpha of 255, since none of them have any transparency yet. Before you draw to the canvas, every pixel is set to (0,0,0,0): fully transparent black.
+</p>
+
+<blockquote class="instruction">
+Complete the following:
+</blockquote>
+<ol>
+<li> Create a function <code>draw_rgb_fast</code> which:
+<ol>
+<li> Gets the drawing context for your canvas and stores it in a variable <code>ctx</code>
+<li> Gets <code>ctx.getImageData(0,0,500,500)</code> and stores it in a variable <code>id</code>
+<li> Use for loops to iterate through every x and y pixel on the canvas (from 0 to 500):
+<li> At every pixel, set:
+<ul>
+<li> Red to the x coordinate, rescaled from 0 to 500 to go from 0 to 255
+<li> Green to the y coordinate, rescaled from 0 to 500 to go from 0 to 255
+<li> Blue to the value of <code>Number(document.getElementById("r").value)</code> where "r" is replaced by the name of your input box.
+<li> Alpha to 255
+</ul>
+Using:
+<blockquote class="code">
+function set_rgba(imagedata,x,y,r,g,b,a) {<br>
+&nbsp;var pos = y*imagedata.width+x;<br>
+&nbsp;imagedata.data[pos*4] = r;<br>
+&nbsp;imagedata.data[pos*4+1] = g;<br>
+&nbsp;imagedata.data[pos*4+2] = b;<br>
+&nbsp;imagedata.data[pos*4+3] = a;<br>
+&nbsp;}<br>
+</blockquote>
+</ol>
+<li>This just updates your array, now we need to write it back to the canvas using <code>ctx.putImageData(id,0,0)</code>.
+<li>Finally, instead of your input element having <code>onchange</code>, set it to have <code>oninput="draw_rgb_fast()"</code>.
+</ol>
+
+There should now be much less of a delay!
+
+<h2>HSL to RGB</h2>
+<p>
+The downside of writing to our canvas this way is that we can only specify color in terms of RGB. If we want to replicate our HSL visualizer, we'll need a function for converting between HSL and RGB. Below is one such algorithm. It first computes chroma, <code>C</code>, which is the difference between the maximum and minimum of R, G, and B. Luminance, <code>L</code>, is the average of the maximum of R, G, and B, and the minimum of R, G, and B. Knowing these two values is enough to solve for the max and min, and then we figure out which of R, G, and B should be the max, which the min, and which should be interpolated based on the hue, <code>H</code>.
+</p>
+
+<br><img src="05_hsl.png" style="border:1px solid"><br>
+
+<blockquote class="code">
+function HSL_to_RGB(H,S,L) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var R,G,B;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var C;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if (L &lt;= .5) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;C = S*2*L;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;else {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;C = S*2*(1-L);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var max = L+C/2;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var min = L-C/2;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if (H &lt; 60) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;R = max;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;G = convert_a_to_b(H,0,60,min,max);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;else if (H &lt; 120) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;R = convert_a_to_b(H,60,120,max,min);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;G = max;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;else if (H &lt; 180) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;R = min;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;G = max;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;else if (H &lt; 240) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;R = min;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;G = convert_a_to_b(H,180,240,max,min);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;else if (H &lt; 300) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;R = convert_a_to_b(H,240,300,min,max);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;G = min;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;else {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;R = max;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;G = min;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return([255*R,255*G,255*B]);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}
+</blockquote>
+
+<blockquote class="instruction">
+The image above has a plot of the R, G, and B values from 0 to 255 as a function of H. Use the code above and the chart to fill in the missing calculation of B.
+</blockquote>
+
+</body>
+</html>

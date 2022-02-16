@@ -69,6 +69,8 @@ Instructions for you to follow in this document will be highlighted in blue.
 
 <h2>Filling Paths and Transparency</h2>
 
+We can fill paths in html canvases by using <code>ctx.fill()</code>. To specify a color to fill with, we set <code>ctx.fillStyle</code> to a string representing a color. You can see a variety of ways of specifying color at the <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/color_value">MDN</a>. Note that some of the more advanced color spaces like Lab are only available in Safari.
+
 <blockquote class="instruction">
 Complete the following:
 </blockquote>
@@ -93,7 +95,7 @@ Remember to close up the triangle!
 <li>250,200
 </ul>
 <li>Fill in the triangle with <code>ctx.fillStyle = "rgba(0,255,0,.5)";</code> This specifies a color which has no red, is maximally blue, has no green, and has a transparency (alpha) value of .5 (halfway between invisible = 0 and opaque = 1).
-<li>Change <code>ctx.fillStyle</code> to <code>"rgba(0,0,255,.1)"</code>. This is a pure blue color which is almost entirely transparent.
+<li>Now set <code>ctx.fillStyle</code> to <code>"rgba(0,0,255,.1)"</code>. This is a pure blue color which is almost entirely transparent.
 <li>Call <code>ctx.fillRect(150,175,200,100);</code>. This fills a rectangle with the current <code>ctx.fillStyle</code> whose top left corner is at 150,175, and has width 200 and height 100.
 </ol>
 
@@ -128,9 +130,16 @@ Note: you can also use <code>"rgb(" + x + "," + y + ",0)"</code> to create the s
 The result should look like:<br>
 
 <img src="05_mango1.png" style="border:1px solid">
+</ol>
 
-<li>Add in an <code>&lt;input type="range"&gt;</code> or <code>&lt;input type="range"&gt;</code> element to your body with an <code>onchange="draw_rgb()"</code>.
-<li>Add in to your <code>draw_rgb()</code> function code that grabs the value of this input element and uses it as the blue value for each pixel.
+<blockquote class="instruction">
+Complete the following:
+</blockquote>
+
+<ol>
+<li>Add <code>&lt;input type="range" id="inp" min=0 max=500 onchange="draw_rgb()"&gt;</code> to your body.
+<li>Add in to your <code>draw_rgb()</code> function code that grabs the value of this input element and uses it as the blue value for each pixel:
+<code>var inp = Number(document.getElementById("inp").value);</code>
 </ol>
 
 You may notice a few issues with this program:

@@ -1420,7 +1420,8 @@ function tkas_pemdas_as(L,fz) {
 	}
 
 function tkas_pemdas(L) {
-	var fz = tkas_parse_find_paren_focuszone(L);
+	//var fz = tkas_parse_find_paren_focuszone(L);
+	var fz = [0,L.length-1];
 	return(
 		tkas_pemdas_function(L,fz) ||
 		tkas_pemdas_abs(L,fz) ||
@@ -2209,6 +2210,7 @@ function tkas_rule_sequence_drawer(T,RL,tag) {
 	str += "</span>";
 	return(str);
 	}
+
 
 
 var tkas_css = `

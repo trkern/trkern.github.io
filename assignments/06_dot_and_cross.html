@@ -1,0 +1,694 @@
+<!doctype html>
+<html>
+<head>
+<script src="https://trkern.github.io/katex.min.js"></script>
+<script>
+function bootkatex() {
+	var l = document.getElementsByClassName("kd");
+	var i;
+	for (i = 0; i < l.length; i++) {
+		katex.render(l[i].title,l[i],{displayMode:true});
+		}
+	l = document.getElementsByClassName("k");
+	for (i = 0; i < l.length; i++) {
+		katex.render(l[i].title,l[i],{});
+		}
+	}
+</script>
+<style>
+code {
+	background-color: #DDDDDD;
+	}
+.code {
+	font-family: monospace;
+	background-color: #DDDDDD;
+	}
+body {
+	font-family: sans-serif;
+	}
+.caution {
+	background-color: #EEEEBB;
+	padding: 20px;
+	border-left: 3px solid yellow;
+	}
+.caution:before {
+	font-size: xx-large;
+	content: "!"
+	}
+.instruction {
+	background-color: #BBCCEE;
+	}
+blockquote.instruction {
+	padding: 20px;
+	border-left: 3px solid #222255;
+	}
+.matrix td{
+	text-align:center;
+	padding: .4em;
+	}
+</style>
+<link rel="stylesheet" href="https://trkern.github.io/katex.min.css">
+</head>
+<body onload="bootkatex()">
+
+<h1>Dot and Cross Products</h1>
+
+<p>In this interactive, we will explore basic vector operations and their uses in graphics.</p>
+
+Assignment Goals:
+</p>
+<ul>
+<li> Work out the vector formulas, and convert these to Javascript code:
+<ul>
+<li> Vector length
+<li> Vector linear combinations
+<li> Vector projection
+<li> Measuring orthogonality
+<li> Measuring angles
+<li> Finding perpendiculars
+</ul>
+<li> Learn about the <a href="https://en.wikipedia.org/wiki/Hairy_ball_theorem">hedgehog theorem</a> and its application to computer graphics.
+</ul>
+
+<blockquote class="instruction">
+Instructions for you to follow in this document will be highlighted in blue.
+</blockquote>
+
+<h2>The Dot Product</h2>
+
+<p>Given two vectors <span class="k" title="v = (v_0,v_1,\ldots,v_{n-1})"></span> and <span class="k" title="w = (w_0, w_1, \ldots, w_{n-1})"></span>, their dot product is computed by taking the sum of the corresponding products of their elements:
+
+<div class="kd" title="v \cdot w = v_0 \cdot w_0 + v_1 \cdot w_1 + v_2 \cdot w_2 + \cdots + v_{n-1} \cdot w_{n-1} = \sum_{i = 0}^n v_i \cdot w_i"></div>
+
+So, for instance, to take the dot product of (1,2,3) and (4,5,6) we need to compute 1*4+2*5+3*6 = 32.</p>
+
+<blockquote class="instruction">
+Play around with the dot product at this Desmos <a href="https://www.desmos.com/calculator/yjzl7fgzly">interactive</a>. You can click and drag the points to change the vectors (imagine there are vector arrows on the lines). What ways can you make the dot product larger? Smaller? Positive? Negative?
+</blockquote>
+
+<blockquote class="instruction">
+Starting with your orthographic/perspective projection code as a base, add a function <code>vec_dot(v,w)</code> which takes in two arrays v and w (of whatever length) representing vectors and returns their dot product.
+</blockquote>
+
+<p>HINT: you can get the length of an array v with <code>v.length</code>. You may assume both arrays are the same size, or pad the smaller one out with 0s so they are the same size.
+</p>
+
+Some tests: 
+<blockquote class='code'>
+<br>vec_dot([-3,-4,-3],[5,-5,-5]) = 20
+<br>vec_dot([],[]) = 0
+<br>vec_dot([-3],[-2]) = 6
+<br>vec_dot([5,1,2,-3],[-3,0,-3,4]) = -33
+<br>vec_dot([-2],[1]) = -2
+<br>vec_dot([-5,-2,1],[5,-2,-4]) = -25
+<br>vec_dot([0],[-5]) = 0
+<br>vec_dot([4,-4,-5],[5,0,-1]) = 25
+<br>vec_dot([-4,-5],[2,3]) = -23
+<br>vec_dot([0,-5],[-5,-2]) = 10
+<br>vec_dot([1],[-4]) = -4
+<br>vec_dot([3,1],[-3,-2]) = -11
+<br>vec_dot([2,-1,-5],[-3,-1,2]) = -15
+<br>vec_dot([],[]) = 0
+<br>vec_dot([2,1,2],[5,-1,3]) = 15
+<br>vec_dot([5,-5,-4],[0,3,-2]) = -7
+</blockquote>
+<p>The power of the dot product is that with such a simple formula, we get the product of the geometric lengths of the two vectors times the cosine of the angle between them:</p>
+
+<div class="kd" title="v \cdot w = |v| |w| \cos(\theta)"></div>
+
+<p>When dot producting a vector with itself, we get the geometric length of the vector squared:</p>
+
+<div class="kd" title="v \cdot v = |v| |v| \cos(0) = |v|^2"></div>
+
+<blockquote class="instruction">
+Write a function <code>vec_length(v)</code> that takes in an array v representing a vector and returns its geometric length as a vector.
+</blockquote>
+
+Some tests:
+<blockquote class="code">
+vec_length([-2,-5]) = 5.385164807134504
+<br>vec_length([4,2,-5,2]) = 7
+<br>vec_length([4,1,-1]) = 4.242640687119285
+<br>vec_length([-3,1,1]) = 3.3166247903554
+<br>vec_length([-3,4,-2]) = 5.385164807134504
+<br>vec_length([-5,4,4]) = 7.54983443527075
+<br>vec_length([-1,-3,0]) = 3.1622776601683795
+<br>vec_length([0,-1,2]) = 2.23606797749979
+<br>vec_length([3,-5,-1]) = 5.916079783099616
+<br>vec_length([2,2]) = 2.8284271247461903
+<br>vec_length([2,-1]) = 2.23606797749979
+<br>vec_length([0,5]) = 5
+<br>vec_length([-4]) = 4
+<br>vec_length([-2,4]) = 4.47213595499958
+<br>vec_length([]) = 0
+<br>vec_length([4,3,-4]) = 6.4031242374328485
+</blockquote>
+
+<p>When the dot product of two nonzero vectors is zero, we know that <span class="k" title="\cos(\theta)"></span> is zero. <span class="instruction">What value of <span class="k" title="\theta"></span> makes <span class="k" title="\cos(\theta)=0"></span>?</span></p>
+
+<p>Finally, we can work out the angle between two vectors using the inverse cosine.</p>
+
+<div class="kd" title="\frac{v \cdot w}{|v||w|} = \cos(\theta)"></div>
+<div class="kd" title="\arccos\left(\frac{v \cdot w}{|v||w|}\right) = \theta"></div>
+
+<blockquote class="instruction">
+Create a function <code>vec_angle(v,w)</code> that takes two arrays v and w representing vectors and outputs the angle between them. You can calculate the arccos of a value with <code>Math.acos</code>. Note that the answer should be in radians.
+</blockquote>
+
+Some tests: 
+<blockquote class='code'>
+vec_angle([-2],[2]) = 3.141592653589793
+<br>vec_angle([-4,5],[-1,-2]) = 2.0032041023654346
+<br>vec_angle([-2,-2,1,-2],[0,4,5,2]) = 1.8644113058799612
+<br>vec_angle([4,-4,0],[-1,-1,-2]) = 1.5707963267948966
+<br>vec_angle([4,5],[0,2]) = 0.6747409422235525
+<br>vec_angle([-5,4],[3,1]) = 2.1451011569695986
+<br>vec_angle([],[]) = NaN
+<br>vec_angle([2],[3]) = 0
+<br>vec_angle([2,-3],[-3,0]) = 2.1587989303424644
+<br>vec_angle([-5,1,-4],[2,-3,-4]) = 1.484729872611871
+<br>vec_angle([-4,5,2,-4],[3,0,2,-4]) = 1.3794235250236024
+<br>vec_angle([-1],[3]) = 3.141592653589793
+<br>vec_angle([-4,-2,5],[4,-2,3]) = 1.4876550949064553
+<br>vec_angle([0,-2],[-4,-4]) = 0.7853981633974484
+<br>vec_angle([2,5,-4,-3],[-2,1,-4,5]) = 1.5306569313958542
+<br>vec_angle([3,-5,-4],[2,1,-3]) = 1.057152860382729
+</blockquote>
+
+<p>This lets us tell if two vectors are in the same direction or not! Two vector are pointing in the same general direction if their angle is between 0 and <span class="k" title="\frac{\pi}{2}"></span> (90 degrees), and in generally the opposite directions if their angle is between <span class="k" title="\frac{\pi}{2}"></span> (90 degrees) and <span class="k" title="\pi"></span> (180 degrees).</p>
+
+<blockquote class="instruction">
+Take a look at the graph of cos(x) on desmos. What's the difference between angles between 0 and pi/2 and between pi/2 and pi? How is this reflected in the dot product formula? Using this insight, write a <code>vec_same_direction(v,w)</code> function that returns true or false depending on whether v and w are pointing in the same direction.
+</blockquote>
+
+Some tests: 
+<blockquote class='code'>
+vec_same_direction([-3,5,1],[-4,-2,1]) = true
+<br>vec_same_direction([-3],[2]) = false
+<br>vec_same_direction([-3,1,0,3],[5,-3,2,-5]) = false
+<br>vec_same_direction([0],[-2]) = false
+<br>vec_same_direction([-2,-2],[0,1]) = false
+<br>vec_same_direction([1],[-5]) = false
+<br>vec_same_direction([-3,-4,-2],[-2,-1,0]) = true
+<br>vec_same_direction([3],[2]) = true
+<br>vec_same_direction([-1],[-4]) = true
+<br>vec_same_direction([0,-1,3],[1,1,-2]) = false
+<br>vec_same_direction([4,-5,3],[-2,-3,1]) = true
+<br>vec_same_direction([-4,1],[2,0]) = false
+<br>vec_same_direction([],[]) = false
+<br>vec_same_direction([1,-3,5],[-2,2,5]) = true
+<br>vec_same_direction([0,-2,0,-1],[1,5,-5,3]) = false
+<br>vec_same_direction([-2,-1,2],[3,-1,-5]) = false
+</blockquote>
+
+<img src="06_dot1.png" style="border: 1px solid">
+<img src="06_dot2.png" style="border: 1px solid">
+
+<p>
+Some resources for learning about dot products:
+<ul>
+<li>3blue1brown has a <a href="https://www.youtube.com/watch?v=LyGKycYT2v0">video</a> on dot products
+<li>Freya Holmer has a <a href="https://www.youtube.com/watch?v=MOYiVLEnhrw&t=8781s">lecture</a> on dot products, with 
+<li>Khan Academy has some <a href="https://www.khanacademy.org/math/linear-algebra/vectors-and-spaces#dot-cross-products">videos</a> on dot and cross products
+<li>Geogebra has an interactive <a href="https://www.geogebra.org/m/c8euxmbc">worksheet</a> on dot products
+</ul>
+</p>
+
+<h2>Unit Vectors</h2>
+
+<p>It's very useful to be able to talk about a vector pointing in a particular direction with length one. This lets us express a direction without specifying a magnitude.
+</p>
+
+<blockquote class="instruction">
+Write a function <code>vec_scale(a,v)</code> which takes in a vector v and outputs a new vector av, which is obtained by multiplying all of the entries of v by a.
+</blockquote>
+
+Some tests: 
+<blockquote class='code'>
+vec_scale(-5,[3,3,-3]) = [-15,-15,15]
+<br>vec_scale(0,[-4,1,4]) = [0,0,0]
+<br>vec_scale(2,[2,-5]) = [4,-10]
+<br>vec_scale(-2,[5,-4,-1]) = [-10,8,2]
+<br>vec_scale(5,[0,1,5]) = [0,5,25]
+<br>vec_scale(4,[0,-4]) = [0,-16]
+<br>vec_scale(-3,[-2,-4]) = [6,12]
+<br>vec_scale(2,[3,4,-1]) = [6,8,-2]
+<br>vec_scale(-4,[2,4]) = [-8,-16]
+<br>vec_scale(2,[-4,0,-1]) = [-8,0,-2]
+<br>vec_scale(-2,[-1,-5,1]) = [2,10,-2]
+<br>vec_scale(2,[2,3]) = [4,6]
+<br>vec_scale(-1,[2,-2,4,0]) = [-2,2,-4,0]
+<br>vec_scale(-1,[4]) = [-4]
+<br>vec_scale(5,[3,-4,0]) = [15,-20,0]
+<br>vec_scale(1,[-2]) = [-2]
+</blockquote>
+
+<p>The vector av points in the same direction as v (the opposite direction if a is negative, or nowhere if a is 0), and has length a times the length of v.</p>
+
+<blockquote class="instruction">
+Write a function <code>vec_normalize(v)</code> which takes in a vector v and outputs a new vector which has the same direction as v, but has length 1. HINT: What do you need to multiply the length of v by to get 1?
+</blockquote>
+
+Some tests: 
+<blockquote class='code'>
+vec_normalize([3,5,0]) = [0.5144957554275265,0.8574929257125441,0]
+<br>vec_normalize([-1]) = [-1]
+<br>vec_normalize([-4,5]) = [-0.6246950475544243,0.7808688094430304]
+<br>vec_normalize([5,2]) = [0.9284766908852593,0.3713906763541037]
+<br>vec_normalize([-3,-3,4]) = [-0.5144957554275265,-0.5144957554275265,0.6859943405700353]
+<br>vec_normalize([-5,3]) = [-0.8574929257125441,0.5144957554275265]
+<br>vec_normalize([-4,-1,4]) = [-0.6963106238227914,-0.17407765595569785,0.6963106238227914]
+<br>vec_normalize([-4,0,1]) = [-0.9701425001453319,0,0.24253562503633297]
+<br>vec_normalize([5,4]) = [0.7808688094430304,0.6246950475544243]
+<br>vec_normalize([4]) = [1]
+<br>vec_normalize([-3,-4,-5]) = [-0.4242640687119285,-0.565685424949238,-0.7071067811865475]
+<br>vec_normalize([1,2]) = [0.4472135954999579,0.8944271909999159]
+<br>vec_normalize([1,-5,-3]) = [0.1690308509457033,-0.8451542547285165,-0.50709255283711]
+<br>vec_normalize([4,-4,-2,5]) = [0.5121475197315839,-0.5121475197315839,-0.25607375986579195,0.6401843996644798]
+<br>vec_normalize([-1,3,1]) = [-0.30151134457776363,0.9045340337332909,0.30151134457776363]
+<br>vec_normalize([-5,2,-4,-1]) = [-0.7372097807744857,0.29488391230979427,-0.5897678246195885,-0.14744195615489714]
+</blockquote>
+
+<h2>Projection</h2>
+
+<p>Another key application of the dot product is, given a vector u, take a vector v and break it apart as v_perpendicular + v_parallel, where v_parallel is in the same direction as u, and v_perpendicular is perpendicular to u. The dot product is handy here because we need to calculate <span class="k" title="|v| \cos(\theta)"></span>. If the length of u is 1, this is the dot product, otherwise, we need to take the dot product divided by the length of u.
+</p>
+
+<a title="Math buff, CC BY-SA 4.0 &lt;https://creativecommons.org/licenses/by-sa/4.0&gt;, via Wikimedia Commons" href="https://commons.wikimedia.org/wiki/File:Scalar_vector_projection.svg"><img width="512" alt="Scalar vector projection" src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Scalar_vector_projection.svg/512px-Scalar_vector_projection.svg.png"></a>
+
+<blockquote class="instruction">
+Write a function <code>vec_parallel_component(v,u)</code> that calculates a vector of length <span class="k" title="|v| \cos(\theta)"></span> in the direction of u.
+</blockquote>
+
+Some tests: 
+<blockquote class='code'>
+vec_parallel_component([-2,-5],[5,-5]) = [1.4999999999999998,-1.4999999999999998]
+<br>vec_parallel_component([-5,4,3],[-4,1,2]) = [-5.714285714285715,1.4285714285714288,2.8571428571428577]
+<br>vec_parallel_component([0],[-2]) = [0]
+<br>vec_parallel_component([],[]) = []
+<br>vec_parallel_component([-1,-1,5],[0,-2,0]) = [0,-1,0]
+<br>vec_parallel_component([0,-3,-4],[-1,1,1]) = [2.3333333333333344,-2.3333333333333344,-2.3333333333333344]
+<br>vec_parallel_component([0,-1,0],[4,3,2]) = [-0.41379310344827586,-0.3103448275862069,-0.20689655172413793]
+<br>vec_parallel_component([2,-1,4,4],[-2,-2,-5,-3]) = [1.619047619047619,1.619047619047619,4.0476190476190474,2.4285714285714284]
+<br>vec_parallel_component([1,4,2],[-2,-3,2]) = [1.176470588235294,1.764705882352941,-1.176470588235294]
+<br>vec_parallel_component([-5,0,-2],[-4,-1,2]) = [-3.0476190476190483,-0.7619047619047621,1.5238095238095242]
+<br>vec_parallel_component([3],[-2]) = [3]
+<br>vec_parallel_component([-3],[-1]) = [-3]
+<br>vec_parallel_component([3,-1,1],[5,3,-3]) = [1.0465116279069768,0.627906976744186,-0.627906976744186]
+<br>vec_parallel_component([-4,-5,4],[3,-1,5]) = [1.114285714285714,-0.3714285714285713,1.8571428571428563]
+<br>vec_parallel_component([-4,0,-5],[-2,5,2]) = [0.12121212121212119,-0.303030303030303,-0.12121212121212119]
+<br>vec_parallel_component([3,1,2],[4,1,-3]) = [1.076923076923077,0.2692307692307693,-0.8076923076923078]
+</blockquote>
+
+<blockquote class="instruction">
+Write a function <code>vec_perpendicular_component(v,u)</code> that calculates v-<code>vec_parallel_component</code>
+</blockquote>
+
+Some tests: 
+<blockquote class='code'>
+vec_perpendicular_component([-3,-2,4],[3,3,0]) = [-0.49999999999999956,0.5000000000000004,4]
+<br>vec_perpendicular_component([-3,1],[-4,4]) = [-1.0000000000000004,-0.9999999999999996]
+<br>vec_perpendicular_component([4,-4],[-5,-1]) = [0.9230769230769225,-4.615384615384615]
+<br>vec_perpendicular_component([2,0,-2],[1,-5,1]) = [2,0,-2]
+<br>vec_perpendicular_component([-4,1],[-1,0]) = [0,1]
+<br>vec_perpendicular_component([-3,-3],[2,5]) = [-1.5517241379310345,0.6206896551724137]
+<br>vec_perpendicular_component([],[]) = []
+<br>vec_perpendicular_component([3,1],[-4,3]) = [1.5599999999999996,2.08]
+<br>vec_perpendicular_component([4,-5,-5],[-3,-5,-3]) = [5.953488372093023,-1.744186046511627,-3.0465116279069764]
+<br>vec_perpendicular_component([-5,4,-2],[5,5,3]) = [-4.067796610169491,4.932203389830509,-1.4406779661016946]
+<br>vec_perpendicular_component([5,3,-1],[2,1,1]) = [0.9999999999999991,0.9999999999999996,-3.0000000000000004]
+<br>vec_perpendicular_component([1,-5],[-1,0]) = [0,-5]
+<br>vec_perpendicular_component([-1,-4],[2,5]) = [0.517241379310345,-0.20689655172413746]
+<br>vec_perpendicular_component([4,1,1],[0,2,5]) = [4,0.5172413793103449,-0.2068965517241379]
+<br>vec_perpendicular_component([-2,2,-3,2],[-2,3,-3,4]) = [-0.5789473684210524,-0.13157894736842124,-0.8684210526315788,-0.8421052631578951]
+<br>vec_perpendicular_component([1,-2,-5],[-1,-4,4]) = [0.606060606060606,-3.575757575757576,-3.424242424242424]
+</blockquote>
+
+<p>These functions are very useful for reflections (v_perpendicular stays the same, v_parallel gets negated), both of light and of physics objects. Freya Holmer has a <a href="https://www.youtube.com/watch?v=MOYiVLEnhrw&t=9870s">lecture</a> about using this to create physically correct sounds.
+</p>
+
+<p>
+Note that you can describe a line or a plane as the set of all points whose projection onto a given vector is a specific length. You can play around with this in 2d in Desmos <a href="https://www.desmos.com/calculator/znsoard4tb">here</a> or in 3d in Geogebra <a href="https://www.geogebra.org/m/suyjrztk">here</a> (move the slider to progress the derivation). These are related to the ax+by=c and ax+by+cz=d equations for lines and planes.
+</p>
+
+<h2>Adding and Linear Combinations</h2>
+
+<blockquote class="instruction">
+Write a function <code>vec_add(v,w)</code> that returns v+w where v and w are arrays representing vectors.
+</blockquote>
+
+Some tests: 
+<blockquote class='code'>
+vec_add([-4,0,3],[-2,-5,-2]) = [-6,-5,1]
+<br>vec_add([-2,1,-4],[-4,-5,3]) = [-6,-4,-1]
+<br>vec_add([-5,-3],[2,4]) = [-3,1]
+<br>vec_add([3,2],[2,-1]) = [5,1]
+<br>vec_add([-1,3,-1],[2,-2,1]) = [1,1,0]
+<br>vec_add([3,0],[5,4]) = [8,4]
+<br>vec_add([-5],[-5]) = [-10]
+<br>vec_add([2,-3,-3],[5,3,4]) = [7,0,1]
+<br>vec_add([-3],[-1]) = [-4]
+<br>vec_add([2,-3],[-2,3]) = [0,0]
+<br>vec_add([1,4],[0,-5]) = [1,-1]
+<br>vec_add([5],[3]) = [8]
+<br>vec_add([-3,-5,4],[-1,-3,4]) = [-4,-8,8]
+<br>vec_add([0],[3]) = [3]
+<br>vec_add([5,-5,-3],[-2,4,-1]) = [3,-1,-4]
+<br>vec_add([2,-2],[-4,4]) = [-2,2]
+</blockquote>
+
+<blockquote class="instruction">
+Write a function <code>vec_combination(a,v,b,w)</code> that returns av+bw where v and w are arrays representing vectors.
+</blockquote>
+
+Some tests: 
+<blockquote class='code'>
+<br>vec_combination(-1,[-1],-2,[2]) = [-3]
+<br>vec_combination(0,[-3,3],0,[5,-2]) = [0,0]
+<br>vec_combination(-1,[5,-2,-3],2,[-5,-1,1]) = [-15,0,5]
+<br>vec_combination(2,[4,0,2],-1,[-5,-4,-3]) = [13,4,7]
+<br>vec_combination(5,[3,-2],-5,[0,5]) = [15,-35]
+<br>vec_combination(-3,[-3,4,1],3,[-3,-2,-3]) = [0,-18,-12]
+<br>vec_combination(5,[1],3,[-3]) = [-4]
+<br>vec_combination(-1,[1],-5,[0]) = [-1]
+<br>vec_combination(3,[0,-3],4,[5,3]) = [20,3]
+<br>vec_combination(3,[-1,-2,3,-3],4,[5,1,-2,4]) = [17,-2,1,7]
+<br>vec_combination(4,[-2,0],-3,[-2,-2]) = [-2,6]
+<br>vec_combination(-1,[-2,5,2],-2,[-5,3,0]) = [12,-11,-2]
+<br>vec_combination(4,[2,-1,2],-4,[0,4,1]) = [8,-20,4]
+<br>vec_combination(5,[-3,4],-3,[-1,5]) = [-12,5]
+<br>vec_combination(-4,[0,-3,-3],-1,[2,5,1]) = [-2,7,11]
+<br>vec_combination(-2,[-3,-5],-1,[-1,3]) = [7,7]
+</blockquote>
+
+<blockquote class="instruction">
+Write a function <code>vec_triple_combination(a,v,b,w,c,u)</code> that returns av+bw+cu where u, v and w are arrays representing vectors.
+</blockquote>
+
+Some tests: 
+<blockquote class='code'>
+<br>vec_triple_combination(-5,[4],-4,[5],1,[3]) = [-37]
+<br>vec_triple_combination(-2,[0,-1,2],4,[5,-4,-2],5,[1,-1,-2]) = [25,-19,-22]
+<br>vec_triple_combination(-2,[-3,4,2,-4],1,[-4,-5,0,5],0,[3,1,0,-3]) = [2,-13,-4,13]
+<br>vec_triple_combination(3,[-4,3,5],5,[5,3,-5],-1,[-1,1,4]) = [14,23,-14]
+<br>vec_triple_combination(2,[],4,[],2,[]) = []
+<br>vec_triple_combination(-1,[0,-5],-3,[-3,3],5,[-3,-4]) = [-6,-24]
+<br>vec_triple_combination(2,[-5],0,[2],5,[-4]) = [-30]
+<br>vec_triple_combination(-1,[1,-4],-1,[1,2],-5,[-2,2]) = [8,-8]
+<br>vec_triple_combination(5,[3,0],1,[0,1],-1,[4,-3]) = [11,4]
+<br>vec_triple_combination(0,[-1],5,[-3],5,[-5]) = [-40]
+<br>vec_triple_combination(-1,[4,5,0],1,[-2,3,-1],-1,[-5,-4,-2]) = [-1,2,1]
+<br>vec_triple_combination(2,[2,-1,0],0,[4,2,5],1,[1,2,-3]) = [5,0,-3]
+<br>vec_triple_combination(5,[0,-3],-2,[-2,1],0,[-3,4]) = [4,-17]
+<br>vec_triple_combination(0,[-2,-5,-4],-1,[5,-1,0],0,[0,0,-4]) = [-5,1,0]
+<br>vec_triple_combination(1,[-5,-1],1,[-2,4],-4,[3,-3]) = [-19,15]
+<br>vec_triple_combination(-2,[-3,-4],1,[1,5],-1,[-1,2]) = [8,11]
+</blockquote>
+
+<p>
+BONUS: use the <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/rest_parameters">rest parameter</a> feature of Javascript to implement a version of <code>vec_combination</code> that can take as many pairs of inputs as you want and calculates the appropriate linear combination. E.g. <code>vec_combination(a,v,b,w,c,z,d,x)</code> computes av+bw+cz+dx. To get you started, the code below calculates the product of its inputs:
+</p>
+
+<blockquote class="code">
+function long_product(...L) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var i;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var return_value = 1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;for (i = 0; i &lt; L.length; i++) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return_value *= L[i];<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return(return_value);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}
+</blockquote>
+
+<h2>Finding Perpendicular Vectors in 2d</h2>
+
+<p>Given a vector v, we often find ourselves wanting to find a vector perpendicular to it. In 2d, there are essentially two possible vectors perpendicular to the vector (x,y): (-y,x) and (y,-x), as well as all scalar multiples of them. Use the dot product to verify that these vectors are perpendicular.</p>
+
+<blockquote class="instruction">
+Create a function <code>vec_2d_perpendicular(v)</code> which takes in an array v representing a 2d vector, and returns a vector perpendicular to it.
+</blockquote>
+
+<blockquote class="instruction">
+Create a function <code>draw_arrow(A,B)</code> which takes in two points (in canvas coordinates) and draws an arrow from A to B, as shown below:
+</blockquote>
+
+<br><img src="06_draw_arrow.png"><br>
+
+<p>The tricky part of this is to locate the points C and D. I recommend having the length of the blue lines in the image be the same, and have them be some fixed distance, like 10 pixels.</p>
+
+You can locate the point C by:
+<ol>
+<li> create a vector v of length 10 in the direction of the vector from point B to point A, <li> create a vector w of length 10 in the direction of a vector perpendicular to the vector from point B to point A
+<li> add v and w to the coordinates of point B. Note that you can write this whole thing as a vector linear combination.
+</ol>
+
+<p>
+BONUS: if the vector from A to B is really short, the arrowhead will look disproportionately long. Add in a check to see if the vector from A to B is less than a certain length, in which case, scale down the arrowhead.
+</p>
+
+<h2>Finding Perpendicular Vectors in 3d</h2>
+
+<p>The problem of finding perpendicular vectors in 3 dimensions is actually harder than in 2 because there are so many options! In fact, the set of perpendicular vectors to a given vector v forms a two dimensional plane through the origin! You can visualize this plane in Geogebra <a href="https://www.geogebra.org/3d/b44wmqyj">here</a> by dragging around the endpoint of the vector.
+</p>
+
+Finding perpendicular vectors is a key tool for:
+<ul>
+<li> Placing objects on uneven terrain (once you know the "up" vector, you need to determine the "forward" vector).
+<li> Setting up a camera (once you know the "forward" vector, you need to determine the "up" vector: which direction should be up on the computer screen)
+<li> Determining how controls should control the player (you need to determine what direction the left arrow will move the player/camera)
+</ul>
+
+There are two solutions. For instance, with the camera problem:
+<ul>
+<li> What direction "up" is only depends on the direction the camera is facing. By the <a href="https://en.wikipedia.org/wiki/Hairy_ball_theorem">hairy ball theorem</a>, it is necessary to handle at least one point specially to avoid jumps in camera angles. A common solution is to prevent the player from looking directly up or down as in this three.js <a href="https://threejs.org/examples/#webgl_lightprobe">example</a>.
+<li> What direction "up" is depends on what direction was up and how the camera has moved. This is good for games set in outer space, where there is no canonical "up", but can lead to disorienting effects where the direction of "up" changes. You can see this 
+<ul>
+<li>In this Three.js <a href="https://threejs.org/examples/?q=controls#misc_controls_trackball">example</a> by dragging your mouse around in a circle and watching how "up" changes
+<li>In this disorienting Three.js <a href="https://threejs.org/examples/?q=controls#misc_controls_fly">example</a> by looking around with the mouse or keyboard. 
+</ul>
+</ul>
+
+<blockquote class="instruction">
+Given a vector v = (v[0],v[1],v[2]), find a formula for a vector which is perpendicular to it, and has z component 0, and write the function <code>vec_first_perpendicular(v)</code> which returns this vector.
+</blockquote>
+<ol>
+<li>HINT: Use the dot product to verify perpendicularity.
+<li>HINT: You will need to handle the case where v[0] and v[1] are both 0 specially, as there are plenty of vectors with z component 0 which are perpendicular to (0,0,1)!
+</ol>
+
+<h2>Cross Products</h2>
+<p>Once we have two vectors in three dimensions, we can find a third vector which is perpendicular to both using the vector cross product.</p>
+
+<p>Given two 3D vectors v and w, their cross product v &times; w is a vector:
+<ul>
+<li>with length the area of the parallelogram formed by the two vectors
+<li>perpendicular to those two vectors
+<li>obeying a right-hand rule for those two vectors (if you point the fingers of your right hand in the direction of v and can rotate them to point in the direction of w, your thumb is pointing in the direction of v &times; w)
+</ul>
+This is really useful for:
+<ul>
+<li>Calculating the area of triangles (half the area of the parallelogram)
+<li>Reasoning about the orientation of a triangle
+<li>Distinguishing clockwise and counter-clockwise triangles
+</ul>
+</p>
+
+<p>
+Given two vectors <span class="k" title="v = (v_0, v_1, v_2)"></span> and <span class="k" title="w = (w_0, w_1, w_2)"></span>, their cross product is <div class="kd" title="v \times w = \begin{pmatrix} v_1 \cdot w_2 - v_2 \cdot w_1 \\ v_2 \cdot w_0 - v_0 \cdot w_2 \\ v_0 \cdot w_1 - v_1 \cdot w_0 \end{pmatrix}"></div> Note: the vector has been written vertically for clarity.
+</p>
+
+<blockquote class="instruction">
+Create a <code>vec_cross(v,w)</code> function which returns the cross product of v and w.
+</blockquote>
+
+Some tests: 
+<blockquote class='code'>
+vec_cross([-2,-1,-5],[-4,-5,3]) = [-28,26,6]
+<br>vec_cross([5,3,0],[-4,-3,4]) = [12,-20,-3]
+<br>vec_cross([3,5,-1],[4,-1,-4]) = [-21,8,-23]
+<br>vec_cross([2,-5,5],[0,-1,4]) = [-15,-8,-2]
+<br>vec_cross([0,2,-3],[4,-5,5]) = [-5,-12,-8]
+<br>vec_cross([-4,-4,1],[-2,3,-5]) = [17,-22,-20]
+<br>vec_cross([-2,-1,-1],[4,-1,3]) = [-4,2,6]
+<br>vec_cross([5,2,4],[5,-4,3]) = [22,5,-30]
+<br>vec_cross([4,-4,2],[-2,3,2]) = [-14,-12,4]
+<br>vec_cross([-5,-2,3],[-5,-4,4]) = [4,5,10]
+<br>vec_cross([-3,-4,-3],[0,-4,3]) = [-24,9,12]
+<br>vec_cross([-4,5,-5],[2,0,-3]) = [-15,-22,-10]
+<br>vec_cross([2,-4,2],[-3,-5,0]) = [10,-6,-22]
+<br>vec_cross([0,2,-3],[-2,4,3]) = [18,6,4]
+<br>vec_cross([-1,4,5],[5,3,4]) = [1,29,-23]
+<br>vec_cross([0,-2,1],[3,-3,2]) = [-1,3,6]
+</blockquote>
+
+<p>Some resources for learning about cross products:
+<ul>
+<li> I've put together a <a href="https://trkern.github.io/cross">visualizer</a> for cross products
+<li> 3blue1brown has a <a href="https://www.youtube.com/watch?v=eu6i7WJeinw">video</a> on 2 and 3 dimensional cross products
+<li> Freya Holmer has a <a href="https://www.youtube.com/watch?v=XiwEyopOMqg&t=8120s">lecture</a> on cross products with applications for video games
+<li> Geogebra also has a <a href="https://www.geogebra.org/m/psMTGDgc">few</a> <a href="https://www.geogebra.org/m/jcnba3fg">visualizations</a> of the cross product
+<li> Khan Academy has some <a href="https://www.khanacademy.org/math/linear-algebra/vectors-and-spaces#dot-cross-products">videos</a> on dot and cross products
+<li> Math with Drew has a <a href="https://www.youtube.com/watch?v=tAKZclEBq7A">video</a> on the determinant formula for calculating cross products, and a demonstration on why they are perpendicular to the original vectors.
+<li> Wikipedia <a href="https://en.wikipedia.org/wiki/Cross_product#Coordinate_notation">shows</a> a way of working out the cross product formula just from knowing how to take cross products involving the basis vectors i = (1,0,0), j = (0,1,0) and k = (0,0,1) and using distributivity.
+</ul>
+</p>
+
+<blockquote class="instruction">
+Create a function <code>vec_triangle_area(A,B,C)</code> which returns the area of the triangle between points in three dimensional space A, B, and C. You can get two vectors representing the sides of the triangle by computing B-A and C-A, and then compute the area of the triangle by taking half the cross product.
+</blockquote>
+
+Some tests: 
+<blockquote class='code'>
+vec_triangle_area([-5,-2,-1],[-3,-4,0],[3,0,1]) = 10.63014581273465
+<br>vec_triangle_area([2,3,-3],[0,1,5],[3,-4,0]) = 27.16615541441225
+<br>vec_triangle_area([5,-4,-4],[-1,-4,-2],[-2,-3,-4]) = 7.681145747868608
+<br>vec_triangle_area([0,3,5],[3,3,2],[-3,1,3]) = 8.616843969807043
+<br>vec_triangle_area([2,-1,-4],[-5,-5,5],[3,-5,5]) = 39.395431207184416
+<br>vec_triangle_area([5,1,0],[3,0,-4],[3,-4,-3]) = 9.447221813845593
+<br>vec_triangle_area([3,4,2],[-1,-3,5],[0,2,-1]) = 18.296174463531987
+<br>vec_triangle_area([-1,-1,3],[-2,-2,3],[-1,-3,-1]) = 3
+<br>vec_triangle_area([0,-2,-5],[-2,-1,-5],[4,-5,1]) = 6.782329983125268
+<br>vec_triangle_area([-4,3,5],[3,3,-2],[5,-5,1]) = 43.292609068985435
+<br>vec_triangle_area([1,2,2],[2,1,1],[-4,2,4]) = 3.082207001484488
+<br>vec_triangle_area([-1,3,3],[4,5,0],[-4,-5,-2]) = 29.444863728670914
+<br>vec_triangle_area([-3,2,2],[5,1,3],[3,-4,0]) = 24.041630560342615
+<br>vec_triangle_area([2,5,1],[4,-5,1],[3,-1,-3]) = 20.42057785666214
+<br>vec_triangle_area([3,1,3],[4,-5,-1],[2,-5,4]) = 16.224980739587952
+<br>vec_triangle_area([5,-2,4],[3,4,3],[3,5,3]) = 1.118033988749895
+</blockquote>
+
+<blockquote class="instruction">
+Create a function <code>vec_triangle_normal(A,B,C)</code> function which returns a vector perpendicular to the triangle between points in three dimensional space A, B, and C.
+</blockquote>
+
+Some tests: 
+<blockquote class='code'>
+vec_angle(vec_triangle_normal([-2,4,1],[-1,-5,5],[1,-2,3]), [6,10,21]) = 0
+<br>vec_angle(vec_triangle_normal([-3,-4,-1],[-4,-4,-2],[-1,5,1]), [9,0,-9]) = 0
+<br>vec_angle(vec_triangle_normal([-4,-1,5],[5,3,-2],[4,1,-3]), [-18,16,-14]) = 0
+<br>vec_angle(vec_triangle_normal([-2,-1,5],[-4,-2,4],[-1,-1,0]), [5,-11,1]) = 0
+<br>vec_angle(vec_triangle_normal([0,-5,-2],[1,5,2],[3,-2,2]), [28,8,-27]) = 0
+<br>vec_angle(vec_triangle_normal([-2,-2,3],[3,1,3],[-1,1,5]), [6,-10,12]) = 0
+<br>vec_angle(vec_triangle_normal([-3,-3,-4],[2,-3,1],[-1,0,3]), [-15,-25,15]) = 0
+<br>vec_angle(vec_triangle_normal([-4,0,1],[5,3,0],[-3,5,2]), [8,-10,42]) = 0
+<br>vec_angle(vec_triangle_normal([2,-5,-3],[3,4,-3],[0,-4,1]), [36,-4,19]) = 0
+<br>vec_angle(vec_triangle_normal([4,-1,-3],[1,-1,-5],[0,-2,2]), [-2,23,3]) = 0
+<br>vec_angle(vec_triangle_normal([4,-2,-5],[-2,-2,5],[-1,1,1]), [-30,-14,-18]) = 0
+<br>vec_angle(vec_triangle_normal([-2,2,-5],[-4,2,-2],[0,-1,1]), [9,18,6]) = 0
+<br>vec_angle(vec_triangle_normal([-1,-1,5],[-3,4,3],[0,0,0]), [-23,-12,-7]) = 0
+<br>vec_angle(vec_triangle_normal([2,5,0],[4,-4,4],[2,2,-1]), [21,2,-6]) = 0
+<br>vec_angle(vec_triangle_normal([0,2,-2],[4,-5,-3],[0,-1,1]), [-24,-12,-12]) = 0
+<br>vec_angle(vec_triangle_normal([-4,-1,3],[2,3,-1],[3,-5,-5]), [-48,20,-52]) = 0
+</blockquote>
+Note: if all the angles are working out to pi, your triangles are oriented according to the left-hand rule. You can fix this by switching the order in your cross product. Some 3d engines (including Unity and Unreal) use a left-handed system. Always check what kind of system you're using!
+
+<blockquote class="instruction">
+Create a function <code>draw_cross()</code> which does the following:
+</blockquote>
+
+<ol>
+<li> Clear the canvas
+<li> Get three numbers from inputs in the body of your document to use as the coordinates of a vector v:
+<blockquote class="code">
+&lt;input type="number" id="v0" value=1 oninput="draw_cross()"&gt;&lt;br&gt;<br>
+&lt;input type="number" id="v1" value=1 oninput="draw_cross()"&gt;&lt;br&gt;<br>
+&lt;input type="number" id="v2" value=1 oninput="draw_cross()"&gt;
+</blockquote>
+<blockquote class="code">
+&nbsp;&nbsp;&nbsp;&nbsp;var v0 = Number(document.getElementById("v0").value);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var v1 = Number(document.getElementById("v1").value);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var v2 = Number(document.getElementById("v2").value);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var v = [v0,v1,v2];
+</blockquote>
+<li> Calculate a vector w which is perpendicular to v using your <code>vec_first_perpendicular</code>
+<li> Calculate a vector u which is perpendicular to both v and w
+<li> Let o be the zero vector (0,0,0)
+<li> Calculate vectors <code>vn, un, wn</code> which are normalized (unit length) versions of v, u, and w.
+<li> Calculate vectors <code>vnp, unp, wnp, vp, op</code> which are versions of vn, un, wn, v, and o that have been projected from 3d model space to canvas space using the function:
+<blockquote class="code">
+function space_to_canvas(v) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var xrot = Number(document.getElementById("xrot").value);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var yrot = Number(document.getElementById("yrot").value);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var v3v = new THREE.Vector3(v[0],v[1],v[2]);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;v3v.applyMatrix3(rotation_matrix_x(xrot));<br>
+&nbsp;&nbsp;&nbsp;&nbsp;v3v.applyMatrix3(rotation_matrix_y(yrot));<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return([convert_a_to_b(v3v.x,-5,5,0,500),convert_a_to_b(v3v.y,-5,5,500,0)]);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}
+</blockquote>
+Use your <code>draw_arrow</code> function to draw arrows:
+<ul>
+<li>From op to vp
+<li>From op to vnp
+<li>From op to wnp
+<li>From op to unp
+</ul>
+You can make them different colors using <code>ctx.strokeStyle</code> if you want.
+</ol>
+
+<h2>Linear Combinations</h2>
+
+<p>
+When we look at a vector like <code>bunverts[0] = [0.45, -2.75, 4.6]</code>, it's describing a linear combination that gives us a location in three dimensional space. Specifically, if e0 = (1,0,0), e1 = (0,1,0), and e2 = (0,0,1), then this point is .45*e0 - 2.75*e1 + 4.6*e2. But we can recycle that linear combination with other basis vectors to produce a bunny that has been rotated!
+</p>
+
+<blockquote class="instruction">
+Add to your <code>draw_cross</code> function code which does the following:
+</blockquote>
+<ol>
+<li> Iterate over each element of bunverts:
+<li> Calculate <code>bv = vec_triple_combination(bunverts[i][0],vn,bunverts[i][1],wn,bunverts[i][2],un)</code>
+<br>NOTE: this is the same as applying the matrix whose columns are vn, wn, un to the vector bunverts[i]!
+<li> Calculate <code>bvp</code> from bv by applying <code>space_to_canvas</code> from before.
+<li> Draw a circle at this point using:
+<blockquote class="code">
+ctx.beginPath();<br>
+ctx.arc(bvp[0],bvp[1],3,0,2*Math.PI);<br>
+ctx.fill();
+</blockquote>
+You can read more about the ctx.arc function at the MDN <a href="https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/arc">page</a>.
+</ol>
+
+You should get a cloud of points that roughly looks like a bunny!
+
+We can also find the center of various faces by taking the average of their vertices:
+
+<blockquote class="instruction">
+Add the following code to your <code>draw_cross</code> function:
+</blockquote>
+
+<blockquote class="code">
+&nbsp;&nbsp;&nbsp;&nbsp;for (i = 0; i &lt; bunfaces.length; i++) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;var bfc = vec_triple_combination(1/3,bunverts[bunfaces[i][0]],1/3,bunverts[bunfaces[i][1]],1/3,bunverts[bunfaces[i][2]]);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;var bfcp = space_to_canvas(vec_combination(bfc[0],vn,bfc[1],wn,bfc[2],un))<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ctx.beginPath();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ctx.fillStyle = "red";<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ctx.arc(bfcp[0],bfcp[1],3,0,2*Math.PI);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ctx.fill();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+</blockquote>
+
+We can also take weighted averages of the corners of a triangle to get other positions within the triangle. These weighted averages are called affine combinations: linear combinations where the coefficients add up to 1.
+
+<blockquote class="instruction">
+Add to your <code>draw_cross</code> function code which does the following:
+</blockquote>
+<ol>
+<li> Create variables a, b, and c, representing the vectors (1,0,0), (0,1,0) and (0,0,1) respectively
+<li> Create a for loop on a variable i ranging from 0 to 1 in increments of 0.1
+<li> Within that, create a for loop on a variable j ranging from 0 to 1-i in increments of 0.1
+<li> Within that, let k = 1-i-j
+<li> Create a new vector t = i*a+j*b+k*c using <code>vec_triple_combination</code>
+<li> Create tp which is t converted to canvas coordinates using <code>space_to_canvas</code>
+<li> Draw a circle at the point tp using <code>ctx.arc</code>, as above.
+</ol>
+
+<p>
+Note: there may be a strange dent in your triangle caused by floating point errors.
+</p>
+
+<p>
+You can get a higher resolution set of vertices of the stanford bunny (with still only a fraction of the vertices of the full model!) at <a href="https://trkern.github.io/assignments/bunverts_medium.txt">https://trkern.github.io/assignments/bunverts_medium.txt</a>. Note that the placement and scale of this model are different.
+</p>
+
+</body>
+</html>

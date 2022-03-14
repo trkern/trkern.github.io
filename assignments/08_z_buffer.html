@@ -1,0 +1,236 @@
+<!doctype html>
+<html>
+<head>
+<script src="https://trkern.github.io/katex.min.js"></script>
+<script>
+function bootkatex() {
+	var l = document.getElementsByClassName("kd");
+	var i;
+	for (i = 0; i < l.length; i++) {
+		katex.render(l[i].title,l[i],{displayMode:true});
+		}
+	l = document.getElementsByClassName("k");
+	for (i = 0; i < l.length; i++) {
+		katex.render(l[i].title,l[i],{});
+		}
+	}
+
+function gifswap(e) {
+	if (e.target.src.slice(-3) == "gif") {
+		e.target.src = e.target.src.slice(0,-3) + "png";
+		}
+	else if (e.target.src.slice(-3) == "png") {
+		e.target.src = e.target.src.slice(0,-3) + "gif";
+		}
+	}
+</script>
+<style>
+code {
+	background-color: #DDDDDD;
+	}
+.code {
+	font-family: monospace;
+	background-color: #DDDDDD;
+	}
+body {
+	font-family: sans-serif;
+	}
+.caution {
+	background-color: #EEEEBB;
+	padding: 20px;
+	border-left: 3px solid yellow;
+	}
+.caution:before {
+	font-size: xx-large;
+	content: "!"
+	}
+.instruction {
+	background-color: #BBCCEE;
+	}
+blockquote.instruction {
+	padding: 20px;
+	border-left: 3px solid #222255;
+	}
+.matrix td{
+	text-align:center;
+	padding: .4em;
+	}
+</style>
+<link rel="stylesheet" href="https://trkern.github.io/katex.min.css">
+</head>
+<body onload="bootkatex()">
+
+<h1> Z-Buffers </h1>
+
+Assignment Goals:
+<ul>
+<li> Learn how to compute intersections between rays and triangles
+<li> Learn how z-buffers work
+</ul>
+
+<blockquote class="instruction">
+Instructions for you to follow in this document will be highlighted in blue.
+</blockquote>
+
+<blockquote class="caution">
+Don't forget to cite your sources!
+</blockquote>
+
+<h2>Z-Buffers: An Overview</h2>
+
+<p>Backface culling helped remove a large number of faces we didn't want to draw, but it didn't handle faces that are blocked from the camera by other faces. Our approach is as follows:</p>
+
+<ol>
+<li> Draw our triangles pixel-by-pixel
+<li> When we draw a pixel, keep track of how far it is from the camera
+<li> Only draw pixels if they are closer than the previously drawn pixel in the same location
+</ol>
+
+<p>This means keeping track of depth information within a separate 2d array the same size as our image. This array is called a z-buffer. At any point in our triangle-drawing process, we want <code>zbuff[i][j]</code> to keep track of the depth of the closest pixel that was drawn at location (i,j) on the canvas. Then when we go to draw to location (i,j) again for another triangle, we check <code>zbuff[i][j]</code> to see if we are drawing behind or in front of the previously drawn pixel.
+</p>
+
+<p>The information in the z-buffer can then additionally be used to:
+<ul>
+<li> Create a fog effect
+<li> Locate shadows
+<li> Create screen space reflections
+<li> Simulate focus of a camera lens (depth of field)
+</ul>
+
+<p>Z-buffers handle a lot of situations correctly, including textures with full transparency in them. A special check can be performed to see if the pixel of the texture has alpha = 0, and not write to the z-buffer in this situation. If this check is turned off, the result can look very strange, as in this <a href="https://stackoverflow.com/questions/9643415/rendering-3d-models-with-textures-that-have-alpha-in-opengl">example</a>. Z-buffers do have trouble when alpha is in the middle of 0 and 1, and other solutions are necessary for accurate translucency effects.</p>
+
+<p>Z-buffers also lead to z-fighting: when two meshes occupy the same space, which is considered "on top" can change from pixel to pixel or based on the camera angle due to floating point errors:</p>
+
+<br><img src="08_zfight.png" onclick="gifswap(event)">[Click to toggle animation]<br>
+
+<h2>Ray-Triangle Intersections</h2>
+
+<p>
+Our goal is to go through each pixel on the screen and trace it back to see if and where it intersects our triangle.
+</p>
+
+<blockquote class="instruction">
+Create a function <code>solve_pixel_t(cx,cy,w0,w1,w2)</code> which does the following:
+</blockquote>
+
+<br><img src="08_zint.png"><br>
+
+<ol>
+<li> <code>cx</code> and <code>cy</code> are meant to be canvas coordinates. Create variables <code>x</code> and <code>y</code> which apply the reverse <code>convert_a_to_b</code> function in your projection code.
+<li> Create variables <code>side1</code> which is w1-w0 and <code>side2</code> which is w2-w0. Remember you can subtract two THREE.Vector3s with <code>new THREE.Vector3().subVectors(a,b)</code>.
+<li> Our goal is now to solve the equation:
+<div class="kd" title="\mathtt{w0} + u \;\mathtt{ side1} + v \;\mathtt{side2} = t \begin{pmatrix}\mathtt{x}\\\mathtt{y}\\1\end{pmatrix}"></div>
+Switching sides:
+<div class="kd" title="t \begin{pmatrix}-\mathtt{x}\\-\mathtt{y}\\-1\end{pmatrix} + u \;\mathtt{ side1} + v \;\mathtt{side2} = -\mathtt{w0}"></div>
+Expanding:
+<div class="kd" title="t \begin{pmatrix}-\mathtt{x}\\-\mathtt{y}\\-1\end{pmatrix} + u \begin{pmatrix}\mathtt{side1.x}\\\mathtt{side1.y}\\\mathtt{side1.z}\end{pmatrix} + v \begin{pmatrix}\mathtt{side2.x}\\\mathtt{side2.y}\\\mathtt{side2.z}\end{pmatrix} = -\mathtt{w0}"></div>
+Writing as a matrix product:
+<div class="kd" title="\begin{pmatrix} -\mathtt{x} & \mathtt{side1.x} & \mathtt{side2.x} \\ - \mathtt{y} & \mathtt{side1.y} & \mathtt{side2.y} \\ -1 & \texttt{side1.z} & \texttt{side2.z} \end{pmatrix} \begin{pmatrix}t\\u\\v\end{pmatrix} = -\mathtt{w0}"></div>
+Multiplying both sides by an inverse matrix:
+<div class="kd" title="\begin{pmatrix}t\\u\\v\end{pmatrix} = \begin{pmatrix} -\mathtt{x} & \mathtt{side1.x} & \mathtt{side2.x} \\ - \mathtt{y} & \mathtt{side1.y} & \mathtt{side2.y} \\ -1 & \texttt{side1.z} & \texttt{side2.z} \end{pmatrix}^{-1}(-\mathtt{w0})"></div>
+Cancelling some minus signs:
+<div class="kd" title="\begin{pmatrix}t\\u\\v\end{pmatrix} = \begin{pmatrix} \mathtt{x} & -\mathtt{side1.x} & -\mathtt{side2.x} \\  \mathtt{y} & -\mathtt{side1.y} & -\mathtt{side2.y} \\ 1 & -\texttt{side1.z} & -\texttt{side2.z} \end{pmatrix}^{-1}\mathtt{w0}"></div>
+</ol>
+
+We can turn this into code to include in your function:
+
+<blockquote class="code">
+&nbsp;&nbsp;&nbsp;&nbsp;var side1 = new THREE.Vector3().subVectors(w1,w0);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var side2 = new THREE.Vector3().subVectors(w2,w0);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var m = new THREE.Matrix3().set(<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;x, -side1.x, -side2.x,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;y, -side1.y, -side2.y,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1, -side1.z, -side2.z<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var answer = w0.clone().applyMatrix3(m.invert());<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var t = answer.x;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var u = answer.y;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var v = answer.z;
+</blockquote>
+
+<blockquote class="instruction">
+Continue working on your <code>solve_pixel_t(cx,cy,w0,w1,w2)</code> function:
+</blockquote>
+
+<ol>
+<li> There's a chance that our equation doesn't have a solution or has infinitely many solutions. This happens if our ray is parallel to our triangle. We can detect this by looking at the determinant of m. Add <code>if (m.determinant() == 0) {return(null);}</code> to the function.
+<li> We've found the intersection point between our ray and the plane of the triangle, but we need to check if this point is actually in the triangle, or somewhere outside of the triangle. It is outside of the triangle if u or v is negative or if u+v is larger than 1. Add code to <code>return(null);</code> in these cases.
+<li> If t is less than 0, the triangle is behind the camera and we shouldn't draw it. Add code to <code>return(null);</code> in this case.
+<li> Finally, <code>return(t);</code>. Note that this is the distance from the plane of our camera to our pixel, not the distance from the camera point to our pixel.
+</ol>
+
+<h2>Creating our Z-buffer</h2>
+
+<blockquote class="instruction">
+Create a function <code>draw_persp_bunny_zbuff()</code> by copying your function for drawing the bunny in perspective projection, then:
+</blockquote>
+
+<ol>
+<li> Add to the beginning the code:
+<blockquote class="code">
+&nbsp;&nbsp;&nbsp;&nbsp;var x,y;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;zbuffer = [];<br>
+&nbsp;&nbsp;&nbsp;&nbsp;for (x = 0; x &lt; 500; x++) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;zbuffer.push([]);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for (y = 0; y &lt; 500; y++) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;zbuffer[x].push(Infinity);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+</blockquote>
+This creates a 500x500 array for storing the z-buffer in, then fills all the entries with Infinity (so any point we try to draw will show up as closer to the camera than the starting entry).
+<li> Also add to the beginning <code>var imagedata = ctx.getImageData(0,0,500,500);</code> and be sure to include <code>set_rgba</code> in your code:
+<blockquote class="code">
+function set_rgba(imagedata,x,y,r,g,b,a) {<br>
+&nbsp;var pos = y*imagedata.width+x;<br>
+&nbsp;imagedata.data[pos*4] = r;<br>
+&nbsp;imagedata.data[pos*4+1] = g;<br>
+&nbsp;imagedata.data[pos*4+2] = b;<br>
+&nbsp;imagedata.data[pos*4+3] = a;<br>
+&nbsp;}<br>
+</blockquote>
+We will be using the imageData approach from the color assignment to speed up our drawing.
+<li> Also copy over <code>HSL_to_RGB</code> from the color assignment.
+<li> Remove all the code that actually draws to the canvas (starting from <code>ctx.beginPath()</code>)
+<li> We would like to iterate over all pixels of our triangles. A few possible approaches:
+<ul>
+<li> Iterate over all pixels in the image to test if they're in our triangle. Remember that we're already looping over all faces of the bunny model, so this will get extremely expensive!
+<li> Go through each row and identify the first and last pixel of that row that belongs to the triangle. This is the traditional way to approach this problem, but will require a large number of separately handled cases based on the relative positions of the vertices. You can read about this technique and hierarchical rasterization <a href="https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-837-computer-graphics-fall-2012/lecture-notes/MIT6_837F12_Lec21.pdf">here</a>.
+<li> Iterate over all pixels in the smallest rectangle containing our triangle. This is a good enough compromise that should produce real-time performance. If the canvas coordinates of your triangle vertices are (c0x, c0y), etc, the following code will find lower and upper bounds for your for loops:
+
+<blockquote class="code">
+var minx = Math.round(Math.max(0,Math.min(c0x,c1x,c2x)));<br>
+var maxx = Math.round(Math.min(499,Math.max(c0x,c1x,c2x)));<br>
+var miny = Math.round(Math.max(0,Math.min(c0y,c1y,c2y)));<br>
+var maxy = Math.round(Math.min(499,Math.max(c0y,c1y,c2y)));
+</blockquote>
+
+Note that we set upper and lower bounds of 0 and 499, since we don't care about pixels outside of the canvas.
+</ul>
+
+<li> Create for loops for x and y iterating over this rectangle we set up. Within these for loops:
+
+<li> Get the value of <code>solve_pixel_t(x,y,w0,w1,w2)</code> and store it in a variable t. Make sure the last three arguments are the coordinates of the vertices of the triangle after being rotated and translated, but before being projected.
+
+<li> If t is null, we are outside the triangle: don't do anything and move on to the next pixel.
+<li> If t is larger than the current value of <code>zbuffer[x][y]</code>, the pixel we're trying to draw is blocked by a pixel in a closer triangle: don't do anything and move on to the next pixel.
+<li> We finally get to draw our pixel! Call <code>set_rgba(imagedata,x,y,...HSL_to_RGB(i,1,.5),255);</code> where i is the index in your loop over all faces.
+<li> Set <code>zbuffer[x][y] = t</code>
+
+<li> Finally, outside of all your loops at the end of your function, call <code>ctx.putImageData(imagedata,0,0);</code>.
+
+</ul>
+</ol>
+
+<h2>Above and Beyond</h2>
+
+The following are optional suggestions for improving your interactive:
+<ul>
+<li> Draw the contents of the z-buffer to a separate canvas.
+
+<br><img src="08_z_bunny.png"><br>
+
+<li> Use the contents of the z-buffer to modify the color of a pixel. You can create a fog effect by modifying the S and L components of the color of each pixel, although it will take quite a bit of tuning to get the right effect.
+</ul>
+
+</body>
+</html>

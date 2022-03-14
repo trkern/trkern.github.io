@@ -461,7 +461,7 @@ Finding perpendicular vectors is a key tool for:
 There are two solutions. For instance, with the camera problem:
 <ul>
 <li> What direction "up" is only depends on the direction the camera is facing. By the <a href="https://en.wikipedia.org/wiki/Hairy_ball_theorem">hairy ball theorem</a>, it is necessary to handle at least one point specially to avoid jumps in camera angles. A common solution is to prevent the player from looking directly up or down as in this three.js <a href="https://threejs.org/examples/#webgl_lightprobe">example</a>.
-<li> What direction "up" is depends on what direction was up and how the camera has moved. This is good for games set in outer space, where there is no canonical "up", but can lead to disorienting effects where the direction of "up" changes. You can see this 
+<li> What direction "up" is depends on what direction was up and how the camera has moved. This is good for games set in outer space, where there is no canonical "up", but can lead to disorienting effects where the direction of "up" changes. You can see this: 
 <ul>
 <li>In this Three.js <a href="https://threejs.org/examples/?q=controls#misc_controls_trackball">example</a> by dragging your mouse around in a circle and watching how "up" changes
 <li>In this disorienting Three.js <a href="https://threejs.org/examples/?q=controls#misc_controls_fly">example</a> by looking around with the mouse or keyboard. 
@@ -469,10 +469,10 @@ There are two solutions. For instance, with the camera problem:
 </ul>
 
 <blockquote class="instruction">
-Given a vector v = (v[0],v[1],v[2]), find a formula for a vector which is perpendicular to it, and has z component 0, and write the function <code>vec_first_perpendicular(v)</code> which returns this vector.
+Given a vector v = (v[0],v[1],v[2]), write function <code>vec_first_perpendicular(v)</code> which returns a nonzero vector which is perpendicular to v and has z component 0.
 </blockquote>
 <ol>
-<li>HINT: Use the dot product to verify perpendicularity.
+<li>HINT: In most cases, (-v[1], v[0], 0) will work. Use the dot product to verify perpendicularity.
 <li>HINT: You will need to handle the case where v[0] and v[1] are both 0 specially, as there are plenty of vectors with z component 0 which are perpendicular to (0,0,1)!
 </ol>
 
@@ -635,7 +635,7 @@ When we look at a vector like <code>bunverts[0] = [0.45, -2.75, 4.6]</code>, it'
 Add to your <code>draw_cross</code> function code which does the following:
 </blockquote>
 <ol>
-<li> Iterate over each element of bunverts:
+<li> Iterate over each element of bunverts: <code>for (i = 0; i &lt; bunverts.length; i++)</code>
 <li> Calculate <code>bv = vec_triple_combination(bunverts[i][0],vn,bunverts[i][1],wn,bunverts[i][2],un)</code>
 <br>NOTE: this is the same as applying the matrix whose columns are vn, wn, un to the vector bunverts[i]!
 <li> Calculate <code>bvp</code> from bv by applying <code>space_to_canvas</code> from before.
@@ -650,6 +650,15 @@ You can read more about the ctx.arc function at the MDN <a href="https://develop
 
 You should get a cloud of points that roughly looks like a bunny!
 
+<p>
+This is what happens when we put together a 3d scene: each object in the scene has their own coordinate space (axes) which is translated, rotated and otherwise transformed. To work out where a point in the model goes, we construct the appropriate combination of the axis vectors and translate.
+</p>
+
+<p>Freya Holmer has a lecture on spaces <a href="https://www.youtube.com/watch?v=XiwEyopOMqg&t=2544s">here</a>. You can also see the axes of a scene full of models, lights, and a camera below:
+</p>
+
+<img src="06_modelspaces.png"><br>
+
 We can also find the center of various faces by taking the average of their vertices:
 
 <blockquote class="instruction">
@@ -661,7 +670,6 @@ Add the following code to your <code>draw_cross</code> function:
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;var bfc = vec_triple_combination(1/3,bunverts[bunfaces[i][0]],1/3,bunverts[bunfaces[i][1]],1/3,bunverts[bunfaces[i][2]]);<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;var bfcp = space_to_canvas(vec_combination(bfc[0],vn,bfc[1],wn,bfc[2],un))<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ctx.beginPath();<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ctx.fillStyle = "red";<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ctx.arc(bfcp[0],bfcp[1],3,0,2*Math.PI);<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ctx.fill();<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}

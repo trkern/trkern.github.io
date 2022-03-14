@@ -60,17 +60,17 @@ Complete the following:
 </blockquote>
 
 <ol>
-<li> Make a copy of your interactive for drawing a cube using perspective projection. Make sure it is drawing the cube and not the bunny.
+<li> Start with your code for drawing in a perspective projection (or your code from the dot/cross product assignment if that includes your perspective drawing code).
 <li> Create an array called <code>face_colors = ["red","green","blue","cyan","magenta","yellow"];</code>. You can replace the color strings with any color names or formats from the <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/color_value">CSS color specification</a>.
-<li> In <code>draw_persp</code>, in your for loop over each face, add the following code after you have finished creating the path for the face:
+<li> In <code>draw_cube_persp</code>, in your for loop over each face, add the following code after you have finished creating the path for the face:
 <blockquote class="code">
 ctx.fillStyle = face_colors[i];<br>
 ctx.fill();
 </blockquote>
 <li> Run your code and rotate the cube around. It should look almost correct: each face will be drawn in with a color, but some faces will be drawn on top of other faces when they're actually behind them. There are three fixes for this:
 <ul>
-<li> <a href="https://en.wikipedia.org/wiki/Painter%27s_algorithm">Painter's Algorithm</a>: Sorting the faces from furthest to closest to the camera, and draw them in that order. In rare cases, this can be baked into the code. In other cases, two faces will intersect and one will need to be drawn partially on top of and partially underneath another and this won't work.
-<li> Backface culling: Removing the faces not facing the camera. We do not want to draw faces that aren't facing the camera (backfaces) and so we cull (remove) them from the render process. This will solve our cube problem, but again won't solve overlap problems.
+<li> <a href="https://en.wikipedia.org/wiki/Painter%27s_algorithm">Painter's Algorithm</a>: Sorting the faces from furthest to closest to the camera, and draw them in that order. For some types of geometry, it is easy to tell which triangles are closest/furthest from the camera. In other cases, two faces will intersect and one will need to be drawn partially on top of and partially underneath another and this won't work at all.
+<li> Backface culling: Removing the faces not facing the camera. We do not want to draw faces that aren't facing the camera (backfaces) and so we cull (remove) them from the render process. This will solve our cube problem, but won't solve overlap problems.
 <li> Z-buffers: Keeping track of how far each pixel is from the camera when we draw it. We will implement this process in a later activity.
 </ul>
 </ol>
@@ -78,13 +78,13 @@ ctx.fill();
 <p>Backface culling is incredibly fast because we already need to calculate the direction of each face for lighting and other effects, we can calculate angles quickly with linear algebra, and once we've decided to cull a face we don't need to do any more processing for that face. Most 3d graphics engines implement a combination of these techniques.</p>
 
 <p>
-You can see backface culling in action when you fall through the map in video games. This shows up often in <a href="https://youtu.be/T2SatL2mx3I?t=2157">speedruns [warning: flickering]</a> and you can see it for yourself in this THREE.js <a href="https://threejs.org/examples/#webgl_geometry_terrain">demo</a> by flying beneath the terrain. The geometry between the camera and where the camera is supposed to be aren't drawn, because those walls are "facing" away from the camera, towards where the camera should be.
+You can see backface culling in action when you fall through the map in video games. This shows up often in <a href="https://youtu.be/T2SatL2mx3I?t=2157">speedruns [warning: flickering]</a> and you can see it for yourself in this THREE.js <a href="https://threejs.org/examples/#webgl_geometry_terrain">demo</a> by flying beneath the terrain. The geometry between the camera and where the camera is supposed to be aren't drawn, because those walls are "facing" away from the camera, towards where the camera is expected to be.
 </p>
 
 <h2>Normal Vectors</h2>
 
 <p>
-In your <code>draw_persp</code> in your loop over each face, we need to check if the normal vector to the face is pointing towards or away from the camera. To do this, we need two vectors: one from the camera to the face which we will call <code>vc</code>, and another which is normal to the face.
+In your <code>draw_persp_code</code> function in your loop over each face, we need to check if the normal vector to the face is pointing towards or away from the camera. To do this, we need two vectors: one from the camera to the face which we will call <code>vc</code>, and another which is normal to the face.
 </p>
 
 <blockquote class="instruction">
@@ -103,19 +103,18 @@ Complete the following:
 <li> Applying your rotation matrices to the normal vectors of the face.
 <li> Do not apply the translation to the normal vectors of the face. Translations only affect points, not directions!
 </ol>
-<li> <code>vc</code> should be a vector from the camera (located at the origin) to the face. It can be the location of any vertex after being transformed or the center of the face.
-<li> Now, we need to calculate if these two vectors are pointing in the same direction. You can do this using dot products. THREE.js offers <code>v.dot(w)</code> which returns the dot product of the vectors <code>v</code> and <code>w</code> or you can calculate the dot product by hand.
+<li> <code>vc</code> should be a vector from the camera (located at the origin) to the face. It can be the location of any vertex or the center of the face, after being transformed (rotated and translated), but before being projected.
+
+<blockquote class="caution">
+Make sure <code>vc</code> is the location of the vertex after being rotated and translated!
+</blockquote>
+
+<li> Now, we need to calculate if these two vectors are pointing in the same direction. You can do this using dot products. THREE.js offers <code>v.dot(w)</code> which returns the dot product of the vectors <code>v</code> and <code>w</code> or you can calculate the dot product using your <code>vec_dot</code> function.
 <li> Use an <code>if</code> statement to only draw and fill a face if <code>vc</code> and <code>vn</code> are in opposite directions.
 </ol>
 
 <p>
-Some resources for learning about dot products:
-<ul>
-<li>3blue1brown has a <a href="https://www.youtube.com/watch?v=LyGKycYT2v0">video</a> on dot products
-<li>Freya Holmer has a <a href="https://www.youtube.com/watch?v=MOYiVLEnhrw&t=8781s">lecture</a> on dot products, with 
-<li>Khan Academy has some <a href="https://www.khanacademy.org/math/linear-algebra/vectors-and-spaces#dot-cross-products">videos</a> on dot and cross products
-<li>Geogebra has an interactive <a href="https://www.geogebra.org/m/c8euxmbc">worksheet</a> on dot products
-</ul>
+Some resources for learning about dot products can be found in the previous assignment.
 </p>
 
 <h2>Calculating Normal Vectors</h2>
@@ -134,38 +133,24 @@ This is really useful for:
 </ul>
 </p>
 
-<p>THREE.js has a built-in cross product function. To calculate the cross product of vectors v and w, use <code>new THREE.Vector3().crossVectors(v,w)</code>. You can also calculate cross products of 3-element arrays by hand using the following code:
+<p>THREE.js has a built-in cross product function. To calculate the cross product of vectors v and w, use <code>new THREE.Vector3().crossVectors(v,w)</code>. Or use your <code>vec_cross</code> function from before.
 </p>
 
-<blockquote class="code">
-function cross_product(a,b) {<br>
-&nbsp;return([<br>
-&nbsp;&nbsp;a[1]*b[2]-a[2]*b[1],<br>
-&nbsp;&nbsp;a[2]*b[0]-a[0]*b[2],<br>
-&nbsp;&nbsp;a[0]*b[1]-a[1]*b[0]<br>
-&nbsp;&nbsp;]);<br>
-&nbsp;}
-</blockquote>
-
-<p>Some resources for learning about cross products:
-<ul>
-<li> I've put together a <a href="https://trkern.github.io/cross">visualizer</a> for cross products
-<li> 3blue1brown has a <a href="https://www.youtube.com/watch?v=eu6i7WJeinw">video</a> on 2 and 3 dimensional cross products
-<li> Freya Holmer has a <a href="https://www.youtube.com/watch?v=XiwEyopOMqg&t=8120s">lecture</a> on cross products with applications for video games
-<li> Geogebra also has a <a href="https://www.geogebra.org/m/psMTGDgc">few</a> <a href="https://www.geogebra.org/m/jcnba3fg">visualizations</a> of the cross product
-<li> Khan Academy has some <a href="https://www.khanacademy.org/math/linear-algebra/vectors-and-spaces#dot-cross-products">videos</a> on dot and cross products
-</ul>
+<p>Some resources for learning about cross products can be found in the previous assignment.
 </p>
 
 <blockquote class="instruction">
 Complete the following:
 </blockquote>
 <ol>
-<li> In your code for drawing the bunny, in your for loop over each face, assign three Vector3s to the vertices of the triangle after it's been transformed (rotated and translated, but before the projection). Call them v0, v1, and v2. Make sure they're in the right order.
-<li> Calculate v1-v0 and v1-v2. These are the vectors representing two edges of the triangle. THREE.js has a built-in vector subtraction function. To calculate the difference of vectors v and w, use <code>new THREE.Vector3().subVectors(v,w)</code>.
+<li> In your code for drawing the bunny, in your for loop over each face, assign three Vector3s to the vertices of the triangle after it's been transformed (rotated and translated, but before the projection). Call them t0, t1, and t2. Make sure they're in the right order.
+<li> Calculate t1-t0 and t2-t0. These are the vectors representing two edges of the triangle. THREE.js has a built-in vector subtraction function. To calculate the difference of vectors v and w, use <code>new THREE.Vector3().subVectors(v,w)</code>.
 <li> Calculate the cross product of these two vectors. Call it <code>vn</code>.
 <li> As before, calculate the dot product of <code>vn</code> and <code>vc</code> to determine if you should draw the face. <code>vc</code> can be any point in the triangle, either one of the vertices or its center.
-<li> You'll need to pick a <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/color_value">color</a> for each face, and it's better to pick a different color for each face. You can use <code>ctx.fillStyle = "hsla("+i+",100%,50%,1)";</code>, where i is the index of the face. You could also populate an appropriate length <code>face_colors</code> array.
+<li> You'll need to pick a <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/color_value">color</a> for each face, and it's better to pick a different color for each face. You can use <code>ctx.fillStyle = "hsla("+i+",100%,50%,1)";</code>, where i is the index of the face. You could also populate an appropriate length <code>face_colors</code> array using <code>Math.random()</code>.
+<li> The result should look something like the below:
+<br><img src="07_bad_bunny.png"><br>
+Note that most of the faces are drawn correctly, but a few faces are drawn on top of faces they should be behind. Why is that?
 </ol>
 
 <h2>Above and Beyond</h2>
@@ -173,6 +158,7 @@ Complete the following:
 The following are optional suggestions for improving your interactive:
 <ul>
 <li> You can create a neat transparency effect on the cube by first drawing the back faces, then drawing the front faces with a partially transparent color. This sort of effect is much trickier to pull off correctly for more complex geometry, since it requires keeping track of the order that triangles appear from furthest to closest to the camera for every pixel.
+<li> When deciding what color to color each face, use the normal vector that you computed in some way. This can create an effect that is unrealistic but very good at communicating the shape of an object. You can see an example <a href="https://trkern.github.io/platonic_solid_explorer">here</a> and <a href="https://threejs.org/docs/#api/en/materials/MeshNormalMaterial">here</a>.
 </ul>
 
 </body>

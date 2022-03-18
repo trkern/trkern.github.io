@@ -668,7 +668,7 @@ Add the following code to your <code>draw_cross</code> function:
 <blockquote class="code">
 &nbsp;&nbsp;&nbsp;&nbsp;for (i = 0; i &lt; bunfaces.length; i++) {<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;var bfc = vec_triple_combination(1/3,bunverts[bunfaces[i][0]],1/3,bunverts[bunfaces[i][1]],1/3,bunverts[bunfaces[i][2]]);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;var bfcp = space_to_canvas(vec_combination(bfc[0],vn,bfc[1],wn,bfc[2],un))<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;var bfcp = space_to_canvas(vec_triple_combination(bfc[0],vn,bfc[1],wn,bfc[2],un))<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ctx.beginPath();<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ctx.arc(bfcp[0],bfcp[1],3,0,2*Math.PI);<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ctx.fill();<br>

@@ -142,7 +142,7 @@ We can turn this into code to include in your function:
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;y, -side1.y, -side2.y,<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1, -side1.z, -side2.z<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;var answer = w0.clone().applyMatrix3(m.invert());<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var answer = w0.clone().applyMatrix3(new THREE.Matrix3().getInverse(m));<br>
 &nbsp;&nbsp;&nbsp;&nbsp;var t = answer.x;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;var u = answer.y;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;var v = answer.z;
@@ -213,7 +213,7 @@ Note that we set upper and lower bounds of 0 and 499, since we don't care about 
 
 <li> If t is null, we are outside the triangle: don't do anything and move on to the next pixel.
 <li> If t is larger than the current value of <code>zbuffer[x][y]</code>, the pixel we're trying to draw is blocked by a pixel in a closer triangle: don't do anything and move on to the next pixel.
-<li> We finally get to draw our pixel! Call <code>set_rgba(imagedata,x,y,...HSL_to_RGB(i,1,.5),255);</code> where i is the index in your loop over all faces.
+<li> We finally get to draw our pixel! Call <code>set_rgba(imagedata,x,y,...HSL_to_RGB(i,1,.5),255);</code> where i is the index in your loop over all faces. The <code>...</code> notation expands out an array as multiple arguments to a function. Read more about it <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Spread_syntax#examples">here</a>.
 <li> Set <code>zbuffer[x][y] = t</code>
 
 <li> Finally, outside of all your loops at the end of your function, call <code>ctx.putImageData(imagedata,0,0);</code>.

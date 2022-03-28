@@ -1,0 +1,287 @@
+<!doctype html>
+<html>
+<head>
+<style>
+code {
+	background-color: #DDDDDD;
+	}
+.code {
+	font-family: monospace;
+	background-color: #DDDDDD;
+	}
+body {
+	font-family: sans-serif;
+	}
+.caution {
+	background-color: #EEEEBB;
+	padding: 20px;
+	border-left: 3px solid yellow;
+	}
+.caution:before {
+	font-size: xx-large;
+	content: "!"
+	}
+.instruction {
+	background-color: #BBCCEE;
+	}
+blockquote.instruction {
+	padding: 20px;
+	border-left: 3px solid #222255;
+	}
+.matrix td{
+	text-align:center;
+	padding: .4em;
+	}
+</style>
+</head>
+<body>
+
+<h1> Textures </h1>
+
+Assignment Goals:
+<ul>
+<li> Learn how to read in image files in Javascript
+<li> Use ray-triangle intersections to solve for uv coordinates
+<li> Explore some other graphical effects that can be accomplished with pixel-by-pixel calculations
+</ul>
+
+<blockquote class="instruction">
+Instructions for you to follow in this document will be highlighted in blue.
+</blockquote>
+
+<blockquote class="caution">
+Don't forget to cite your sources!
+</blockquote>
+
+<h2>Getting uv-coordinates</h2>
+
+<p>
+When we draw a particular pixel of a square on our cube (or triangle on the bunny model), we need to figure out where on the square this pixel is, so we know what pixel of the texture to read. Luckily our <code>solve_pixel_t</code> function already calculates these u and v coordinates! We just need to capture these values and return them from the function as well.
+</p>
+
+<p>
+We will return these several values by creating an <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Object_initializer">object</a> with the attributes <code>.t</code>, <code>.u</code>, and <code>.v</code>, which will be set to the appropriate values. <code>{t:1, u:2, v:3}</code> is an object, which we can store in a variable with <code>var solution = {t:1, u:2, v:3}</code>, and <code>solution.t</code> will evaluate to 1, <code>solution.u</code> will evaluate to 2, and <code>solution.v</code> will evaluate to 3.
+</p>
+
+<blockquote class="instruction">
+Complete the following:
+</blockquote>
+
+<ol>
+<li> Copy your code from the previous assignment on z-buffers. Create a function <code>draw_persp_cube_zbuff</code>, based on your <code>draw_persp_bunny_zbuff</code> function (and <code>draw_persp_cube</code>).
+<li> Be sure to update the calculation of <code>minx</code> etc. to include the extra vertex.
+<li> Copy your <code>solve_pixel_t</code> function to <code>solve_pixel</code>, updated in the following way:
+<ol>
+<li> We're solving for pixel locations on squares, not triangles, so update the upper bounds in <code>solve_pixel</code> so that instead of requiring u + v < 1, require u and v < 1.
+<li> Have <code>solve_pixel</code> return <code>{t:answer.x,u:answer.y,v:answer.z}</code>. This creates a new object that has the desired t, u, and v attributes. You could also return <code>{t:t, u:u, v:v}</code>. On the left of the :s are the names of the attributes (strings) and on the right are the values they are set to.
+</ol>
+<li> In your <code>draw_persp_cube_zbuff</code> function, replace <code>var t = solve_pixel_t(x,y,w0,w1,w2)</code> with <code>var answer = solve_pixel(x,y,w0,w1,w3)</code>. We replace w2 with w3 because we're capturing the vectors that form the sides of our square: w1-w0 and w3-w0.
+<li> Replace <code>t</code> with <code>answer.t</code>
+<li> Replace your <code>set_rgba</code> call to set the red value based on <code>answer.u</code> and green value based on <code>answer.v</code>, and set blue to 0. You'll need to rescale these values. <code>answer.u</code> and <code>answer.v</code> go from 0 to 1 and the rgb values are from 0 to 255.
+</ol>
+
+The result should look like:
+<br><img src="09_mango_cube.png" style="border:1px solid"><br>
+
+<h2>Arbitrary Code</h2>
+
+<p>When you call <code>set_rgba</code>, you have access to the following variables:
+<ul>
+<li>x, y: Pixel coordinates on the canvas
+<li>t: The "depth" of the pixel
+<li>u, v: Coordinates on the square
+<li>t*convert_a_to_b(x,0,500,-5,5), t*convert_a_to_b(y,500,0,-5,5), t: Coordinates in 3d-space of the pixel
+<blockquote class="caution">
+Your exact conversions may vary if you've zoomed in or out.
+</blockquote>
+<li><code>vec_length([t*x,t*y,t])</code>: the distance from the camera to the pixel
+<li><code>Date.now()</code>: the number of milliseconds since January 1, 1970 00:00:00 UTC
+<li><code>new Date().getSeconds()</code>: number of seconds since the beginning of the current minute. See <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date">here</a> for various other time-related values you have access to.
+
+<blockquote class="caution">
+In order to get animations working properly, you will need to constantly recalculate the scene. You can call a function at a regular interval using <code><a href="https://developer.mozilla.org/en-US/docs/Web/API/setInterval">setInterval</a></code>.
+</blockquote>
+
+<li><code>vn</code>: the normal vector to the face, from which you can determine (with <code>vc</code>):
+<ul>
+<li>Whether the face is facing towards or away from the camera
+<li>The angle between the face and the camera
+</ul>
+<li>The contents of the last drawn frame (assuming we save it somewhere)
+<li>Any global variables such as a texture array
+<li>The index of the current face
+</ul>
+
+And have the following output options:
+<ul>
+<li> Set the pixel r,g,b,a values
+<li> Don't do anything (to go to the next step in the for loop (the next pixel), call <code>continue;</code>).
+<li> Set the pixel z-buffer value
+<li> Write to a separate array or imagedata object at coordinates x,y
+</ul>
+
+<p>
+Writing our images pixel-by-pixel is expensive and complicated, but here's where this technique shines: most graphical effects can be achieved with some relatively simple calculations at this step, including:
+</p>
+
+<ul>
+<li> Textures (including animated textures)
+<li> Computed patterns (such as circles or waves) <a href="https://threejs.org/examples/#webgl_shader2">example</a>
+<li> Lighting <a href="https://threejs.org/docs/index.html?q=material#api/en/materials/MeshLambertMaterial">example</a>
+<li> Chrome <a href="https://threejs.org/examples/?q=material#webgl_materials_envmaps">example</a>
+<li> Cel-shading <a href="https://threejs.org/docs/index.html?q=material#api/en/materials/MeshToonMaterial">example</a>
+<li> Normal-based coloring <a href="https://threejs.org/docs/index.html?q=material#api/en/materials/MeshNormalMaterial">example</a>
+<li> Clipping <a href="https://threejs.org/examples/#webgl_clipping">example</a>
+<li> Fog <a href="https://threejs.org/examples/#webgl_geometry_terrain">example</a>
+<li> Textures with transparency <a href="https://threejs.org/examples/#webgl_loader_texture_dds">example</a>
+<li> Textures and effects based on screen position <a href="https://threejs.org/examples/#webgl_postprocessing_masking">example</a> <a href="https://threejs.org/examples/#webgl2_multiple_rendertargets">example</a>
+</ul>
+
+<p>
+Indeed, nearly every graphical effect can be achieved with a combination of this, some advanced math, several render passes, and manipulating the vertex coordinates (which we could do earlier in our <code>draw_persp_cube_zbuff</code> function.
+</p>
+
+<p>
+We will experiment with some of these effects, and you are welcome to experiment with more, but we will come back to the rest after we have learned to program in the shader language GLSL: a specialized language for writing programs for your GPU. The GPU is specially designed for the fact that these pixel-by-pixel computations are:
+<ul>
+<li> Relatively simple
+<li> Involve operations on 2, 3, and 4, dimensional vectors, but usually not arbitrary length arrays
+<li> One pixel doesn't depend on the result of another pixel's computation, so many pixels can be computed simultaneously or out of order
+<li> Often involve linearly interpolating values between the vertices of the shape (we'll come back to this in a later assignment)
+</ul>
+</p>
+
+<h2>Graphing Functions</h2>
+
+<p>We can draw graphs of functions on our surface to get various effects:</p>
+
+
+<blockquote class="instruction">
+Complete the following:
+</blockquote>
+
+<ol>
+<li> Within your loop over every pixel, comment out your call to <code>set_rgba</code> and replace it by:
+<li> Create variables <code>surfx</code> and <code>surfy</code> which are <code>answer.u</code> and <code>answer.v</code> rescaled using <code>convert_a_to_b</code> to go from -5 to 5 (instead of 0 to 1).
+<li> Use an <code>if</code> statement to set a pixel to green if <code>surfy == Math.sin(surfx)</code>, and blue otherwise.
+<li> The result should be an entirely blue cube. The odds that we picked a point where this equality works out exactly are incredibly small.
+<li> Replace the <code>if</code> statement to check if <code>Math.abs</code> of the difference between <code>surfy</code> and <code>Math.sin(surfx)</code> is less than .1
+</ol>
+
+The result should look like:
+
+<br><img src="09_sine_cube.png"><br>
+
+<h2>Repeating Patterns</h2>
+
+<p>We can use the sine function to produce a repeating pattern.</p>
+
+<blockquote class="instruction">
+Complete the following:
+</blockquote>
+
+<ol>
+<li> Revert the changes you made in the previous section
+<li> Modify your <code>set_rgba</code> call to set red to <code>255*Math.sin(answer.u*30)</code> and green to <code>255*Math.sin(answer.v*30)</code>
+</ol>
+
+The result should look like:
+
+<br><img src="09_grid_cube2.png"><br>
+
+Note that half the time, the sine function returns negative values, which show up as an absence of that color (as if it were set to 0). Experiment with this function to see what the 30 and 255 do.
+
+
+<h2>Screen-Position Effects</h2>
+
+<blockquote class="instruction">
+Complete the following:
+</blockquote>
+
+<ol>
+<li> Change your <code>set_rgba</code> call to set red to <code>255*Math.sin(x)</code> and green to <code>255*Math.sin(y)</code>.
+</ol>
+
+The result should look like:
+
+<br><img src="09_grid_cube.png"><br>
+
+<h2>Partially-Transparent Meshes</h2>
+
+<p>A common tool in computer graphics is to have part of a mesh be completely transparent, based on a formula or a texture image. The formula or texture image can contain a high level of complexity, but the computer only has to deal with a small number of triangles.</p>
+
+<blockquote class="instruction">
+Complete the following:
+</blockquote>
+
+<ol>
+<li> Comment out the backface-culling check
+<li> Before drawing to the canvas or writing to the z-buffer add a check to see if u is between .4 and .6 and if so, <code>continue;</code>.
+</ol>
+
+The result should look like:
+
+<br><img src="09_cut_cube.png" style="border:1px solid"></br>
+
+<h2>Reading in Image Files</h2>
+
+<p>Reading image files is a challenge for Javascript because:
+<ul>
+<li> Web security: you can draw an image from a third-party website to a canvas, but if you try read the pixels of that image, it returns a security error. This prevents webpages from using your credentials to load an image from your computer or a third-party site containing secure data and then reporting back the contents of that image to another party. Read more about tainted canvases <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/CORS_enabled_image">here</a>.
+<li> Delay: when you start loading an image, it takes time to transfer, during which you'd like to continue rendering the scene. This is an issue for video games as well: often times a lower quality texture/3d model will be used while waiting for the larger data file to load.
+</ul>
+
+<p>While there are better ways of solving these problems, we will be using the simple solution of including the texture as an image in our webpage and waiting for the page to load.</p>
+
+<blockquote class="instruction">
+Complete the following:
+</blockquote>
+
+<ol>
+<li> Add an element to the body of your webpage <code>&lt;img src = "https://trkern.github.io/cat275x275.png" id="cat" crossorigin=""&gt;</code>
+<li> Create a global variable called <code>cat_imagedata</code>
+<li> Create a function <code>load_cat()</code>:
+<blockquote class="code">
+&nbsp;&nbsp;&nbsp;&nbsp;var ctx = document.getElementById("canvas").getContext("2d");<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ctx.drawImage(document.getElementById("cat"),0,0);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cat_imagedata = ctx.getImageData(0,0,275,275);<br>
+</blockquote>
+This function draws the contents of the <code>&lt;img id="cat"&gt;</code> in the webpage to the canvas, then writes this data to the <code>cat_imagedata</code> variable.
+<li>Add <code>load_cat();</code> to your <code>&lt;body&gt;</code>'s onload property.
+</ol>
+
+Now let's go back to our pixel-by-pixel <code>set_rgba</code> call within your <code>draw_persp_cube_zbuff</code> function.
+
+<ol>
+<li> First, create new variables representing the location on the cat image texture we want to sample by:
+<ol>
+<li> Converting u and v to range from 0 to 274
+<li> Rounding down so we're accessing the array at valid positions
+</ol>
+<li> Use <code>get_rgba</code> to get the rgba values you'd like to draw to the canvas at that pixel.
+<li> Use <code>set_rgba</code> to set those rgba values to the canvas.
+</ol>
+
+<h2>Texturing Geometry</h2>
+
+<p>It is very tedious and inefficient to have a separate image file for each face of a 3d model. In fact, it is common for a 3d model to have a single texture image. For instance, take this space suit model from <a href="https://nasa3d.arc.nasa.gov/detail/nmss-z2">NASA</a>:
+
+<br><img src="09_suit_render.png"><br>
+
+The entire texture is stored in a single image:
+
+<br><img src="09_suit_texture.png"><br> 
+
+Each vertex then keeps track of its corresponding location on the texture image, so the pixel shader can determine what part of the texture to look at.
+
+<br><img src="09_suit_uvmap.png"><br>
+
+This 3d model comes with a wide variety of images, including the normal map below. Each pixel of the normal map keeps track of the x, y, and z coordinates of a true normal vector relative to the surface. The main color you're seeing is (128,128,255). Each color gets remapped to the range from -1 to 1, so this color represents the vector (0,0,1): a vector straight out of the surface. This normal map data gets used when calculating lighting effects to give the illusion of much higher detail with fewer vertices and faces.
+
+<br><img src="09_suit_normal.png"><br> 
+
+We will explore these effects once we start programming in GLSL, which has a number of built-in features that make these easier to implement.
+
+
+</body>
+</html>

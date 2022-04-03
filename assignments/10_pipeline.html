@@ -1,0 +1,76 @@
+<!doctype html>
+<html>
+<head>
+<style>
+code {
+	background-color: #DDDDDD;
+	}
+.code {
+	font-family: monospace;
+	background-color: #DDDDDD;
+	}
+body {
+	font-family: sans-serif;
+	}
+.caution {
+	background-color: #EEEEBB;
+	padding: 20px;
+	border-left: 3px solid yellow;
+	}
+.caution:before {
+	font-size: xx-large;
+	content: "!"
+	}
+.instruction {
+	background-color: #BBCCEE;
+	}
+blockquote.instruction {
+	padding: 20px;
+	border-left: 3px solid #222255;
+	}
+.matrix td{
+	text-align:center;
+	padding: .4em;
+	}
+</style>
+</head>
+<body>
+
+<h1> The Graphics Pipeline </h1>
+
+Assignment Goals:
+<ul>
+<li> Learn about the graphics pipeline
+</ul>
+
+<blockquote class="instruction">
+Instructions for you to follow in this document will be highlighted in blue.
+</blockquote>
+
+<blockquote class="caution">
+Don't forget to cite your sources!
+</blockquote>
+
+<h2>The Graphics Pipeline</h2>
+
+<p>Not only have we build a fully-functioning basic 3d rendering engine, but this rendering engine is also a model of the modern <a href="https://www.khronos.org/opengl/wiki/Rendering_Pipeline_Overview">rendering pipeline</a>.</p>
+
+The relevant stages are:
+
+<ol>
+<li> Vertex Specification: vertex data of 3d models is stored in arrays to be sent to later stages.
+<li> Vertex Shader: model vertex coordinates are transformed to screen-relative coordinates based on transformations applied to the model, camera position, and additional effects.
+<li> Face Culling: some triangles are discarded depending on which direction they're facing and which directions they should be drawn from (some triangles, for instance, can specify that they should be drawn from both sides).
+<li> The Perspective Divide: x and y coordinates are divided by the z coordinate (actually the w coordinate, but we'll talk about that later).
+<li> The Viewport Transform: x and y coordinates are transformed from spacial coordinates to pixel coordinates for display on the screen.
+<li> Rasterization: Each triangle is divided up into pixels.
+<li> Fragment Shader: Color for each pixel of each triangle is determined using an arbitrary formula.
+<li> Depth Test: Each pixel is tested against the depth buffer to determine if it should be drawn.
+</ol>
+
+<blockquote class="instruction">
+Comment your submission for the previous assignment to clearly label which stage is happening where.
+</blockquote>
+
+</body>
+</html>

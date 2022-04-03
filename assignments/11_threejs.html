@@ -1,0 +1,236 @@
+<!doctype html>
+<html>
+<head>
+<style>
+code {
+	background-color: #DDDDDD;
+	}
+.code {
+	font-family: monospace;
+	background-color: #DDDDDD;
+	}
+body {
+	font-family: sans-serif;
+	}
+.caution {
+	background-color: #EEEEBB;
+	padding: 20px;
+	border-left: 3px solid yellow;
+	}
+.caution:before {
+	font-size: xx-large;
+	content: "!"
+	}
+.instruction {
+	background-color: #BBCCEE;
+	}
+blockquote.instruction {
+	padding: 20px;
+	border-left: 3px solid #222255;
+	}
+.matrix td{
+	text-align:center;
+	padding: .4em;
+	}
+</style>
+</head>
+<body>
+
+<h1> Getting Started with THREE.js </h1>
+
+Assignment Goals:
+<ul>
+<li> Learn how to read in image files in Javascript
+<li> Use ray-triangle intersections to solve for uv coordinates
+<li> Explore some other graphical effects that can be accomplished with pixel-by-pixel calculations
+</ul>
+
+<blockquote class="instruction">
+Instructions for you to follow in this document will be highlighted in blue.
+</blockquote>
+
+<blockquote class="caution">
+Don't forget to cite your sources!
+</blockquote>
+
+<h2>Getting Started with THREE.js</h2>
+
+<blockquote class="caution">
+Make sure you're using the version of THREE.js hosted at <code>https://trkern.github.io/three.js</code>. I may wish to change the version of three.js my online interactives are using, so I encourage you to point to <code>https://trkern.github.io/3d/three118.js</code>, or better yet download your own copy of THREE.js. You can check to see if you're using the right version of THREE.js by checking the value of <code>THREE.REVISION</code> in the developer console. It should be 118.
+</blockquote>
+
+<blockquote class="instruction">
+Complete the following:
+</blockquote>
+
+<ol>
+<li> Start with a blank html document, and copy over the canvas in the body and <code>&lt;script src="https://trkern.github.io/three.js"&gt;&lt;/script&gt;</code> in the head from your previous assignments.
+<li> Create a function <code>draw()</code> containing the following code:
+<ul>
+<li> <code>var scene = new THREE.Scene();</code> <a href="https://threejs.org/docs/#api/en/scenes/Scene">Scenes</a> store 3d models, lighting, and cameras in them.
+<li> <code>var camera = new THREE.PerspectiveCamera(75,1,0.1,1000);</code> This creates a <a href="https://threejs.org/docs/#api/en/cameras/PerspectiveCamera">perspective camera</a> that we can use as a viewpoint on the scene.
+<li> <code>var renderer_options = {canvas:document.getElementById("canvas"), antialias:true}</code> This is a javascript object containing options for when we create our renderer. The <code>canvas</code> option tells the renderer where to render to.
+<li> <code>var renderer = new THREE.WebGLRenderer(renderer_options)</code> This creates a <a href="https://threejs.org/docs/#api/en/renderers/WebGLRenderer">renderer</a>, an object we can call to render the scene.
+<li> <code>var donut_geometry = new THREE.TorusGeometry(2,1,16,20);</code> This creates a geometry. Geometries store all the information about an object's vertices: their locations, how they are connected to form faces, their normal vectors, where each vertex goes in a texture map, and even possibly a color associated to each vertex. THREE.js has a number of functions that automatically work out this information for you for common shapes like cubes, cones, cylinders, and toruses. You can read about the options for the <code>new THREE.TorusGeometry</code> function <a href="https://threejs.org/docs/#api/en/geometries/TorusGeometry">here</a>.
+<li> <code>var donut_material = new THREE.MeshNormalMaterial();</code> This creates a material. Materials describe how objects look.
+<li> <code>var donut_mesh = new THREE.Mesh(donut_geometry, donut_material);</code> This combines the geometry and material together into a single object.
+<li> <code>scene.add(donut_mesh);</code> Adds the donut to our scene.
+<li> <code>camera.position.z = 5;</code> Move our camera so we can actually see the donut
+<li> <code>renderer.render(scene,camera);</code> Renders our scene from the perspective of the camera
+<li> Finally, add <code>draw()</code> to your body's onload.
+</ul>
+</ol>
+
+The result should look like:
+
+<br><img src="11_donut.png"><br>
+
+<h2>Animation</h2>
+
+<p>We would like to create an animation where our donut rotates. Javascript offers the <code><a href="https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame">requestAnimationFrame</a></code> function which takes in a function and requests that it be called the next time the browser window redraws itself (usually 60 times per second).<p>
+
+<blockquote class="instruction">
+Complete the following:
+</blockquote>
+<ol>
+<li> Elevate your scene, camera, renderer, and donut_mesh variables to the global scope. You can do this by putting <code>var scene, camera, renderer donut_mesh;</code> in your global scope, then removing the <code>var</code>s before assigning these variables in your <code>draw()</code> function.
+<li> Create a function <code>animate()</code> which does the following:
+<ul>
+<li> Calls <code>requestAnimationFrame(animate)</code> to request that this function be called again next frame
+<li> Adds .01 to <code>donut_mesh.rotation.x</code>
+<li> Adds .01 to <code>donut_mesh.rotation.y</code>
+<li> Renders the scene from the perspective of the camera
+</ul>
+<li>Rename your <code>draw()</code> function to <code>create_scene()</code> and remove its render call
+<li>Add <code>animate();</code> after your call to <code>create_scene();</code> in your body's onload.
+</ol>
+
+<blockquote class="caution">
+An early mistake I made working with <code>requestAnimationFrame</code> was calling <code>animate()</code> more than once. This causes several requests per frame, and thus several calls to animate per frame, and thus several renders per frame. Each new call slowed down the program. Changes you make to the scene will automatically be reflected in the render. You can stop your animation by creating a global variable <code>var stop_animation=false</code> and checking the value of this variable in your animate function to determine whether or not to requestAnimationFrame.
+</blockquote>
+
+<h2>Camera Controls</h2>
+
+<p>It's very useful to have control over the camera of our scene.</p>
+
+<blockquote class="instruction">
+Complete the following:
+</blockquote>
+
+<ol>
+<li> Add <code>&lt;script src="https://trkern.github.io/OrbitControls.js"&gt;&lt;/script&gt;</code> to the head of your document. This is a local version of <a href="https://github.com/mrdoob/three.js/blob/master/examples/js/controls/OrbitControls.js">https://github.com/mrdoob/three.js/blob/master/examples/js/controls/OrbitControls.js</a>. OrbitControls documentation can be found <a href="https://threejs.org/docs/#examples/en/controls/OrbitControls">here</a>.
+<li> Add a global variable along with scene, camera, renderer, which is <code>controls = new THREE.OrbitControls(camera, document.getElementById("canvas");</code>.
+<li> Add to your animate function <code>controls.update()</code>.
+<li> Remove your modifications to donut_mesh.rotation from your animate function.
+</ol>
+
+You should now be able to:
+<ul>
+<li> Left-click-drag to rotate the object
+<li> Use your arrow keys or right-click-drag to pan the object
+<li> Scroll (or middle-click-drag) to dolly in or out (move closer or farther)
+</ul>
+
+<h2>Fake Normals, Changing Attributes</h2>
+
+<p>You might notice by looking at the outline of the torus, that the shading seems to be much higher resolution than the geometry itself. We can reveal this cheat:</p>
+
+<blockquote class="instruction">
+In the developer console, set <code>donut_mesh.material.flatShading = true</code> and <code>donut_mesh.material.needsUpdate = true</code>.
+</blockquote>
+
+<p>
+<code>donut_mesh.material</code> refers to the second argument when we called <code>new THREE.Mesh</code> to create <code>donut_mesh</code>. This is the same as if we had written <code>var donut_material = new THREE.MeshNormalMaterial({flatShading:true});</code>, with <code>flatShading</code> as one of the options to our material. Very often if you make a change to something in THREE.js, you need to tell THREE.js that it has updated, so it doesn't have to check every single variable every single frame to see if it has changed.
+</p>
+
+<p>
+This has also revealed the cheat behind our normal shading: the normals for each vertex are smoothly interpolated across each face, causing the lighting to appear as if the object is smoother than it actually is. Below we can see some interpolated normals across a surface with sharp angles and flat sides and the corresponding round oval it appears to be based on how it reflects light.
+</p>
+
+<br><img src="11_normal_interpolation.png"></br>
+
+Setting <code>flatShading</code> to false turns off this interpolation effect, instead using the surface normals. We'll come back to this.
+
+<h2>Translation and Rotation</h2>
+
+<blockquote class="instruction">
+Complete the following:
+</blockquote>
+
+<ol>
+<li> Add to your <code>create_scene</code> function a new mesh:
+<blockquote class="code">
+&nbsp;&nbsp;&nbsp;&nbsp;var can_geometry = new THREE.CylinderGeometry(1,1,2,20,3);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var can_material = new THREE.MeshBasicMaterial({color:"green", wireframe:true});<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var can_mesh = new THREE.Mesh(can_geometry, can_material);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;scene.add(can_mesh);
+</blockquote>
+MeshBasicMaterial describes a material that always renders as a single color.
+<li> The cylinder has a THREE.Vector3 called <code>can_mesh.position</code>, which cannot be modified directly. <code>can_mesh.position = new THREE.Vector3(1,2,3);</code> does not work! You can set the position using:
+<ul>
+<li> <code>can_mesh.position.x = 3;</code>
+<li> <code>can_mesh.position = new THREE.Vector3(1,2,3);</code>
+<li> <code>can_mesh.position.copy(v)</code>, where <code>v</code> is another THREE.Vector3
+</ul>
+Set the can position to (1,2,3).
+<li> Rotations are trickier to specify, but you can rotate the can using <code>can_mesh.rotateX(angle)</code>, <code>can_mesh.rotateY(angle)</code>, and <code>can_mesh.rotateZ(angle)</code>. Rotate the can <code>Math.PI/4</code> radians around the z-axis.
+</ol>
+
+The result should look like:
+<br><img src="11_donut_can.png"><br>
+
+<h2>Lighting</h2>
+
+<p>If you try to use most of the <a href="https://threejs.org/docs/?q=material">materials</a> available in THREE.js, you'll find that they don't work. That's because these materials describe how lighting is calculated, and we don't have any lights set up yet.</p>
+
+<blockquote class="instruction">
+Add a light to your <code>create_scene</code> function:
+</blockquote>
+<blockquote class="code">
+	var light = new THREE.PointLight(0xffff99);<br>
+	light.position.set(10,10,10);<br>
+	scene.add(light);
+</blockquote>
+
+<p>
+The argument to <code>new THREE.PointLight</code> is the <a href="https://en.wikipedia.org/wiki/Web_colors#Hex_triplet">hexadecimal</a> representation of the color of the light. Here I've chosen a yellow-ish light.
+</p>
+
+<p>
+You'll notice that this doesn't affect any of the currently rendered objects, because their materials don't use light to calculate pixel colors.
+</p>
+
+<blockquote class="instruction">
+Add to your <code>create_scene</code> function:
+</blockquote>
+<blockquote class="code">
+	var dodec_geometry = new THREE.DodecahedronGeometry();<br>
+	var dodec_material = new THREE.MeshPhongMaterial({color:"white"});<br>
+	var dodec_mesh = new THREE.Mesh(dodec_geometry,dodec_material);<br>
+	scene.add(dodec_mesh);
+</blockquote>
+
+The result should look like:
+<br><img src="11_donut_can_dodec.png"><br>
+
+<h2>Modifying the Scene</h2>
+
+You can change the background color of the scene using <code>scene.background = new THREE.Color("orange");</code>. See all possible ways of creating colors in THREE.js <a href="https://threejs.org/docs/#api/en/math/Color">here</a>.
+
+<blockquote class="instruction">
+Set the background color of your scene to whatever color you want.
+</blockquote>
+
+
+<h2>Above and Beyond</h2>
+
+Some optional steps for improving your interactive:
+
+<ul>
+<li> Experiment with some of the other <a href="https://threejs.org/docs/?q=material">materials</a> and <a href="https://threejs.org/docs/?q=geometry">geometries</a>. Some are simple to get working, while others have lots of complex options.
+<li> Make your own scene.
+</ul>
+
+
+</body>
+</html>

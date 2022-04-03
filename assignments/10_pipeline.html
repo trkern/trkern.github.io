@@ -58,8 +58,8 @@ Don't forget to cite your sources!
 The relevant stages are:
 
 <ol>
-<li> Vertex Specification: vertex data of 3d models is stored in arrays to be sent to later stages.
-<li> Vertex Shader: model vertex coordinates are transformed to screen-relative coordinates based on transformations applied to the model, camera position, and additional effects.
+<li> Vertex Specification: vertex data of 3d models is stored in arrays to be sent to later stages. Extra data (such as vertex colors) may be associated to each vertex.
+<li> Vertex Shader: model vertex coordinates are transformed to screen-relative coordinates based on transformations applied to the model, camera position, and additional effects. Additional data is associated to each vertex.
 <li> Face Culling: some triangles are discarded depending on which direction they're facing and which directions they should be drawn from (some triangles, for instance, can specify that they should be drawn from both sides).
 <li> The Perspective Divide: x and y coordinates are divided by the z coordinate (actually the w coordinate, but we'll talk about that later).
 <li> The Viewport Transform: x and y coordinates are transformed from spacial coordinates to pixel coordinates for display on the screen.

@@ -262,6 +262,19 @@ Now let's go back to our pixel-by-pixel <code>set_rgba</code> call within your <
 <li> Use <code>set_rgba</code> to set those rgba values to the canvas.
 </ol>
 
+<blockquote class="code">
+function get_rgba(imagedata,x,y) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;x = Math.floor(x);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;y = Math.floor(y);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var pos = y*imagedata.width+x;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var r = imagedata.data[pos*4];<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var g = imagedata.data[pos*4+1];<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var b = imagedata.data[pos*4+2];<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var a = imagedata.data[pos*4+3];<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return([r,g,b,a]);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}
+</blockquote>
+
 <h2>Texturing Geometry</h2>
 
 <p>It is very tedious and inefficient to have a separate image file for each face of a 3d model. In fact, it is common for a 3d model to have a single texture image. For instance, take this space suit model from <a href="https://nasa3d.arc.nasa.gov/detail/nmss-z2">NASA</a>:

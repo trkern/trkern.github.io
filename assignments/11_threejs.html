@@ -40,9 +40,9 @@ blockquote.instruction {
 
 Assignment Goals:
 <ul>
-<li> Learn how to read in image files in Javascript
-<li> Use ray-triangle intersections to solve for uv coordinates
-<li> Explore some other graphical effects that can be accomplished with pixel-by-pixel calculations
+<li> Learn how to use THREE.js to create scenes to render with WebGL
+<li> Learn how to modify scenes in THREE.js
+<li> Learn how to use THREE.OrbitControls
 </ul>
 
 <blockquote class="instruction">
@@ -169,7 +169,7 @@ MeshBasicMaterial describes a material that always renders as a single color.
 <li> The cylinder has a THREE.Vector3 called <code>can_mesh.position</code>, which cannot be modified directly. <code>can_mesh.position = new THREE.Vector3(1,2,3);</code> does not work! You can set the position using:
 <ul>
 <li> <code>can_mesh.position.x = 3;</code>
-<li> <code>can_mesh.position = new THREE.Vector3(1,2,3);</code>
+<li> <code>can_mesh.position.set(1,2,3)</code>
 <li> <code>can_mesh.position.copy(v)</code>, where <code>v</code> is another THREE.Vector3
 </ul>
 Set the can position to (1,2,3).

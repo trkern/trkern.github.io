@@ -1,0 +1,205 @@
+<!doctype html>
+<html>
+<head>
+<style>
+code {
+	background-color: #DDDDDD;
+	}
+.code {
+	font-family: monospace;
+	background-color: #DDDDDD;
+	}
+body {
+	font-family: sans-serif;
+	}
+.caution {
+	background-color: #EEEEBB;
+	padding: 20px;
+	border-left: 3px solid yellow;
+	}
+.caution:before {
+	font-size: xx-large;
+	content: "!"
+	}
+.instruction {
+	background-color: #BBCCEE;
+	}
+blockquote.instruction {
+	padding: 20px;
+	border-left: 3px solid #222255;
+	}
+.matrix td{
+	text-align:center;
+	padding: .4em;
+	}
+</style>
+</head>
+<body>
+
+<h1> Spaces </h1>
+
+Assignment Goals:
+<ul>
+<li> Understand the connections between:
+<ul>
+<li> Model Space
+<li> World Space
+<li> View Space
+<li> Clip Space
+<li> Screen Space
+</ul>
+<li> Explore how the graphics pipeline uses 4x4 matrices to perform these transformations
+</ul>
+
+<blockquote class="instruction">
+Instructions for you to follow in this document will be highlighted in blue.
+</blockquote>
+
+<blockquote class="caution">
+Don't forget to cite your sources!
+</blockquote>
+
+<h2> Model Space to World Space </h2>
+
+<p>Just like with our bunverts array, all the 3d models in our scenes start out as a list of vertex coordinates. Some of these are created by an artist in a 3d modeling program, others (such as the Stanford bunny) are created by scanning real-world objects, and some are procedurally generated (such as the torus).
+
+<blockquote class="instruction">
+Complete the Following:
+</blockquote>
+
+<blockquote class="code">
+function record_matrix4(m,id) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var str = "&lt;table border=1&gt;";<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var i,j;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;for (i = 0; i &lt; 4; i++) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;str += "&lt;tr&gt;";<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for (j = 0; j &lt; 4; j++) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;str += "&lt;td&gt;";<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;str += m.elements[4*j+i];<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;str += "&lt;/td&gt;";<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;str += "&lt;/tr&gt;";<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;str += "&lt;/table&gt;";<br>
+&nbsp;&nbsp;&nbsp;&nbsp;console.log(str);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;document.getElementById(id).innerHTML = str;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+</blockquote>
+
+<ol>
+<li> Starting with your submission for the previous assignment, add the code above.
+<li> Create an element in the body of your document with the code <code>&lt;div id="modelmatrix"&gt;&lt;/div&gt;</code>
+<li> After creating your <code>dodec_mesh</code>, call <code>record_matrix4(dodec_mesh.matrix, "modelmatrix")</code>. Each mesh (and, more generally, Object3D) has a <code>.matrix</code> attribute, which represents how that object has been transformed relative to the world. By default, no transformations have been performed, so you should get the identity matrix.
+
+<blockquote class="caution">
+Every time you look at a matrix using <code>record_matrix4</code> in this assignment, jot down which matrix you were recording at which step and what the entries of that matrix were. Include this information somewhere in your submission (either as a comment in your code or as part of the body of your html).
+</blockquote>
+
+<li> As you did in the previous assignment, translate the dodecahedron by the vector (-2,-1,3).
+<li> THREE.js needs prompting to update the <code>.matrix</code> attribute, which you can do by calling <code>dodec_mesh.updateMatrix()</code>. What is <code>dodec_mesh.matrix</code> now?
+<li> As you did in the previous assignment, rotate the dodecahedron around the Z axis by <code>Math.PI/4</code>. What is <code>dodec_mesh.matrix</code> now?
+</ol>
+
+<p>
+To apply a 3x3 matrix whose columns are u, v, and w to a vector (a,b,c), we need to calculate a u + b v + c w. If we then want to translate this vector by a vector t, we need to calculate a u + b v + c w + t.
+</p>
+
+<p>
+We can unify these operations by adding a new coordinate to all of our vectors, the w-coordinate, always set to 1. If we construct a matrix whose entries are as follows:
+
+<table border=1>
+<tr><td>u0</td><td>v0</td><td>w0</td><td>t0</td></tr>
+<tr><td>u1</td><td>v1</td><td>w1</td><td>t1</td></tr>
+<tr><td>u2</td><td>v2</td><td>w2</td><td>t2</td></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>1</td></tr>
+</table>
+
+The result of multiplying this by (a,b,c,1) is a vector whose first three coordinates are a u + b v + c w + t and whose fourth coordinate is 1.
+</p>
+
+<p>
+In short, the top left 3x3 matrix is the transformation we want to apply and the top right 3x1 vector is our translation vector. We shouldn't touch the bottom row to make sure the last entry of our result is still 1 (in case we want to do further transformations). Unified into a single matrix, we can compose matrix and translation operations and find their inverses just by doing math with 4x4 matrices.
+</p>
+
+<ul>
+<li> Nicky Case has an interactive that lets you play around with this unified matrix in 2 dimensions <a href="https://ncase.me/matrix/">here</a>
+<li> Freya Holmer has a lecture about homogeneous coordinates <a href="https://youtu.be/XiwEyopOMqg?t=5655">here</a> (careful! the top left matrix is backwards initially)
+</ul>
+
+<h2>Children</h2>
+
+<blockquote class="instruction">
+Complete the Following:
+</blockquote>
+
+<ol>
+<li> Create a new mesh called <code>cube_mesh</code> with <code>new THREE.BoxGeometry(1.5,1.5,1.5)</code> as its geometry and <code>new THREE.MeshBasicMaterial()</code> as its material.
+<li> Instead of adding it to the scene, call <code>can_mesh.add(cube_mesh)</code>. This adds <code>cube_mesh</code> as a child of <code>can_mesh</code>.
+<li> What is <code>cube_mesh.matrix</code>? Is it at the default location in the default orientation? By default, an object's <code>.matrix</code> attribute describes its transformation relative to the scene, but if the object is a child of another object, its <code>.matrix</code> attribute describes its transformation relative to its parent.
+<li> Call <code>cube_mesh.updateWorldMatrix(true,true);</code> and take a look at the contents of <code>cube_mesh.matrixWorld</code>. This is the matrix that actually keeps track of how cube_mesh has been transformed relative to the scene.
+<li> As before, translate cube_mesh by the vector (0,1,0). Notice that it hasn't been translated in the y direction (up on the screen with the starting camera position), but diagonally. That's because it has been translated in the cylinder's y direction, which has been changed since we rotated the cylinder 45 degrees around the z axis.
+</ol>
+
+<p>
+Child objects are very useful, for instance, for creating vehicles in video games. We set the wheels as child objects of the vehicle. We can then rotate the wheels relative to the vehicle, and also apply transformations to the entire vehicle that automatically get applied to the wheels.
+</p>
+
+<p>
+This does, however, create a longer journey from local space to screen space. We first have to go from a child object's space to its parent's space to the space of the scene (world space). That's an extra matrix multiplication! Especially with nested children objects within children objects, so each object should (and does in THREE.js) keep track of the matrix for going from its space directly to world space.
+</p>
+
+<h2>World Space to View Space</h2>
+
+<p>
+Just as in 3d renderer we made, it's really convenient for our calculations to have the camera at the origin, pointing in the z direction, with the y direction up and the x direction to the right. However, when building our scene, we would like to be able to place our camera in the scene with its own base position and orientation relative to the world. Just like any other object, the camera will have a 4x4 matrix representing its combined rotation and translation.
+</p>
+
+<p>
+Our camera will thus have been modified from its default position/orientation by applying a particular matrix, so we can undo that by applying the inverse matrix. If we apply this inverse matrix to the camera, it will transform the camera back to its default position/orientation, and if we also apply this inverse matrix to the rest of the world, it will transform the world along with the camera into what is called view space.
+</p>
+
+<blockquote class="instruction">
+Complete the Following:
+</blockquote>
+
+<ol>
+<li> After setting the camera position, call <code>camera.updateMatrix();</code> and take a look at <code>camera.matrix</code>.
+<li> Call <code>camera.updateWorldMatrix(true,true);</code> and take a look at <code>camera.matrixWorldInverse</code>. How is this related to <code>camera.matrix</code>? This is the matrix that all of our vertex coordinates get transformed by after being transformed to world space.
+<li> At render time, for each object, the product of the model to world and world to view matrices are calculated before being passed to the GPU. At the end of your <code>create_scene</code> function, call <code>renderer.render(scene,camera);</code>, and then take a look at <code>can_mesh.modelViewMatrix</code>. How is this related to <code>can_mesh.matrix</code>?
+</ol>
+
+<h2>View Space to Clip Space</h2>
+
+<p>
+As you can see in <a href="https://threejs.org/examples/#webgl_camera">this</a> example, perspective and orthographic cameras define a portion of 3d space that gets seen: everything outside of that space is invisible. For perspective cameras, this region is a frustrum, and for orthographic cameras, this region is a parallelpiped.
+</p>
+
+<blockquote class="instruction">
+Complete the Following:
+</blockquote>
+
+<ol>
+<li> Take a look at <code>camera.projectionMatrix</code>. This matrix should:
+<ul>
+<li> Apply a slight scaling in the x and y directions, depending on the field of view of the camera
+<li> The z coordinate of the result should be about -z-.2w. This is mainly a setup for the z-buffer based on the front and back camera clipping planes, so it only has to deal with values within a certain range.
+<li> The w coordinate of the result should be about -z. This is a setup for the perspective divide, since we'll be dividing the x and y coordinates by the w coordinate.
+</ul>
+<li> Now create a new camera <code>var ocamera = new THREE.OrthographicCamera();</code> and take a look at <code>ocamera.projectionMatrix</code>. This matrix should:
+<ul>
+<li> Maybe scale in the x and y directions, depending on the setup of the camera.
+<li> The z coordinate of the result should be about -1/999 * z - 1000/999 * w. This is because, by default, the near and far planes of the view parallelpiped are from z = -1 to z = -1000. If w is, as it should be, 1, this function maps z from the range from -1 to -1000 to the range from -1 to 0.
+<li> The w coordinate should be kept as w, which should be 1. This means that when we do the perspective divide (dividing the x and y coordinates by the w coordinate), they shouldn't be affected at all (as we want with orthographic projection).
+</ul>
+</ol>
+
+<h2>The Perspective Divide to Normalized Device Coordinates</h2>
+
+At this step, the x, y, and z coordinates of each vertex are all divided by the w coordinate to produce normalized device coordinates. These coordinates should range from -1 to 1 in x and y.
+
+<h2>Normalized Device Coordinates to Screen Space</h2>
+
+This last step works out the actual pixel coordinates using a <code>convert_a_to_b</code>-style function, as we did in our own 3d renderer.
+
+</body>
+</html>

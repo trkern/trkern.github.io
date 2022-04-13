@@ -134,6 +134,7 @@ Complete the following:
 
 <ol>
 <li> Copy the bunverts and bunfaces arrays to the global scope of your code.
+<li> Within your <code>create_scene</code> function create a new buffergeometry: <code>var bunny_geometry = new THREE.BufferGeometry();</code>
 <li> We now need to flatten the bunverts array to look like the vertices array to pass to the renderer. In your <code>create_scene</code> function, reset the vertices array to <code>[]</code>, then iterate through bunverts, pushing the x, y, and z coordinates (<code>bunverts[i][0]</code>, <code>bunverts[i][1]</code>, and <code>bunverts[i][2]</code>) to <code>vertices</code> separately.
 <li> Create a new array <code>var indices = []</code>, and similarly flatten bunfaces into it.
 <li> Call <code>bunny_geometry.setIndex(indices);</code>

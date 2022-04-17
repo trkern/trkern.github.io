@@ -1,0 +1,372 @@
+<!doctype html>
+<html>
+<head>
+<style>
+code {
+	background-color: #DDDDDD;
+	}
+.code {
+	font-family: monospace;
+	background-color: #DDDDDD;
+	}
+body {
+	font-family: sans-serif;
+	}
+.caution {
+	background-color: #EEEEBB;
+	padding: 20px;
+	border-left: 3px solid yellow;
+	}
+.caution:before {
+	font-size: xx-large;
+	content: "!"
+	}
+.instruction {
+	background-color: #BBCCEE;
+	}
+blockquote.instruction {
+	padding: 20px;
+	border-left: 3px solid #222255;
+	}
+.matrix td{
+	text-align:center;
+	padding: .4em;
+	}
+</style>
+</head>
+<body>
+
+<h1> Introduction to Shaders </h1>
+
+Assignment Goals:
+<ul>
+<li> Create your own shaders in GLSL
+</ul>
+
+<blockquote class="instruction">
+Instructions for you to follow in this document will be highlighted in blue.
+</blockquote>
+
+<blockquote class="caution">
+Don't forget to cite your sources!
+</blockquote>
+
+<p>
+We call code that gets executed on the GPU <b>shaders</b>. In this class, we will concern ourselves with the two most common types of shaders: vertex and fragment shaders.
+</p>
+<ul>
+<li> Vertex Shaders:
+<ul>
+<li> Get executed for each vertex
+<li> Are responsible for converting the vertices of an object from model space to clip space (just before the perspective divide).
+<li> Can read additional data we set as vertex attributes (normals, colors, uvs, etc)
+<li> Can associate additional data to each vertex to get passed to the Fragment Shaders
+</ul>
+<li> Fragment Shaders:
+<ul>
+<li> Get executed for every pixel of every triangular face (except those culled in earlier stages of the <a href="https://www.khronos.org/opengl/wiki/Rendering_Pipeline_Overview">graphics pipeline</a> such as via clipping or backface culling).
+<li> Are responsible for determining the color of each pixel
+<li> Have access to the "additional data" associated to each vertex, linearly interpolated over each face.
+</ul>
+
+</ul>
+
+<p>The GPU is designed to execute simple commands in massive parallel, so shaders aren't allowed to talk to each other, because they might be being executed simultaneously.<p>
+
+<h2>Getting Started with GLSL in THREE.js</h2>
+
+<p>All of the materials within THREE.js (and in all modern 3d applications) are created with shaders. THREE.js has a material called <code>THREE.RawShaderMaterial</code> which allows you to create your own shaders.</p>
+
+<p>
+We start by populating the scene with lots of geometry so we can see how our shaders affect them.
+</p>
+
+<blockquote class="instruction">
+Create a new .html file with a THREE.js scene with: 
+<ol>
+<li> orbit controls
+<li> perspective camera
+<li> at least five meshes that have been translated and/or rotated, at least one smooth and at least one with sharp corners
+<li> all meshes should have the same material (called <code>shader_material</code>)
+<li> render loop
+</ol>
+Build your own or use the code below:
+</blockquote>
+
+<blockquote class="code">
+&lt;!doctype html&gt;<br>
+&lt;html&gt;<br>
+&lt;script src="https://trkern.github.io/3d/three118.js"&gt;&lt;/script&gt;<br>
+&lt;script src="https://trkern.github.io/OrbitControls.js"&gt;&lt;/script&gt;<br>
+&lt;script&gt;<br>
+<br>
+var scene,camera,renderer, controls;<br>
+<br>
+function create_scene() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;scene = new THREE.Scene();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;camera = new THREE.PerspectiveCamera(75,1,.1,1000);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;renderer = new THREE.WebGLRenderer({canvas:document.getElementById("canvas"),antialias:true});<br>
+&nbsp;&nbsp;&nbsp;&nbsp;controls = new THREE.OrbitControls(camera, document.getElementById("canvas"));<br>
+&nbsp;&nbsp;&nbsp;&nbsp;camera.position.z = 5;<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var shader_material = new THREE.MeshNormalMaterial();<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var knot_geometry = new THREE.TorusKnotGeometry(1,0.4,100,16);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var knot = new THREE.Mesh(knot_geometry,shader_material);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;knot.position.set(1,2,-3);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;scene.add(knot);<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var sphere_geometry = new THREE.SphereGeometry(1,30,30);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var sphere = new THREE.Mesh(sphere_geometry,shader_material);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;sphere.position.set(2,-1,-2);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;scene.add(sphere);<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var cube_geometry = new THREE.BoxGeometry();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var cube = new THREE.Mesh(cube_geometry,shader_material);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cube.position.set(-1,-2,-1);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;scene.add(cube);<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var cone_geometry = new THREE.ConeGeometry();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var cone = new THREE.Mesh(cone_geometry,shader_material);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cone.position.set(4,-3,-4);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;scene.add(cone);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var icosa_geometry = new THREE.IcosahedronGeometry();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var icosa = new THREE.Mesh(icosa_geometry,shader_material);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;icosa.position.set(-4,1,-3);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;scene.add(icosa);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var torus_geometry = new THREE.TorusGeometry();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var torus = new THREE.Mesh(torus_geometry,shader_material);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;torus.position.set(-2,-1,-5);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;scene.add(torus);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var tetra_geometry = new THREE.TetrahedronGeometry();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var tetra = new THREE.Mesh(tetra_geometry,shader_material);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;tetra.position.set(-2,4,-4);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;scene.add(tetra);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+<br>
+function animate() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;requestAnimationFrame(animate);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;renderer.render(scene,camera);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;controls.update();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+<br>
+&lt;/script&gt;<br>
+&lt;head&gt;<br>
+&lt;/head&gt;<br>
+&lt;body onload="create_scene(); animate();"&gt;<br>
+&lt;canvas id="canvas" width=500 height=500 style="border: 1px solid"&gt;&lt;/canvas&gt;<br>
+&lt;/body&gt;<br>
+&lt;/html&gt;
+</blockquote>
+
+<p><code>THREE.RawShaderMaterial</code> has two key options: <code>vertexShader</code> and <code>fragmentShader</code>. These should be set to strings containing the GLSL code for our shaders. We could include the code directly as a string in our javascript, but this is an awkward solution.</p>
+
+<blockquote class="instruction">
+Complete the Following:
+</blockquote>
+
+<ol>
+<li> Add a <code>&lt;script id="vertexShader" type="x-shader/x-vertex"&gt;</code> element to your page. The id is so we can <code>getElementById</code> the element. The type is not important, it just specifies that the code is not javascript (<code>type = "text/javascript"</code>, or no type specified), so the browser shouldn't try to execute it. Within this script tag, include the code:
+<ol>
+<li> <code>precision highp float;</code> This sets the default level of precision for floats.
+<li> A <a href="https://www.khronos.org/opengl/wiki/Uniform_(GLSL)">uniform</a> is a variable provided by THREE.js that is constant over all calls to the shader. This includes the transformation matrices we covered in the spaces activity:
+<blockquote class="code">
+uniform mat4 projectionMatrix;<br>
+uniform mat4 modelMatrix;<br>
+uniform mat4 viewMatrix;
+</blockquote>
+GLSL is a very strictly typed language: every variable has a type and we need to explicitly perform conversions between them. GLSL has 2x2, 3x3, and 4x4 matrices of floating point numbers as built-in types, called mat2, mat3, and mat4 (similar to how we might specify a variable as a float or an int). It also provides 2, 3, and 4 element vectors of floating point numbers, called vec2, vec3, and vec4. Read about other types <a href="https://www.khronos.org/opengl/wiki/Data_Type_(GLSL)">here</a>.
+<li> An attribute is a variable provided by THREE.js which changes per vertex. These are the attributes we set in our procedural geometry assignment. THREE.js sets a wide variety of attributes in its default geometry constructors:
+<blockquote class="code">
+attribute vec3 position;<br>
+attribute vec2 uv;<br>
+attribute vec3 normal;
+</blockquote>
+<li> A varying is a variable we would like to pass from our vertex shader to our fragment shader. Let's pass our uv (the texture coordinates on the surface of our object) coordinates to the fragment shader:
+<blockquote class="code">
+varying vec2 uvpass;
+</blockquote>
+<li> <code>void main() {</code> This will be the function called for each vertex by our shader. Shaders allow you to define your own functions with C-like syntax, but recursion is strictly prohibited.
+<li> <code> gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position,1.0); </code> 
+<p> The attribute vec3 position passed by THREE.js is the model coordinates of our vertex. As in our spaces assignment, we first need to convert it from a vec3 to a vec4 by adding a 1 in the w-coodinate. The <a href="https://www.khronos.org/opengl/wiki/Data_Type_(GLSL)#Vector_constructors">vec4</a> constructor is very flexible: feed it four components worth of vectors and numbers and it will create a vec4 out of them.</p>
+<p>
+Then we need to multiply it by our model, view, and projection matrices in that order. gl_position is a special (vec4) variable which is the output of the vertex shader: the position in clip space of the vertex. This position gets perspective divided to produce normalized device coordinates, then convert_a_to_b'ed to produce pixel coordinates on the canvas.
+</p>
+<li> <code>uvpass = uv;</code> This copies the data from the attribute uv to the varying uvpass so it can get passed to the fragment shader.
+<li> <code>}</code> Close the void main function definition. Don't forget a closing <code>&lt;/script&gt;</code> tag as well.
+</ol>
+<li> Add a <code>&lt;script id="fragmentShader" type="x-shader/x-fragment"&gt;</code> tag to your html. Within this tag, include the code:
+<ol>
+<li> <code>precision highp float;</code>
+<li> <code>varying vec2 uvpass;</code> This specifies that we will be receiving uvpass from the vertex shader. Each vertex of our triangle has its own uv coordinates, and the value we get is interpolated between them.
+<li> <code>void main() {</code> This is the function that gets called for all the pixels of every triangle.
+<li> <code>gl_FragColor = vec4(uvpass,0.0,1.0);</code> gl_FragColor is the special output variable for our fragment shader: it specifies the rgba color of this pixel. In this case, we set the first two values (R and G) to the u and v values of uvpass, then set B and A to 0 and 1. You can see a list of other special variables <a href="https://www.khronos.org/opengl/wiki/Built-in_Variable_(GLSL)">here</a>.
+<li> <code>}</code> Close the void main function definition. Don't forget a closing <code>&lt;/script&gt;</code> tag as well.
+</ol>
+<li> Finally, change shader_material:
+<blockquote class="code">
+&nbsp;&nbsp;&nbsp;&nbsp;var shader_material = new THREE.RawShaderMaterial({<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;vertexShader: document.getElementById("vertexShader").textContent,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fragmentShader: document.getElementById("fragmentShader").textContent<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;});
+</blockquote>
+</ol>
+
+The result should look like:
+<br><img src="14_mango.png"><br>
+
+<p>Explore the scene to see how the uv coordinates of each model are set up. uv coordinates are texture coordinates, so this is what our objects would look like if we applied the following texture to them:</p>
+
+<br><img src="14_mango_texture.png"><br>
+
+<p>You can set your own uv coordinates using <code>geo.setAttribute('uv', new Float32BufferAttribute(uvs, 2));</code>, and have lots of choice and flexibility in how you do so. Here's a glimpse into how THREE.js sets position, normals, and uv coordinates for spheres:
+
+<blockquote class="code">
+var vertices = [];<br>
+var normals = [];<br>
+var uvs = [];<br>
+for ( var iy = 0; iy &lt;= heightSegments; iy ++ ) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var v = iy / heightSegments;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// special case for the poles<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var uOffset = 0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if ( iy == 0 && thetaStart == 0 ) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;uOffset = 0.5 / widthSegments;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} <br>
+&nbsp;&nbsp;&nbsp;&nbsp;else if ( iy == heightSegments && thetaEnd == Math.PI ) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;uOffset = - 0.5 / widthSegments;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;for ( var ix = 0; ix &lt;= widthSegments; ix ++ ) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;var u = ix / widthSegments;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// vertex<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;vertex.x = - radius * Math.cos( phiStart + u * phiLength ) * Math.sin( thetaStart + v * thetaLength );<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;vertex.y = radius * Math.cos( thetaStart + v * thetaLength );<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;vertex.z = radius * Math.sin( phiStart + u * phiLength ) * Math.sin( thetaStart + v * thetaLength );<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;vertices.push( vertex.x, vertex.y, vertex.z );<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// normal<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;normal.copy( vertex ).normalize();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;normals.push( normal.x, normal.y, normal.z );<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// uv<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;uvs.push( u + uOffset, 1 - v );<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+this.setAttribute( 'position', new Float32BufferAttribute( vertices, 3 ) );<br>
+this.setAttribute( 'normal', new Float32BufferAttribute( normals, 3 ) );<br>
+this.setAttribute( 'uv', new Float32BufferAttribute( uvs, 2 ) );<br>
+</blockquote>
+
+<h2>Swizzling</h2>
+<p>If <code>v</code> is a vec4, then we can access its elements in GLSL with any of the following accessors (each row is four equivalent selectors):
+<ul>
+<li> <code>v[0], v.r, v.x, v.s</code>
+<li> <code>v[1], v.g, v.y, v.t</code>
+<li> <code>v[2], v.b, v.z, v.p</code>
+<li> <code>v[3], v.a, v.w, v.q</code>
+</ul>
+We can also combine letter accessors (of the same column above) to form vec2s, vec3s, and vec4s. For instance, <code>v.yzzx</code> is the same as <code>vec4(v.y,v.z,v.z,v.x)</code>.
+</p>
+
+<blockquote class="instruction">
+Replace <code>gl_FragColor = vec4(uvpass,0.0,1.0);</code> in your shader with the following to see what happens:
+</blockquote>
+<ol>
+<li> <code>gl_FragColor = vec4(uvpass.yx,0.0,1.0);</code>
+<li> <code>gl_FragColor = vec4(uvpass,1.0,1.0);</code>
+<li> <code>gl_FragColor = vec4(0.5,uvpass.yx,1.0);</code>
+<li> <code>gl_FragColor = vec4(uvpass.yxx,1.0);</code>
+<li> <code>gl_FragColor = vec4(uvpass.xxx,1.0);</code>
+</ol>
+Note that modifying the alpha value of gl_FragColor won't do anything unless you add the option <code>transparent:true</code> to your THREE.RawShaderMaterial. This is a separate option so GLSL knows if it can make optimizations assuming the object is fully opaque.
+
+<h2>Normal Shading</h2>
+
+<p>Let's try to replicate the shading of <a href="https://threejs.org/docs/index.html?q=normal#api/en/materials/MeshNormalMaterial">MeshNormalMaterial</a>.</p>
+
+<blockquote class="instruction">
+Complete the Following:
+</blockquote>
+<ol>
+<li> Begin by passing the value of normal through to the fragment shader by adding <code>varying vec3 normpass;</code> to both shaders, and setting <code>normpass = normal</code> in the <code>main()</code> of your vertex shader.
+<li> In the <code>main()</code> of your fragment shader, set <code>gl_FragColor = vec4(normpass,1.0)</code>.
+<p>This doesn't look right! Note that points with a normal in the positive x direction have red, points with a normal in the positive y direction have green, and points with a normal in the positive z direction have blue. But, points with a normal in the negative x direction are getting their r value set to a negative number. GLSL is perfectly happy to output vectors with negative components, it's only when we finally go to draw our pixels to the screen that rgb values less than 0 get set to 0 and rgb values larger than 1 get set to 1.</p>
+<li>To fix this, we need to convert_a_to_b our rgb values from the range [-1,1] to the range [0,1]. Implement <code>convert_a_to_b</code>, using exactly the same code as in javascript, but with some additional type information in the declaration: <code>float convert_a_to_b(float x, float a_min, float a_max, float b_min, float b_max) {</code>
+<li> Apply <code>convert_a_to_b</code> to each of the components of <code>normpass</code> in your creation of <code>gl_FragColor</code>.
+
+<blockquote class="caution">
+GLSL can be very particular about types: the arguments of <code>convert_a_to_b</code> were specified to be floats, and GLSL interprets "-1", "0" and "1" as ints and will not automatically convert them to floats. You need your calls to <code>convert_a_to_b</code> to look like <code>convert_a_to_b(normpass.x,-1.0,1.0,0.0,1.0)</code>.
+</blockquote>
+
+The result should look like:
+<br><img src="14_normal.png"><br>
+
+<li>GLSL offers another clever way of converting our vectors. Note that to convert from [-1,1] to [0,1], you just need to add 1 and divide by 2. Set <code>gl_FragColor = vec4((normpass+1.0)/2.0,1.0);</code>. These operations get applied to each component of normpass. This is standard linear algebra for multiplication and division and not standard at all for addition and subtraction. 
+<li>Note that again you need to specify your numbers as floats here: GLSL does not know how to combine ints and floats. Replace the various floats in <code>gl_FragColor = vec4((normpass+1.0)/2.0,1.0);</code> with ints (1 and 2, instead of 1.0 and 2.0) and see what errors you get in the developer console.
+</ol>
+
+<h2>Graphing Math</h2>
+
+<blockquote class="instruction">
+Complete the Following:
+</blockquote>
+
+<ol>
+<li> Within your <code>main()</code> function of your fragment shader, comment out your old assignments for <code>gl_FragColor</code>. Comments work the same way as in javascript.
+<li> We can create new variables, provided we specify their type. Add <code>float surfx = convert_a_to_b(uvpass.x,0.0,1.0,-5.0,5.0);</code> and similarly define <code>surfy</code> based on <code>uvpass.y</code>.
+<li> We can use if, else if, and else statements, just like in javascript. If <code>abs(sin(surfx)-surfy) < 0.1</code>, set the pixel color to green, and otherwise set the pixel color to blue. You can see a list of built-in math functions on the last page of the <a href="https://www.khronos.org/files/webgl/webgl-reference-card-1_0.pdf">WebGL Refernece Card</a>.
+</ol>
+
+The result should look like:
+<br><img src="14_graph.png"><br>
+
+<h2>Repeating Patterns</h2>
+
+Built-in functions (alas, not user-created functions) act component-wise on vectors. For instance, <code>sin(uvpass)</code> is the same as <code>vec2(sin(uvpass.x),sin(uvpass.y))</code>.
+
+<blockquote class="instruction">
+Comment out your old assignment for <code>gl_FragColor</code> and have it set red to sin(30u) and green to sin(30v). Use the insight above to make only one call to the sin function.
+</blockquote>
+
+The result should look like:
+<br><img src="14_tartan.png"><br>
+
+Note that when sin is negative, the color components go below 0, which is fine.
+
+<h2>Screen-Position Effects</h2>
+
+<p>GLSL provides a built-in variable called <code>vec4 gl_FragCoord</code>, whose x and y coordinates are the pixel coordinates on the canvas. It also provides a z-coordinate which is used in z-buffering and is highly sensitive close to the camera, and a w-coordinate which is a better reflection of the depth from the camera.</p>
+
+<blockquote class="instruction">
+Comment out your old assignment for <code>gl_FragColor</code> and have it set red to sin(gl_FragCoord.x) and green to sin(gl_FragCoord.y). Use the insight above to make only one call to the sin function.
+</blockquote>
+
+The result should look like:
+<br><img src="14_grid.png"><br>
+
+<blockquote class="instruction">
+Comment out your old assignment for <code>gl_FragColor</code> and have it set red, green, and blue to gl_FragCoord.w. Use swizzling to make only one mention of gl_FragColor.
+</blockquote>
+
+The result should look like (when zoomed in):
+<br><img src="14_spooky.png"><br>
+
+<h2>Partially-Transparent Meshes</h2>
+
+<p>Fragment Shaders (and fragment shaders only) support the <code>discard;</code> operation which discards the pixel, not writing to the z-buffer or the screen.</p>
+
+<blockquote class="instruction">
+Complete the Following:
+</blockquote>
+
+<ol>
+<li> Comment our your old assignment for <code>gl_FragColor</code> and restore the original red = u and green = v "mango" coloring fragment shader.
+<li> Add a line in your fragment shader to discard if <code>uvpass.x</code> is between 0.4 and 0.6. && (AND) and || (OR) are the same as in javascript.
+<li> Add <code>side: THREE.DoubleSide</code> as an option to your <code>THREE.RawShaderMaterial</code> in your javascript.
+</ol>
+
+The result should look like:
+<br><img src="14_cut.png"><br>
+
+</body>
+</html>

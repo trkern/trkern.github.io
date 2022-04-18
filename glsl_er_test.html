@@ -1,0 +1,121 @@
+<!doctype html>
+<html>
+<script src="https://trkern.github.io/3d/three118.js"></script>
+<script src="https://trkern.github.io/OrbitControls.js"></script>
+<script id="vertexShader" type="x-shader/x-vertex">
+precision highp float;
+uniform mat4 projectionMatrix;
+uniform mat4 modelMatrix;
+uniform mat4 viewMatrix;
+attribute vec3 position;
+attribute vec2 uv;
+attribute vec3 normal;
+varying vec2 uvpass;
+varying vec3 normpass;
+void main() {
+	gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position,1.0);
+	//gl_Position = projectionMatrix * viewMatrix * vec4(position,1.0);
+	uvpass = uv;
+	//normpass = normal;
+	normpass = (viewMatrix*vec4(normal,0.0)).xyz;
+	}
+</script>
+<script id="fragmentShader" type="x-shader/x-fragment">
+precision highp float;
+varying vec3 normpass;
+varying vec2 uvpass; 
+uniform sampler2D tex;
+uniform sampler2D height;
+void main() {
+	float highness = (texture2D(height, uvpass).x-0.7);
+	//gl_FragColor = vec4(normpass.xy,0.0,1.0);
+	gl_FragColor = texture2D(tex,mod(uvpass - 0.2*highness*normpass.xy,1.0));
+	}
+</script>
+
+<script>
+
+var scene,camera,renderer, controls;
+
+function create_scene() {
+	var er = new THREE.TextureLoader().load("https://trkern.github.io/er.jpg");
+	var leaftex = new THREE.TextureLoader().load("https://trkern.github.io/bricks07-1k/bricks07%20diffuse%201k.jpg");
+	var leafheight = new THREE.TextureLoader().load("https://trkern.github.io/bricks07-1k/bricks07%20height%201k.jpg");
+
+	scene = new THREE.Scene();
+	camera = new THREE.PerspectiveCamera(75,1,.1,1000);
+	renderer = new THREE.WebGLRenderer({canvas:document.getElementById("canvas"),antialias:true});
+	controls = new THREE.OrbitControls(camera, document.getElementById("canvas"));
+	camera.position.z = 5;
+
+	var shader_material = new THREE.RawShaderMaterial({
+		vertexShader: document.getElementById("vertexShader").textContent,
+		fragmentShader: document.getElementById("fragmentShader").textContent,
+		transparent: true,
+		side: THREE.DoubleSide,
+		uniforms: {
+			tex: {value: leaftex},
+			height: {value: leafheight}
+			},
+		});
+
+	var knot_geometry = new THREE.TorusKnotGeometry(1,0.4,100,16);
+	var knot = new THREE.Mesh(knot_geometry,shader_material);
+	knot.position.set(1,2,-3);
+	scene.add(knot);
+
+	var sphere_geometry = new THREE.BoxGeometry(3,3,3);
+	var sphere = new THREE.Mesh(sphere_geometry,shader_material);
+	sphere.position.set(0,0,0);
+	scene.add(sphere);
+
+	var cube_geometry = new THREE.BoxGeometry();
+	var cube = new THREE.Mesh(cube_geometry,shader_material);
+	cube.position.set(-1,-2,-1);
+	scene.add(cube);
+
+	var cone_geometry = new THREE.ConeGeometry();
+	var cone = new THREE.Mesh(cone_geometry,shader_material);
+	cone.position.set(4,-3,-4);
+	scene.add(cone);
+	
+	var icosa_geometry = new THREE.IcosahedronGeometry();
+	var icosa = new THREE.Mesh(icosa_geometry,shader_material);
+	icosa.position.set(-4,1,-3);
+	scene.add(icosa);
+	
+	var torus_geometry = new THREE.TorusGeometry();
+	var torus = new THREE.Mesh(torus_geometry,shader_material);
+	torus.position.set(-2,-1,-5);
+	scene.add(torus);
+	
+	var tetra_geometry = new THREE.TetrahedronGeometry();
+	var tetra = new THREE.Mesh(tetra_geometry,shader_material);
+	tetra.position.set(-2,4,-4);
+	scene.add(tetra);
+
+	var skybox_material = new THREE.ShaderMaterial({
+		vertexShader: "varying vec2 uvpass; void main() {uvpass = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);}",
+		fragmentShader: "varying vec2 uvpass; uniform sampler2D tex; void main() {gl_FragColor = texture(tex,uvpass);}",
+		uniforms: {tex: {value: er}},
+		side: THREE.DoubleSide
+		});
+	var skybox_geometry = new THREE.SphereGeometry(30,30,30);
+	var skybox = new THREE.Mesh(skybox_geometry, skybox_material);
+	scene.add(skybox);
+
+	}
+
+function animate() {
+	requestAnimationFrame(animate);
+	renderer.render(scene,camera);
+	controls.update();
+	}
+
+</script>
+<head>
+</head>
+<body onload="create_scene(); animate();">
+<canvas id="canvas" width=500 height=500 style="border: 1px solid"></canvas>
+</body>
+</html>

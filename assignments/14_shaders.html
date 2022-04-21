@@ -75,7 +75,7 @@ We call code that gets executed on the GPU <b>shaders</b>. In this class, we wil
 
 <h2>Getting Started with GLSL in THREE.js</h2>
 
-<p>All of the materials within THREE.js (and in all modern 3d applications) are created with shaders. THREE.js has a material called <code>THREE.RawShaderMaterial</code> which allows you to create your own shaders.</p>
+<p>All of the materials within THREE.js (and in all modern 3d applications) are created with shaders. THREE.js has a material called <code>THREE.ShaderMaterial</code> which allows you to create your own shaders.</p>
 
 <p>
 We start by populating the scene with lots of geometry so we can see how our shaders affect them.
@@ -162,7 +162,7 @@ function animate() {<br>
 &lt;/html&gt;
 </blockquote>
 
-<p><code>THREE.RawShaderMaterial</code> has two key options: <code>vertexShader</code> and <code>fragmentShader</code>. These should be set to strings containing the GLSL code for our shaders. We could include the code directly as a string in our javascript, but this is an awkward solution.</p>
+<p><code>THREE.ShaderMaterial</code> has two key options: <code>vertexShader</code> and <code>fragmentShader</code>. These should be set to strings containing the GLSL code for our shaders. We could include the code directly as a string in our javascript, but this is an awkward solution.</p>
 
 <blockquote class="instruction">
 Complete the Following:
@@ -171,36 +171,24 @@ Complete the Following:
 <ol>
 <li> Add a <code>&lt;script id="vertexShader" type="x-shader/x-vertex"&gt;</code> element to your page. The id is so we can <code>getElementById</code> the element. The type is not important, it just specifies that the code is not javascript (<code>type = "text/javascript"</code>, or no type specified), so the browser shouldn't try to execute it. Within this script tag, include the code:
 <ol>
-<li> <code>precision highp float;</code> This sets the default level of precision for floats.
-<li> A <a href="https://www.khronos.org/opengl/wiki/Uniform_(GLSL)">uniform</a> is a variable provided by THREE.js that is constant over all calls to the shader. This includes the transformation matrices we covered in the spaces activity:
-<blockquote class="code">
-uniform mat4 projectionMatrix;<br>
-uniform mat4 modelMatrix;<br>
-uniform mat4 viewMatrix;
-</blockquote>
-GLSL is a very strictly typed language: every variable has a type and we need to explicitly perform conversions between them. GLSL has 2x2, 3x3, and 4x4 matrices of floating point numbers as built-in types, called mat2, mat3, and mat4 (similar to how we might specify a variable as a float or an int). It also provides 2, 3, and 4 element vectors of floating point numbers, called vec2, vec3, and vec4. Read about other types <a href="https://www.khronos.org/opengl/wiki/Data_Type_(GLSL)">here</a>.
-<li> An attribute is a variable provided by THREE.js which changes per vertex. These are the attributes we set in our procedural geometry assignment. THREE.js sets a wide variety of attributes in its default geometry constructors:
-<blockquote class="code">
-attribute vec3 position;<br>
-attribute vec2 uv;<br>
-attribute vec3 normal;
-</blockquote>
 <li> A varying is a variable we would like to pass from our vertex shader to our fragment shader. Let's pass our uv (the texture coordinates on the surface of our object) coordinates to the fragment shader:
 <blockquote class="code">
 varying vec2 uvpass;
 </blockquote>
+<blockquote class="caution">
+GLSL is a very strictly typed language: every variable has a type and we need to explicitly perform most conversions between them. GLSL has 2x2, 3x3, and 4x4 matrices of floating point numbers as built-in types, called mat2, mat3, and mat4 (similar to how we might specify a variable as a float or an int). It also provides 2, 3, and 4 element vectors of floating point numbers, called vec2, vec3, and vec4. Read about other types <a href="https://www.khronos.org/opengl/wiki/Data_Type_(GLSL)">here</a>.
+</blockquote>
 <li> <code>void main() {</code> This will be the function called for each vertex by our shader. Shaders allow you to define your own functions with C-like syntax, but recursion is strictly prohibited.
 <li> <code> gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position,1.0); </code> 
-<p> The attribute vec3 position passed by THREE.js is the model coordinates of our vertex. As in our spaces assignment, we first need to convert it from a vec3 to a vec4 by adding a 1 in the w-coodinate. The <a href="https://www.khronos.org/opengl/wiki/Data_Type_(GLSL)#Vector_constructors">vec4</a> constructor is very flexible: feed it four components worth of vectors and numbers and it will create a vec4 out of them.</p>
+<p> The position is a vec3 passed by THREE.js containing the model coordinates of our vertex. As in our spaces assignment, we first need to convert it from a vec3 to a vec4 by adding a 1 in the w-coodinate. The <a href="https://www.khronos.org/opengl/wiki/Data_Type_(GLSL)#Vector_constructors">vec4</a> constructor is very flexible: feed it four components worth of vectors and numbers and it will create a vec4 out of them.</p>
 <p>
 Then we need to multiply it by our model, view, and projection matrices in that order. gl_position is a special (vec4) variable which is the output of the vertex shader: the position in clip space of the vertex. This position gets perspective divided to produce normalized device coordinates, then convert_a_to_b'ed to produce pixel coordinates on the canvas.
 </p>
-<li> <code>uvpass = uv;</code> This copies the data from the attribute uv to the varying uvpass so it can get passed to the fragment shader.
+<li> <code>uvpass = uv;</code> uv is a vec2 representing the uv coordinates of our vertex, set by THREE.js, but since it's a vertex attribute, it's only available in the vertex shader. We want to access it in the fragment shader, so let's copy its value to the varying uvpass so it can get passed to the fragment shader.
 <li> <code>}</code> Close the void main function definition. Don't forget a closing <code>&lt;/script&gt;</code> tag as well.
 </ol>
 <li> Add a <code>&lt;script id="fragmentShader" type="x-shader/x-fragment"&gt;</code> tag to your html. Within this tag, include the code:
 <ol>
-<li> <code>precision highp float;</code>
 <li> <code>varying vec2 uvpass;</code> This specifies that we will be receiving uvpass from the vertex shader. Each vertex of our triangle has its own uv coordinates, and the value we get is interpolated between them.
 <li> <code>void main() {</code> This is the function that gets called for all the pixels of every triangle.
 <li> <code>gl_FragColor = vec4(uvpass,0.0,1.0);</code> gl_FragColor is the special output variable for our fragment shader: it specifies the rgba color of this pixel. In this case, we set the first two values (R and G) to the u and v values of uvpass, then set B and A to 0 and 1. You can see a list of other special variables <a href="https://www.khronos.org/opengl/wiki/Built-in_Variable_(GLSL)">here</a>.
@@ -208,7 +196,7 @@ Then we need to multiply it by our model, view, and projection matrices in that 
 </ol>
 <li> Finally, change shader_material:
 <blockquote class="code">
-&nbsp;&nbsp;&nbsp;&nbsp;var shader_material = new THREE.RawShaderMaterial({<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var shader_material = new THREE.ShaderMaterial({<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;vertexShader: document.getElementById("vertexShader").textContent,<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fragmentShader: document.getElementById("fragmentShader").textContent<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;});
@@ -218,7 +206,7 @@ Then we need to multiply it by our model, view, and projection matrices in that 
 The result should look like:
 <br><img src="14_mango.png"><br>
 
-<p>Explore the scene to see how the uv coordinates of each model are set up. uv coordinates are texture coordinates, so this is what our objects would look like if we applied the following texture to them:</p>
+<p>Explore your scene to see how the uv coordinates of each model are set up. uv coordinates are texture coordinates, so this is what our objects would look like if we applied the following texture to them:</p>
 
 <br><img src="14_mango_texture.png"><br>
 
@@ -257,6 +245,175 @@ this.setAttribute( 'normal', new Float32BufferAttribute( normals, 3 ) );<br>
 this.setAttribute( 'uv', new Float32BufferAttribute( uvs, 2 ) );<br>
 </blockquote>
 
+<h2>THREE.ShaderMaterial versus THREE.RawShaderMaterial</h2>
+
+<blockquote class="caution">
+<p>THREE.js takes your shader code, adds some helpful boilerplate on top (using string concatenation), then sends it off to WebGL to be compiled. If there are errors in your code, you'll see the full contents of what was sent to WebGL in your developer console; you'll need to scroll down to see the code you entered.</p>
+<p>If you don't want this extra boilerplate, you can use THREE.RawShaderMaterial, but you'll need to be careful about which version of GLSL you're using, since many important names have been changed in the newer version. For reference, the full code sent to WebGL is below:
+</blockquote>
+
+<blockquote class="code">
+1: #version 300 es //specify the version of GLSL.<br>
+2: //In this newer version, some names have been changed, so use define macros for compatibility<br>
+3: #define attribute in<br>
+4: #define varying out<br>
+5: #define texture2D texture<br>
+6: precision highp float; //specify the default level of precision of floats<br>
+7: precision highp int;<br>
+8: #define HIGH_PRECISION<br>
+9: #define SHADER_NAME ShaderMaterial<br>
+10: #define VERTEX_TEXTURES<br>
+11: #define GAMMA_FACTOR 2<br>
+12: #define MAX_BONES 0<br>
+13: #define BONE_TEXTURE<br>
+14: #define DOUBLE_SIDED<br>
+15: uniform mat4 modelMatrix; //get some useful global data from THREE.js<br>
+16: uniform mat4 modelViewMatrix;<br>
+17: uniform mat4 projectionMatrix;<br>
+18: uniform mat4 viewMatrix;<br>
+19: uniform mat3 normalMatrix;<br>
+20: uniform vec3 cameraPosition;<br>
+21: uniform bool isOrthographic;<br>
+22: #ifdef USE_INSTANCING<br>
+23:  attribute mat4 instanceMatrix;<br>
+24: #endif<br>
+25: attribute vec3 position; //these are the attributes specified for each vertex<br>
+26: attribute vec3 normal;<br>
+27: attribute vec2 uv;<br>
+28: #ifdef USE_TANGENT<br>
+29: &nbsp;&nbsp;&nbsp;&nbsp;attribute vec4 tangent;<br>
+30: #endif<br>
+31: #ifdef USE_COLOR<br>
+32: &nbsp;&nbsp;&nbsp;&nbsp;attribute vec3 color;<br>
+33: #endif<br>
+34: #ifdef USE_MORPHTARGETS<br>
+35: &nbsp;&nbsp;&nbsp;&nbsp;attribute vec3 morphTarget0;<br>
+36: &nbsp;&nbsp;&nbsp;&nbsp;attribute vec3 morphTarget1;<br>
+37: &nbsp;&nbsp;&nbsp;&nbsp;attribute vec3 morphTarget2;<br>
+38: &nbsp;&nbsp;&nbsp;&nbsp;attribute vec3 morphTarget3;<br>
+39: &nbsp;&nbsp;&nbsp;&nbsp;#ifdef USE_MORPHNORMALS<br>
+40: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;attribute vec3 morphNormal0;<br>
+41: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;attribute vec3 morphNormal1;<br>
+42: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;attribute vec3 morphNormal2;<br>
+43: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;attribute vec3 morphNormal3;<br>
+44: &nbsp;&nbsp;&nbsp;&nbsp;#else<br>
+45: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;attribute vec3 morphTarget4;<br>
+46: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;attribute vec3 morphTarget5;<br>
+47: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;attribute vec3 morphTarget6;<br>
+48: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;attribute vec3 morphTarget7;<br>
+49: &nbsp;&nbsp;&nbsp;&nbsp;#endif<br>
+50: #endif<br>
+51: #ifdef USE_SKINNING<br>
+52: &nbsp;&nbsp;&nbsp;&nbsp;attribute vec4 skinIndex;<br>
+53: &nbsp;&nbsp;&nbsp;&nbsp;attribute vec4 skinWeight;<br>
+54: #endif<br>
+55: <br>
+56: //our code below:<br>
+57: varying vec2 uvpass;<br>
+58: void main() {<br>
+59: &nbsp;&nbsp;&nbsp;&nbsp;gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position,1.0);<br>
+60: &nbsp;&nbsp;&nbsp;&nbsp;uvpass = uv;<br>
+61: &nbsp;&nbsp;&nbsp;&nbsp;}<br>
+62:  
+</blockquote>
+
+<blockquote class="code">
+1: #version 300 es //specify the version of GLSL. <br>
+2: //In this newer version, some names have been changed, so use define macros for compatibility<br>
+3: #define varying in<br>
+4: out highp vec4 pc_fragColor;<br>
+5: #define gl_FragColor pc_fragColor<br>
+6: #define gl_FragDepthEXT gl_FragDepth<br>
+7: #define texture2D texture<br>
+8: #define textureCube texture<br>
+9: #define texture2DProj textureProj<br>
+10: #define texture2DLodEXT textureLod<br>
+11: #define texture2DProjLodEXT textureProjLod<br>
+12: #define textureCubeLodEXT textureLod<br>
+13: #define texture2DGradEXT textureGrad<br>
+14: #define texture2DProjGradEXT textureProjGrad<br>
+15: #define textureCubeGradEXT textureGrad<br>
+16: precision highp float; //specify the default level of precision of floats<br>
+17: precision highp int;<br>
+18: #define HIGH_PRECISION<br>
+19: #define SHADER_NAME ShaderMaterial<br>
+20: #define GAMMA_FACTOR 2<br>
+21: #define DOUBLE_SIDED<br>
+22: uniform mat4 viewMatrix; //get some useful data from THREE.js<br>
+23: uniform vec3 cameraPosition;<br>
+24: uniform bool isOrthographic;<br>
+25: <br>
+26: vec4 LinearToLinear( in vec4 value ) { //potentially useful functions for working with color<br>
+27: &nbsp;&nbsp;&nbsp;&nbsp;return value;<br>
+28: }<br>
+29: vec4 GammaToLinear( in vec4 value, in float gammaFactor ) {<br>
+30: &nbsp;&nbsp;&nbsp;&nbsp;return vec4( pow( value.rgb, vec3( gammaFactor ) ), value.a );<br>
+31: }<br>
+32: vec4 LinearToGamma( in vec4 value, in float gammaFactor ) {<br>
+33: &nbsp;&nbsp;&nbsp;&nbsp;return vec4( pow( value.rgb, vec3( 1.0 / gammaFactor ) ), value.a );<br>
+34: }<br>
+35: vec4 sRGBToLinear( in vec4 value ) {<br>
+36: &nbsp;&nbsp;&nbsp;&nbsp;return vec4( mix( pow( value.rgb * 0.9478672986 + vec3( 0.0521327014 ), vec3( 2.4 ) ), value.rgb * 0.0773993808, vec3( lessThanEqual( value.rgb, vec3( 0.04045 ) ) ) ), value.a );<br>
+37: }<br>
+38: vec4 LinearTosRGB( in vec4 value ) {<br>
+39: &nbsp;&nbsp;&nbsp;&nbsp;return vec4( mix( pow( value.rgb, vec3( 0.41666 ) ) * 1.055 - vec3( 0.055 ), value.rgb * 12.92, vec3( lessThanEqual( value.rgb, vec3( 0.0031308 ) ) ) ), value.a );<br>
+40: }<br>
+41: vec4 RGBEToLinear( in vec4 value ) {<br>
+42: &nbsp;&nbsp;&nbsp;&nbsp;return vec4( value.rgb * exp2( value.a * 255.0 - 128.0 ), 1.0 );<br>
+43: }<br>
+44: vec4 LinearToRGBE( in vec4 value ) {<br>
+45: &nbsp;&nbsp;&nbsp;&nbsp;float maxComponent = max( max( value.r, value.g ), value.b );<br>
+46: &nbsp;&nbsp;&nbsp;&nbsp;float fExp = clamp( ceil( log2( maxComponent ) ), -128.0, 127.0 );<br>
+47: &nbsp;&nbsp;&nbsp;&nbsp;return vec4( value.rgb / exp2( fExp ), ( fExp + 128.0 ) / 255.0 );<br>
+48: }<br>
+49: vec4 RGBMToLinear( in vec4 value, in float maxRange ) {<br>
+50: &nbsp;&nbsp;&nbsp;&nbsp;return vec4( value.rgb * value.a * maxRange, 1.0 );<br>
+51: }<br>
+52: vec4 LinearToRGBM( in vec4 value, in float maxRange ) {<br>
+53: &nbsp;&nbsp;&nbsp;&nbsp;float maxRGB = max( value.r, max( value.g, value.b ) );<br>
+54: &nbsp;&nbsp;&nbsp;&nbsp;float M = clamp( maxRGB / maxRange, 0.0, 1.0 );<br>
+55: &nbsp;&nbsp;&nbsp;&nbsp;M = ceil( M * 255.0 ) / 255.0;<br>
+56: &nbsp;&nbsp;&nbsp;&nbsp;return vec4( value.rgb / ( M * maxRange ), M );<br>
+57: }<br>
+58: vec4 RGBDToLinear( in vec4 value, in float maxRange ) {<br>
+59: &nbsp;&nbsp;&nbsp;&nbsp;return vec4( value.rgb * ( ( maxRange / 255.0 ) / value.a ), 1.0 );<br>
+60: }<br>
+61: vec4 LinearToRGBD( in vec4 value, in float maxRange ) {<br>
+62: &nbsp;&nbsp;&nbsp;&nbsp;float maxRGB = max( value.r, max( value.g, value.b ) );<br>
+63: &nbsp;&nbsp;&nbsp;&nbsp;float D = max( maxRange / maxRGB, 1.0 );<br>
+64: &nbsp;&nbsp;&nbsp;&nbsp;D = clamp( floor( D ) / 255.0, 0.0, 1.0 );<br>
+65: &nbsp;&nbsp;&nbsp;&nbsp;return vec4( value.rgb * ( D * ( 255.0 / maxRange ) ), D );<br>
+66: }<br>
+67: const mat3 cLogLuvM = mat3( 0.2209, 0.3390, 0.4184, 0.1138, 0.6780, 0.7319, 0.0102, 0.1130, 0.2969 );<br>
+68: vec4 LinearToLogLuv( in vec4 value )  {<br>
+69: &nbsp;&nbsp;&nbsp;&nbsp;vec3 Xp_Y_XYZp = cLogLuvM * value.rgb;<br>
+70: &nbsp;&nbsp;&nbsp;&nbsp;Xp_Y_XYZp = max( Xp_Y_XYZp, vec3( 1e-6, 1e-6, 1e-6 ) );<br>
+71: &nbsp;&nbsp;&nbsp;&nbsp;vec4 vResult;<br>
+72: &nbsp;&nbsp;&nbsp;&nbsp;vResult.xy = Xp_Y_XYZp.xy / Xp_Y_XYZp.z;<br>
+73: &nbsp;&nbsp;&nbsp;&nbsp;float Le = 2.0 * log2(Xp_Y_XYZp.y) + 127.0;<br>
+74: &nbsp;&nbsp;&nbsp;&nbsp;vResult.w = fract( Le );<br>
+75: &nbsp;&nbsp;&nbsp;&nbsp;vResult.z = ( Le - ( floor( vResult.w * 255.0 ) ) / 255.0 ) / 255.0;<br>
+76: &nbsp;&nbsp;&nbsp;&nbsp;return vResult;<br>
+77: }<br>
+78: const mat3 cLogLuvInverseM = mat3( 6.0014, -2.7008, -1.7996, -1.3320, 3.1029, -5.7721, 0.3008, -1.0882, 5.6268 );<br>
+79: vec4 LogLuvToLinear( in vec4 value ) {<br>
+80: &nbsp;&nbsp;&nbsp;&nbsp;float Le = value.z * 255.0 + value.w;<br>
+81: &nbsp;&nbsp;&nbsp;&nbsp;vec3 Xp_Y_XYZp;<br>
+82: &nbsp;&nbsp;&nbsp;&nbsp;Xp_Y_XYZp.y = exp2( ( Le - 127.0 ) / 2.0 );<br>
+83: &nbsp;&nbsp;&nbsp;&nbsp;Xp_Y_XYZp.z = Xp_Y_XYZp.y / value.y;<br>
+84: &nbsp;&nbsp;&nbsp;&nbsp;Xp_Y_XYZp.x = value.x * Xp_Y_XYZp.z;<br>
+85: &nbsp;&nbsp;&nbsp;&nbsp;vec3 vRGB = cLogLuvInverseM * Xp_Y_XYZp.rgb;<br>
+86: &nbsp;&nbsp;&nbsp;&nbsp;return vec4( max( vRGB, 0.0 ), 1.0 );<br>
+87: }<br>
+88: vec4 linearToOutputTexel( vec4 value ) { return LinearToLinear( value ); }<br>
+89: <br>
+90: <br>
+91: varying vec2 uvpass;<br>
+92: void main() {<br>
+93: &nbsp;&nbsp;&nbsp;&nbsp;gl_FragColor = vec4(uvpass,0.0,1.0);<br>
+94: &nbsp;&nbsp;&nbsp;&nbsp;}
+</blockquote>
+
 <h2>Swizzling</h2>
 <p>If <code>v</code> is a vec4, then we can access its elements in GLSL with any of the following accessors (each row is four equivalent selectors):
 <ul>
@@ -278,7 +435,7 @@ Replace <code>gl_FragColor = vec4(uvpass,0.0,1.0);</code> in your shader with th
 <li> <code>gl_FragColor = vec4(uvpass.yxx,1.0);</code>
 <li> <code>gl_FragColor = vec4(uvpass.xxx,1.0);</code>
 </ol>
-Note that modifying the alpha value of gl_FragColor won't do anything unless you add the option <code>transparent:true</code> to your THREE.RawShaderMaterial. This is a separate option so GLSL knows if it can make optimizations assuming the object is fully opaque.
+Note that modifying the alpha value of gl_FragColor won't do anything unless you add the option <code>transparent:true</code> to your THREE.ShaderMaterial. This is a separate option so GLSL knows if it can make optimizations assuming the object is fully opaque.
 
 <h2>Normal Shading</h2>
 
@@ -314,7 +471,7 @@ Complete the Following:
 <ol>
 <li> Within your <code>main()</code> function of your fragment shader, comment out your old assignments for <code>gl_FragColor</code>. Comments work the same way as in javascript.
 <li> We can create new variables, provided we specify their type. Add <code>float surfx = convert_a_to_b(uvpass.x,0.0,1.0,-5.0,5.0);</code> and similarly define <code>surfy</code> based on <code>uvpass.y</code>.
-<li> We can use if, else if, and else statements, just like in javascript. If <code>abs(sin(surfx)-surfy) < 0.1</code>, set the pixel color to green, and otherwise set the pixel color to blue. You can see a list of built-in math functions on the last page of the <a href="https://www.khronos.org/files/webgl/webgl-reference-card-1_0.pdf">WebGL Refernece Card</a>.
+<li> We can use if, else if, and else statements, just like in javascript. If <code>abs(sin(surfx)-surfy) < 0.1</code>, set the pixel color to green, and otherwise set the pixel color to blue. You can see a list of built-in math functions on the last page of the <a href="https://www.khronos.org/files/webgl/webgl-reference-card-1_0.pdf">WebGL Reference Card</a>.
 </ol>
 
 The result should look like:
@@ -362,11 +519,23 @@ Complete the Following:
 <ol>
 <li> Comment our your old assignment for <code>gl_FragColor</code> and restore the original red = u and green = v "mango" coloring fragment shader.
 <li> Add a line in your fragment shader to discard if <code>uvpass.x</code> is between 0.4 and 0.6. && (AND) and || (OR) are the same as in javascript.
-<li> Add <code>side: THREE.DoubleSide</code> as an option to your <code>THREE.RawShaderMaterial</code> in your javascript.
+<li> Add <code>side: THREE.DoubleSide</code> as an option to your <code>THREE.ShaderMaterial</code> in your javascript.
 </ol>
 
 The result should look like:
 <br><img src="14_cut.png"><br>
+
+<h2>Further Resources</h2>
+
+<ul>
+<li> Freya Holmer has a <a href="https://www.youtube.com/watch?v=kfM-yu0iQBk">lecture series</a> on shaders in Unity. This is a different language with different keywords and different setup, but the concepts are the same.
+<li> You can see various shaders in action at <a href="https://www.shadertoy.com/">shadertoy</a>. Note that these are purely fragment shaders: the geometry of these scenes is just a rectangle stuck in front of a camera. The fragment shaders then compute each pixel on the screen as a function of u,v (which are the same as x,y) and time.
+<li> Inigo Quilez breaks down the math behind a shader he created to draw a landscape in this <a href="https://www.youtube.com/watch?v=BFld4EBO2RE">video</a>.
+<li> SimonDev has a <a href="https://www.youtube.com/watch?v=C8Cuwq1eqDw">video</a> on using shaders in THREE.JS.
+</ul>
+
+
+
 
 </body>
 </html>

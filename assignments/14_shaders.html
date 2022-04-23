@@ -448,7 +448,12 @@ Complete the Following:
 <li> Begin by passing the value of normal through to the fragment shader by adding <code>varying vec3 normpass;</code> to both shaders, and setting <code>normpass = normal</code> in the <code>main()</code> of your vertex shader.
 <li> In the <code>main()</code> of your fragment shader, set <code>gl_FragColor = vec4(normpass,1.0)</code>.
 <p>This doesn't look right! Note that points with a normal in the positive x direction have red, points with a normal in the positive y direction have green, and points with a normal in the positive z direction have blue. But, points with a normal in the negative x direction are getting their r value set to a negative number. GLSL is perfectly happy to output vectors with negative components, it's only when we finally go to draw our pixels to the screen that rgb values less than 0 get set to 0 and rgb values larger than 1 get set to 1.</p>
-<li>To fix this, we need to convert_a_to_b our rgb values from the range [-1,1] to the range [0,1]. Implement <code>convert_a_to_b</code>, using exactly the same code as in javascript, but with some additional type information in the declaration: <code>float convert_a_to_b(float x, float a_min, float a_max, float b_min, float b_max) {</code>
+<li>To fix this, we need to convert_a_to_b our rgb values from the range [-1,1] to the range [0,1]. You may be able to implement <code>convert_a_to_b</code>, using exactly the same code as in javascript, but with some additional type information in the declaration: <code>float convert_a_to_b(float x, float a_min, float a_max, float b_min, float b_max) {</code>. If not, use the code below:
+<blockquote class="code">
+float convert_a_to_b(float x, float a_min, float a_max, float b_min, float b_max) {<br>
+	return(((x-a_min)/(a_max-a_min))*(b_max-b_min) + b_min);<br>
+	}
+</blockquote>
 <li> Apply <code>convert_a_to_b</code> to each of the components of <code>normpass</code> in your creation of <code>gl_FragColor</code>.
 
 <blockquote class="caution">

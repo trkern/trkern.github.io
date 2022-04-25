@@ -1,0 +1,221 @@
+<!doctype html>
+<html>
+<head>
+<style>
+code {
+	background-color: #DDDDDD;
+	}
+.code {
+	font-family: monospace;
+	background-color: #DDDDDD;
+	}
+body {
+	font-family: sans-serif;
+	}
+.caution {
+	background-color: #EEEEBB;
+	padding: 20px;
+	border-left: 3px solid yellow;
+	}
+.caution:before {
+	font-size: xx-large;
+	content: "!"
+	}
+.instruction {
+	background-color: #BBCCEE;
+	}
+blockquote.instruction {
+	padding: 20px;
+	border-left: 3px solid #222255;
+	}
+.matrix td{
+	text-align:center;
+	padding: .4em;
+	}
+</style>
+</head>
+<body>
+
+<h1> Uniforms </h1>
+
+Assignment Goals:
+<ul>
+<li> Learn how to pass data to shaders
+</ul>
+
+<blockquote class="instruction">
+Instructions for you to follow in this document will be highlighted in blue.
+</blockquote>
+
+<blockquote class="caution">
+Don't forget to cite your sources!
+</blockquote>
+
+<h2>Animation</h2>
+
+GLSL has three types of variables:
+<ul>
+<li> uniforms: variables which are passed by THREE.js to the shader which are the same for all invocations of that shader.
+<li> attributes: variables which are passed by THREE.js (as we did in the procedural geometry assignment), which are associated to each vertex.
+<li> varyings: variables which are passed from the vertex shader to the fragment shader (and which get interpolated along each triangle along the way).
+</ul>
+
+Uniforms allow us to pass data to the shader, such as the value of a slider, the current time, or textures.
+
+<blockquote class="instruction">
+Complete the Following:
+</blockquote>
+
+<ol>
+<li> Starting with your submission for the shader assignment, modify your shader back to a simple red=u, green=v "mango" texture.
+<li> Add <code>&lt;input type="range" min=0 max=1 step=.01 id="slider"&gt;</code> to the body of your webpage
+<li> Elevate <code>shader_material</code> to the global scope by adding <code>var shader_material</code> to the global scope and getting rid of the var in <code>var shader_material = new THREE.ShaderMaterial...</code> in your create_scene function.
+<li> Add <code>uniforms: {slider:{value:0}}</code> as an option for your <code>shader_material</code> This creates a new uniform called slider (with the value of 0) that your shaders can access.
+<li> Add the following to your animate function:
+<blockquote class="code">
+	shader_material.uniforms.slider.value = Number(document.getElementById("slider").value);<br>
+	shader_material.uniformsNeedUpdate = true;
+</blockquote>
+<li> Add <code>uniform float slider;</code> to your fragment shader code
+<li> When you set gl_FragColor in your fragment shader, set blue to slider.
+</ol>
+
+<p>The slider should now let you adjust the blueness of the objects in the scene.</p>
+
+<blockquote class="instruction">
+Try out the following formulas for gl_FragColor to see what the slider does to them:
+</blockquote>
+
+<ol>
+<li> <code>gl_FragColor = vec4(uvpass + slider * vec2(3.0,4.0), 0.0, 1.0);</code>
+<li> <code>gl_FragColor = vec4(fract(uvpass + slider * vec2(3.0,4.0)), 0.0, 1.0);</code> note that fract is a function which returns the fractional part of a number (frac(3.14) = 0.14), so this makes sure the output wraps around from 1 back to 0 and stays between 1 and 0.
+<li> <blockquote class="code">&nbsp;&nbsp;&nbsp;&nbsp;float surfx = 10.0*uvpass.x-5.0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;float surfy = 10.0*uvpass.y-5.0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if (abs(sin(surfx+10.0*slider)-surfy) &lt; 0.1) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gl_FragColor = vec4(0,1,0,1);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;else {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gl_FragColor = vec4(0,0,1,1);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</blockquote>
+<li> <blockquote class="code">&nbsp;&nbsp;&nbsp;&nbsp;float surfx = 10.0*uvpass.x-5.0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;float surfy = 10.0*uvpass.y-5.0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if (abs(sin(surfx)-surfy) &lt; slider) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gl_FragColor = vec4(0,1,0,1);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;else {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gl_FragColor = vec4(0,0,1,1);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</blockquote>
+</ol>
+
+A common technique in computer graphics is to adjust values using a slider to determine what value looks best, then hardcoding it.
+
+<h2>Animation</h2>
+
+You can make these values animate by sending the current time to the shader. Note that <code>Date.now()</code> is too large to send to the shader.
+
+<blockquote class="instruction">
+In your animate function in your javascript, set <code>shader_material.uniforms.slider.value = (Date.now()/5000)%1; </code>
+</blockquote>
+
+<blockquote class="caution">
+The GPU is perfectly happy to show rapidly flickering brightly colored images. Be careful to avoid doing this!
+</blockquote>
+
+An important consideration with shaders is when to do a particular calculation:
+<ul>
+<li> Before the shader: gets executed on the CPU, once per frame (or just once)
+<li> In the vertex shader: gets executed on the GPU, once per vertex per frame
+<li> In the fragment shader: gets executed on the GPU, once per pixel per face per frame
+</ul>
+It's usually best to do a calculation as high on this list as possible to avoid redundancy
+
+<h2>Textures</h2>
+
+<p>A major type of uniform is textures. While textures usually specify the color of pixels on surfaces, they can be used to store any two-dimensional array of vectors.</p>
+
+<blockquote class="instruction">
+Complete the Following:
+</blockquote>
+
+<ol>
+<li> Change the box in your scene to <code>new THREE.BoxGeometry(5,5,5);</code> to make it larger.
+<li> Add to your <code>create_scene</code> function <code>var brick_texture = new THREE.TextureLoader().load("https://trkern.github.io/bricks07-1k/bricks07%20diffuse%201k.jpg");</code> This creates a texture for THREE.js to use. You could set it to be a texture directly by using a material like <code>new THREE.MeshBasicMaterial({map: brick_texture});</code>, but we will be doing this with shaders to learn how to work with textures in shaders.
+<li> Update your shader_material's uniforms to include our texture:
+<blockquote class="code">
+uniforms: {<br>
+&nbsp;slider:{value:0},<br>
+&nbsp;brick:{value:brick_texture},<br>
+&nbsp;}
+</blockquote>
+<li> Add <code>uniform sampler2D brick;</code> to the top of your fragment shader. You now have access to the full brick texture image at the fragment shader stage.
+<li> In your <code>main()</code> function of your fragment shader, add <code>gl_FragColor = texture(brick, uvpass);</code>. texture is a function that reads a position into the texture.
+</ol>
+<p>An essential feature of shaders is that if your code compiles, it will not crash, so what happens if you feed coordinates that are too large, too small, or have decimal parts to them into the texture function?
+<ul>
+<li> If the values are too large or too small, texture defaults to the color of the nearest pixel with valid coordinates. You can change this behavior by modifying the brick_texture object. See the THREE.js <a href="https://threejs.org/docs/#api/en/textures/Texture.wrapS">documentation</a> for more details.
+<li> We're already passing values into our texture function that have decimal parts! How the texture function handles these depends on the .magFilter and .minFilter options of our brick_texture object. By default, it uses bilinear interpolation.
+<ul>
+<li> Computerphile has a <a href="https://www.youtube.com/watch?v=AqscP7rc8_M">video</a> about bilinear interpolation.
+<li> I've made a <a href="https://www.youtube.com/watch?v=j2nByOY8cSI">video</a> about how bilinear interpolation creates hyperbolas in video games.
+</ul>
+</ul>
+</p>
+
+<blockquote class="instruction">
+Complete the Following:
+</blockquote>
+
+<ol>
+<li> See what happens if you sample values too large with <code>gl_FragColor = texture(brick,4.0*uvpass);</code>. This multiplies our uv values to go from 0 to 4 and texture expects u and v values between 0 and 1. 
+<li> You can bring these values back into the range 0 to 1 with the fract function (that returns the decimal part of a number). See what happens when you set <code>gl_FragColor = texture(brick,fract(4.0*uvpass));</code>. Note that fract, like many built-in functions, acts on each coordinate when fed a vector.
+<li> Set <code>gl_FragColor = texture(brick,uvpass);</code>. In your <code>create_scene</code> function, set:
+<blockquote>
+brick_texture.magFilter = THREE.NearestFilter;<br>
+brick_texture.minFilter = THREE.NearestFilter;</blockquote> Compare what happens when you zoom in on the texture now with nearest-neighbor filtering versus the default bilinear filtering. Can you think of a video game that uses nearest-neighbor texture filtering?
+</ol>
+
+<p>You may have heard of trilinear filtering: this combines bilinear filtering with an additional linear interpolation between different scale versions of a texture. These scaled versions of the image are precomputed to save time. You can see an example of a texture file with scaled versions included <a href="https://commons.wikimedia.org/wiki/File:MipMap_Example_STS101.jpg">here</a>.</p>
+
+<h2>Vertex Transformation</h2>
+
+<p>Our vertex shaders also can have access to our uniforms, and we can use them to transform the resulting locations of various vertices.</p>
+
+<blockquote class="instruction">
+Complete the Following:
+</blockquote>
+
+<ol>
+<li> Change the box in your javascript to <code>new THREE.BoxGeometry(5,5,5,64,64,64);</code>. This breaks each side of the box into lots of tiny different squares so we can adjust all of those squares' positions separately. Essentially, the result looks like: 
+<br><img src="15_square.png"><br>
+Except with more subdivisions (64 in each direction, so each face has 64x64 boxes).
+<li> Add <code>var brick_height = new THREE.TextureLoader().load("https://trkern.github.io/bricks07-1k/bricks07%20height%201k.jpg");</code> to your scene and <code>brickheight: {value:brick_height}</code> to your uniforms.
+
+<p>The brick height map (shown below) is a grayscale image where the intensity of each pixel represents the height of that pixel.<p>
+<br><img src= "https://trkern.github.io/bricks07-1k/bricks07%20height%201k.jpg"><br>
+<li> Add <code>uniform sampler2D brickheight;</code> to the global scope of your vertex shader.
+<li> Add <blockquote class="code">float highness = texture(brickheight,uv).x;<br>vec3 newposition = position + 0.2*highness * normal;</blockquote> to your main() function in your vertex shader, and replace position with newposition in your assignment to gl_Position.
+</ol>
+
+You can adjust the quality of the height mapped geometry by changing the number of subdivisions of each side of the box from 64. More subdivisions will mean more points to sample from the hight map texture, so higher quality, but slower. Fewer subdivisions will be lower quality but faster.
+
+<h2>Bonus: Parallax Transformations</h2>
+
+This section is optional.
+
+<p>A common use of shaders is to produce holographic materials: materials that look different depending on the direction you look at them from. This can lead to a cheap 3d effect that requires no extra geometry, which skilled artists can make look good.</p>
+
+<blockquote class="instruction">
+Complete the Following:
+</blockquote>
+
+<ol>
+<li> In your vertex shader, reset: <code>gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position,1.0);</code>
+<li> Use a varying vec3 called normpass to send <code>normpass = (viewMatrix*modelMatrix*vec4(normal,0.0)).xyz</code> from the vertex shader to the fragment shader. This is the normal vector from the perspective of the camera.
+<li> In the main() function of your fragment shader, calculate <code>float highness = (texture2D(brickheight, uvpass).x-0.7);</code>
+<li> Then calculate <code>gl_FragColor = texture2D(brick,uvpass - 0.1*highness*normpass.xy);</code>. This offsets the coordinates we sample our texture from based on the height of the pixel and the normal direction from the camera to produce a 3d effect. You can see a simpler version of normal displacement in this <a href="https://www.youtube.com/watch?v=uLN69rtiu4Y">video</a> by Jasper.
+</ol>
+
+<p>Parallax transformation is used heavily in video games like Dark Souls 2, and is a predecessor of many more advanced effects that use a vertex shader to produce a 3d effect. You can see a modern version of this effect used to make windows look like they have interiors in this <a href="https://www.youtube.com/watch?v=dUjNoIxQXAA">video</a> by Game Dev Guide.</p>
+
+</body>
+</html>

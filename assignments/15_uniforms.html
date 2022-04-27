@@ -217,5 +217,26 @@ Complete the Following:
 
 <p>Parallax transformation is used heavily in video games like Dark Souls 2, and is a predecessor of many more advanced effects that use a vertex shader to produce a 3d effect. You can see a modern version of this effect used to make windows look like they have interiors in this <a href="https://www.youtube.com/watch?v=dUjNoIxQXAA">video</a> by Game Dev Guide.</p>
 
+<h2>Double Bonus: Radar Ping</h2>
+
+<p>You know enough now to create your own effects! One effect that commonly shows up in video games is a glowing sphere that draws on various surfaces, as shown below:
+
+<br><img src="15_ping.png"><br>
+
+This effect consists of two parts: a transparent sphere object, and a shader to add a glow on every surface where it is a particular distance from the center of the sphere.</p>
+
+<p>Try to replicate this effect for yourself! Some hints:</p>
+
+<ul>
+<li> You can use the slider to adjust the radius of the sphere, and assume the sphere is centered at the origin. Start with the mango-uv coloring and have this effect modify the blue of each pixel, or simply add a vector representing this effect onto whatever other gl_FragColor calculation you had in mind.
+<li> GLSL has a built-in <code>length</code> function, or see if you can avoid taking square roots by calculating and comparing the distance squared.
+<li> You'll need to pass the world-space position to the fragment shader. The attribute vec3 <code>position</code>, available to the vertex shader, gives model-space coordinates, so you'll have to convert it to world-space coordinates at some point.
+<li> Remember that with floating-point calculations, values will rarely be exactly equal (==) to each other. Compare when the absolute value of their difference is within a certain range.
+<li> Consider modulating the intensity of the effect by the absolute value of the difference between the sphere radius and the point's distance to the center.
+</ul>
+
+<p>If you do this, submit it as a separate submission to assignment 15 on Canvas.</p>
+
+
 </body>
 </html>

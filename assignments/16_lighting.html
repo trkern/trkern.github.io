@@ -1,0 +1,340 @@
+<!doctype html>
+<html>
+<head>
+<style>
+code {
+	background-color: #DDDDDD;
+	}
+.code {
+	font-family: monospace;
+	background-color: #DDDDDD;
+	}
+body {
+	font-family: sans-serif;
+	}
+.caution {
+	background-color: #EEEEBB;
+	padding: 20px;
+	border-left: 3px solid yellow;
+	}
+.caution:before {
+	font-size: xx-large;
+	content: "!"
+	}
+.instruction {
+	background-color: #BBCCEE;
+	}
+blockquote.instruction {
+	padding: 20px;
+	border-left: 3px solid #222255;
+	}
+.matrix td{
+	text-align:center;
+	padding: .4em;
+	}
+</style>
+</head>
+<body>
+
+<h1> Lighting </h1>
+
+Assignment Goals:
+<ul>
+<li> Create shaders for diffuse, Phong, and Blinn-Phong lighting
+</ul>
+
+<blockquote class="instruction">
+Instructions for you to follow in this document will be highlighted in blue.
+</blockquote>
+
+<blockquote class="caution">
+Don't forget to cite your sources!
+</blockquote>
+
+<h2>Diffuse Lighting</h2>
+
+<p>
+When light hits a surface, some of it gets absorbed and some of it gets reflected (this can vary by color). Depending on the roughness of the surface, the light may get reflected in a random direction, or the light might get reflected like a mirror.
+</p>
+
+<p>If light gets reflected in random directions, it doesn't matter the angle we view a surface from: the only thing that matters is how much light that surface gets. Surfaces directly facing the light look bright and surfaces facing light at an angle look dimmer. Surfaces facing away from the light don't get lit at all.</p>
+
+<p>You can see an example of this kind of lighting <a href="https://threejs.org/docs/#api/en/materials/MeshLambertMaterial">here</a>. Note that the lighting in this example is only computed at the vertices. We will calculate lighting at each pixel for higher quality.</p>
+
+<blockquote class="instruction">
+Copy the template code below into a new html file.
+</blockquote>
+
+<blockquote class="code">
+&lt;!doctype html&gt;<br>
+&lt;html&gt;<br>
+&lt;script src="https://trkern.github.io/3d/three140.js"&gt;&lt;/script&gt;<br>
+&lt;script src="https://trkern.github.io/OrbitControls.js"&gt;&lt;/script&gt;<br>
+&lt;script id="vertexShader" type="x-shader/x-vertex"&gt;<br>
+varying vec2 uvpass;<br>
+varying vec3 positionpass;<br>
+varying vec3 normalpass;<br>
+varying vec3 tangentpass;<br>
+varying vec3 bitangentpass;<br>
+attribute vec3 tangent;<br>
+void main() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position,1.0);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;uvpass = uv;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;positionpass = (modelMatrix * vec4(position,1.0)).xyz;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;normalpass = (modelMatrix * vec4(normal,0.0)).xyz;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;tangentpass = tangent;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;bitangentpass = normalize(cross(normal,tangent));<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&lt;/script&gt;<br>
+&lt;script id="fragmentShader" type="x-shader/x-fragment"&gt;<br>
+varying vec2 uvpass;<br>
+varying vec3 positionpass;<br>
+varying vec3 normalpass;<br>
+varying vec3 tangentpass;<br>
+varying vec3 bitangentpass;<br>
+uniform float slider;<br>
+uniform sampler2D tile_basecolor;<br>
+uniform sampler2D tile_normal;<br>
+uniform sampler2D tile_metallic;<br>
+uniform vec3 lightposition;<br>
+void main() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;gl_FragColor = vec4(uvpass,0.0,1.0);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&lt;/script&gt;<br>
+<br>
+&lt;script&gt;<br>
+<br>
+var scene,camera,renderer, controls;<br>
+var shader_material;<br>
+var light;<br>
+var cube, cube_geometry;<br>
+<br>
+function create_scene() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var tile_basecolor = new THREE.TextureLoader().load("https://trkern.github.io/3d/Tiles_048_SD/Tiles_048_basecolor.jpg");<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var tile_normal = new THREE.TextureLoader().load("https://trkern.github.io/3d/Tiles_048_SD/Tiles_048_normal.jpg");<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var tile_metallic = new THREE.TextureLoader().load("https://trkern.github.io/3d/Tiles_048_SD/Tiles_048_metallic.jpg");<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;scene = new THREE.Scene();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;camera = new THREE.PerspectiveCamera(75,1,.1,1000);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;renderer = new THREE.WebGLRenderer({canvas:document.getElementById("canvas"),antialias:true});<br>
+&nbsp;&nbsp;&nbsp;&nbsp;controls = new THREE.OrbitControls(camera, document.getElementById("canvas"));<br>
+&nbsp;&nbsp;&nbsp;&nbsp;camera.position.z = 5;<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;shader_material = new THREE.ShaderMaterial({<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;vertexShader: document.getElementById("vertexShader").textContent,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fragmentShader: document.getElementById("fragmentShader").textContent,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;side: THREE.DoubleSide,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;uniforms: {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;slider:{value:0},<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tile_basecolor:{value:tile_basecolor},<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tile_normal:{value:tile_normal},<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tile_metallic:{value:tile_metallic},<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;lightposition: {value:[1,2,3]},<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;});<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var knot_geometry = new THREE.TorusKnotGeometry(1,0.4,100,16);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;knot_geometry.computeTangents();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var knot = new THREE.Mesh(knot_geometry,shader_material);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;knot.position.set(1,2,-3);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;scene.add(knot);<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var sphere_geometry = new THREE.SphereGeometry(1,30,30);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;sphere_geometry.computeTangents();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var sphere = new THREE.Mesh(sphere_geometry,shader_material);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;sphere.position.set(2,-1,-2);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;scene.add(sphere);<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cube_geometry = new THREE.BoxGeometry(5,5,5);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cube_geometry.computeTangents();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cube = new THREE.Mesh(cube_geometry,shader_material);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cube.position.set(-1,-2,-1);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;scene.add(cube);<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var cone_geometry = new THREE.ConeGeometry();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cone_geometry.computeTangents();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var cone = new THREE.Mesh(cone_geometry,shader_material);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cone.position.set(4,-3,-4);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;scene.add(cone);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var torus_geometry = new THREE.TorusGeometry();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;torus_geometry.computeTangents();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var torus = new THREE.Mesh(torus_geometry,shader_material);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;torus.position.set(-2,-1,-5);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;scene.add(torus);<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var light_geometry = new THREE.SphereGeometry(.1);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;light = new THREE.Mesh(light_geometry, new THREE.MeshBasicMaterial());<br>
+&nbsp;&nbsp;&nbsp;&nbsp;light.position.set(1,2,3);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;scene.add(light);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+<br>
+function animate() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var lightx = Number(document.getElementById("lightx").value);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var lighty = Number(document.getElementById("lighty").value);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var lightz = Number(document.getElementById("lightz").value);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;var slider = Number(document.getElementById("slider").value);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;light.position.set(lightx,lighty,lightz);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;shader_material.uniforms.lightposition.value = [lightx,lighty,lightz];<br>
+&nbsp;&nbsp;&nbsp;&nbsp;shader_material.uniforms.slider.value = slider;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;shader_material.uniformsNeedUpdate = true;<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;requestAnimationFrame(animate);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;renderer.render(scene,camera);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;controls.update();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+<br>
+&lt;/script&gt;<br>
+&lt;head&gt;<br>
+&lt;/head&gt;<br>
+&lt;body onload="create_scene(); animate();"&gt;<br>
+&lt;canvas id="canvas" width=500 height=500 style="border: 1px solid"&gt;&lt;/canvas&gt;<br>
+&lt;br&gt;light x:&lt;input type="range" min=-5 max=5 step=.01 value=1 id="lightx"&gt;<br>
+&lt;br&gt;light y:&lt;input type="range" min=-5 max=5 step=.01 value=2 id="lighty"&gt;<br>
+&lt;br&gt;light z:&lt;input type="range" min=-5 max=5 step=.01 value=3 id="lightz"&gt;<br>
+&lt;br&gt;slider:&lt;input type="range" min=0 max=1 step=.01 id="slider"&gt;<br>
+&lt;/body&gt;<br>
+&lt;/html&gt;
+</blockquote>
+
+This is the template from before, but:
+<ul>
+<li> I've added in sliders to adjust the location of a light. This light will appear as an all-white sphere, and we would like to choose colors for our surfaces so it looks like it is lighting the scene.
+<li> I've also added in an extra slider whose value gets passed to the shaders in case you'd like to play around with values to see what looks best.
+<li> I've added three texture files and passed them as uniforms to the shaders.
+<li> I've updated the version of THREE.js. This is essential to have access to computeTangents. This allows us to compute a vector in the direction of increasing u values, and pass it to the shader as a vertex attribute. Since the vertex attribute isn't in the THREE.js boilerplate, we have to declare it in the vertex shader.
+<li> The vertex shader passes a lot of information to the fragment shader: 
+<ul> 
+<li> The uvs in <code>uvpass</code>,
+<li> The world-space position of the point in <code>positionpass</code>
+<li> The normal to each surface in <code>normalpass</code>
+<li> A vector in increasing u direction in <code>tangentpass</code>
+<li> A vector in increasing v direction in <code>bitangentpass</code>
+</ul>
+</ul>
+
+<blockquote class="instruction">
+Complete the Following:
+</blockquote>
+
+<ol>
+<li>In the main() function in your fragment shader, add <code>vec3 V = normalize(cameraPosition - positionpass);</code>. This create a new vec3 variable called V (the view vector) that stores a unit vector (because it's normalized) in the direction from the current point on the surface (positionpass) to the camera position (cameraPosition, which is a uniform sent by THREE.js).
+<li> Create a new vec3 variable called <code>L</code> that stores a unit vector (the light vector) in the direction from the current point on the surface to the light position.
+<li> Create a new vec3 variable called <code>N</code> that stores a unit vector normal to the surface.
+<blockquote class="caution">
+<p>While the attribute <code>normal</code> in the vertex shader will always be normalized by THREE.js for built-in objects, when these normal vectors get interpolated going from the vertex shader to the fragment shader, they may wind up no longer normalized. You can see this by setting <code>gl_FragColor = vec4(vec3(length(normalpass)),1.0);</code> in your fragment shader. In the middle of some surfaces, the length of normalpass can drop noticably below 1.</p> <p>In fact, special considerations have been made to keep the normals for shapes like the cube under control: each vertex is actually three separate vertices, each with their own vertex normals! You can see this by typing <code>(new THREE.BoxGeometry()).attributes.position.array</code> into the console. This is not, as one might expect, an array of 8 triples of numbers (3 for each corner of the cube), but an array of 24 triples of numbers!</p>
+</blockquote>
+<li> Create a new float called <code>diffuse</code> set to <code>dot(L,N)</code>. This is the built-in dot product function, and this formula accounts for how much light gets spread out over the surface. When light is at an angle, it gets spread out. This is what causes the sun to be less intense during the winter.
+<li> Create a new float called <code>b</code> set to <code>diffuse</code>. As we add new sources of light, we will set this to the total contribution of the light.
+<li> Set <code>gl_FragColor = vec4(b,b,b,1.0);</code>
+<li> Run your code and try adjusting the light position sliders to see if the lighting looks correct. The surfaces should look unglazed.
+</ol>
+
+<h2>Ambient Light</h2>
+
+<p>Ambient light refers to light that has bounced enough around a scene that it just seems to be hitting every surface from every direction. Advanced ambient lighting algorithms can take into account the colors of objects in the scene, or even whether an object is in the center of a room where it gets full lighting or the edges of the room where it gets less light.</p>
+
+<blockquote class="instruction">
+Complete the Following:
+</blockquote>
+
+<ol>
+<li> In your main function of your fragment shader, add an extra 0.2 to b. This should add an extra .1 units of light to every surface, but if you test it out, it won't work!
+<li> The issue here is that when we're calculating diffuse, the dot product between L and N could be negative. This doesn't show up in our final image since negative rgb values show up as 0, but these negative values will cause problems when we combine them with other lights.
+<li> Instead of adding diffuse to b, add <code>clamp(diffuse,0.0,1.0)</code>. This function takes values outside the range from 0 to 1 and forces them into that range.
+<li> It should now look like your scene has some ambient light to it.
+</ol>
+
+<h2>Specular Lighting</h2>
+
+<p>Light that bounces off a surface like a mirror is called specular lighting, and creates highlights to an image, as seen below:</p>
+<br><a title="Brad Smith, CC BY-SA 3.0 &lt;http://creativecommons.org/licenses/by-sa/3.0/&gt;, via Wikimedia Commons" href="https://commons.wikimedia.org/wiki/File:Phong_components_version_4.png"><img width="512" alt="Phong components version 4" src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Phong_components_version_4.png/512px-Phong_components_version_4.png"></a><br>
+
+<p>Modern reflectance algorithms can account for detailed differences in the distribution of angles that light bounces off a surface.</p>
+
+<blockquote class="instruction">
+Complete the Following:
+</blockquote>
+
+<ol>
+<li> In the main() function of your fragment shader, set <code>vec3 R = reflect(-L,N);</code>. This calculates the direction when light from the light source bounces off the surface. You could also calculate this with the formula <code>(-L)-2.0*dot(N,-L)*N;</code>, but this operation is common enough that it is built-in to GLSL.
+<li> Add a variable <code>float specular</code> that:
+<ol>
+<li> Calculates the dot product of V and R
+<li> Clamps the value between 0.0 and 1.0
+<li> Raises the result to the power of 64 using <code>pow(x,64.0)</code>. When the dot product between V and R is very close to 1 (they're nearly the same direction), this value will be close to 1, but usually it will be very close to 0.
+</ol>
+<li> Add <code>specular</code> to b. You should now be able to see the light reflected in the various surfaces. You can adjust the exponent by replacing it with 100.0*slider to see how different values of exponent affect the lighting.
+<li> This result isn't quite correct: you might be able to catch some light reflecting off of surfaces it can't reach. You can fix this with: <code>if (dot(L,N) < 0.0) {specular = 0.0;}</code>.
+</ol>
+
+<h2>Bonus: Blinn-Phong Lighting</h2>
+
+<p>A more common type of specular lighting is <a href="https://en.wikipedia.org/wiki/Blinn%E2%80%93Phong_reflection_model">Blinn-Phong</a>.</p>
+
+<blockquote class="instruction">
+[Bonus] Complete the Following:
+</blockquote>
+<ol>
+<li> In the main() function of your fragment shader, set <code>vec3 H</code> to be the normalized average of L and V.
+<li> Instead of calculating specular based on dot(V,R), calculate it based on dot(H,N).
+</ol>
+
+<h2>Bonus: Toon Lighting</h2>
+
+<p>These algorithms produce grayscale gradients. This is realistic, but doesn't fit all art styles. When trying to mimic the style of comics that have large patches of solid color, we don't want gradients.</p>
+
+<p>Jasper has a detailed <a href="https://www.youtube.com/watch?v=mnxs6CR6Zrk">video</a> on how cel shading works The Legend of Zelda: The Wind Waker.</p>
+
+<blockquote class="instruction">
+[Bonus] Complete the Following:
+</blockquote>
+
+<ol>
+<li> In the main() function of your fragment shader:
+<ul>
+<li> If b is between 0.7 and 1, set it to 1
+<li> If b is between 0.4 and 0.7, set it to 0.7
+<li> If b is less than 0.4, set it to 0.4
+</ul>
+</ol>
+
+<p>
+You can adjust the number and location of the thresholds to control the effect. In combination with a clever choice of lighting algorithms, textures, and colors, this can produce a cartoon-y effect.
+</p>
+
+<h2>Textures</h2>
+
+<p>
+The template comes with three textures: the basecolor, normal and metallic, as shown below:
+</p>
+
+<img src="https://trkern.github.io/3d/Tiles_048_SD/Tiles_048_basecolor.jpg">
+<img src="https://trkern.github.io/3d/Tiles_048_SD/Tiles_048_normal.jpg">
+<img src="https://trkern.github.io/3d/Tiles_048_SD/Tiles_048_metallic.jpg">
+
+<blockquote class="instruction">
+Complete the Following:
+</blockquote>
+
+<ol>
+<li> In the main function of your fragment shader, multiply your <code>gl_FragColor</code> by <code>texture(tile_basecolor,uvpass)</code>. The result should look like a marble surface: perfectly flat and reflective. Let's fix that!
+<li> The normal texture contains information about how the normals of the surface should vary across the surface. These values are relative to how the texture is placed on the surface, and have to be rescaled. The normal vector is a unit vector, so its components are between -1 and 1, but color needs to be between 0 and 1. We can decode that information with <code>vec3 texN = (2.0*texture(tile_normal,uvpass).xyz-1.0);</code>.
+<ul>
+<li> texN.x contains the component of the normal vector in the direction of increasing u, that is, in the direction of tangentpass
+<li> texN.y contains the component of the normal vector in the direction of increasing v, that is, in the direction of bitangentpass
+<li> texN.z contains the component of the normal vector in the direction normal to the geometry, that is, in the direction of normalpass.
+</ul>
+You can combine these by changing our definition of N:
+<blockquote class="code">
+vec3 N = normalize(texN.z * normalize(normalpass) + texN.x * normalize(tangentpass) + texN.y * normalize(bitangentpass));
+</blockquote>
+<li> Now let's grab the metallicness of the surface at each point so that only the gold tiles have specular lighting. Set <code>float M</code> to be the red component of the texture tile_metallic at the coordinates uvpass.
+<li> Then multiply the contribution of specular to the lighting value by M.
+</ol>
+The result should look like:
+<br><img src="16_combined.png"><br>
+If you don't look too closely, it looks like a highly detailed 3d surface, even though there's no underlying geometry! Appreciate how many triangles it would take to reconstruct each individual tile on this surface, and how there are only two triangles per face of the cube.
+
+</body>
+</html>

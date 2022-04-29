@@ -1,0 +1,142 @@
+<!doctype html>
+<html>
+<script src="https://trkern.github.io/3d/three140.js"></script>
+<script src="https://trkern.github.io/OrbitControls.js"></script>
+<script id="vertexShader" type="x-shader/x-vertex">
+varying vec2 uvpass;
+varying vec3 positionpass;
+varying vec3 normalpass;
+varying vec3 tangentpass;
+varying vec3 bitangentpass;
+attribute vec3 tangent;
+void main() {
+	gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position,1.0);
+	uvpass = uv;
+	positionpass = (modelMatrix * vec4(position,1.0)).xyz;
+	normalpass = (modelMatrix * vec4(normal,0.0)).xyz;
+	tangentpass = tangent;
+	bitangentpass = normalize(cross(normal,tangent));
+	}
+</script>
+<script id="fragmentShader" type="x-shader/x-fragment">
+varying vec2 uvpass;
+varying vec3 positionpass;
+varying vec3 normalpass;
+varying vec3 tangentpass;
+varying vec3 bitangentpass;
+uniform float slider;
+uniform sampler2D tile_basecolor;
+uniform sampler2D tile_normal;
+uniform sampler2D tile_metallic;
+uniform vec3 lightposition;
+void main() {
+	vec3 L = normalize(lightposition - positionpass);
+	vec3 V = normalize(cameraPosition - positionpass);
+	vec3 texN = (2.0*texture(tile_normal,uvpass).xyz-1.0);
+	vec3 N = normalize(texN.z * normalize(normalpass) + texN.x * normalize(tangentpass) + texN.y * normalize(bitangentpass));
+	//vec3 N = normalize(normalpass);
+	vec3 R = reflect(-L,N);
+	float M = texture(tile_metallic,uvpass).x;
+	float diffuse = clamp(dot(L,N),0.0,1.0);
+	float phong = pow(clamp(dot(V,R),0.0,1.0), 64.0);
+	//float b = clamp(phong + diffuse + 0.1,0.0,1.0);
+	float b = M*phong+diffuse+0.1;
+	if (dot(L,normalpass) < 0.0) {b = 0.1;}
+	gl_FragColor = vec4(b,b,b,1.0) * texture(tile_basecolor,uvpass);
+	//gl_FragColor = vec4(tangentpass,1.0);
+	}
+</script>
+
+<script>
+
+var scene,camera,renderer, controls;
+var shader_material;
+var light;
+var cube, cube_geometry;
+
+function create_scene() {
+	var tile_basecolor = new THREE.TextureLoader().load("https://trkern.github.io/3d/Tiles_048_SD/Tiles_048_basecolor.jpg");
+	var tile_normal = new THREE.TextureLoader().load("https://trkern.github.io/3d/Tiles_048_SD/Tiles_048_normal.jpg");
+	var tile_metallic = new THREE.TextureLoader().load("https://trkern.github.io/3d/Tiles_048_SD/Tiles_048_metallic.jpg");
+
+	scene = new THREE.Scene();
+	camera = new THREE.PerspectiveCamera(75,1,.1,1000);
+	renderer = new THREE.WebGLRenderer({canvas:document.getElementById("canvas"),antialias:true});
+	controls = new THREE.OrbitControls(camera, document.getElementById("canvas"));
+	camera.position.z = 5;
+
+	shader_material = new THREE.ShaderMaterial({
+		vertexShader: document.getElementById("vertexShader").textContent,
+		fragmentShader: document.getElementById("fragmentShader").textContent,
+		side: THREE.DoubleSide,
+		uniforms: {
+			slider:{value:0},
+			tile_basecolor:{value:tile_basecolor},
+			tile_normal:{value:tile_normal},
+			tile_metallic:{value:tile_metallic},
+			lightposition: {value:[1,2,3]},
+			}
+		});
+
+	var knot_geometry = new THREE.TorusKnotGeometry(1,0.4,100,16);
+	knot_geometry.computeTangents();
+	var knot = new THREE.Mesh(knot_geometry,shader_material);
+	knot.position.set(1,2,-3);
+	scene.add(knot);
+
+	var sphere_geometry = new THREE.SphereGeometry(1,30,30);
+	sphere_geometry.computeTangents();
+	var sphere = new THREE.Mesh(sphere_geometry,shader_material);
+	sphere.position.set(2,-1,-2);
+	scene.add(sphere);
+
+	cube_geometry = new THREE.BoxGeometry(5,5,5);
+	cube_geometry.computeTangents();
+	cube = new THREE.Mesh(cube_geometry,shader_material);
+	cube.position.set(-1,-2,-1);
+	scene.add(cube);
+
+	var cone_geometry = new THREE.ConeGeometry();
+	cone_geometry.computeTangents();
+	var cone = new THREE.Mesh(cone_geometry,shader_material);
+	cone.position.set(4,-3,-4);
+	scene.add(cone);
+	
+	var torus_geometry = new THREE.TorusGeometry();
+	torus_geometry.computeTangents();
+	var torus = new THREE.Mesh(torus_geometry,shader_material);
+	torus.position.set(-2,-1,-5);
+	scene.add(torus);
+
+	var light_geometry = new THREE.SphereGeometry(.1);
+	light = new THREE.Mesh(light_geometry, new THREE.MeshBasicMaterial());
+	light.position.set(1,2,3);
+	scene.add(light);
+	}
+
+function animate() {
+	var lightx = Number(document.getElementById("lightx").value);
+	var lighty = Number(document.getElementById("lighty").value);
+	var lightz = Number(document.getElementById("lightz").value);
+	var slider = Number(document.getElementById("slider").value);
+	light.position.set(lightx,lighty,lightz);
+	shader_material.uniforms.lightposition.value = [lightx,lighty,lightz];
+	shader_material.uniforms.slider.value = slider;
+	shader_material.uniformsNeedUpdate = true;
+
+	requestAnimationFrame(animate);
+	renderer.render(scene,camera);
+	controls.update();
+	}
+
+</script>
+<head>
+</head>
+<body onload="create_scene(); animate();">
+<canvas id="canvas" width=500 height=500 style="border: 1px solid"></canvas>
+<br>light x:<input type="range" min=-5 max=5 step=.01 value=1 id="lightx">
+<br>light y:<input type="range" min=-5 max=5 step=.01 value=0 id="lighty">
+<br>light z:<input type="range" min=-5 max=5 step=.01 value=3 id="lightz">
+<br>slider:<input type="range" min=0 max=1 step=.01 id="slider">
+</body>
+</html>

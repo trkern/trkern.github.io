@@ -1,0 +1,119 @@
+<!doctype html>
+<html>
+<head>
+<style>
+code {
+	background-color: #DDDDDD;
+	}
+.code {
+	font-family: monospace;
+	background-color: #DDDDDD;
+	}
+body {
+	font-family: sans-serif;
+	}
+.caution {
+	background-color: #EEEEBB;
+	padding: 20px;
+	border-left: 3px solid yellow;
+	}
+.caution:before {
+	font-size: xx-large;
+	content: "!"
+	}
+.instruction {
+	background-color: #BBCCEE;
+	}
+blockquote.instruction {
+	padding: 20px;
+	border-left: 3px solid #222255;
+	}
+.matrix td{
+	text-align:center;
+	padding: .4em;
+	}
+</style>
+</head>
+<body>
+
+<h1> Above and Beyond </h1>
+
+<h2>Ray Tracing</h2>
+
+<p>Many of the shaders on <a href="https://www.shadertoy.com/browse">shadertoy</a> look like 3d scenes. But shadertoy only lets you modify the fragment shader: the geometry of these shaders is always a rectangle (two triangles) stuck up against the camera. Any 3d effects are implemented by implementing a 3d rendering engine in the fragment shader. Often times, this is a ray tracing type algorithm: for every pixel on the screen, the shader fires a virtual ray of light (sometimes many) backwards until it hits the scene, potentially following backwards as it is reflected or refracted.</p>
+
+<p>There are several ways of figuring out where a ray hits a scene:
+<ul>
+<li> For scenes made up of small amounts of basic geometry, finding where a line intersects a sphere, etc is a simple math equation, which gets tested for each object in the scene to see which is the closest hit by the ray. The ray can be reflected deterministically according to another equation, or nondeterministically to simulate lots of light rays. See an example <a href="https://www.shadertoy.com/view/4ljGRd">here</a>.
+<li> For scenes made up of volumetric effects like clouds, it makes sense to move the ray discrete steps forward, checking at each step whether the ray is passing through the cloud and calculating how that should contribute to the final color of that pixel. See an example <a href="https://www.shadertoy.com/view/Xsc3R4">here</a>.
+<li> For complex scenes, keeping track of a formula for computing the distance from any point to the scene makes it possible to traverse empty space with large steps. See an example in this <a href="https://www.youtube.com/watch?v=svLzmFuSBhk">video</a>.
+</ul></p>
+
+Dr. Karoly Zsolnai-Feher has a series of online course lecture <a href="https://users.cg.tuwien.ac.at/zsolnai/gfx/rendering-course/">videos</a> on ray tracing.
+
+<h2>Shadows</h2>
+
+<p>We've talked about lighting surfaces differently based on the direction to the light source, but these surfaces can't yet cast shadows on other surfaces. A common algorithm for this is to first render the scene from the perspective of the light source just to create a z-buffer. This rendered z-buffer image is passed as a uniform to the real scene renderer. For each point in the scene, we use basic matrix transformations to compute where it shows up from the light-camera's perspective, that is, what pixel on the light's z-buffer this point corresponds to. If the distance from the point to the light is that z-buffer distance, we've found the closest point to the light in that direction, so the pixel is lit. Otherwise, there is a closer piece of geometry in that direction, so the pixel is in shadow. You can see these z-buffers in action <a href="https://threejs.org/examples/#webgl_shadowmap_viewer">here</a>.</p>
+
+<p>These z-buffers can then be used for more advanced operations such as crepuscular lighting, as in <a href="https://threejs.org/examples/#webgl_postprocessing_godrays">this</a> example.</p>
+
+<h2>Convolution</h2>
+
+<p>As we've seen, images are just stored in the computer as large arrays of numbers, in other words, vectors. By comparing the dot product of two of these vectors to the lengths of these vectors (i.e. computing the angle between these vectors in incredibly high-dimensional space), we can determine how similar two images are on a pixel-by-pixel basis.</p>
+
+<p>This isn't particularly useful when applied to entire pictures, because it can only detect pixel-by-pixel similarity and not other types of similarity of images. However, when applied at a small scale, we can use this technique to identify portions of images that look like edges, or apply other filters to images.</p>
+
+<ul>
+<li> Computerphile has a <a href="https://www.youtube.com/watch?v=uihBwtPIBxM">video</a> on the Sobel Edge detector.
+<li> Computerphile also has a <a href="https://www.youtube.com/watch?v=C_zFhWdM4ic">video</a> on using this technique to perform a blur operation.
+<li> Grant Sanderson also has a <a href="https://www.youtube.com/watch?v=8rrHTtUzyZA">video</a> on using this technique.
+<li> This technique is called convolution, and forms the foundation of <a href="https://www.youtube.com/watch?v=iaSUYvmCekI">convolutional neural networks</a>, which are used to:
+<ul>
+<li> Perform real-time upscaling of video games with <a href="https://www.youtube.com/watch?v=_DPRt3AcUEY">deep learned super-sampling</a>.
+<li> Perform style-transfer, as in this Two Minute Papers <a href="https://www.youtube.com/watch?v=22Sojtv4gbg">video</a>.
+</ul> 
+</ul>
+
+<h2>Light-Fields</h2>
+
+<p>Normal cameras record all of the rays of light that hit a particular point in space (the focal point of the camera) and record the direction of each of those rays. Light-field cameras record all of the rays of light that hit a particular surface in space, and record the direction of each of those rays. In reality, this is usually done with a sphere with many cheap cameras mounted to its surface, or taking pictures with the same camera from lots of different perspectives. This is a lot more data than what is captured by just one camera, but this makes it possible to reconstruct the view from anywhere in the sphere by tracing which rays of light would hit the observer if allowed to continue into the sphere.</p>
+
+<p>You can see this in action in real-time <a href="https://www.youtube.com/watch?v=SvRgkXQZIQg">here</a>.</p>
+
+<h2>LODs</h2>
+
+<p>
+A common technique in computer graphics is to use lower Level of Detail (LOD) models and textures far away from the camera.
+</p>
+<ul>
+<li> You can see how to implement this in THREE.js in the source code of this <a href="https://threejs.org/examples/#webgl_lod">example</a>.
+<li> Unreal Engine's <a href="https://www.youtube.com/watch?v=eviSykqSUUw">Nanite Technology</a> is an advanced approach to LOD.
+<li> Craig Perko has a <a href="https://www.youtube.com/watch?v=mcpLSHU8M1c">video</a> on voxel octrees, the way of dealing with LOD in voxel-based worlds.
+</ul>
+
+<h2>Noise</h2>
+A common tool in computer graphics is creating realistic randomness, for textures and terrain heightmaps.
+
+<ul>
+<li> The Book of Shaders has some interactive <a href="https://thebookofshaders.com/11/">shaders</a> exploring noise
+<li> <a href="https://en.wikipedia.org/wiki/Perlin_noise">Perlin Noise</a> is a common form of noise for computer graphics.
+<li> Inigo Quilez talks about generating a landscape by combining a deterministic randomness function (note that shaders must be deterministic: any randomness must be passed to them as a uniform or vertex attribute) with smaller rotated copies of itself in his <a href="https://youtu.be/BFld4EBO2RE?t=146">Painting a Landscape with Maths</a> video.
+<li> Jasper describes how noisy textures are used to produce effects in Super Mario Galaxy 2 in this <a href="https://www.youtube.com/watch?v=8rCRsOLiO7k">video</a>.
+</ul>
+
+<h2>Further Resources</h2>
+
+<ul>
+<li> Adrian Courreges has compiled a large <a href="https://www.adriancourreges.com/blog/2020/12/29/graphics-studies-compilation/">list</a> of analyses of scenes in real video games.
+<li> Freya Holmer's Shaders for Game Devs video <a href="https://www.youtube.com/playlist?list=PLImQaTpSAdsCnJon-Eir92SZMl7tPBS4Z">series</a> covers a wide variety of basic shaders in HLSL, another language for writing shaders. She also has other math for game dev videos on her channel.
+<li> Two Minute Papers' youtube <a href="https://www.youtube.com/channel/UCbfYPyITQ-7l4upoX8nvctg">channel</a> covers a wide variety of computer-research papers, but often focuses on computer graphics and light transport.
+<li> The Game Developers Conference covers a wide variety of topics, including graphics. For instance, you can find a talk on 3D Geometry <a href="https://www.youtube.com/watch?v=GpsKrAipXm8">here</a>.
+<li> The SIGGRAPH conference often leads to youtube videos presenting cutting-edge graphics research. You can see a sample of these videos <a href="https://www.youtube.com/watch?v=Ros7ZXqLbFg">here</a>.
+<li> <a href="https://noclip.website/">noclip.website</a> allows you to view a wide variety of video game levels with a free camera.
+<li> Inigo Quilez has some <a href="https://www.youtube.com/watch?v=BFld4EBO2RE">videos</a> on rendering scenes in a fragment shader.
+<li> Martin Donald has a few <a href="https://www.youtube.com/c/MartinDonald/videos">videos</a> on a few shader tricks.
+</ul>
+
+
+</body>
+</html>

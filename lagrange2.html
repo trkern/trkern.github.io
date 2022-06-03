@@ -312,6 +312,7 @@ function upd() {
 	var i;
 	var pl = lagpoly(gpairlist);
 	var l = [{type:"plot", fct:ff(pl), nojump:true}];
+	if (!document.getElementById("chk_showgraph").checked) {l = [];}
 	for (i = 0; i < gpairlist.length; i++) {
 		if(document.getElementById("chk_drawpoints").checked) {
 			l.push({type:"dot", x:gpairlist[i][0], y:gpairlist[i][1]});
@@ -320,13 +321,18 @@ function upd() {
 			l.push({type:"label", x:gpairlist[i][0], y:gpairlist[i][1], label:"", labeloffsety:-10});
 			}
 		}
+	tgr_update_plotdata("gr",{showaxes:document.getElementById("chk_drawaxes").checked, showgrid:document.getElementById("chk_drawgrid").checked, labelaxes: document.getElementById("chk_labelaxes").checked});
+
 	tgr_update_grapher_objs("gr",l);
 	var str = "<table><tr>";
+	var cstr = "";
 	for (i = pl.length-1; i >= 0; i--) {
 		str += "<td>" + plusify(pl[i]) + "x<sup>"+i+"</sup></td>";
+		cstr += plusify(pl[i]) + "x^" + i;
 		}
 	str += "</tr></table>";
 	document.getElementById("form").innerHTML = str;
+	document.getElementById("cform").innerHTML = cstr;
 	if (document.getElementById("chk_rshow").checked) {rgo();}
 	str = "";
 	var j;
@@ -582,6 +588,16 @@ function loadr() {
 	loaddata(l);
 	}
 
+function loadl() {
+	var n = Number(document.getElementById("nlp").value);
+	var i;
+	var l = [];
+	for (i = 0; i < n; i++) {
+		l.push([i, .6*i + .5 * Math.random()]);
+		}
+	loaddata(l);
+	}
+
 function changen(e) {
 	gpairlist = gpairlist.slice(0,Number(e.target.value));
 	makeentrygrid();
@@ -641,15 +657,21 @@ Pick a number of data points (n) and enter some data below. If you like, you can
 <br><button onclick="loadht()">Daily High Temperatures (F) NYC</button> 3/1/19 to 3/<input type='number' min=2 max=18 id='maxht' value=6>/19
 <br><button onclick="loadnp()">Near-Parabola</button> with <input type='number' min=3 step=2 value=7 id='nnp'> points
 <br><button onclick="loadr()">Pseudo-random numbers 0-10</button> with <input type='number' min=2 value=7 id='nrp'> points
+<br><button onclick="loadl()">Near-Line</button> with <input type="number" min=3 step=5 value=20 id="nlp"> points
 <br>
 n:<input type="number" min=0 id="npts" oninput="changen(event)" value=4>
 <div id="egrid"></div>
 <input type="checkbox" id="chk_rshow" oninput="document.getElementById('rform').innerHTML=''; upd()" checked> Show rational coefficients
 <div id="rform"></div>
 <div id="form"></div>
+<div id="cform"></div>
 <div id="gr"></div>
 <input type="checkbox" id="chk_drawpoints" oninput="upd()" checked> Draw Points <br>
-<input type="checkbox" id="chk_labelpoints" oninput="upd()"> Label Points
+<input type="checkbox" id="chk_labelpoints" oninput="upd()"> Label Points <br>
+<input type="checkbox" id="chk_drawaxes" oninput="upd()" checked> Draw Axes <br>
+<input type="checkbox" id="chk_labelaxes" oninput="upd()" checked> Label Axes <br>
+<input type="checkbox" id="chk_drawgrid" oninput="upd()" checked> Draw Grid <br>
+<input type="checkbox" id="chk_showgraph" oninput="upd()" checked> Draw Graph <br>
 
 <h1>Make Your Own Lagrange Polynomial</h1>
 <p>

@@ -20,6 +20,32 @@ void main() {
 	viewdir = TBN * (cameraPosition - position);
 	}
 </script>
+<script id="vertexDispShader" type="x-shader/x-vertex">
+uniform sampler2D height;
+varying vec2 uvpass;
+void main() {
+	float highness = texture2D(height,uv).r;
+	vec3 newposition = position + highness*normal;
+	gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(newposition,1.0);
+	uvpass = uv;
+	}
+</script>
+<script id="fragmentWireShader" type="x-shader/x-fragment">
+varying vec2 uvpass;
+uniform float divisions;
+uniform sampler2D tex;
+uniform sampler2D height;
+void main() {
+	gl_FragColor = texture2D(tex,uvpass);
+	vec2 sqcoords = mod(divisions*uvpass,1.0);
+	if (sqcoords.x < 0.02 || sqcoords.x > .98 || sqcoords.y < 0.02 || sqcoords.y > .98 || abs(sqcoords.x - sqcoords.y) < 0.028) {
+		gl_FragColor = vec4(0,1,0,1);
+		}
+	else {
+		//gl_FragColor = vec4(0,0,0,1);
+		}
+	}
+</script>
 <script id="fragmentShader0" type="x-shader/x-fragment">varying vec3 normpass;
 varying vec2 uvpass;
 varying vec3 viewdir;
@@ -106,11 +132,12 @@ void main() {
 	float w = d1/(d1-d2);
 	texcoord = prevtexcoord * w + texcoord * (1.0-w);
 	gl_FragColor = texture2D(tex,texcoord);
+	if (abs(d1-d2) < .001) {gl_FragColor = vec4(0,0,1,1);}
 	}
 </script>
 <script>
 
-var scene,camera,renderer, controls, shader_material, frame;
+var scene,camera,renderer, controls, shader_material, box, frame, vertexdisp;
 
 function create_scene() {
 	var bricktex = new THREE.TextureLoader().load("https://trkern.github.io/bricks07-1k/bricks07%20diffuse%201k.jpg");
@@ -124,7 +151,7 @@ function create_scene() {
 
 	shader_material = new THREE.ShaderMaterial({
 		vertexShader: document.getElementById("vertexShader").textContent,
-		fragmentShader: document.getElementById("fragmentShader1").textContent,
+		fragmentShader: document.getElementById("fragmentShader0").textContent,
 		transparent: true,
 		side: THREE.DoubleSide,
 		uniforms: {
@@ -136,7 +163,7 @@ function create_scene() {
 
 	var box_geometry = new THREE.BoxGeometry(5,5,5);
 	box_geometry.computeTangents();
-	var box = new THREE.Mesh(box_geometry,shader_material);
+	box = new THREE.Mesh(box_geometry,shader_material);
 	box.position.set(0,0,0);
 	scene.add(box);
 	
@@ -147,6 +174,20 @@ function create_scene() {
 	frame.position.set(0,0,-2.501);
 	scene.add(frame);
 
+	var vertex_disp_geometry = new THREE.PlaneGeometry(5,5,30,30);
+	var vertex_disp_material = new THREE.ShaderMaterial({
+		vertexShader: document.getElementById("vertexDispShader").textContent,
+		fragmentShader: document.getElementById("fragmentWireShader").textContent,
+		uniforms: {
+			tex: {value: bricktex},
+			height: {value: brickheight},
+			divisions: {value: 30}
+			}
+		});
+	vertex_disp = new THREE.Mesh(vertex_disp_geometry, vertex_disp_material);
+	vertex_disp.position.set(0,0,3);
+	scene.add(vertex_disp);
+	vertex_disp.visible = false;
 	}
 
 function animate() {
@@ -169,6 +210,10 @@ function update_shader() {
 
 function showhideframe() {
 	frame.visible = document.getElementById("chk_frame").checked;
+	}
+
+function showhidevdisp() {
+	vertex_disp.visible = document.getElementById("chk_vdisp").checked;
 	}
 
 </script>
@@ -195,5 +240,6 @@ void main() {
 <button onclick="load_shader(3)">Shader 3</button>
 <button onclick="load_shader(4)">Shader 4</button>
 <input type="checkbox" id="chk_frame" checked onchange="showhideframe()"> Show Frame
+<input type="checkbox" id="chk_vdisp" onchange="showhidevdisp()"> Show Vertex Displacement
 </body>
 </html>

@@ -1,0 +1,304 @@
+<!doctype html>
+<html>
+<script src="https://trkern.github.io/3d/three140.js"></script>
+<script src="https://trkern.github.io/OrbitControls.js"></script>
+<script id="vertexShader" type="x-shader/x-vertex">
+varying vec2 uvpass;
+varying vec3 normpass;
+varying vec3 positionpass;
+varying vec3 viewdir;
+attribute vec3 tangent;
+uniform vec3 smartCameraPosition;
+void main() {
+	gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position,1.0);
+	uvpass = uv;
+	normpass = (projectionMatrix * viewMatrix*modelMatrix*vec4(normal,0.0)).xyz;
+	positionpass = position;
+	vec3 T = normalize(mat3(modelMatrix) * tangent);
+	vec3 B = normalize(mat3(modelMatrix) * cross(normal, tangent));
+	vec3 N = normalize(mat3(modelMatrix) * normal);
+	mat3 TBN = transpose(mat3(T,B,N));
+	viewdir = TBN * (smartCameraPosition - position);
+	}
+</script>
+<script id="fragmentShader0" type="x-shader/x-fragment">varying vec3 normpass;
+varying vec2 uvpass;
+varying vec3 viewdir;
+uniform sampler2D tex;
+uniform sampler2D height;
+uniform float slider;
+void main() {
+	gl_FragColor = texture2D(tex,uvpass);
+	}
+</script>
+<script id="fragmentShader1" type="x-shader/x-fragment">varying vec3 normpass;
+varying vec2 uvpass;
+varying vec3 viewdir;
+uniform sampler2D tex;
+uniform sampler2D height;
+uniform float slider;
+void main() {
+	float highness = 2.0*slider-1.0;
+	vec2 texcoord = mod(uvpass - viewdir.xy/viewdir.z * highness,1.0);
+	gl_FragColor = texture2D(tex,texcoord);
+	}
+</script>
+<script id="fragmentShader2" type="x-shader/x-fragment">varying vec3 normpass;
+varying vec2 uvpass;
+varying vec3 viewdir;
+uniform sampler2D tex;
+uniform sampler2D height;
+uniform float slider;
+void main() {
+	float highness = -0.05*(texture2D(height, uvpass).x-1.0);
+	vec2 texcoord = mod(uvpass - viewdir.xy/viewdir.z * highness,1.0);
+	gl_FragColor = texture2D(tex,texcoord);
+	}
+</script>
+<script id="fragmentShader3" type="x-shader/x-fragment">varying vec3 normpass;
+varying vec2 uvpass;
+varying vec3 viewdir;
+uniform sampler2D tex;
+uniform sampler2D height;
+uniform float slider;
+void main() {
+	vec3 viewdirt = normalize(viewdir);
+	float layers = 10.0;
+	float spacing = 1.0 / layers;
+	vec2 deltaxy = viewdirt.xy * slider / layers;
+	vec2 currentxy = uvpass;
+	float currentd = texture2D(height, currentxy).r;
+	float currentl = 1.0;
+	while (currentl > currentd) {
+		currentxy -= deltaxy;
+		currentd = texture2D(height, currentxy).r;
+		currentl -= spacing;
+		}
+	vec2 texcoord = currentxy;
+	gl_FragColor = texture2D(tex,texcoord);
+	}
+</script>
+<script id="fragmentShader4" type="x-shader/x-fragment">varying vec3 normpass;
+varying vec2 uvpass;
+varying vec3 viewdir;
+uniform sampler2D tex;
+uniform sampler2D height;
+uniform float slider;
+void main() {
+	vec3 viewdirt = normalize(viewdir);
+	float layers = 10.0;
+	float spacing = 1.0 / layers;
+	vec2 deltaxy = viewdirt.xy * slider / (layers * viewdirt.z);
+	vec2 currentxy = uvpass;
+	float currentd = 1.0-texture2D(height, currentxy).r;
+	float currentl = 0.0;
+	while (currentl < currentd) {
+		currentxy -= deltaxy;
+		currentd = 1.0-texture2D(height, currentxy).r;
+		currentl += spacing;
+		}
+	vec2 texcoord = currentxy;
+	vec2 prevtexcoord = currentxy + deltaxy;
+	float d1 = currentd - currentl;
+	float d2 = (1.0-texture2D(height, prevtexcoord).r) - currentl + spacing;
+	float w = d1/(d1-d2);
+	texcoord = prevtexcoord * w + texcoord * (1.0-w);
+	gl_FragColor = texture2D(tex,texcoord);
+	}
+</script>
+<script id="fragmentShader5" type="x-shader/x-fragment">varying vec3 normpass;
+varying vec2 uvpass;
+varying vec3 viewdir;
+uniform sampler2D tex;
+uniform sampler2D height;
+uniform float slider;
+
+vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir)
+{ 
+	float heightScale = slider;
+    // number of depth layers
+    const float minLayers = 8.0;
+    const float maxLayers = 32.0;
+    float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0.0, 0.0, 1.0), viewDir)));  
+    // calculate the size of each layer
+    float layerDepth = 1.0 / numLayers;
+    // depth of current layer
+    float currentLayerDepth = 0.0;
+    // the amount to shift the texture coordinates per layer (from vector P)
+    vec2 P = viewDir.xy / viewDir.z * heightScale; 
+    vec2 deltaTexCoords = P / numLayers;
+  
+    // get initial values
+    vec2  currentTexCoords     = texCoords;
+    float currentDepthMapValue = texture(height, currentTexCoords).r;
+      
+    while(currentLayerDepth < currentDepthMapValue)
+    {
+        // shift texture coordinates along direction of P
+        currentTexCoords -= deltaTexCoords;
+        // get depthmap value at current texture coordinates
+        currentDepthMapValue = texture(height, currentTexCoords).r;  
+        // get depth of next layer
+        currentLayerDepth += layerDepth;  
+    }
+    
+    // get texture coordinates before collision (reverse operations)
+    vec2 prevTexCoords = currentTexCoords + deltaTexCoords;
+
+    // get depth after and before collision for linear interpolation
+    float afterDepth  = currentDepthMapValue - currentLayerDepth;
+    float beforeDepth = texture(height, prevTexCoords).r - currentLayerDepth + layerDepth;
+ 
+    // interpolation of texture coordinates
+    float weight = afterDepth / (afterDepth - beforeDepth);
+    vec2 finalTexCoords = prevTexCoords * weight + currentTexCoords * (1.0 - weight);
+
+    return finalTexCoords;
+}
+
+void main() {
+	vec3 viewdirt = normalize(viewdir);
+	//float highness = -0.05*(texture2D(height, uvpass).x-1.0);
+	vec2 texCoords = uvpass;
+	texCoords = ParallaxMapping(texCoords, viewdirt);
+	if(texCoords.x > 1.0 || texCoords.y > 1.0 || texCoords.x < 0.0 || texCoords.y < 0.0) discard;
+	gl_FragColor = texture2D(tex,texCoords);
+	}
+
+
+</script>
+<script id="fragmentShader6" type="x-shader/x-fragment">varying vec3 normpass;
+varying vec2 uvpass;
+varying vec3 viewdir;
+uniform sampler2D tex;
+uniform sampler2D height;
+uniform float slider;
+void main() {
+	vec3 viewdirt = normalize(viewdir);
+	//float highness = -0.05*(texture2D(height, uvpass).x-1.0);
+	float layers = 10.0;
+	float spacing = 1.0 / layers;
+	vec2 deltaxy = viewdirt.xy * slider / (layers * viewdirt.z);
+	vec2 currentxy = uvpass;
+	float currentd = 1.0-texture2D(height, currentxy).r;
+	float currentl = 0.0;
+	while (currentl + spacing < currentd) {
+		currentxy -= deltaxy;
+		currentd = 1.0-texture2D(height, currentxy).r;
+		currentl += spacing;
+		}
+	float sublayers = 10.0;
+	float subspacing = spacing/sublayers;
+	deltaxy = deltaxy/sublayers;
+	while (currentl < currentd) {
+		currentxy -= deltaxy;
+		currentd = 1.0-texture2D(height,currentxy).r;
+		currentl += spacing;
+		}
+	vec2 texcoord = currentxy;
+	gl_FragColor = texture2D(tex,texcoord);
+	}
+</script>
+<script>
+
+var scene,camera,renderer, controls, shader_material, frame;
+
+function create_scene() {
+	//var bricktex = new THREE.TextureLoader().load("https://trkern.github.io/PavingStones115A_1K-JPG/PavingStones115A_1K_Color.jpg");
+	//var brickheight = new THREE.TextureLoader().load("https://trkern.github.io/PavingStones115A_1K-JPG/PavingStones115A_1K_Displacement.jpg");
+
+	//var bricktex = new THREE.TextureLoader().load("https://trkern.github.io/bark_brown_02_4k.blend/textures/bark_brown_02_diff_4k.jpg");
+	//var brickheight = new THREE.TextureLoader().load("https://trkern.github.io/bark_brown_02_4k.blend/textures/bark_brown_02_disp_4k.png");
+
+	var bricktex = new THREE.TextureLoader().load("https://trkern.github.io/bricks07-1k/bricks07%20diffuse%201k.jpg");
+	var brickheight = new THREE.TextureLoader().load("https://trkern.github.io/bricks07-1k/bricks07%20height%201k.jpg");
+
+	//var bricktex = new THREE.TextureLoader().load("https://raw.githubusercontent.com/JoeyDeVries/LearnOpenGL/master/resources/textures/toy_box_diffuse.png");
+	//var brickheight = new THREE.TextureLoader().load("https://raw.githubusercontent.com/JoeyDeVries/LearnOpenGL/master/resources/textures/toy_box_disp.png");
+
+	scene = new THREE.Scene();
+	camera = new THREE.PerspectiveCamera(75,1,.1,1000);
+	renderer = new THREE.WebGLRenderer({canvas:document.getElementById("canvas"),antialias:true});
+	controls = new THREE.OrbitControls(camera, document.getElementById("canvas"));
+	camera.position.z = 5;
+
+	shader_material = new THREE.ShaderMaterial({
+		vertexShader: document.getElementById("vertexShader").textContent,
+		fragmentShader: document.getElementById("fragmentShader1").textContent,
+		transparent: true,
+		side: THREE.DoubleSide,
+		uniforms: {
+			slider: {value: Number(document.getElementById("slider").value)},
+			tex: {value: bricktex},
+			height: {value: brickheight},
+			smartCameraPosition: {value: [camera.position.x,camera.position.y,camera.position.z]}
+			},
+		});
+
+	var box_geometry = new THREE.BoxGeometry(5,5,5);
+	box_geometry.computeTangents();
+	var box = new THREE.Mesh(box_geometry,shader_material);
+	box.position.set(0,0,0);
+	scene.add(box);
+	
+
+	var frame_geometry = new THREE.BoxGeometry(10,10,10);
+	var frame_texture = new THREE.MeshBasicMaterial({map: bricktex});
+	frame = new THREE.Mesh(frame_geometry,frame_texture);
+	frame.position.set(0,0,-2.501);
+	scene.add(frame);
+
+	}
+
+function animate() {
+	requestAnimationFrame(animate);
+	shader_material.uniforms.slider.value = Number(document.getElementById("slider").value);
+	if (!document.getElementById("chk_camera").checked) {
+		shader_material.uniforms.smartCameraPosition.value = [camera.position.x,camera.position.y,camera.position.z];
+		}
+	shader_material.uniformsNeedUpdate = true;
+	renderer.render(scene,camera);
+	controls.update();
+	}
+
+function load_shader(i) {
+	document.getElementById("shader").value = document.getElementById("fragmentShader"+i).textContent;
+	}
+
+function update_shader() {
+	//console.log(document.getElementById("shader").value);
+	shader_material.fragmentShader = document.getElementById("shader").value;
+	shader_material.needsUpdate = true;
+	}
+
+function showhideframe() {
+	frame.visible = document.getElementById("chk_frame").checked;
+	}
+
+</script>
+<head>
+</head>
+<body onload="create_scene(); animate();">
+<canvas id="canvas" width=700 height=700 style="border: 1px solid"></canvas>
+<textarea id="shader" style="width:700px; height:700px" spellcheck="false">varying vec3 normpass;
+varying vec2 uvpass;
+varying vec3 viewdir;
+uniform sampler2D tex;
+uniform sampler2D height;
+uniform float slider;
+void main() {
+	gl_FragColor = texture2D(tex,uvpass);
+	}
+</textarea>
+<br>
+<input type="range" min=0 max=1 step=.01 id="slider">
+<button onclick="update_shader()">Update Shader</button>
+<button onclick="load_shader(0)">Shader 0</button>
+<button onclick="load_shader(1)">Shader 1</button>
+<button onclick="load_shader(2)">Shader 2</button>
+<button onclick="load_shader(3)">Shader 3</button>
+<button onclick="load_shader(4)">Shader 4</button>
+<input type="checkbox" id="chk_camera"> Freeze Camera
+<input type="checkbox" id="chk_frame" checked onchange="showhideframe()"> Show Frame
+</body>
+</html>

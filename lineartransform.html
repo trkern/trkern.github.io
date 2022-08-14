@@ -158,6 +158,17 @@ function drawcanv(a,b,c,d) {
 		ctx.lineTo(tog(nev)[0],tog(nev)[1]);
 		ctx.stroke();
 		}
+	if (document.getElementById("c11").checked) {
+		var x, y;
+		for (x = -u; x <= u; x++) {
+			for (y = -u; y <= u; y++) {
+				ctx.fillStyle = "black";
+				ctx.beginPath();
+				ctx.arc(tog([x*a+y*b,x*c+y*d])[0],tog([x*a+y*b,x*c+y*d])[1],5,0,6.29);
+				ctx.fill();
+				}
+			}
+		}
 	}
 
 function Upd() {
@@ -815,6 +826,7 @@ More detailed instructions can be found at the bottom of the page.
 <input type="checkbox" id="c8" onchange="drawworkbench()"> Show guessing game target <br>
 <input type="checkbox" id="c9" onchange="Upd()" checked> Show unit eigenvectors <br>
 <input type="checkbox" id="c10" onchange="Upd()" checked> Show eigenvector axes <br>
+<input type="checkbox" id="c11" onchange="Upd()"> Show points <br>
 
 <h2> Morphing </h2>
 Clicking the "Morph" button will show you an animation of points moving from their original positions to their new positions after the matrix transformation. In reality, when we apply a matrix transformation, there is no moving, no inbetween frames. The only things we have are the starting point, which gets multiplied by the matrix to produce the ending point. However, because all the points in the image are getting moved at once, it is easier to visualize what's happening via these animations.

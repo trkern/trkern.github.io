@@ -160,8 +160,8 @@ function drawcanv(a,b,c,d) {
 		}
 	if (document.getElementById("c11").checked) {
 		var x, y;
-		for (x = -u; x <= u; x++) {
-			for (y = -u; y <= u; y++) {
+		for (x = -u; x <= u; x += .5) {
+			for (y = -u; y <= u; y += .5) {
 				ctx.fillStyle = "black";
 				ctx.beginPath();
 				ctx.arc(tog([x*a+y*b,x*c+y*d])[0],tog([x*a+y*b,x*c+y*d])[1],5,0,6.29);

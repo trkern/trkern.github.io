@@ -3,6 +3,9 @@
 <head>
 <script>
 
+var cat = [[-341, 289], [-333, 297], [-321, 307], [-315, 315], [-307, 325], [-311, 341], [-319, 371], [-273, 355], [-273, 371], [-255, 363], [-241, 353], [-231, 339], [-227, 333], [-209, 327], [-197, 313], [-185, 301], [-171, 289], [-157, 267], [-147, 251], [-129, 231], [-115, 209], [-99, 199], [-75, 191], [-51, 181], [-39, 179], [-25, 173], [-3, 167], [17, 159], [37, 147], [53, 139], [67, 129], [81, 117], [89, 105], [99, 91], [109, 79], [119, 61], [131, 45], [137, 21], [139, -1], [137, -31], [135, -63], [133, -89], [125, -115], [119, -139], [119, -155], [135, -163], [149, -163], [171, -161], [187, -159], [203, -155], [223, -155], [247, -157], [267, -161], [291, -175], [307, -183], [323, -193], [333, -207], [345, -223], [355, -237], [367, -247], [385, -261], [395, -269], [407, -255], [417, -263], [413, -279], [401, -301], [389, -309], [371, -307], [353, -297], [341, -273], [331, -253], [315, -227], [299, -211], [289, -203], [263, -195], [221, -187], [161, -199], [131, -211], [103, -217], [59, -235], [29, -245], [-5, -245], [-33, -251], [-53, -247], [-125, -239], [-167, -245], [-241, -247], [-249, -233], [-247, -215], [-219, -207], [-217, -67], [-217, -59], [-225, -37], [-239, -7], [-255, 19], [-271, 41], [-281, 69], [-281, 87], [-279, 115], [-275, 139], [-281, 161], [-287, 181], [-317, 183], [-329, 179], [-351, 203], [-363, 229], [-343, 267], [-341, 289]];
+
+
 function ribet(mn,mx) {
 	return(Math.floor(Math.random()*(mx-mn+1))+mn);
 	}
@@ -158,6 +161,22 @@ function drawcanv(a,b,c,d) {
 		ctx.lineTo(tog(nev)[0],tog(nev)[1]);
 		ctx.stroke();
 		}
+	if (document.getElementById("c12").checked) {
+		var i;
+		ctx.beginPath();
+		ctx.fillStyle = "orange";
+		ctx.strokeStyle = "black";
+		var x = (cat[0][0])/100;
+		var y = (cat[0][1])/100;
+		ctx.moveTo(tog([x*a+y*b,x*c+y*d])[0],tog([x*a+y*b,x*c+y*d])[1]);
+		for (i = 1; i < cat.length; i++) {
+			x = (cat[i][0])/100;
+			y = (cat[i][1])/100;
+			ctx.lineTo(tog([x*a+y*b,x*c+y*d])[0],tog([x*a+y*b,x*c+y*d])[1]);
+			}
+		ctx.fill();
+		ctx.stroke();
+		}
 	if (document.getElementById("c11").checked) {
 		var x, y;
 		for (x = -u; x <= u; x += .5) {
@@ -169,6 +188,7 @@ function drawcanv(a,b,c,d) {
 				}
 			}
 		}
+
 	}
 
 function Upd() {
@@ -827,6 +847,7 @@ More detailed instructions can be found at the bottom of the page.
 <input type="checkbox" id="c9" onchange="Upd()" checked> Show unit eigenvectors <br>
 <input type="checkbox" id="c10" onchange="Upd()" checked> Show eigenvector axes <br>
 <input type="checkbox" id="c11" onchange="Upd()"> Show points <br>
+<input type="checkbox" id="c12" onchange="Upd()"> Show cat <br>
 
 <h2> Morphing </h2>
 Clicking the "Morph" button will show you an animation of points moving from their original positions to their new positions after the matrix transformation. In reality, when we apply a matrix transformation, there is no moving, no inbetween frames. The only things we have are the starting point, which gets multiplied by the matrix to produce the ending point. However, because all the points in the image are getting moved at once, it is easier to visualize what's happening via these animations.

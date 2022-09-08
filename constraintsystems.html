@@ -1,0 +1,441 @@
+<!doctype html>
+<html translate="no" lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<meta name=description content="Local Constraint Systems">
+<link rel="icon" href="icon.png">
+<title> Constraint Systems </title>
+<script>
+
+function ribet(min, max) {
+	return Math.floor(Math.random() * (max - min + 1) ) + min;
+	}
+
+function alternate(l1,l2,starttop) {
+	var str = "<table border=1><tr>";
+	var i;
+	for (i = 0; i < l1.length; i++) {
+		str += "<td colspan=2>"+l1[i]+"</td>";
+		}
+	str += "</tr><tr>";
+	str += "<td style='border:none'></td>";
+	for (i = 0; i < l2.length; i++) {
+		str += "<td colspan=2>"+l2[i]+"</td>";
+		}
+	str += "<td style='border:none'></td>";
+	str += "</tr></table>";
+	return(str);
+	}
+
+var goodcolor = "#77AADD";
+var badcolor = "#EE8866";
+var midcolor = "#EEDD88";
+var goodtext = "&#10004";
+var badtext = "X";
+var midtext = "";
+
+var bgcolor = "white"; //"#CCDDAA";
+var textcolor = "black";
+var bdcolor = "black";
+
+function piece_to_html(p) {
+	var str = '<svg viewbox="0 0 100 100" width=70 height=70>';
+	str += '<polygon points = "0 100 100 100 50 0" stroke="'+bdcolor+'" fill="'+goodcolor+'"/>';
+	str += '<text x=30 y=95 font-size="45" text-anchor="middle" fill="'+textcolor+'">'+p[1]+'</text>';
+	str += '<text x=70 y=95 font-size="45" text-anchor="middle" fill="'+textcolor+'">'+p[2]+'</text>';
+	str += '<text x=50 y=55 font-size="45" text-anchor="middle" fill="'+textcolor+'">'+p[0]+'</text>';
+	str += '</svg>';
+	return(str);
+	}
+
+function endpiece_to_html(s) {
+	var str = '<svg viewbox="0 0 100 100" width=70 height=70>';
+	str += '<polygon points = "0 100 50 100 75 50 50 0" stroke="'+bdcolor+'" fill="'+goodcolor+'"/>';
+	str += '<text x=30 y=95 font-size="45" text-anchor="middle" fill="'+textcolor+'">'+s+'</text>';
+	str += '<text x=50 y=55 font-size="45" text-anchor="middle" fill="'+textcolor+'">#</text>';
+	str += '</svg>';
+	return(str);
+	}
+
+function startpiece_to_html(s) {
+	var str = '<svg viewbox="0 0 100 100" width=70 height=70>';
+	str += '<polygon points = "100 100 50 100 25 50 50 0" stroke="'+bdcolor+'" fill="'+goodcolor+'"/>';
+	str += '<text x=70 y=95 font-size="45" text-anchor="middle" fill="'+textcolor+'">'+s+'</text>';
+	str += '<text x=50 y=55 font-size="45" text-anchor="middle" fill="'+textcolor+'">#</text>';
+	str += '</svg>';
+	return(str);
+	}
+
+function stateinput(i) {
+	var str = "<div style='text-align: right'>";
+	str += "<select id='input_"+i+"' style='font-size:30; background-color:rgba(255,255,255,70%)' onchange='colortris()'>";
+	str += "<option value='none'></option>";
+	var i;
+	for (i = 0; i < states.length; i++) {
+		str += "<option value="+i+">"+states[i]+"</option>";
+		}
+	str += "</select>";
+	str += "</div>";
+	return(str);
+	}
+
+function puzzle_to_html() {
+	var l = ["#"].concat(puzzle).concat(["#"]);
+	var w = 50*(l.length);
+	var str = '<svg viewbox="0 0 '+w+' 100" width='+w+' height=100>';
+	var i;
+	for (i = 0; i < l.length; i++) {
+		str += '<polygon id="diamond_'+i+'" points="'+(i*50)+' 50 '+(i*50+25)+' 0 '+(i*50+50)+' 50 '+(i*50+25)+' 100" stroke="'+bdcolor+'" fill="'+bgcolor+'"/>';
+		}
+	for (i = 0; i < l.length-1; i++) {
+		str += '<polygon id="basetri_'+i+'" points="'+(i*50+25)+' 100 '+(i*50+75)+' 100 '+(i*50+50)+' 50" stroke="'+bdcolor+'" fill="'+bgcolor+'"/>';
+		}
+	for (i = 0; i < l.length; i++) {
+		str += '<text x='+(i*50+25)+' y=55 font-size="45" text-anchor="middle" fill="'+textcolor+'">'+l[i]+'</text>';
+		str += '<text x='+(i*50+25)+' y=20 text-anchor="middle" fill="'+textcolor+'" style="font-size: 20px" id="cx_'+i+'"></text>';
+		}
+	for (i = 0; i < l.length-1; i++) {
+		str += '<foreignObject x='+(i*50+25)+' y=60 width=50 height=50>';
+		str += stateinput(i);
+		str += '</foreignObject>';
+		}
+	str += '</svg>';
+	return(str);
+	}
+
+function colortris() {
+	var l = ["#"].concat(puzzle).concat(["#"]);
+	var il = [];
+	var i;
+	for (i = 0; i < l.length-1; i++) {
+		il.push(document.getElementById("input_"+i).value);
+		}
+	var goodl = [];
+	if (il[0] == "none") {
+		goodl.push("mid");
+		document.getElementById("diamond_0").style.fill = midcolor;
+		document.getElementById("cx_0").innerHTML = midtext;
+		}
+	else if (startpieces.indexOf(il[0]) != -1) {
+		goodl.push("good");
+		document.getElementById("diamond_0").style.fill = goodcolor;
+		document.getElementById("cx_0").innerHTML = goodtext;
+		}
+	else {
+		goodl.push("bad");
+		document.getElementById("diamond_0").style.fill = badcolor;
+		document.getElementById("cx_0").innerHTML = badtext;
+		}
+	for (i = 1; i < l.length-1; i++) {
+		var s1 = il[i-1];
+		var s2 = il[i];
+		var c = puzzle[i-1];
+		if (s1 == "none" || s2 == "none") {
+			goodl.push("mid");
+			document.getElementById("diamond_"+i).style.fill = midcolor;
+			document.getElementById("cx_"+i).innerHTML = midtext;
+			}
+		else if (pieces.indexOf(""+c+""+s1+""+s2+"") != -1) {
+			goodl.push("good");
+			document.getElementById("diamond_"+i).style.fill = goodcolor;
+			document.getElementById("cx_"+i).innerHTML = goodtext;
+			}
+		else {
+			goodl.push("bad");
+			document.getElementById("diamond_"+i).style.fill = badcolor;
+			document.getElementById("cx_"+i).innerHTML = badtext;
+			}
+		}
+	if (il[il.length-1] == "none") {
+		goodl.push("mid");
+		document.getElementById("diamond_"+il.length).style.fill = midcolor;
+		document.getElementById("cx_"+il.length).innerHTML = midtext;
+		}
+	else if (endpieces.indexOf(il[il.length-1]) != -1) {
+		goodl.push("good");
+		document.getElementById("diamond_"+il.length).style.fill = goodcolor;
+		document.getElementById("cx_"+il.length).innerHTML = goodtext;
+		}
+	else {
+		goodl.push("bad");
+		document.getElementById("diamond_"+il.length).style.fill = badcolor;
+		document.getElementById("cx_"+il.length).innerHTML = badtext;
+		}
+	for (i = 0; i < l.length-1; i++) {
+		if (goodl[i] == "bad" || goodl[i+1] == "bad") {
+			document.getElementById("basetri_"+i).style.fill = badcolor;
+			}
+		else if (goodl[i] == "mid" || goodl[i+1] == "mid") {
+			document.getElementById("basetri_"+i).style.fill = midcolor;
+			}
+		else {
+			document.getElementById("basetri_"+i).style.fill = goodcolor;
+			}
+		}
+	}
+
+var puzzle = [];
+var lang = [];
+var states = [];
+var pieces = [];
+var startpieces = [];
+var endpieces = [];
+var pieces_display = [];
+
+function nthcapital(n) {
+	return(String.fromCharCode(65+n));
+	}
+function nthlower(n) {
+	return(String.fromCharCode(97+n));
+	}
+
+function addpiece(i,j,k) {
+	var c = lang[i];
+	var s1 = states[j];
+	var s2 = states[k];
+	var p = ""+c+""+s1+""+s2+"";
+	if (pieces.indexOf(p) == -1) {
+		pieces.push(p);
+		}
+	}
+
+function gp1(i,p) { //generate pieces with character i with each having a probability of p of being added.
+	var j, k;
+	for (j = 0; j < states.length; j++) {
+		for (k = 0; k < states.length; k++) {
+			if (Math.random() < p) {
+				addpiece(i,j,k);
+				}
+			}
+		}
+	}
+
+function gp2(i) { //generate pieces with character i forward-runnable
+	var j;
+	for (j = 0; j < states.length; j++) {
+		k = ribet(0, states.length-1);
+		addpiece(i,j,k);
+		}
+	}
+
+function gp3(i) { //generate pieces with character i backward-runnable
+	var j;
+	for (j = 0; j < states.length; j++) {
+		k = ribet(0, states.length-1);
+		addpiece(i,k,j);
+		}
+	}
+
+function gp4(n) { //generate n random pieces
+	var m;
+	for (m = 0; m < n; m++) {
+		i = ribet(0, lang.length-1);
+		j = ribet(0, states.length-1);
+		k = ribet(0, states.length-1);
+		addpiece(i,j,k);
+		}
+	}
+
+function generate() {
+	lang = [];
+	states = [];
+	pieces = [];
+	startpieces = [];
+	endpieces = [];
+	var nchar = ribet(2, 4);
+	var nstate = ribet(3, 5);
+	var i;
+	for (i = 0; i < nchar; i++) {
+		lang.push(nthcapital(i));
+		}
+	for (i = 0; i < nstate; i++) {
+		states.push(i.toString());
+		}
+
+	var j,k;
+	for (i = 0; i < nchar; i++) {
+		var s1 = states[ribet(0,states.length-1)];
+		var s2 = states[ribet(0,states.length-1)];
+		var c = lang[i];
+		var p = ""+c+""+s1+""+s2+"";
+		if (pieces.indexOf(p) == -1) {
+			pieces.push(p);
+			}
+		var r = ribet(0,3);
+		if (r == 0) {
+			gp1(i,.5);
+			}
+		else if (r == 1) {
+			gp1(i,.2);
+			gp2(i);
+			}
+		else if (r == 2) {
+			gp1(i,.2);
+			gp3(i);
+			}
+		}
+	gp4(ribet(0,4));
+
+	pieces.sort();
+	var n4 = ribet(1,nstate);
+	var n5 = ribet(1,nstate);
+	for (i = 0; i < n4; i++) {
+		var c = states[ribet(0,states.length-1)];
+		if (startpieces.indexOf(c) == -1) {startpieces.push(c)};
+		}
+	for (i = 0; i < n5; i++) {
+		var c = states[ribet(0,states.length-1)];
+		if (endpieces.indexOf(c) == -1) {endpieces.push(c)};
+		}
+	startpieces.sort();
+	endpieces.sort();
+	var wordlength = ribet(3,7);
+	puzzle = [];
+	for (i = 0; i < wordlength; i++) {
+		puzzle.push(lang[ribet(0,lang.length-1)]);
+		}
+	}
+
+function display() {
+	var i;
+	var str = "Pieces:<br>"
+	for (i = 0; i < pieces.length; i++) {
+		var p = pieces[i];
+		if (i > 0 && pieces[i][0] != pieces[i-1][0]) {str += "<br>"}
+		str += piece_to_html(p);
+		}
+	str += "<br>Start pieces:<br>";
+	for (i = 0; i < startpieces.length; i++) {
+		var p = startpieces[i];
+		str += startpiece_to_html(p);
+		}
+	str += "<br>End pieces:<br>";
+	for (i = 0; i < endpieces.length; i++) {
+		var p = endpieces[i];
+		str += endpiece_to_html(p);
+		}
+	str += "<br>Puzzle:<br>";
+	str += puzzle_to_html(["A","B","C","B","A","B","C","A","A"]);
+	document.getElementById("pieces").innerHTML = str;
+	requestAnimationFrame(colortris);
+	}
+
+function old_checkunsolve() {
+	var statelistlist = [];
+	var statelist = [];
+	var newstatelist = [];
+	var i, j, k;
+	var rval;
+	for (i = 0; i < startpieces.length; i++) {
+		newstatelist.push(startpieces[i]);
+		}
+	statelistlist.push(newstatelist);
+	for (j = 0; j < puzzle.length; j++) {
+		for (i = 0; i < newstatelist.length; i++) {statelist.push(newstatelist[i]);}
+		newstatelist = [];
+		for (i = 0; i < statelist.length; i++) {
+			for (k = 0; k < states.length; k++) {
+				var p = puzzle[j]+statelist[i]+states[k];
+				if (pieces.indexOf(p) != -1 && newstatelist.indexOf(states[k]) == -1) {
+					newstatelist.push(states[k]);
+					}
+				}
+			}
+		statelistlist.push(newstatelist);
+		}
+	rval = false;
+	for (j = 0; j < newstatelist.length; j++) {
+		if (endpieces.indexOf(newstatelist[j]) != -1) {rval = true;}
+		}
+	console.log(statelistlist);
+	console.log(rval);
+	return(rval);
+	}
+
+function checkunsolve() {
+	var runlist = [];
+	var newrunlist = [];
+	var i, j, k;
+	newrunlist = startpieces.slice();
+	for (i = 0; i < puzzle.length; i++) {
+		runlist = newrunlist.slice();
+		newrunlist = [];
+		for (j = 0; j < runlist.length; j++) {
+			var laststate = runlist[j][runlist[j].length-1];
+			for (k = 0; k < states.length; k++) {
+				var p = puzzle[i]+laststate+states[k];
+				if (pieces.indexOf(p) != -1) {
+					newrunlist.push(runlist[j]+states[k]);
+					}
+				}
+			}
+		}
+	runlist = [];
+	for (i = 0; i < newrunlist.length; i++) {
+		if (endpieces.indexOf(newrunlist[i][newrunlist[i].length-1]) != -1) {
+			runlist.push(newrunlist[i]);
+			}
+		}
+	var str = "";
+	if (runlist.length == 0) {
+		str = "Correct! There are no solutions!"
+		}
+	else {
+		str = "Incorrect! One possible solution is: " + runlist[0];
+		}
+	document.getElementById("result").innerHTML = str;
+	}
+
+function makeinstructions() {
+	var str = "<ul><li>Invalid pieces will be shown with: <span style='border:1px solid; display:inline-block; width:1em; height:1em; background-color:"+badcolor+";font:300% monospace'>"+badtext+"</span>.";
+	str += "<li>Valid pieces will be shown with: <span style='border:1px solid; display:inline-block; width:1em; height:1em; background-color:"+goodcolor+";font:300% monospace'>"+goodtext+"</span>.";
+	document.getElementById("instructions").innerHTML = str;
+	}
+
+function boot() {
+	document.getElementById("result").innerHTML = "";
+	generate();
+	display();
+	makeinstructions();
+	}
+
+</script>
+<style>
+text {
+	font: 50px monospace;
+	}
+td {
+	display: inline-block;
+	}
+tr {
+	text-align:center;
+	}
+table {
+	display: inline-block;
+	}
+select {
+	font: 30px monospace; //old was 40
+	}
+</style>
+<body onload="boot()">
+
+<h1>Triangular Constraint Systems</h1>
+
+<div id="pieces"></div>
+
+<button onclick="boot()">New Puzzle</button>
+<button onclick="checkunsolve()">Unsolvable!</button>
+
+<div id="result"></div>
+
+<h2>Instructions</h2>
+
+<p>
+Within the puzzle above, your goal is to fill in the numbers in the second row so each triangle (and the trapezoids on the ends) look like the pieces given. Pieces can be used multiple times, and not all pieces need to be used. <span id="instructions"></span>
+Sometimes there will be no solutions. If you are confident there are no solutions, click the "Unsolvable!" button.
+</p>
+
+</body>
+</html>

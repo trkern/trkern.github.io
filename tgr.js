@@ -42,6 +42,8 @@ grapher_obj.type //string one of the following:
 	//"hline" (horizontal line)
 	//"polyg" (polygon)
 	//"circle"
+	//"rectangle" (newer rectangle, supports both incolor and edge color)
+	//"bool" (for plotting equalities, inequalities. is not smart)
 grapher_obj.fct //function being plotted (as a javascript function)
 grapher_obj.hints //some hints for the plot.
 	//A hint is: [ptx,pty,lc,rc]
@@ -51,19 +53,19 @@ grapher_obj.hints //some hints for the plot.
 grapher_obj.tmin //for parametric plots, may be a function of plotdata
 grapher_obj.tmax //for parametric plots, may be a function of plotdata
 grapher_obj.dt //for parametric plots
-grapher_obj.xmin //for "plot", "rect", may be a function of plotdata 
-grapher_obj.xmax //for "plot", "rect", may be a function of plotdata
+grapher_obj.xmin //for "plot", "rect" may be a function of plotdata 
+grapher_obj.xmax //for "plot", "rect"may be a function of plotdata
 grapher_obj.ymin //for "rect"
 grapher_obj.ymax //for "rect"
-grapher_obj.x //for "hole", "dot", "circle", "line", "label", "vline"
-grapher_obj.y //for "hole", "dot", "circle", "line", "label", "hline"
-grapher_obj.x2 //for "line"
-grapher_obj.y2 //for "line"
-grapher_obj.color //for "plot", "par", "rect", "hole", "dot", "line", "label", "polyg", "circle"
+grapher_obj.x //for "hole", "dot", "circle", "line", "label", "vline", "rectangle"
+grapher_obj.y //for "hole", "dot", "circle", "line", "label", "hline", "rectangle"
+grapher_obj.x2 //for "line", "rectangle", "vec",
+grapher_obj.y2 //for "line", "rectangle", "vec",
+grapher_obj.color //for "plot", "par", "rect", "hole", "dot", "line", "label", "polyg", "circle", "rectangle"
 grapher_obj.linewidth //for "plot", "line", "vline", "polyg", "circle"
 grapher_obj.id //for tgr_update_grapher_obj_by_id
 grapher_obj.r //for in pixels:"hole", "dot", in grid units:"circle"
-grapher_obj.incolor //for "hole"
+grapher_obj.incolor //for "hole", "rectangle", "circle"
 grapher_obj.nojump //for "plot". If function moves from above view window to below view window in a single step, don't draw that line. May behave oddly with hinting
 grapher_obj.label //for "label" label at x,y. If "", defaults to (x,y). Requires plotdata.labelpoints
 grapher_obj.labeloffsetx //for "label"
@@ -75,6 +77,7 @@ grapher_obj.blend //not fully implemented, access to globalCompositeOperation
 grapher_obj.vlist //for "polyg". A list of 2-element lists.
 grapher_obj.startangle //for "circle"
 grapher_obj.endangle //for"circle"
+grapher_obj.shrink //for "line", "vec". Shrinks both ends by distance (in grid units)
 */
 
 function dbg(x) {
@@ -418,6 +421,22 @@ function tgr_detect_jump(pt1,pt2,pd) {
 
 function tgr_plot(grapher_obj, ctx, pd) {
 	var i,j;
+	var newx = grapher_obj.x;
+	var newy = grapher_obj.y;
+	var newx2 = grapher_obj.x2;
+	var newy2 = grapher_obj.y2;
+	if ("shrink" in grapher_obj) {
+		var x1 = grapher_obj.x;
+		var x2 = grapher_obj.x2;
+		var y1 = grapher_obj.y;
+		var y2 = grapher_obj.y2;
+		var s = grapher_obj.shrink;
+		var l = Math.sqrt((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2));
+		newx = x1 + (x2-x1)*s/l;
+		newy = y1 + (y2-y1)*s/l;
+		newx2 = x2 + (x1-x2)*s/l;
+		newy2 = y2 + (y1-y2)*s/l;
+		}
 	if ("blend" in grapher_obj) {
 		ctx.globalCompositeOperation = grapher_obj.blend;
 		}
@@ -534,6 +553,15 @@ function tgr_plot(grapher_obj, ctx, pd) {
 		var l = grapher_obj.label ?? "";
 		tgr_labeldistance(ctx,tgr_tocanv([lx1,ly1],pd),tgr_tocanv([lx2,ly2],pd),l);
 		}
+	if (grapher_obj.type == "labeledge") {
+		var lx1, lx2, ly1, ly2;
+		lx1 = tgr_plug(grapher_obj.x,pd);
+		ly1 = tgr_plug(grapher_obj.y,pd);
+		lx2 = tgr_plug(grapher_obj.x2,pd);
+		ly2 = tgr_plug(grapher_obj.y2,pd);
+		var l = grapher_obj.label ?? "";
+		tgr_labeledge(ctx,tgr_tocanv([lx1,ly1],pd),tgr_tocanv([lx2,ly2],pd),l);
+		}
 	if (grapher_obj.type == "rect") {
 		var xmax, xmin;
 		if (grapher_obj.xmax !== undefined) {
@@ -553,8 +581,41 @@ function tgr_plot(grapher_obj, ctx, pd) {
 			ymin = Math.max(pd.ymin,tgr_plug(grapher_obj.ymin,pd));
 			}
 		else {ymin = pd.ymin;}
-		ctx.fillStyle = grapher_obj.color;
+		ctx.fillStyle = grapher_obj.color; 
 		tgr_rect(ctx, ...tgr_tocanv([xmin,ymin],pd), ...tgr_tocanv([xmax,ymax],pd));
+		}
+	if (grapher_obj.type == "rectangle") {
+		var xmax, xmin;
+		if (grapher_obj.x2 !== undefined) {
+			xmax = Math.min(pd.xmax,tgr_plug(grapher_obj.x2,pd));
+			}
+		else {xmax = pd.xmax;}
+		if (grapher_obj.x !== undefined) {
+			xmin = Math.max(pd.xmin,tgr_plug(grapher_obj.x,pd));
+			}
+		else {xmin = pd.xmin;}
+		var ymax, ymin;
+		if (grapher_obj.y2 !== undefined) {
+			ymax = Math.min(pd.ymax,tgr_plug(grapher_obj.y2,pd));
+			}
+		else {ymax = pd.ymax;}
+		if (grapher_obj.y !== undefined) {
+			ymin = Math.max(pd.ymin,tgr_plug(grapher_obj.y,pd));
+			}
+		else {ymin = pd.ymin;}
+		ctx.fillStyle = grapher_obj.incolor;
+		ctx.strokeStyle = grapher_obj.color;
+		var min = tgr_tocanv([xmin,ymin],pd);
+		var max = tgr_tocanv([xmax,ymax],pd);
+		if ("linewidth" in grapher_obj) {
+			ctx.lineWidth = grapher_obj.linewidth;
+			}
+		else {
+			ctx.lineWidth=2;
+			}
+		ctx.rect(min[0],min[1],max[0]-min[0],max[1]-min[1]);
+		ctx.fill();
+		ctx.stroke();
 		}
 	if (grapher_obj.type == "hole") {
 		var pointx,pointy;
@@ -597,10 +658,10 @@ function tgr_plot(grapher_obj, ctx, pd) {
 		}
 	if (grapher_obj.type == "line") {
 		var lx1, lx2, ly1, ly2;
-		lx1 = tgr_plug(grapher_obj.x,pd);
-		ly1 = tgr_plug(grapher_obj.y,pd);
-		lx2 = tgr_plug(grapher_obj.x2,pd);
-		ly2 = tgr_plug(grapher_obj.y2,pd);
+		lx1 = tgr_plug(newx,pd);
+		ly1 = tgr_plug(newy,pd);
+		lx2 = tgr_plug(newx2,pd);
+		ly2 = tgr_plug(newy2,pd);
 		ctx.beginPath();
 		ctx.strokeStyle = grapher_obj.color;
 		ctx.lineWidth = grapher_obj.linewidth;
@@ -610,10 +671,10 @@ function tgr_plot(grapher_obj, ctx, pd) {
 		}
 	if (grapher_obj.type == "vec") {
 		var lx1, lx2, ly1, ly2, lg;
-		lx1 = tgr_plug(grapher_obj.x,pd);
-		ly1 = tgr_plug(grapher_obj.y,pd);
-		lx2 = tgr_plug(grapher_obj.x2,pd);
-		ly2 = tgr_plug(grapher_obj.y2,pd);
+		lx1 = tgr_plug(newx,pd);
+		ly1 = tgr_plug(newy,pd);
+		lx2 = tgr_plug(newx2,pd);
+		ly2 = tgr_plug(newy2,pd);
 		var p1 = tgr_tocanv([lx1,ly1],pd);
 		var p2 = tgr_tocanv([lx2,ly2],pd);
 		lg = Math.sqrt((p1[0]-p2[0])*(p1[0]-p2[0])+(p1[1]-p2[1])*(p1[1]-p2[1]));
@@ -726,7 +787,42 @@ function tgr_plot(grapher_obj, ctx, pd) {
 		if ("startangle" in grapher_obj) {startangle = grapher_obj.startangle;}
 		if ("endangle" in grapher_obj) {endangle = grapher_obj.endangle;}
 		ctx.ellipse(...center,radiusx,radiusy,0,startangle,endangle);
+		if ("incolor" in grapher_obj) {
+			ctx.fillStyle = grapher_obj.incolor;
+			ctx.fill();
+			}
 		ctx.stroke();
+		if ("accept" in grapher_obj) {
+			ctx.beginPath();
+			ctx.ellipse(...center,radiusx+3,radiusy+3, 0, startangle, endangle);
+			ctx.stroke();
+			}
+		}
+	if (grapher_obj.type == "bool") {
+		console.log("hi");
+		var tempx;
+		var tempy;
+		var xmin = pd.xmin;
+		var xmax = pd.xmax;
+		var ymin = pd.ymin;
+		var ymax = pd.ymax;
+		var f = grapher_obj.fct;
+		var i,j;
+		ctx.fillStyle = grapher_obj.color;
+		for (i = 0; i < pd.numpts; i++) {
+			var x1 = xmin + i*(xmax-xmin)/pd.numpts;
+			var x2 = xmin + (i+1)*(xmax-xmin)/pd.numpts;
+			for (j = 0; j < pd.numpts; j++) {
+				var y1 = ymin + j*(ymax-ymin)/pd.numpts;
+				var y2 = ymin + (j+1)*(ymax-ymin)/pd.numpts;
+				if (f((x1+x2)/2,(y1+y2)/2)) {
+					var min = tgr_tocanv([x1,y1],pd);
+					var max = tgr_tocanv([x2,y2],pd);
+					ctx.rect(min[0],min[1],max[0]-min[0],max[1]-min[1]);
+					ctx.fill();
+					}
+				}
+			}
 		}
 	if ("blend" in grapher_obj) {
 		ctx.globalCompositeOperation = "source-over";
@@ -769,6 +865,27 @@ function tgr_labeldistance(ctx,pt1,pt2,l) {
 	ctx.moveTo(pt1[0],pt1[1]);
 	ctx.lineTo(pt1[0]-4*y,pt1[1]+4*x);
 	ctx.stroke();
+	if (l == "") {return;}
+	ctx.beginPath();
+	ctx.font="16px serif";
+	ctx.fillStyle = "black";
+	ctx.textAlign = "center";
+	ctx.textBaseline = "middle";
+	ctx.strokeStyle="white";
+	ctx.lineWidth = 7;
+	ctx.strokeText(l,.5*pt1[0]+.5*pt2[0]-2*y,.5*pt1[1]+.5*pt2[1]+2*x);
+	ctx.fillText(l,.5*pt1[0]+.5*pt2[0]-2*y,.5*pt1[1]+.5*pt2[1]+2*x);
+	}
+
+
+function tgr_labeledge(ctx,pt1,pt2,l) {
+	var lg = tgr_dist(pt1,pt2);
+	if (lg < 1) {return;}
+	var x = 5*(pt1[0]-pt2[0])/lg;
+	var y = 5*(pt1[1]-pt2[1])/lg;
+	ctx.lineWidth=1;
+	ctx.fillStyle="black";
+	ctx.strokeStyle="black";
 	if (l == "") {return;}
 	ctx.beginPath();
 	ctx.font="16px serif";

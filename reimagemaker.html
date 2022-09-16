@@ -1,0 +1,144 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<script src="tgr.js"></script>
+<script>
+function boot1() {
+	tgr_grapher("gr", [
+		{type:"circle", x:110, y:175, r:80},
+		{type:"label", label:"L₁", x:110, y:175, font:"56px monospace"},
+		{type:"vec", x:0, y:175,x2:55, y2:175, shrink:10},
+		{type:"circle", x:55, y:175, r:10, incolor:"#CCDDAA"},
+		{type:"circle", x:170, y:175, r:10, incolor:"#CCDDAA", accept:true},
+		{type:"circle", x:162, y:205, r:10, incolor:"#CCDDAA", accept:true},
+		{type:"circle", x:140, y:227, r:10, incolor:"#CCDDAA", accept:true},
+
+		{type:"circle", x:290, y:225, r:80},
+		{type:"label", label:"L₂", x:320, y:225, font:"56px monospace"},
+		{type:"vec", x:170, y:225, x2:235, y2:225, shrink:10},
+		{type:"circle", x:235, y:225, r:10, incolor:"#CCDDAA"},
+		{type:"circle", x:280, y:205, r:10, incolor:"#CCDDAA"},
+		{type:"circle", x:280, y:245, r:10, incolor:"#CCDDAA"},
+		{type:"vec", x:235, y:225, x2:280, y2:205, shrink:10},
+		{type:"vec", x:235, y:225, x2:280, y2:245, shrink:10},
+		{type:"labeledge", x:235, y:225, x2:280, y2:245, label:"a"},
+		{type:"labeledge", x:235, y:225, x2:280, y2:205, label:"b"},
+		], {xmin: 0, xmax: 400, ymin:400, ymax:0, dragging:false, showgrid:false, showaxes:false, labelaxes:false});
+	}
+
+function boot2() {
+	tgr_grapher("gr", [
+		{type:"circle", x:110, y:175, r:80},
+		{type:"label", label:"L₁", x:110, y:175, font:"56px monospace"},
+		{type:"vec", x:0, y:175,x2:55, y2:175, shrink:10},
+		{type:"circle", x:55, y:175, r:10, incolor:"#CCDDAA"},
+		{type:"circle", x:170, y:175, r:10, incolor:"#CCDDAA", accept:true},
+		{type:"circle", x:162, y:205, r:10, incolor:"#CCDDAA", accept:true},
+		{type:"circle", x:140, y:227, r:10, incolor:"#CCDDAA", accept:true},
+
+		{type:"circle", x:290, y:225, r:80},
+		{type:"label", label:"L₂", x:320, y:225, font:"56px monospace"},
+		//{type:"vec", x:170, y:225, x2:235, y2:225, shrink:10},
+		{type:"circle", x:235, y:225, r:10, incolor:"#CCDDAA"},
+		{type:"circle", x:280, y:205, r:10, incolor:"#CCDDAA"},
+		{type:"circle", x:280, y:245, r:10, incolor:"#CCDDAA"},
+		{type:"vec", x:235, y:225, x2:280, y2:205, shrink:10},
+		{type:"vec", x:235, y:225, x2:280, y2:245, shrink:10},
+		{type:"labeledge", x:235, y:225, x2:280, y2:245, label:"a"},
+		{type:"labeledge", x:235, y:225, x2:280, y2:205, label:"b"},
+		{type:"vec", x:170, y:175, x2:280, y2:205, shrink:10},
+		{type:"vec", x:170, y:175, x2:280, y2:245, shrink:10},
+		{type:"labeledge", x:170, y:175, x2:280, y2:245, label:"a"},
+		{type:"labeledge", x:170, y:175, x2:280, y2:205, label:"b"},
+		{type:"vec", x:162, y:205, x2:280, y2:205, shrink:10},
+		{type:"vec", x:162, y:205, x2:280, y2:245, shrink:10},
+		{type:"labeledge", x:162, y:205, x2:280, y2:245, label:"a"},
+		{type:"labeledge", x:162, y:205, x2:280, y2:205, label:"b"},
+		{type:"vec", x:140, y:227, x2:280, y2:205, shrink:10},
+		{type:"vec", x:140, y:227, x2:280, y2:245, shrink:10},
+		{type:"labeledge", x:140, y:227, x2:280, y2:245, label:"a"},
+		{type:"labeledge", x:140, y:227, x2:280, y2:205, label:"b"},
+		], {xmin: 0, xmax: 400, ymin:400, ymax:0, dragging:false, showgrid:false, showaxes:false, labelaxes:false});
+	}
+
+function boot3() {
+	tgr_grapher("gr", [
+		{type:"circle", x:110, y:175, r:80},
+		{type:"label", label:"L₁", x:110, y:175, font:"56px monospace"},
+		{type:"vec", x:0, y:175,x2:55, y2:175, shrink:10},
+		{type:"circle", x:55, y:175, r:10, incolor:"#CCDDAA"},
+		{type:"circle", x:170, y:175, r:10, incolor:"#CCDDAA", accept:true},
+		{type:"circle", x:162, y:205, r:10, incolor:"#CCDDAA", accept:true},
+		{type:"circle", x:140, y:227, r:10, incolor:"#CCDDAA", accept:true},
+
+		{type:"circle", x:290, y:225, r:80},
+		{type:"label", label:"L₂", x:320, y:225, font:"56px monospace"},
+		{type:"vec", x:170, y:175, x2:235, y2:225, shrink:10},
+		{type:"labeledge", x:170, y:175, x2:235, y2:225, label:"ε"},
+		{type:"vec", x:162, y:205, x2:235, y2:225, shrink:10},
+		{type:"labeledge", x:162, y:205, x2:235, y2:225, label:"ε"},
+		{type:"vec", x:140, y:227, x2:235, y2:225, shrink:10},
+		{type:"labeledge", x:140, y:227, x2:235, y2:225, label:"ε"},
+		{type:"circle", x:235, y:225, r:10, incolor:"#CCDDAA"},
+		{type:"circle", x:280, y:205, r:10, incolor:"#CCDDAA"},
+		{type:"circle", x:280, y:245, r:10, incolor:"#CCDDAA"},
+		{type:"vec", x:235, y:225, x2:280, y2:205, shrink:10},
+		{type:"vec", x:235, y:225, x2:280, y2:245, shrink:10},
+		{type:"labeledge", x:235, y:225, x2:280, y2:245, label:"a"},
+		{type:"labeledge", x:235, y:225, x2:280, y2:205, label:"b"},
+		], {xmin: 0, xmax: 400, ymin:400, ymax:0, dragging:false, showgrid:false, showaxes:false, labelaxes:false});
+	}
+
+function boot4() {
+	tgr_grapher("gr", [
+		{type:"circle", x:310, y:100, r:80},
+		{type:"label", label:"L₁", x:310, y:100, font:"56px monospace"},
+		{type:"circle", x:255, y:100, r:10, incolor:"#CCDDAA"},
+		{type:"circle", x:370, y:100, r:10, incolor:"#CCDDAA", accept:true},
+		{type:"circle", x:362, y:130, r:10, incolor:"#CCDDAA", accept:true},
+		{type:"circle", x:340, y:152, r:10, incolor:"#CCDDAA", accept:true},
+
+		{type:"circle", x:310, y:270, r:80},
+		{type:"label", label:"L₂", x:310, y:270, font:"56px monospace"},
+		{type:"circle", x:255, y:270, r:10, incolor:"#CCDDAA"},
+		{type:"circle", x:370, y:270, r:10, incolor:"#CCDDAA", accept:true},
+		{type:"circle", x:362, y:300, r:10, incolor:"#CCDDAA", accept:true},
+		{type:"circle", x:340, y:322, r:10, incolor:"#CCDDAA", accept:true},
+
+		{type:"circle", x:200, y:185, r:10, incolor:"#CCDDAA"},
+		{type:"vec", x:200, y:185, x2:255, y2:100, shrink:10},
+		{type:"labeledge", x:200, y:185, x2:255, y2:100, label:"ε"},
+		{type:"vec", x:200, y:185, x2:255, y2:270, shrink:10},
+		{type:"labeledge", x:200, y:185, x2:255, y2:300, label:"ε"},
+		{type:"vec", x:140, y:185, x2:200, y2:185, shrink:10},
+
+		], {xmin: 0, xmax: 400, ymin:400, ymax:0, dragging:false, showgrid:false, showaxes:false, labelaxes:false});
+	}
+
+function boot5() {
+	tgr_grapher("gr", [
+		{type:"circle", x:110, y:175, r:80},
+		{type:"label", label:"L₁", x:110, y:175, font:"56px monospace"},
+		{type:"vec", x:0, y:175,x2:55, y2:175, shrink:10},
+		{type:"circle", x:55, y:175, r:10, incolor:"#CCDDAA"},
+		{type:"circle", x:170, y:175, r:10, incolor:"#CCDDAA", accept:true},
+		{type:"circle", x:162, y:205, r:10, incolor:"#CCDDAA", accept:true},
+		{type:"circle", x:140, y:227, r:10, incolor:"#CCDDAA", accept:true},
+		{type:"circle", x:112, y:245, r:90, linewidth:2, incolor:"transparent", startangle:2.35, endangle:7.02},
+		{type:"circle", x:97, y:235, r:70, linewidth:2, incolor:"transparent", startangle:2.3, endangle:6.55},
+		{type:"circle", x:87, y:225, r:55, linewidth:2, incolor:"transparent", startangle:2.3, endangle:6.02},
+		{type:"labeledge", x:110, y:330, x2:120, y2:340, label:"ε"},
+		{type:"labeledge", x:95, y:305, x2:96, y2:305, label:"ε"},
+		{type:"labeledge", x:85, y:280, x2:86, y2:280, label:"ε"},
+		], {xmin: 0, xmax: 400, ymin:0, ymax:400, dragging:false, showgrid:false, showaxes:false, labelaxes:false});
+	}
+
+</script>
+</head>
+<body onload="boot5()">
+<div id="gr"></div>
+</body>
+</html>

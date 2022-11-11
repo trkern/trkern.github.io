@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<script>
+
+function factorial(x) {
+	var rval = 1;
+	var i;
+	for (i = 1; i <= x; i++) {
+		rval *= i;
+		}
+	return(rval);
+	}
+
+function doublecrtsolve(r1,r2,m1,m2) {
+	var i;
+	for (i = r1; true; i+= m1) {
+		if (i % m2 == r2) {return(i);}
+		}
+	}
+
+function manycrtsolve(rl, ml) {
+	while (rl.length > 1) {
+		var newfirstr = doublecrtsolve(rl[0], rl[1], ml[0], ml[1]);
+		rl.splice(0, 2, newfirstr);
+		ml.splice(0, 2, ml[0] * ml[1]);
+		}
+	return(rl);
+	}
+
+function solve(l) {
+	var m = l.length;
+	var i, j, k;
+	for (i = 0; i < l.length; i++) {
+		m = Math.max(m,l[i]);
+		}
+	var b = factorial(m);
+	var ml = [];
+	for (i = 0; i < l.length; i++) {
+		ml.push(1+(1+i)*b);
+		}
+	return([manycrtsolve(l,ml),b]);
+	}
+
+function go() {
+	var s = document.getElementById("in").value.split(",");
+	var i;
+	var l = [];
+	for (i = 0; i < s.length; i++) {
+		l.push(Number(s[i]));
+		}
+	console.log(l);
+	var rval = solve(l);
+	document.getElementById("solution").innerHTML = rval[0] + ", " + rval[1];
+	}
+</script>
+</head>
+<body>
+Type in a comma-separated list of numbers below and hit go, and you'll be given a pair of numbers (a,b) such that the remainder when a is divided by 1+(i+1)*b is x[i].
+<input type="text" id="in">
+<button onclick="go()">go</button>
+<div id="solution"></div>
+</body>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass+Mono&display=swap" rel="stylesheet"> 
+<script>
+
+//A step is an object:
+//.tape: A list of symbols on the tape (letters)
+//.state: A state
+//.position: Head position
+
+var hiddenrules = {}; //stores rules not currently on the table so you can get them back.
+var realrules = {};
+
+function updtabl() {
+	createtabl();
+	document.getElementById("rules").innerHTML = drawrules(realrules);
+	}
+
+function createtabl() {
+	var states = Number(document.getElementById("states").value);
+	var chars = document.getElementById("characters").value.split("");
+	realrules = {};
+	var i,j,k;
+	for (k = 0; k < chars.length; k++) {
+		i = chars[k];
+		if (! (i in hiddenrules)) {hiddenrules[i] = {};}
+		if (! (i in realrules)) {realrules[i] = {};}
+		for (j = 0; j < states; j++) {
+			if (! (j in hiddenrules[i])) {
+				hiddenrules[i][j] = {
+					char: chars[ribet(0, chars.length-1)],
+					state: ribet(0,states-1),
+					move: "LRN"[ribet(0,2)],
+					accept: "ARNNNNNN"[ribet(0,7)],
+					}
+				}
+			realrules[i][j] = hiddenrules[i][j];
+			}
+		}
+	}
+
+function ribet(mn,mx) {
+	return(Math.floor(Math.random()*(mx-mn+1))+mn);
+	}
+
+function randomrules(alphabet,states) {
+	var rval = {};
+	var i,j;
+	for (i = 0; i < alphabet.length; i++) {
+		rval[alphabet[i]] = {};
+		for (j = 0; j < states.length; j++) {
+			rval[alphabet[i]][states[j]] = {
+				char: alphabet[ribet(0,alphabet.length-1)],
+				state: states[ribet(0,states.length-1)],
+				move: "LRN"[ribet(0,2)],
+				accept: "ARNNNNNN"[ribet(0,7)],
+				}
+			}
+		}
+	return(rval);
+	}
+
+function steptorowstring(s,maxw) {
+	var str = "<tr>";
+	var i;
+	for (i = 0; i < s.tape.length || i < maxw; i++) {
+		str += "<td>";
+		if (i == s.position) {
+			str += s.state;
+			str += "<br><span style='transform:rotate(180deg) translate(0,.24em); display:inline-block'>^</span><br>";
+			if (s.tape[i] == " ") {str += "&nbsp;";}
+			else {str += s.tape[i];}
+			}
+		else if (i >= s.tape.length) {
+			str += "&nbsp;"
+			}
+		else {
+			if (s.tape[i] == " ") {str += "&nbsp;";}
+			else {str += s.tape[i];}
+			}
+		str += "</td>";
+		}
+	str += "</tr>";
+	console.log(str);
+	return(str);
+	}
+
+function drawrules(r) {
+	var i,j;
+	var str = "<table border=1><tr><td>read</td><td>state</td><td></td><td>write</td><td>state'</td><td>move</td><td>accept</td></tr>";
+	for (i in r) {
+		for (j in r[i]) {
+			str += "<tr><td>"+i+"</td><td>"+j+"</td><td></td><td>"+r[i][j].char+"</td><td>"+r[i][j].state+"</td><td>"+r[i][j].move+"</td><td>"+r[i][j].accept+"</tr>";
+			}
+		}
+	str +="</table>";
+	return(str);
+	}
+
+function update(s,r) {
+	var c = s.tape[s.position];
+	var rul = r[c][s.state];
+	//rul.char,state,move,accept
+	s.tape = s.tape.split("");
+	s.tape[s.position] = rul.char;
+	s.tape = s.tape.join("");
+	s.state = rul.state;
+	if (rul.move == "L") {
+		if (s.position > 0) {s.position--;}
+		}
+	if (rul.move == "R") {
+		s.position++;
+		if (s.position >= s.tape.length) {
+			s.tape += " ";
+			}
+		}
+	console.log(s);
+	return([s,rul.accept]);
+	}
+
+function duplicatestep(s) {
+	var rval = {};
+	rval.tape = s.tape;
+	rval.state = s.state;
+	rval.position = s.position;
+	return(rval);
+	}
+
+function test() {
+	var t = {tape: "abba", position:0, state:0};
+	var r = randomrules("ab ",[0,1,2,3,4]);
+	var str = "";
+	str += drawrules(r);
+	str += "<table class='tape' style='border-collapse:collapse'>";
+	var i;
+	var stepl = [duplicatestep(t)];
+	var maxw = 0;
+	for (i = 0; i < 100; i++) {
+		var k = update(t,r);
+		t = k[0];
+		if (k[1] == "A" || k[1] == "R") {break;}
+		stepl.push(duplicatestep(t));
+		maxw = Math.max(maxw, t.tape.length);
+		}
+	for (i = 0; i < stepl.length; i++) {
+		str += steptorowstring(stepl[i],maxw);
+		}
+	str += "</table>";
+	document.getElementById("out").innerHTML = str;
+	}
+
+</script>
+<style>
+.tape td {
+	vertical-align:bottom;
+	border:1px solid;
+	font: 56px 'Courier Prime';
+	line-height: 45%;
+	padding: 10px 0px 2px 0px;
+	}
+</style>
+</head>
+<body onload="test()">
+Number of states: <input type="number" id="states" value=5><br>
+Characters: <input type="text" id="characters" value="ab "><br>
+<button onclick="updtabl()">Update</button>
+<div id="rules"></div>
+<div id="out"></div>
+</body>
+</html>

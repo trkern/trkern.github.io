@@ -1,0 +1,1043 @@
+﻿<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="EFGicon.bmp">
+<link rel="image_src" href="efgthumb.png">
+<title> Ehrenfeucht–Fraïssé Game </title>
+<script>
+//To add:
+//-Allow selecting vertices using the keyboard
+//-Spoiler should pick move randomly
+
+var g_v_radius = 20;
+var g_size_unit = 250; //half the square
+
+var g_graphs_n = [0,0]; //number of vertices: left graph, right graph
+var g_graphs_vc = [[],[]]; //coordinates of vertices (box is from (-1,-1) to (1,1))
+var g_graphs_am = [[],[]]; //adjacency matrices
+var g_graphs_shapes = [[],[]]; //shapes of vertices
+var g_graphs_wobble = [[],[]]; //are these vertices wobbly? (unused)
+var g_graphs_labels = [[],[]]; //labels/colors
+var g_graphs_velocities = [[],[]]; //(unused)
+
+var g_color_list = ["white","green","blue","red","cyan","magenta","yellow","orange","maroon","navy","orchid","peru","teal"];
+
+var g_v_dragged = false; //vertex currently being dragged
+var g_drag_x_offset = 0;
+var g_drag_y_offset = 0;
+
+var g_game_tree = []; //The game tree is a dictionary matching: Game state strings TO Ideal number of half-turns remaining
+var g_spoiler_hints = [];
+
+var g_players = [0,0]; //0 = human, 1 = AI
+var g_st = []; //current game history
+var g_lt = []; //left-taken vertices
+var g_rt = []; //right-taken vertices
+var g_spoiler_move = false; //false: waiting for spoiler's turn, else [g,i]
+
+var g_mood = 0; //0 = waiting for game, 1 = playing game
+
+var g_highlight_vertices = [[],[]];
+var g_highlight_edges = [[],[]];
+
+var g_move_labels = 0; //0: use colors, 1: use numbers, 2:use both
+
+function ribet(mn,mx) {
+	return(Math.floor(Math.random()*(mx-mn+1))+mn);
+	}
+
+function shkey(g,i) {
+	if (g) {return(String.fromCharCode(97+i))}
+	else {return(String.fromCharCode(65+i))}
+	}
+
+function colorthingie(x) { //https://ux.stackexchange.com/questions/107318/formula-for-color-contrast-between-text-and-background
+	if (x <= .03928) {return(x/12.92);}
+	else {return(Math.pow((x+.055)/1.055,2.4));}
+	}
+
+function lum(r,g,b) {
+	return(.2126*colorthingie(r/255)+.7152*colorthingie(g/255)+.0722*colorthingie(b/255));
+	}
+
+function coltorgb(col) {
+	var e = document.createElement("canvas");
+	var ctx = e.getContext("2d");
+	ctx.fillStyle = col;
+	ctx.fillRect(0,0,1,1);
+	return(ctx.getImageData(0,0,1,1).data)
+	}
+
+function colcontrast(col1,col2) {
+	var l1 = lum(...coltorgb(col1));
+	var l2 = lum(...coltorgb(col2));
+	if (l1 > l2) {
+		return((l1+.05)/(l2+.05));
+		}
+	else {
+		return((l2+.05)/(l1+.05));
+		}
+	}
+
+function coltextoptimal(col) {
+	var l = lum(...coltorgb(col));
+	if (l > .175) {return("black");}
+	return("white");
+	}
+
+function outp(str) {
+	document.getElementById("out").innerHTML = str;
+	}
+
+function vertexcircle() {
+	var ln=g_graphs_n[0];
+	var rn=g_graphs_n[1];
+	for (i = 0; i < ln; i++) {
+		g_graphs_vc[0].push([.9*Math.cos(i*2*Math.PI/ln),.9*Math.sin(i*2*Math.PI/ln)]);
+		}
+	for (i = 0; i < rn; i++) {
+		g_graphs_vc[1].push([.9*Math.cos(i*2*Math.PI/rn),.9*Math.sin(i*2*Math.PI/rn)]);		
+		}
+	}
+
+function loaduri() { //not currently used
+	var str = document.URL;
+	if (str.indexOf("?") == -1) {return;}
+	str = str.slice(str.indexOf("?")+1);
+	str = decodeURI(str);
+	str = "{"+str+"}";
+	str = str.replaceAll("'",'"');
+	str = str.replaceAll("(","[").replaceAll(")","]");
+	console.log(str);
+	var j = JSON.parse(str);
+	console.log(j);
+	g_graphs_n = j.n;
+	g_graphs_am = j.am;
+	g_graphs_shapes = j.shapes;
+	g_graphs_vc = [[],[]];
+	vertexcircle();
+	console.log(j);
+	console.log(g_graphs_n);
+	}
+
+function makegraphsuri() {
+	var str = document.URL;
+	if (str.indexOf("?") == -1) {return;}
+	str = str.slice(str.indexOf("?")+1);
+	str = decodeURI(str);
+	str = "{"+str+"}";
+	str = str.replaceAll("'",'"');
+	str = str.replaceAll("(","[").replaceAll(")","]");
+	console.log(str);
+	var jj = JSON.parse(str);
+	console.log(j);
+	g_graphs_n = [0,0];
+	g_graphs_vc = [[],[]];
+	g_graphs_am = [[],[]];
+	g_graphs_shapes = [[],[]];
+	g_graphs_labels = [[],[]];
+	var minn = Number(document.getElementById("minn").value);
+	var maxn = Number(document.getElementById("maxn").value);
+	var numshp = Number(document.getElementById("numshp").value);
+	var ln = jj.n[0];
+	var rn = jj.n[1];
+	g_graphs_n = [ln,rn];
+	var i,j,k;
+	vertexcircle();
+	for (i = 0; i < ln; i++) {
+		g_graphs_am[0].push([]);
+		for (j = 0; j < ln; j++) {
+			g_graphs_am[0][i].push(0);
+			}
+		}
+	for (i = 0; i < ln; i++) {
+		for (j = 0; j < i; j++) {
+			g_graphs_am[0][i][j] = jj.am[0][i][j];
+			g_graphs_am[0][j][i] = jj.am[0][j][i];
+			}
+		}
+	for (i = 0; i < rn; i++) {
+		g_graphs_am[1].push([]);
+		for (j = 0; j < rn; j++) {
+			g_graphs_am[1][i].push(0);
+			}
+		}
+	for (i = 0; i < rn; i++) {
+		for (j = 0; j < i; j++) {
+			g_graphs_am[1][i][j] = jj.am[1][i][j];
+			g_graphs_am[1][j][i] = jj.am[1][j][i];
+			}
+		}
+	for (i = 0; i < ln; i++) {
+		g_graphs_shapes[0].push(jj.shapes[0][i]);
+		g_graphs_labels[0].push("");
+		}
+	for (i = 0; i < rn; i++) {
+		g_graphs_shapes[1].push(jj.shapes[1][i]);
+		g_graphs_labels[1].push("");
+		}
+	for (i = 0; i < ln; i++) {
+		g_graphs_velocities[0].push([0,0]);
+		}
+	for (i = 0; i < rn; i++) {
+		g_graphs_velocities[1].push([0,0]);
+		}
+	}
+
+function updateuri() {
+	var j = {
+		n: g_graphs_n,
+		am: g_graphs_am,
+		shapes: g_graphs_shapes,
+		};
+	var base = document.URL.split("?")[0];
+	var str = JSON.stringify(j);
+	console.log(str);
+	str = str.slice(1,-1);
+	str = str.replaceAll("[","(").replaceAll("]",")");
+	str = str.replaceAll('"',"'");
+	str = base+"?"+encodeURI(str);
+	str =  "Permalink: <a href=\""+str+"\">"+str+"</a>";
+	console.log(str);
+	document.getElementById("permalink").innerHTML = str;
+	}
+
+function makegraphs() {
+	g_graphs_n = [0,0];
+	g_graphs_vc = [[],[]];
+	g_graphs_am = [[],[]];
+	g_graphs_shapes = [[],[]];
+	g_graphs_labels = [[],[]];
+	var minn = Number(document.getElementById("minn").value);
+	var maxn = Number(document.getElementById("maxn").value);
+	var numshp = Number(document.getElementById("numshp").value);
+	var ln = ribet(minn,maxn);
+	var rn = ribet(minn,maxn);
+	g_graphs_n = [ln,rn];
+	var i,j,k;
+	vertexcircle();
+	for (i = 0; i < ln; i++) {
+		g_graphs_am[0].push([]);
+		for (j = 0; j < ln; j++) {
+			g_graphs_am[0][i].push(0);
+			}
+		}
+	for (i = 0; i < ln; i++) {
+		for (j = 0; j < i; j++) {
+			k = ribet(0,1);
+			g_graphs_am[0][i][j] = k;
+			g_graphs_am[0][j][i] = k;
+			}
+		}
+	for (i = 0; i < rn; i++) {
+		g_graphs_am[1].push([]);
+		for (j = 0; j < rn; j++) {
+			g_graphs_am[1][i].push(0);
+			}
+		}
+	for (i = 0; i < rn; i++) {
+		for (j = 0; j < i; j++) {
+			k = ribet(0,1);
+			g_graphs_am[1][i][j] = k;
+			g_graphs_am[1][j][i] = k;
+			}
+		}
+	for (i = 0; i < ln; i++) {
+		g_graphs_shapes[0].push(ribet(0,numshp-1));
+		g_graphs_labels[0].push("");
+		}
+	for (i = 0; i < rn; i++) {
+		g_graphs_shapes[1].push(ribet(0,numshp-1));
+		g_graphs_labels[1].push("");
+		}
+	for (i = 0; i < ln; i++) {
+		g_graphs_velocities[0].push([0,0]);
+		}
+	for (i = 0; i < rn; i++) {
+		g_graphs_velocities[1].push([0,0]);
+		}
+	}
+
+function newgame() {
+	g_mood = 1;
+	g_game_tree = [];
+	g_spoiler_hints = [];
+	g_st = []; //current game history
+	g_lt = []; //left-taken vertices
+	g_rt = []; //right-taken vertices
+	g_spoiler_move = false; //false: waiting for spoiler's turn, else [g,i]
+	g_highlight_vertices = [[],[]];
+	g_highlight_edges = [[],[]];
+	makegraphs();
+	updateuri();
+	drawgraphs();
+	//document.getElementById("out").innerHTML = "Searching Game Tree... Please Wait."
+	htremain([],[],[]);
+	document.getElementById("out").innerHTML = "";
+	if (g_players[0] == 1) {aispoiler();}
+	}
+
+function newurigame() {
+	var str = document.URL;
+	if (str.indexOf("?") == -1) {return;}
+	g_mood = 1;
+	g_game_tree = [];
+	g_spoiler_hints = [];
+	g_st = []; //current game history
+	g_lt = []; //left-taken vertices
+	g_rt = []; //right-taken vertices
+	g_spoiler_move = false; //false: waiting for spoiler's turn, else [g,i]
+	g_highlight_vertices = [[],[]];
+	g_highlight_edges = [[],[]];
+	makegraphsuri();
+	updateuri();
+	drawgraphs();
+	//document.getElementById("out").innerHTML = "Searching Game Tree... Please Wait."
+	htremain([],[],[]);
+	document.getElementById("out").innerHTML = "";
+	if (g_players[0] == 1) {aispoiler();}	
+	}
+
+function vertexhere(g,x,y) {//x and y are coordinates in canv
+	var i;
+	var dx = 0;
+	var dy = 0;
+	var r2 = g_v_radius*g_v_radius;
+	for (i = 0; i < g_graphs_n[g]; i++) {
+		dx = x-vertextocanv(g,i)[0];
+		dy = y-vertextocanv(g,i)[1];
+		if (dx*dx + dy*dy < r2) {
+			return(i);
+			}
+		}
+
+	return(-1);
+	}
+
+function checkcollisions(x,y) {
+	var g = g_v_dragged[0];
+	var i;
+	var dx = 0;
+	var dy = 0;
+	var r2 = 4*g_v_radius*g_v_radius;
+	if (x < g_v_radius || x > 2*g_size_unit-g_v_radius) {return(true);}
+	if (y < g_v_radius || y > 2*g_size_unit-g_v_radius) {return(true);}
+	for (i = 0; i < g_graphs_n[g]; i++) {
+		if (i != g_v_dragged[1]) {
+			dx = x-vertextocanv(g,i)[0];
+			dy = y-vertextocanv(g,i)[1];
+			if (dx*dx + dy*dy < r2) {
+				return(true);
+				}
+			}
+		}
+	return(false);
+	}
+
+function tock() {
+	wobbletock(0);
+	wobbletock(1);
+	drawgraph(0);
+	drawgraph(1);
+	}
+
+function wobbletock(g) {
+	var forcesx = [];
+	var forcesy = [];
+	var i,j,k;
+	var wibble = .6;
+	var force = .01;
+	var repel = -.1;
+	var u = g_size_unit;
+	for (i = 0; i < g_graphs_n[g]; i++) {
+		forcesx.push(0);
+		forcesy.push(0);
+		for (j = 0; j < g_graphs_n[g]; j++) {
+			if (i != j) {
+				pt0x = g_graphs_vc[g][i][0];
+				pt0y = g_graphs_vc[g][i][1];
+				pt1x = g_graphs_vc[g][j][0];
+				pt1y = g_graphs_vc[g][j][1];
+				d2 = (pt0x-pt1x)*(pt0x-pt1x) + (pt0y-pt1y)*(pt0y-pt1y);
+				if (d2 != 0) {
+					forcesx[i] += force*(pt0x-pt1x)/d2;
+					forcesy[i] += force*(pt0y-pt1y)/d2;
+					}
+				else {
+					forcesx[i] += ribet(-10,10)/1000;
+					forcesy[i] += ribet(-10,10)/1000;
+					}
+				}
+				if (g_graphs_am[g][i][j] == 1) {
+					forcesx[i] += repel*(pt0x-pt1x);
+					forcesy[i] += repel*(pt0y-pt1y);
+					}
+			}
+		}
+	//--have finished calculating forces by this point--
+	for (i = 0; i < g_graphs_n[g]; i++) {
+		g_graphs_velocities[g][i][0] = wibble*(+g_graphs_velocities[g][i][0]+forcesx[i]);
+		g_graphs_velocities[g][i][1] = wibble*(+g_graphs_velocities[g][i][1]+forcesy[i]);
+		if ([g,i] != g_v_dragged) {
+			console.log([g,i]);
+			console.log(g_v_dragged);
+			g_graphs_vc[g][i][0] = +g_graphs_vc[g][i][0] + g_graphs_velocities[g][i][0];
+			g_graphs_vc[g][i][1] = +g_graphs_vc[g][i][1] + g_graphs_velocities[g][i][1];
+			}
+		if (g_graphs_vc[g][i][0] > 1) {g_graphs_vc[g][i][0] = 1;}
+		if (g_graphs_vc[g][i][0] <-1) {g_graphs_vc[g][i][0] =-1;}
+		if (g_graphs_vc[g][i][1] > 1) {g_graphs_vc[g][i][1] = 1;}
+		if (g_graphs_vc[g][i][1] <-1) {g_graphs_vc[g][i][1] =-1;}		
+		}
+	}
+
+function vertextocanv(g,i) {
+	var u = g_size_unit;
+	var x = u+u*g_graphs_vc[g][i][0];
+	var y = u+u*g_graphs_vc[g][i][1];
+	return([x,y]);
+	}
+
+function canvtorel(x,y) {
+	var i = 0;
+	var u = g_size_unit;
+	x = x-u;
+	y = y-u;
+	x = x/u;
+	y = y/u;
+	return([x,y]);
+	}
+
+function drawedge(ctx,g,i,j) {
+	var pt1 = vertextocanv(g,i);
+	var pt2 = vertextocanv(g,j);
+	var k = g_graphs_am[g][i][j];
+	if (g_highlight_edges[g].indexOf(i+","+j) != -1 || g_highlight_edges[g].indexOf(j+","+i) != -1) {
+		ctx.beginPath();
+		ctx.lineWidth=7;
+		ctx.strokeStyle="Coral";
+		ctx.moveTo(pt1[0],pt1[1]);
+		ctx.lineTo(pt2[0],pt2[1]);
+		ctx.stroke();
+		}
+	if (k == 0) {return;}
+	ctx.beginPath();
+	ctx.lineWidth=2;
+	ctx.strokeStyle="black";
+	ctx.moveTo(pt1[0],pt1[1]);
+	ctx.lineTo(pt2[0],pt2[1]);
+	ctx.stroke();
+	}
+
+function drawvertex(ctx,g,i) {
+	var r = g_v_radius;
+	var pt = vertextocanv(g,i);
+	//if (g_highlight_vertices[g].indexOf(i) != -1) {
+	//	ctx.beginPath();
+	//	ctx.fillStyle = "black";
+	//	ctx.arc(pt[0],pt[1],1.2*r,0,2*Math.PI);
+	//	ctx.fill();
+	//	}
+	ctx.beginPath();
+	//ctx.fillStyle = g_color_list[g_graphs_colors[g][i]];
+	ctx.strokeStyle = "black";
+	if (g_highlight_vertices[g].indexOf(i) != -1) {
+		ctx.lineWidth=4;
+		}
+	else {
+		ctx.lineWidth=2;
+		}
+	ctx.fillStyle = "white";
+	if((g_move_labels==0 || g_move_labels == 2)&&g_graphs_labels[g][i] != "") {
+		ctx.fillStyle = g_color_list[g_graphs_labels[g][i]];
+		}
+	else if ((g_move_labels==3 || g_move_labels==4) && g_graphs_labels[g][i] != "") {
+		var labnum = g_graphs_labels[g][i];
+		ctx.fillStyle = "hsl(0,0%,"+(62*labnum)%100+"%)";
+		}
+	if(g_graphs_shapes[g][i] == 0) {
+		ctx.arc(pt[0],pt[1],r,0,2*Math.PI);
+		}
+	if(g_graphs_shapes[g][i] == 1) {
+		var s = r*1.2;
+		ctx.moveTo(pt[0],pt[1]-s);
+		ctx.lineTo(pt[0]+.866*s,pt[1]+.5*s);
+		ctx.lineTo(pt[0]-.866*s,pt[1]+.5*s);
+		ctx.closePath();
+		}
+	if(g_graphs_shapes[g][i] == 2) {
+		var s = r*.89;
+		ctx.moveTo(pt[0]-s,pt[1]-s);
+		ctx.lineTo(pt[0]-s,pt[1]+s);
+		ctx.lineTo(pt[0]+s,pt[1]+s);
+		ctx.lineTo(pt[0]+s,pt[1]-s);
+		ctx.closePath();
+		}
+	//ctx.arc(pt[0],pt[1],r,0,2*Math.PI);
+	ctx.fill();
+	ctx.stroke();
+	var keyb = document.getElementById("chk_key").checked;
+	var numb = (g_move_labels == 1 || g_move_labels == 2 || g_move_labels == 4);
+	if (keyb || numb) {
+		ctx.beginPath();
+		ctx.fillStyle = coltextoptimal(ctx.fillStyle);
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+		ctx.font = "30px sans-serif";
+		var str = "";
+		if (numb) {str += g_graphs_labels[g][i];}
+		if (keyb && g_graphs_labels[g][i] == "") {str += shkey(g,i);}
+		ctx.fillText(str,pt[0],pt[1]);
+		}
+	}
+
+function drawgraph(g) {
+	var u = g_size_unit;
+	var ctx = document.getElementById("canv"+g).getContext("2d");
+	ctx.beginPath();
+	ctx.fillStyle = "#FFFFFF";
+	ctx.fillRect(0,0,2*u,2*u);
+	var i, j, k;
+	for (i = 0; i < g_graphs_n[g]; i++) {
+		for (j = 0; j < i; j++) {
+			drawedge(ctx,g,i,j);
+			}
+		}
+	for (i = 0; i < g_graphs_n[g]; i++) {
+		drawvertex(ctx,g,i);
+		}
+	}
+
+function drawgraphs() {
+	drawgraph(0);
+	drawgraph(1);
+	}
+
+function test() {
+	//console.log(decompressstatestring("1,3|3,2"));
+	//console.log(compressstatestring([[1,3],[3,2]]));
+	//console.log(validmove([[1,1]],[1],[1],0,0));
+	console.log(htremain([],[],[]));
+	//console.log(g_game_tree);
+	aispoiler();
+	}
+
+function unused_decompressstatestring(ststr) { // 1,3|3,2 -> [[1,3],[3,2]]
+	var tlist = ststr.split("|");
+	var rval = [];
+	for (i = 0; i < tlist.length; i++) {
+		rval.push(tlist[i].split(","));
+		}
+	return(rval);
+	}
+
+function compressstatestring(st) { //[[1,3],[3,2]] -> 1,3|3,2
+	var tlist = [];
+	for (i = 0; i < st.length; i++) {
+		tlist.push(st[i].join(","));
+		}
+	tlist.sort();
+	return(tlist.join("|"));
+	}
+
+var disttype = 0;
+
+function succdist(a,b) {
+	if (disttype == 0) {
+		if (a == b-1) {return(-1);}
+		if (a == b+1) {return(1);}
+		else {return(0);}
+		}
+	if (disttype == 1) {
+		if (a > b) {return(1);}
+		if (a < b) {return(-1);}
+		}
+	}
+
+function validmove(st,lt,rt,lm,rm) {//state, left-taken vertices, right-taken vertices, left move, right move
+	var n = st.length;
+	var i;
+	if (lt.indexOf(lm) != -1) {return(false);}
+	if (rt.indexOf(rm) != -1) {return(false);}
+	//if (g_graphs_shapes[0][lm] != g_graphs_shapes[1][rm]) {return(false);}
+	for (i = 0; i < n; i++) {
+		if (succdist(lm,st[i][0]) != succdist(rm,st[i][1])) {return(false);}
+		//if(g_graphs_am[0][lm][st[i][0]] != g_graphs_am[1][rm][st[i][1]]) {return(false);}
+		}
+	return(true);
+	}
+
+function dohunt() {
+	var i, j;
+	var str = "<table border=1>"
+	for (i = 0; i < 20; i++) {
+		str += "<tr>"
+		for (j = 0; j < 20; j++) {
+			g_graphs_n = [i,j];
+			g_game_tree = [];
+			g_spoiler_hints = [];
+			disttype = 0;
+			var t1 = htremain([],[],[]);
+			disttype = 1;
+			var t2 = htremain([],[],[]);
+			if (t1 != t2) {alert(i+","+j)};
+			str += "<td>" + t1 + "</td>";
+			//document.getElementById("dohuntout").innerHTML += "<br>"+i+","+j+":"+t1+","+t2;
+			}
+		str += "</tr>";
+		}
+	str += "</table>";
+	document.getElementById("dohuntout").innerHTML = str;
+	}
+
+function htremain(st,lt,rt) { //state, left-taken vertices, right-taken vertices
+	var ststr = compressstatestring(st);
+	if (ststr in g_game_tree) {
+		return(g_game_tree[ststr]);
+		}
+	var rval = -1;
+	var maxi = 0;
+	var i,j;
+	var t = 0;
+	var hint = -1;
+	for (j = 0; j < g_graphs_n[1]; j++) { //see if spoiler wants to play on the right graph
+		if (rt.indexOf(j) == -1) {
+			maxi = 1;
+			for (i = 0; i < g_graphs_n[0]; i++) {
+				if (lt.indexOf(i) == -1) {
+					if (validmove(st,lt,rt,i,j)) {
+						t = 2+htremain(st.concat([[i,j]]),lt.concat([i]),rt.concat([j]));
+						if (t > maxi) {maxi = t};
+						}
+					}
+				}
+			if (rval == -1 || maxi < rval) {rval = maxi; hint = [1,j];}
+			}
+		}
+	for (i = 0; i < g_graphs_n[0]; i++) { //see if spoiler wants to play on the left graph
+		if (lt.indexOf(i) == -1) {
+			maxi = 1;
+			for (j = 0; j < g_graphs_n[1]; j++) {
+				if (rt.indexOf(j) == -1) {
+					if (validmove(st,lt,rt,i,j)) {
+						t = 2+htremain(st.concat([[i,j]]),lt.concat([i]),rt.concat([j]));
+						if (t > maxi) {maxi = t};
+						}
+					}
+				}
+			if (rval == -1 || maxi < rval) {rval = maxi; hint = [0,i];}
+			}
+		}
+	g_spoiler_hints[ststr] = hint;
+	g_game_tree[ststr] = rval;
+	return(rval);
+	}
+
+//var g_players = [0,1]; //0 = human, 1 = AI
+//var g_st = []; //current game history
+//var g_lt = []; //left-taken vertices
+//var g_rt = []; //right-taken vertices
+//var g_spoiler_move = false; //false: waiting for spoiler's turn, else [g,i]
+
+function indicateturn(i) {
+	if (i == 0) {
+		document.getElementById("turn").innerHTML = "Spoiler's (Player I's) turn"; 
+		}
+	if (i == 1) {
+		document.getElementById("turn").innerHTML = "Duplicator's (Player II's) turn";
+		}
+	if (i == -1) {
+		document.getElementById("turn").innerHTML = "Press 'New Game' button to begin";
+		g_mood = 0;
+		}
+	}
+
+function showinvalidmove(g,lm,rm) {
+	var i;
+	outp("Game Over!");
+	for (i = 0; i < g_st.length; i++) {
+		if(g_graphs_am[0][lm][g_st[i][0]] != g_graphs_am[1][rm][g_st[i][1]]) {
+			g_highlight_edges[0].push(lm +","+ g_st[i][0]);
+			g_highlight_edges[1].push(rm +","+ g_st[i][1]);
+			}
+		}
+	indicateturn(-1);
+	drawgraphs();
+	g_mood = 0;
+	}
+
+function makemove(g,i) {
+	if (g_mood == 0) {return;}
+	g_highlight_vertices = [[],[]];
+	g_highlight_edges = [[],[]];
+	if (g_spoiler_move == false) { //it's spoiler's turn
+		if (g_players[0] == 1) {console.log("error: player took computer's spoiler turn");}
+		if (g == 0 && g_lt.indexOf(i) != -1) {outp("This vertex has already been taken!"); return;}
+		if (g == 1 && g_rt.indexOf(i) != -1) {outp("This vertex has already been taken!"); return;}
+		//can make move, so make it:
+		g_spoiler_move = [g,i];
+		g_graphs_labels[g][i] = g_st.length + 1;
+		if (g_players[1] == 1) {aiduplicator();}
+		else {indicateturn(1);}
+		}
+	else { //it's duplicator's turn
+		if (g_players[1] == 1) {console.log("error: player took computer's duplicator turn");}
+		if (g == g_spoiler_move[0]) {outp("Duplicator can't pick a vertex on the same graph as spoiler!"); return;}
+		if (g == 0 && g_lt.indexOf(i) != -1) {outp("This vertex has already been taken!"); return;}
+		if (g == 1 && g_rt.indexOf(i) != -1) {outp("This vertex has already been taken!"); return;}
+		if (g == 0 && !validmove(g_st, g_lt, g_rt, i, g_spoiler_move[1])) {g_graphs_labels[g][i] = g_st.length + 1; showinvalidmove(g,i,g_spoiler_move[1]); return;}
+		if (g == 1 && !validmove(g_st, g_lt, g_rt, g_spoiler_move[1], i)) {g_graphs_labels[g][i] = g_st.length + 1; showinvalidmove(g,g_spoiler_move[1],i); return;}
+		//can make move, so make it:
+		g_graphs_labels[g][i] = g_st.length + 1;
+		if (g == 0) {g_lt.push(i); g_rt.push(g_spoiler_move[1]); g_st.push([i,g_spoiler_move[1]]);}
+		if (g == 1) {g_lt.push(g_spoiler_move[1]); g_rt.push(i); g_st.push([g_spoiler_move[1],i]);}
+		g_spoiler_move = false;
+		if (g_players[0] == 1) {aispoiler();}
+		else {indicateturn(0);}
+		}
+	drawgraphs();
+	}
+
+function aispoiler() {
+	if (g_spoiler_move != false) {console.log("not aispoiler's turn!");}
+	var i;
+	var hint = g_spoiler_hints[compressstatestring(g_st)];
+	if (hint == undefined || hint == -1) {indicateturn(-1); outp("Isomorphism!"); g_mood=0; return;}
+	g_spoiler_move = hint;
+	g_graphs_labels[hint[0]][hint[1]] = g_st.length + 1;
+	if (g_players[1] == 1) {aiduplicator();}
+	else {indicateturn(1);}
+	drawgraphs();
+	}
+
+function aiduplicator() {
+	if (g_spoiler_move == false) {console.log("not aiduplicator's turn!");}
+	var i;
+	var mini = -1;
+	var k;
+	var minimove = -1;
+	if (g_spoiler_move[0] == 0) {
+		for (i = 0; i < g_graphs_n[1]; i++) {
+			if (g_rt.indexOf(i) == -1) {
+				k = g_game_tree[compressstatestring(g_st.concat([[g_spoiler_move[1],i]]))];
+				if ((k != undefined) && (mini == -1 || mini < k)) {mini = k; minimove = i;}
+				}
+			}
+		if (minimove == -1) {mood=0; indicateturn(-1); outp("No Duplicator move found!"); return;}
+		g_graphs_labels[1][minimove] = g_st.length + 1;
+		g_lt.push(g_spoiler_move[1]);
+		g_rt.push(minimove);
+		g_st.push([g_spoiler_move[1],minimove]);
+		g_spoiler_move = false;
+		if (g_players[0] == 1) {aispoiler();}
+		else {indicateturn(0);}
+		}
+	else { //spoiler played on right board
+		for (i = 0; i < g_graphs_n[0]; i++) {
+			if (g_lt.indexOf(i) == -1) {
+				k = g_game_tree[compressstatestring(g_st.concat([[i,g_spoiler_move[1]]]))];
+				if ((k!= undefined) && (mini == -1 || mini < k)) {mini = k; minimove = i;}
+				}
+			}
+		if (minimove == -1) {mood=0; indicateturn(-1); outp("No Duplicator move found!"); return;}
+		g_graphs_labels[0][minimove] = g_st.length + 1;
+		g_rt.push(g_spoiler_move[1]);
+		g_lt.push(minimove);
+		g_st.push([minimove,g_spoiler_move[1]]);
+		g_spoiler_move = false;
+		if (g_players[0] == 1) {aispoiler();}
+		else {indicateturn(0);}
+		}
+	drawgraphs();
+	}
+
+function showhint() {
+	if (g_spoiler_move == false) {//it's spoiler's turn
+		var hint = g_spoiler_hints[compressstatestring(g_st)];
+		g_highlight_vertices[hint[0]] = [hint[1]];
+		}
+	else {
+		var i;
+		var mini = -1;
+		var k;
+		var minimove = -1;
+		if (g_spoiler_move[0] == 0) {
+			for (i = 0; i < g_graphs_n[1]; i++) {
+				if (g_rt.indexOf(i) == -1) {
+					k = g_game_tree[compressstatestring(g_st.concat([[g_spoiler_move[1],i]]))];
+					if ((k != undefined) && (mini == -1 || mini < k)) {mini = k; minimove = i;}
+					}
+				}
+			g_highlight_vertices[1] = [minimove];
+			}
+		else { //spoiler played on right board
+			for (i = 0; i < g_graphs_n[0]; i++) {
+				if (g_lt.indexOf(i) == -1) {
+					k = g_game_tree[compressstatestring(g_st.concat([[i,g_spoiler_move[1]]]))];
+					if ((k!= undefined) && (mini == -1 || mini < k)) {mini = k; minimove = i;}
+					}
+				}
+			g_highlight_vertices[0] = [minimove];
+			}
+		}
+	drawgraphs();
+	}
+
+function hidehint() {
+	g_highlight_vertices = [[],[]];
+	drawgraphs();
+	}
+
+function playerchange(i) {//possibly change the status of player i (human (0)  <-> AI (1))
+	g_players[i] = document.getElementById("p"+i+"s").value;
+	if (g_players[i] == 1 && g_mood == 1) {
+		if (i == 0 && g_spoiler_move == false) {
+			aispoiler();
+			}
+		if (i == 1 && g_spoiler_move != false) {
+			aiduplicator();
+			}
+		}
+	}
+
+function colnumchange() {
+	g_move_labels = document.getElementById("colnum").value;
+	drawgraphs();
+	}
+
+function resize() {
+	var s = document.getElementById("size").value;
+	document.getElementById("canv0").width = s;
+	document.getElementById("canv0").height = s;
+	document.getElementById("canv1").width = s;
+	document.getElementById("canv1").height = s;
+	g_size_unit = s/2;
+	g_v_radius = s/25;
+	drawgraphs();
+	}
+
+function mdown(g,e) {
+	if (document.getElementById("lc_select").value=="drag") {
+		var rect = document.getElementById("canv"+g).getBoundingClientRect();
+		var x = e.clientX - rect.x;
+		var y = e.clientY - rect.y;
+		var i;
+		var c = vertexhere(g,x,y);
+		if (c != -1) {
+			g_v_dragged = [g,c];
+			g_drag_x_offset = x-vertextocanv(g,c)[0];
+			g_drag_y_offset = y-vertextocanv(g,c)[1];
+			}
+		}
+	if (document.getElementById("lc_select").value=="move") {
+		var rect = document.getElementById("canv"+g).getBoundingClientRect();
+		var x = e.clientX - rect.x;
+		var y = e.clientY - rect.y;
+		var i;
+		var c = vertexhere(g,x,y);
+		if (c != -1) {
+			makemove(g,c);
+			}
+		}
+	}
+
+function mmove(g,e) {
+	if (g_v_dragged != false && g_v_dragged[0] == g) {
+		var rect = document.getElementById("canv"+g).getBoundingClientRect();
+		var c = [e.clientX - rect.x - g_drag_x_offset,e.clientY-rect.y-g_drag_y_offset];
+		if(checkcollisions(c[0],c[1]) == false) {
+			g_graphs_vc[g_v_dragged[0]][g_v_dragged[1]] = canvtorel(c[0],c[1]);
+			drawgraphs();
+			}
+		}
+	}
+
+function mup(g,e) {
+	g_v_dragged = false;
+	}
+
+function kpress(e) {
+	if (e.charCode == 48) { //0: toggles action of mousedown
+		document.getElementById("lc_select").selectedIndex = 1-document.getElementById("lc_select").selectedIndex;
+		}
+	if (e.charCode == 49) { //1: new game
+		newgame();
+		}
+	if (e.charCode == 63) { //?: show hint
+		showhint();
+		}
+	if (e.charCode == 50) { //2: toggle keyboard access
+		document.getElementById("chk_key").checked = !document.getElementById("chk_key").checked;
+		drawgraphs();
+		}
+	if (e.charCode >= 97 && e.charCode <= 112) { //lowercase, move on board 1
+		makemove(1,e.charCode-97);
+		}
+	if (e.charCode >= 65 && e.charCode <= 90) { //uppercase, move on board 0
+		makemove(0,e.charCode-65);
+		}
+	console.log(e.charCode);
+	}
+
+function kup(e) {
+	hidehint();
+	}
+
+function boot() {
+	newurigame();
+	}
+
+</script>
+</head>
+<body onload="dohunt()" onkeypress="kpress(event)" onkeyup="kup(event)">
+<div id="dohuntout"></div>
+<h1>Ehrenfeucht–Fraïssé Game</h1>
+<button onclick="newgame()"> New Game </button>
+<input type="checkbox" id="chk_key" onchange="drawgraphs()">Keyboard Access
+Clicking: <select id="lc_select">
+<option value="drag"> Drags Vertices </option>
+<option value="move" selected> Makes a Move </option>
+</select> Spoiler (Player I): <select id="p0s" onchange="playerchange(0)">
+<option value=0> Human </option>
+<option value=1> AI </option>
+</select> Duplicator (Player II): <select id="p1s" onchange="playerchange(1)">
+<option value=0> Human </option>
+<option value=1> AI </option>
+</select> Show: <select id="colnum" onchange="colnumchange()">
+<option value=0> Colors </option>
+<option value=1> Numbers </option>
+<option value=2> Both </option>
+<option value=3> Grayscale </option>
+<option value=4> Grayscale Numbers </option>
+</select> Size: <input type="number" id="size" value=500 style="width:4em" oninput="resize()">
+<br>
+<canvas id="canv0" width=500 height=500 style="border:1px solid" onmousedown="mdown(0,event)" onmousemove="mmove(0,event)" onmouseup="mup(0,event)"> </canvas>
+<canvas id="canv1" width=500 height=500 style="border:1px solid" onmousedown="mdown(1,event)" onmousemove="mmove(1,event)" onmouseup="mup(1,event)"> </canvas>
+<br><span id="turn"> </span> <br><span id="out"> </span> <br>
+Minimum Number of Vertices: <input type="number" value=4 id="minn" min=0 style="width:3em">
+Maximum Number of Vertices: <input type="number" value=6 id="maxn" min=0 style="width:3em">
+Number of Shapes: <input type="number" value=1 id="numshp" min=1 max=3 style="width:3em"> <br>
+Caution: Having more than 7 vertices (1 shape), 9 vertices (2 shapes) or 11 vertices (3 shapes) may cause noticable delay when generating a new game.
+<div id="permalink"></div>
+<h2> Controls </h2>
+Click on a vertex (circle, triangle, square) to play there. <br>
+You can also type the corresponding key. Press 2 to toggle showing keys for each vertex. <br>
+?: hint <br>
+0: switch between dragging vertices and making moves <br>
+1: new game
+<h2> Rules </h2>
+The Ehrenfeucht-Fraïssé Game is a game about first order logic and the inevitable end of all things. Players take turns matching up the vertices (shown as circles, etc.) of two graphs (networks):
+<ol>
+<li> First, Player I (Spoiler) selects a vertex from either graph that has yet to be selected, and colors it a new color. </li>
+<li> Next, Player II (Duplicator) selects a vertex from the other graph that has yet to be selected, and colors it the same color, forming a match between the two vertices of that color. </li>
+</ol>
+The game ends if either:
+<ul>
+<li> Two vertices that are connected by an edge (line) in one graph are matched with vertices which are not connected in the other. </li>
+<li> A vertex of one shape gets matched with a vertex of another shape. </li>
+<li> Or, there are no more vertices left to pick. </li>
+</ul>
+The game will inevitably end. Spoiler's (Player I's) goal is to end the game as quickly as possible. Duplicator's (Player II's) goal is to last as long as possible.
+<ul>
+<li> The Duplicator AI is currently a poor sport and will simply forfeit if it cannot find a suitable match. </li>
+<li> Most versions of the game allow Spoiler to pick previously selected vertices, so long as they are matched with the vertex the original vertex was matched to. Since Spoiler, in seeking to end the game as quickly as possible, has no reason to do this, it is disallowed. </li>
+</ul>
+<h2> What's Happening? </h2>
+It is suggested that you try playing the game a bit before <button onclick='document.getElementById("readon").style.display="block";'>reading on</button>:
+<div id='readon' style='display:none;'>
+<h3> Basic Strategy </h3>
+<ul>
+<li> Player I (Spoiler)'s goal is to exploit differences between the graphs to end the game as soon as possible. For instance, suppose the left graph has a vertex which is connected to every other vertex, while the right graph does not.
+<br><img src='efg2.png'> <img src='efg3.png'><br>
+Spoiler can play at the vertex in the left graph which is connected to every other vertex. No matter which vertex Player II (Duplicator) matches it with, that vertex will not be connected to every other vertex.
+<br><img src='efg4.png'> <img src='efg5.png'><br>
+Spoiler can then take advantage of the vertex in the second graph which is not connected to the original vertex to win the game. No matter where Duplicator moves, they have lost.
+<br><img src='efg4.png'> <img src='efg6.png'><br>
+</li>
+<li> Player II (Duplicator)'s goal is to exploit similarities between the graphs to prolong the game. In fact, if the two graphs are the same (or scrambled versions of one another), Duplicator can keep the game going as long as possible!
+<br><img src='efgthumb.png'><br></li>
+</ul>
+<h3> Connection with Logic </h3>
+So the main goal of the game is to recognize the similarities and differences between the two graphs. Features to pay attention to include:
+<ul>
+<li> If there are no vertices </li>
+<li> If there is a vertex which is connected to every other vertex </li>
+<li> If there is a vertex which is not connected to any other vertex </li>
+<li> If there is a vertex which is connected to every other vertex except one </li>
+<li> If there is a vertex which is not connected to any other vertex except one </li>
+</ul>
+We can write all of these in terms of a very small set of pieces:
+<ul>
+<li> Variables to talk about vertices (a,b,c,etc.)</li>
+<li> There is (another) vertex (&exist;)</li>
+<li> Every (other) vertex (&forall;)</li>
+<li> And, Or, Not (&and;, &or;, &not;)</li>
+<li> Is connected to (&tilde;)</li>
+<li> Equality and inequality (=/&ne;) </li>
+<li> Grammatical pieces (such that/it is the case that) </li>
+<li> Is a circle, triangle, square (if shapes are active) </li>
+</ul>
+The language is awkward, but we can rewrite our features in this language:
+<table border=1>
+<tr> <td colspan=9> There is a vertex which is connected to every other vertex </td> </tr>
+<tr> <td> There is a vertex </td> <td> a </td> <td> such that </td> <td> for every other vertex </td> <td> b </td> <td> it is the case that </td> <td> a </td> <td> is connected to </td> <td> b </td> </tr>
+<tr> <td> &exist; </td> <td> a </td> <td> : </td> <td> &forall; </td> <td> b (&ne; a) </td> <td> : </td> <td> a </td> <td> &sim; </td> <td> b </td> </tr>
+<tr> <td colspan=9> &exist; a: &forall; b &ne; a: a &sim; b </td>
+</table>
+What's remarkable is that: <div style='border:1px solid blue; font-size:larger; padding:20px'> <b> Theorem (Ehrenfeucht, Fraïssé): </b> The number of turns it takes for spoiler to exploit a particular difference between two graphs is the <i> minimum number of variables </i> needed to express that difference in the <i> language above. </i> </div>
+Furthermore:
+<ul>
+<li> The instructions Spoiler must follow to exploit that difference can be fairly straightforwardly read off of the logical formula expressing that difference. </li>
+<li> The minimum number of turns Spoiler needs to win the game is the number of variables in the formula that distinguishes the two graphs with the fewest variables. </li>
+</ul>
+<h3> Why do Ehrenfeucht–Fraïssé Games matter? </h3>
+A major question of logic is what can and what cannot be said in particular formal languages. 
+Think designing a programming language and wanting to make sure that programmers can write programs to do particular things in that language.
+Ehrenfeucht–Fraïssé Games allow us to take our intuitions about playing games and use them to determine what can and cannot be said in this one particular kind of language.
+<br>For example consider the following two graphs:
+<ul>
+<li> Left Graph:
+<br> <img src="efg7.png"> <br>
+A single line of vertices, each connected to the one before it and the one after it, infinite in both directions.
+<li> Right Graph:
+<br> <img src="efg7.png"> <br>
+<br> <img src="efg7.png"> <br>
+Two copies of the left graph.
+</ul>
+We can show that these two graphs are <i>indistinguishable</i> in terms of the formal language we've been using to talk about graphs.
+Specifically, any logical formula written in terms of:
+<ul>
+<li> Variables to talk about vertices (a,b,c,etc.)</li>
+<li> There is (another) vertex (&exist;)</li>
+<li> Every (other) vertex (&forall;)</li>
+<li> And, Or, Not (&and;, &or;, &not;)</li>
+<li> Is connected to (&tilde;)</li>
+<li> Equality and inequality (=/&ne;) </li>
+<li> Grammatical pieces (such that/it is the case that) </li>
+</ul>
+Which is true of one of the graphs is true of the other graph.
+<ol>
+<li> Suppose the graphs aren't indistinguishable. Specifically, that there is some logical formula in the above language which is true of one that is false of the other. </li>
+<li> Then that formula has some number of variables (n) in it, and by the Ehrenfeucht–Fraïssé Theorem, Spoiler has a strategy for winning the game in n turns. </li>
+<li> This strategy is going to look something like: On their first two turns, Spoiler plays in both pieces of the right graph: </li>
+<br> <img src="efg8.png"> <br>
+<li> Forcing Duplicator to play at two points somewhere (ideally very far apart) on the left graph: </li>
+<br> <img src="efg9.png"> <br>
+<li> Spoiler's goal now is to exploit the fact that the selected vertices on the left graph are connected by a (very long) string of vertices whereas they are not connected in such a way on the right graph. </li>
+<li> But, remember that Spoiler claimed not only that they had a winning strategy, but a winning strategy in n turns! </li>
+<li> <i> But</i>, if Duplicator played at two points a certain distance apart (roughly 2<sup>n</sup>), Spoiler does not have enough time to take advantage of this difference. </li>
+<li> So Spoiler didn't actually have a strategy for winning the game in n turns. (The liar!)</li>
+<li> So the graphs really aren't distinguishable. </li>
+</ol>
+Spelling out what this means exactly, any formula in the very specific language we've been working with cannot be true of the left graph and false of the right graph.
+Or, looking at it <i>another way</i>, any difference between the left graph and the right graph cannot be expressed in our particular language.
+As such:
+<div style='border:1px solid blue; font-size:larger; padding:20px'> <b> Fun Fact: </b> There is no formula in our particular language that expresses the idea of "being connected" i.e. any two vertices are connected by a string of vertices, each connected to the next.</div>
+</div>
+<h2> Read More </h2>
+You can learn more about Ehrenfeucht–Fraïssé Games at:
+<ul>
+<li> <a href="https://plato.stanford.edu/entries/logic-games/#BacForGam"> Stanford Encyclopedia of Philosophy </a> </li>
+</ul>
+</body>
+</html>

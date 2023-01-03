@@ -1,0 +1,1160 @@
+﻿<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="rosensteinlogo.png">
+<meta name=description content="An Infinite Board Game">
+<title> EF-Games on Infinite Linear Orderings </title>
+<script>
+
+//a Linear ordering is one of:
+//-1
+//-A tuple ["+",LO...LO] (sum of LO...LO)
+//-A pair ["w",LO] (LO times omega)
+//-A pair ["w*",LO] (LO times omega*)
+//-A tuple ["s",LO...LO] (shuffle of LO...LO)
+
+//a nonstandard linear ordering could also be:
+//"q","w","w*","z",number
+
+//an Element is a list of:
+//- of sums, an index (starting at 0)
+//- of omega, an index (starting at 0)
+//- of omega*, an index (negative, ending at 0)
+//- of shuffles, an index list (0 = left, 1 = right)
+
+var g_shuffle_const_1 = .2; //fraction of shuffle taken up by center LO
+var g_shuffle_const_2 = (1-g_shuffle_const_1)/2; //2*g_shuffle_const_2 + g_shuffle_const_1 MUST equal 1
+var g_omega_const = .2; //fraction of omega(*) products taken up by first element.
+var g_w = 1000;
+var g_c = 50;
+var g_LO = {top:["+",["w",1],["w*",1],["w",1]],bot:["w",1],loc:["+",["w",1],1]};
+var g_drag_x = "NO";
+var g_min_x = 0;
+var g_max_x = g_w;
+var g_zoom_in = 1.1;
+var g_zoom_out = .9;
+var g_zoom_id = "";
+var g_min_radius = .2;
+var g_max_radius = 5;
+var g_mouse_downer = "NO";
+
+var g_color_list = [//brgycp
+	"#4477AA",
+	"#EE6677",
+	"#228833",
+	"#CCBB44",
+	"#66CCEE",
+	"#AA3377"
+	];
+
+var g_zoomies = {
+	top: {drag_x:"NO", min_x:0, max_x:g_w},
+	bot: {drag_x:"NO", min_x:0, max_x:g_w}
+	}
+
+var g_built_in_nslos = [
+	0,1,2,3,4,5,6,7,8,9,
+	"w","w*","z","q",["+","w","w*"],["+","w","z"],["+","w",1],
+	["s",2],["s",1,2],
+	["w","w*"],["w","w"],["w*","w"],["w*","w*"],
+	["+","w","w"],["+","w","w","w"],
+	["+",["w","w"],"w"],
+	["+",1,"q"],["+",1,"q",1],["+","q",1]
+	];
+
+function recursivelistcompare(L1,L2) {
+	if (Array.isArray(L1) != Array.isArray(L2)) {return(false);}
+	if (Array.isArray(L1)) {
+		if (L1.length != L2.length) {return(false);}
+		var i;
+		for (i = 0; i < L1.length; i++) {
+			if (!recursivelistcompare(L1[i],L2[i])) {return(false);}
+			}
+		return(true);
+		}
+	else {
+		return(L1 == L2);
+		}
+	}
+
+function ribet(mn,mx) {
+	return(Math.floor(Math.random()*(mx-mn+1))+mn);
+	}
+
+function nslo_to_str(L) {
+	if (Number.isInteger(L)) {
+		return(L);
+		}
+	if (L == "w") {
+		return("ω");
+		}
+	if (L == "w*") {
+		return("ω*");
+		}
+	if (L == "q") {
+		return("η");
+		}
+	if (L == "z") {
+		return("ζ");
+		}
+	if (L[0] == "+") {
+		var i;
+		var str = "";
+		for (i = 1; i < L.length; i++) {
+			if (i > 1) {str += "+";}
+			str += nslo_to_str(L[i]);
+			}
+		return(str);
+		}
+	if (L[0] == "w") {
+		str = nslo_to_str(L[1]);
+		if (L[1][0] == "+") {str = "("+str+")";}
+		str = str + "⋅ω";
+		return(str);
+		}
+	if (L[0] == "w*") {
+		str = nslo_to_str(L[1]);
+		if (L[1][0] == "+") {str = "("+str+")";}
+		str = str + "⋅ω*";
+		return(str);
+		}
+	if (L[0] == "s") {
+		var str = "σ(";
+		for (i = 1; i < L.length; i++) {
+			if (i > 1) {str += ",";}
+			str += nslo_to_str(L[i]);
+			}
+		str += ")";
+		return(str);
+		}
+	}
+
+function standardize(L) {
+	var rval, i;
+	if (Number.isInteger(L) && L > 1) {
+		rval = ["+"];
+		for (i = 0; i < L; i++) {
+			rval.push(1);
+			}
+		return(rval);
+		}
+	if (L == 0) {
+		return(["+"]);
+		}
+	if (L == "w") {
+		return(["w",1]);
+		}
+	if (L == "z") {
+		return(["B",["w*",1],["w",1]]);
+		}
+	if (L == "q") {
+		return(["s",1]);
+		}
+	if (L == "w*") {
+		return(["w*",1]);
+		}
+	if (L[0] == "A" || L[0] == "+" || L[0] == "w" || L[0] == "w*" || L[0] == "s") {
+		rval = [L[0]];
+		for (i = 1; i < L.length; i++) {
+			rval.push(standardize(L[i]));
+			}
+		return(rval);
+		}
+	return(L);
+	}
+
+function cycle(L) { //0,1,2,3,...n -> 0,2,3,...n,1
+	var r = [L[0]];
+	var i;
+	for (i = 2; i < L.length; i++) {
+		r.push(L[i]);
+		}
+	r.push(L[1]);
+	return(r);
+	}
+
+function rest(L) {
+	var r = [];
+	var i;
+	for (i = 1; i < L.length; i++) {
+		r.push(L[i]);
+		}
+	return(r);
+	}
+
+function point_to_el(x,y,L,xmin,xmax) { //returns false if no point selected or ambiguous
+	var r,k;
+	if (xmax-xmin < .5) {return(false);}
+	if (L == 1 || typeof L == "string") {
+		var dx = x-((xmax+xmin)/2);
+		var dy = y-g_c;
+		if (Math.sqrt(dx*dx+dy*dy) <= Math.max(0,Math.min(5,(xmax-xmin)/5))) {
+			return([]);
+			}
+		else {
+			return(false);
+			}
+		}
+	else if (L[0] == "+") {
+		k = Math.floor((x-xmin)/((xmax-xmin)/(L.length-1)));
+		if (k == L.length-1) {k = L.length-2;}
+		r = point_to_el(x,y,L[k+1],xmin+(k)*(xmax-xmin)/(L.length-1),xmin+(k+1)*(xmax-xmin)/(L.length-1));
+		if (r) {return([k].concat(r));}
+		else {return(false);}
+		}
+	else if (L[0] == "w") {
+		if (x < xmin+g_omega_const*(xmax-xmin)) {
+			r = point_to_el(x,y,L[1],xmin,xmin+g_omega_const*(xmax-xmin));
+			if (r) {return([0].concat(r));}
+			else {return(false);}
+			}
+		else {
+			r = point_to_el(x,y,L,xmin+g_omega_const*(xmax-xmin),xmax);
+			if (r) {
+				r[0] = r[0] + 1;
+				return(r);
+				}
+			else {return(false);}
+			}
+		}
+	else if (L[0] == "w*") {
+		if (x > xmax-g_omega_const*(xmax-xmin)) {
+			r = point_to_el(x,y,L[1],xmax-g_omega_const*(xmax-xmin),xmax);
+			if (r) {return([0].concat(r));}
+			else {return(false);}
+			}
+		else {
+			r = point_to_el(x,y,L,xmin,xmax-g_omega_const*(xmax-xmin));
+			if (r) {
+				r[0] = r[0] - 1;
+				return(r);
+				}
+			else {return(false);}
+			}
+		}
+	else if (L[0] == "s") {
+		if (x < xmin+g_shuffle_const_2*(xmax-xmin)) {
+			r = point_to_el(x,y,cycle(L),xmin,xmin+g_shuffle_const_2*(xmax-xmin));
+			if (r) {
+				r[0] = [0].concat(r[0]);
+				return(r);
+				}
+			else {return(false);}
+			}
+		else if (x > xmax-g_shuffle_const_2*(xmax-xmin)) {
+			r = point_to_el(x,y,cycle(L),xmax-g_shuffle_const_2*(xmax-xmin),xmax);
+			if (r) {
+				r[0] = [1].concat(r[0]);
+				return(r);
+				}
+			else {return(false);}			
+			}
+		else {
+			r = point_to_el(x,y,L[1],xmin+g_shuffle_const_2*(xmax-xmin),xmax-g_shuffle_const_2*(xmax-xmin));
+			if (r) {
+				r = [[]].concat(r);
+				return(r);
+				}
+			else {return(false);}
+			}
+		}
+	}
+
+function el_to_point(e,L,xmin,xmax) { //returns just x
+	if (xmax-xmin < .5) {return((xmax+xmin)/2);}
+	if (L == 1 || typeof L == "string") {
+		return((xmax+xmin)/2);
+		}
+	else if (L[0] == "+") {
+		return(el_to_point(rest(e),L[e[0]+1],xmin+(e[0])*(xmax-xmin)/(L.length-1),xmin+(e[0]+1)*(xmax-xmin)/(L.length-1)));
+		}
+	else if (L[0]  == "w") {
+		if (e[0] == 0) {
+			return(el_to_point(rest(e),L[1],xmin,xmin+g_omega_const*(xmax-xmin)));
+			}
+		else {
+			return(el_to_point([e[0]-1].concat(rest(e)),L,xmin+g_omega_const*(xmax-xmin),xmax));
+			}
+		}
+	else if (L[0] == "w*") {
+		if (e[0] == 0) {
+			return(el_to_point(rest(e),L[1],xmax-g_omega_const*(xmax-xmin),xmax));
+			}
+		else {
+			return(el_to_point([e[0]+1].concat(rest(e)),L,xmin,xmax-g_omega_const*(xmax-xmin)));
+			}
+		}
+	else if (L[0] == "s") {
+		if (e[0].length == 0) {
+			return(el_to_point(rest(e),L[1],xmin+g_shuffle_const_2*(xmax-xmin),xmax-g_shuffle_const_2*(xmax-xmin)));
+			}
+		else if (e[0][0] == 0) {
+			return(el_to_point([rest(e[0])].concat(rest(e)),cycle(L),xmin,xmin+g_shuffle_const_2*(xmax-xmin)));
+			}
+		else if (e[0][0] == 1) {
+			return(el_to_point([rest(e[0])].concat(rest(e)),cycle(L),xmax-g_shuffle_const_2*(xmax-xmin),xmax));
+			}
+		}
+	}
+
+function el_to_radius(e,L,xmin,xmax) {
+	if (xmax-xmin < .5) {return(0);}
+	if (L == 1 || typeof L == "string") {
+		return(Math.max(g_min_radius,Math.min(g_max_radius,(xmax-xmin)/5)));
+		}
+	else if (L[0] == "+") {
+		return(el_to_radius(rest(e),L[e[0]+1],xmin+(e[0])*(xmax-xmin)/(L.length-1),xmin+(e[0]+1)*(xmax-xmin)/(L.length-1)));
+		}
+	else if (L[0]  == "w") {
+		if (e[0] == 0) {
+			return(el_to_radius(rest(e),L[1],xmin,xmin+g_omega_const*(xmax-xmin)));
+			}
+		else {
+			return(el_to_radius([e[0]-1].concat(rest(e)),L,xmin+g_omega_const*(xmax-xmin),xmax));
+			}
+		}
+	else if (L[0] == "w*") {
+		if (e[0] == 0) {
+			return(el_to_radius(rest(e),L[1],xmax-g_omega_const*(xmax-xmin),xmax));
+			}
+		else {
+			return(el_to_radius([e[0]+1].concat(rest(e)),L,xmin,xmax-g_omega_const*(xmax-xmin)));
+			}
+		}
+	else if (L[0] == "s") {
+		if (e[0].length == 0) {
+			return(el_to_radius(rest(e),L[1],xmin+g_shuffle_const_2*(xmax-xmin),xmax-g_shuffle_const_2*(xmax-xmin)));
+			}
+		else if (e[0][0] == 0) {
+			return(el_to_radius([rest(e[0])].concat(rest(e)),cycle(L),xmin,xmin+g_shuffle_const_2*(xmax-xmin)));
+			}
+		else if (e[0][0] == 1) {
+			return(el_to_radius([rest(e[0])].concat(rest(e)),cycle(L),xmax-g_shuffle_const_2*(xmax-xmin),xmax));
+			}
+		}
+	}
+
+function etp_test(e) {
+	var ctx = document.getElementById("c").getContext("2d");
+	ctx.beginPath();
+	var x = el_to_point(e,g_LO,g_min_x,g_max_x);
+	ctx.moveTo(g_w/2,0);
+	ctx.lineTo(x,g_c);
+	ctx.stroke();
+	}
+
+function drawLO(ctx,L,xmin,xmax,ystart,show_arrows) {
+	if (!ystart) {ystart = 0;}
+	if (xmin < 0 && xmax < 0) {
+		return;
+		}
+	if (xmin > g_w && xmax > g_w) {
+		return;
+		}
+	if (xmax - xmin < .1) {
+		return;
+		}
+	var i;
+	if (L == 1) {
+		ctx.fillStyle = "black";
+		ctx.beginPath();
+		ctx.arc((xmax+xmin)/2,g_c+ystart,Math.max(g_min_radius,Math.min(g_max_radius,(xmax-xmin)/5)),0,6.28);
+		ctx.fill();
+		}
+	else if (typeof L == "string") {
+		ctx.fillStyle = L;
+		ctx.beginPath();
+		ctx.arc((xmax+xmin)/2,g_c+ystart,Math.min(5,(xmax-xmin)/5),0,6.28);
+		ctx.fill();
+		}
+	else if (L[0] == "+") {
+		for (i = 1; i < L.length; i++) {
+			drawLO(ctx,L[i],xmin+(i-1)*(xmax-xmin)/(L.length-1),xmin+(i)*(xmax-xmin)/(L.length-1),ystart);
+			}
+		}
+	else if (L[0] == "A") {
+		var div = 0.75*xmin + 0.25*xmax;
+		drawLO(ctx,L[1],xmin,div,ystart);
+		drawLO(ctx,L[2],div,xmax,ystart);
+		}
+	else if (L[0] == "B") {
+		ctx.beginPath();
+		ctx.strokeStyle = "blue";
+		ctx.lineWidth = 5;
+		//ctx.fillRect(xmin*0.95+xmax*0.05, ystart+60, (xmax*0.95+xmin*0.05)-(xmin*0.95+xmax*0.05), 3);
+		ctx.moveTo(xmin*0.95+xmax*0.05, ystart+60);
+		ctx.lineTo(xmax*0.95+xmin*0.05, ystart+60);
+		ctx.stroke();
+		for (i = 1; i < L.length; i++) {
+			drawLO(ctx,L[i],xmin+(i-1)*(xmax-xmin)/(L.length-1),xmin+(i)*(xmax-xmin)/(L.length-1),ystart);
+			}
+		}
+	else if (L[0] == "w") {
+		drawLO(ctx,L[1],xmin,xmin+g_omega_const*(xmax-xmin),ystart);
+		drawLO(ctx,L,xmin+g_omega_const*(xmax-xmin),xmax,ystart);
+		}
+	else if (L[0] == "w*") {
+		drawLO(ctx,L,xmin,xmax-g_omega_const*(xmax-xmin),ystart);
+		drawLO(ctx,L[1],xmax-g_omega_const*(xmax-xmin),xmax,ystart);
+		}
+	else if (L[0] == "s") {
+		var t = cycle(L);
+		drawLO(ctx,t,xmin,xmin+g_shuffle_const_2*(xmax-xmin),ystart);
+		drawLO(ctx,L[1],xmin+g_shuffle_const_2*(xmax-xmin),xmax-g_shuffle_const_2*(xmax-xmin),ystart);
+		drawLO(ctx,t,xmax-g_shuffle_const_2*(xmax-xmin),xmax,ystart);
+		}
+	if (show_arrows) {
+		if (xmin < 0) {
+			ctx.lineCap = "round";
+			ctx.lineJoin = "round";
+			ctx.strokeStyle = "white";
+			ctx.lineWidth = 4;
+			ctx.beginPath();
+			ctx.moveTo(10,g_c+ystart-10);
+			ctx.lineTo(2,g_c+ystart);
+			ctx.lineTo(10,g_c+ystart+10);
+			ctx.stroke();
+			ctx.strokeStyle = "black";
+			ctx.lineWidth = 2;
+			ctx.beginPath();
+			ctx.moveTo(10,g_c+ystart-10);
+			ctx.lineTo(2,g_c+ystart);
+			ctx.lineTo(10,g_c+ystart+10);
+			ctx.stroke();
+			}
+		if (xmax > g_w) {
+			ctx.lineCap = "round";
+			ctx.lineJoin = "round";
+			ctx.strokeStyle = "white";
+			ctx.lineWidth = 4;
+			ctx.beginPath();
+			ctx.moveTo(g_w-10,g_c+ystart-10);
+			ctx.lineTo(g_w-2,g_c+ystart);
+			ctx.lineTo(g_w-10,g_c+ystart+10);
+			ctx.stroke();
+			ctx.strokeStyle = "black";
+			ctx.lineWidth = 2;
+			ctx.beginPath();
+			ctx.moveTo(g_w-10,g_c+ystart-10);
+			ctx.lineTo(g_w-2,g_c+ystart);
+			ctx.lineTo(g_w-10,g_c+ystart+10);
+			ctx.stroke();
+			}
+		}
+	}
+
+function draw_history(ctx,hist,stb,sel) {
+	var i, r, x, y;
+	var toppts = [];
+	var botpts = [];
+	for (i = 0; i < hist.length; i++) {
+		ctx.lineWidth = 2;
+		toppts.push(el_to_point(hist[i][0],g_LO.top,g_zoomies.top.min_x,g_zoomies.top.max_x));
+		botpts.push(el_to_point(hist[i][1],g_LO.bot,g_zoomies.bot.min_x,g_zoomies.bot.max_x));
+		ctx.beginPath();
+		ctx.moveTo(toppts[i],g_c);
+		ctx.lineTo(botpts[i],3*g_c);
+		ctx.stroke();
+		}
+	for (i = 0; i < hist.length; i++) {
+		x = toppts[i];
+		r = el_to_radius(hist[i][0],g_LO.top,g_zoomies.top.min_x,g_zoomies.top.max_x);
+		y = g_c;
+		ctx.beginPath();
+		ctx.arc(x,y,r,0,6.29);
+		ctx.fillStyle = g_color_list[i%6];
+		ctx.fill();
+		}
+	for (i = 0; i < hist.length; i++) {
+		x = botpts[i];
+		r = el_to_radius(hist[i][1],g_LO.bot,g_zoomies.bot.min_x,g_zoomies.bot.max_x);
+		y = 3*g_c;
+		ctx.beginPath();
+		ctx.arc(x,y,r,0,6.29);
+		ctx.fillStyle = g_color_list[i%6];
+		ctx.fill();
+		}
+	if (typeof stb != "undefined") {
+		if (stb == 0) {
+			x = el_to_point(sel,g_LO.top,g_zoomies.top.min_x,g_zoomies.top.max_x);
+			if (document.getElementById("chk_highlight_spm").checked) {r = g_max_radius;}
+			else {r = el_to_radius(sel,g_LO.top,g_zoomies.top.min_x,g_zoomies.top.max_x);}
+			y = g_c;
+			}
+		else {
+			x = el_to_point(sel,g_LO.bot,g_zoomies.bot.min_x,g_zoomies.bot.max_x);
+			if (document.getElementById("chk_highlight_spm").checked) {r = g_max_radius;}
+			else {r = el_to_radius(sel,g_LO.bot,g_zoomies.bot.min_x,g_zoomies.bot.max_x);}
+			y = 3*g_c;
+			}
+		ctx.beginPath();
+		ctx.arc(x,y,r,0,6.29);
+		ctx.fillStyle = g_color_list[hist.length%6];
+		ctx.fill();
+		}
+	}
+
+function draw(L) {
+	var ctx = document.getElementById("c").getContext("2d");
+	ctx.clearRect(0,0,g_w,2*g_c);
+	drawLO(ctx,L,0,g_w);
+	}
+
+function fib(n) {
+	if (n <= 1) {return(1);}
+	return(fib(n-1)+fib(n-2));
+	}
+
+function draw() {
+	var ctx = document.getElementById("c").getContext("2d");
+	ctx.clearRect(0,0,g_w,4*g_c);
+	drawLO(ctx,g_LO.top,g_zoomies.top.min_x,g_zoomies.top.max_x,0,true);
+	drawLO(ctx,g_LO.bot,g_zoomies.bot.min_x,g_zoomies.bot.max_x,2*g_c,true);
+	if (g_game_state != -1) {
+		draw_history(ctx,g_previous_moves,g_game_state,g_spoiler_move);
+		}
+	else {
+		draw_history(ctx,g_previous_moves);
+		}
+	}
+
+function mdown(e) {
+	document.activeElement.blur();
+	e.preventDefault();
+	var rect = e.target.getBoundingClientRect();
+	var eX = e.clientX-rect.x;
+	var eY = e.clientY-rect.y;
+	if (eX <= 10 && Math.abs(eY - g_c) <= 10 && g_zoomies.top.min_x < 0) {
+		g_zoomies.top.min_x = 0;
+		draw();
+		return;
+		}
+	else if (eX <= 10 && Math.abs(eY - 3*g_c) <= 10 && g_zoomies.bot.min_x < 0) {
+		g_zoomies.bot.min_x = 0;
+		draw();
+		return;
+		}
+	else if (g_w-eX <= 10 && Math.abs(eY - g_c) <= 10 && g_zoomies.top.max_x > g_w) {
+		g_zoomies.top.max_x = g_w;
+		draw();
+		return;
+		}
+	else if (g_w-eX <= 10 && Math.abs(eY - 3*g_c) <= 10 && g_zoomies.bot.max_x > g_w) {
+		g_zoomies.bot.max_x = g_w;
+		draw();
+		return;
+		}
+	else if (eY < 100 && point_to_el(eX,eY,g_LO.top,g_zoomies.top.min_x,g_zoomies.top.max_x)) {
+		try_to_make_move(0,point_to_el(eX,eY,g_LO.top,g_zoomies.top.min_x,g_zoomies.top.max_x));
+		}
+	else if (eY >= 100 && point_to_el(eX,eY - 2*g_c,g_LO.bot,g_zoomies.bot.min_x,g_zoomies.bot.max_x)) {
+		try_to_make_move(1,point_to_el(eX,eY-2*g_c,g_LO.bot,g_zoomies.bot.min_x,g_zoomies.bot.max_x));
+		}
+	else if (eY < 100) {
+		g_zoomies.top.drag_x = eX;
+		document.body.style.cursor = "grabbing";
+		g_mouse_downer = e.target;
+		window.addEventListener("mousemove",mmove);
+		window.addEventListener("mouseup",mup);
+		}
+	else {
+		g_zoomies.bot.drag_x = eX;
+		document.body.style.cursor = "grabbing";
+		g_mouse_downer = e.target;
+		window.addEventListener("mousemove",mmove);
+		window.addEventListener("mouseup",mup);
+		}
+
+	}
+
+function mmove(e) {
+	e.preventDefault();
+	if (g_mouse_downer != "NO") {
+		var rect = g_mouse_downer.getBoundingClientRect();
+		}
+	else {
+		var rect = e.target.getBoundingClientRect();
+		}
+	var eX = e.clientX-rect.x;
+	var eY = e.clientY-rect.y;
+	if (g_zoomies.top.drag_x != "NO") {
+		g_zoomies.top.min_x += eX-g_zoomies.top.drag_x;
+		g_zoomies.top.max_x += eX-g_zoomies.top.drag_x;
+		g_zoomies.top.drag_x = eX;
+		fixbounds(g_zoomies.top);
+		draw();
+		}
+	else if (g_zoomies.bot.drag_x != "NO") {
+		g_zoomies.bot.min_x += eX-g_zoomies.bot.drag_x;
+		g_zoomies.bot.max_x += eX-g_zoomies.bot.drag_x;
+		g_zoomies.bot.drag_x = eX;
+		fixbounds(g_zoomies.bot);
+		draw();
+		}
+	else if (g_mouse_downer == "NO") {
+		if (eX <= 10 && Math.abs(eY - g_c) <= 10 && g_zoomies.top.min_x < 0) {
+			e.target.style.cursor = "zoom-out";
+			}
+		else if (eX <= 10 && Math.abs(eY - 3*g_c) <= 10 && g_zoomies.bot.min_x < 0) {
+			e.target.style.cursor = "zoom-out";
+			}
+		else if (g_w-eX <= 10 && Math.abs(eY - g_c) <= 10 && g_zoomies.top.max_x > g_w) {
+			e.target.style.cursor = "zoom-out";
+			}
+		else if (g_w-eX <= 10 && Math.abs(eY - 3*g_c) <= 10 && g_zoomies.bot.max_x > g_w) {
+			e.target.style.cursor = "zoom-out";
+			}
+		else if (eY < 100 && point_to_el(eX,eY,g_LO.top,g_zoomies.top.min_x,g_zoomies.top.max_x)) {
+			e.target.style.cursor = "pointer";
+			}
+		else if (eY >= 100 && point_to_el(eX,eY - 2*g_c,g_LO.bot,g_zoomies.bot.min_x,g_zoomies.bot.max_x)) {
+			e.target.style.cursor = "pointer";
+			}
+		else {
+			e.target.style.cursor = "";
+			}
+		}
+	}
+
+function mup(e) {
+	e.preventDefault();
+	g_zoomies.top.drag_x = "NO";
+	g_zoomies.bot.drag_x = "NO";
+	document.body.style.cursor = "";
+	if(g_mouse_downer != "NO") {g_mouse_downer.style.cursor = "";}
+	g_mouse_downer = "NO";
+	window.removeEventListener("mousemove",mmove);
+	window.removeEventListener("mouseup",mup);
+	}
+
+function mwheel(e) {
+	document.activeElement.blur();
+	e.preventDefault();
+	var rect = e.target.getBoundingClientRect();
+	var eX = e.clientX-rect.x;
+	var eY = e.clientY-rect.y;
+	if (eY < 100) {
+		var dleft = eX-g_zoomies.top.min_x;
+		var dright = g_zoomies.top.max_x-eX;
+		var z;
+		if (e.deltaY < 0) {
+			z = g_zoom_in;
+			}
+		else if (e.deltaY > 0) {
+			z = g_zoom_out;
+			}
+		g_zoomies.top.min_x = eX - z*dleft;
+		g_zoomies.top.max_x = eX + z*dright;
+		fixbounds(g_zoomies.top);
+		draw();
+		}
+	else {
+		var dleft = eX-g_zoomies.bot.min_x;
+		var dright = g_zoomies.bot.max_x-eX;
+		var z;
+		if (e.deltaY < 0) {
+			z = g_zoom_in;
+			}
+		else if (e.deltaY > 0) {
+			z = g_zoom_out;
+			}
+		g_zoomies.bot.min_x = eX - z*dleft;
+		g_zoomies.bot.max_x = eX + z*dright;
+		fixbounds(g_zoomies.bot);
+		draw();
+		}
+	}
+
+function fixbounds(d) {
+	if (d.min_x > 0) {d.min_x = 0;}
+	if (d.max_x < g_w) {d.max_x = g_w;}
+	return(d);
+	}
+
+function mdown2(e) {
+	document.activeElement.blur();
+	e.preventDefault();
+	var rect = e.target.getBoundingClientRect();
+	var eX = e.clientX-rect.x;
+	var eY = e.clientY-rect.y;
+	var id = e.target.id;
+	g_zoomies[id].drag_x = eX;
+	g_zoom_id = id;
+	window.addEventListener("mousemove",mmove2);
+	window.addEventListener("mouseup",mup2);
+	}
+
+function mmove2(e) {
+	e.preventDefault();
+	if (g_zoom_id != "") {
+		var rect = document.getElementById(g_zoom_id).getBoundingClientRect();
+		}
+	else {
+		var rect = e.target.getBoundingClientRect();
+		}
+	var eX = e.clientX-rect.x;
+	var eY = e.clientY-rect.y;
+	var id = g_zoom_id;
+	if (id != "" && g_zoomies[id].drag_x != "NO") {
+		g_zoomies[id].min_x += eX-g_zoomies[id].drag_x;
+		g_zoomies[id].max_x += eX-g_zoomies[id].drag_x;
+		g_zoomies[id].drag_x = eX;
+		fixbounds(g_zoomies[id]);
+		drawcanv(id);
+		}
+	}
+
+function mup2(e) {
+	e.preventDefault();
+	var id = g_zoom_id;
+	if (id != "") {
+		g_zoomies[id].drag_x = "NO";
+		g_zoom_id = "";
+		}
+	window.removeEventListener("mousemove",mmove2);
+	window.removeEventListener("mouseup",mup2);
+	}
+
+function mwheel2(e) {
+	document.activeElement.blur();
+	e.preventDefault();
+	var rect = e.target.getBoundingClientRect();
+	var eX = e.clientX-rect.x;
+	var eY = e.clientY-rect.y;
+	var id = e.target.id;
+	var dleft = eX-g_zoomies[id].min_x;
+	var dright = g_zoomies[id].max_x-eX;
+	var z;
+	if (e.deltaY < 0) {
+		z = g_zoom_in;
+		}
+	else if (e.deltaY > 0) {
+		z = g_zoom_out;
+		}
+	g_zoomies[id].min_x = eX - z*dleft;
+	g_zoomies[id].max_x = eX + z*dright;
+	fixbounds(g_zoomies[id]);
+	drawcanv(id);
+	}
+
+function drawcanv(id) {
+	var ctx = document.getElementById(id).getContext("2d");
+	ctx.clearRect(0,0,g_w,2*g_c);
+	drawLO(ctx,g_LO[id],g_zoomies[id].min_x,g_zoomies[id].max_x,0,true);
+	}
+
+function bootcanv(id,L) {
+	g_zoomies[id] = {drag_x:"NO", min_x:0, max_x:g_w};
+	g_LO[id] = L;
+	drawcanv(id);
+	}
+
+function selector_html(id,oninp,selv) {
+	var str = "<select id='"+id+"_sel' oninput='"+oninp+"'>";
+	var i;
+	for (i = 0; i < g_built_in_nslos.length; i++) {
+		str += "<option value='"+i+"'";
+		if (i == selv) {
+			str += " selected ";
+			}
+		str += ">" + nslo_to_str(g_built_in_nslos[i]) + "</option>";
+		}
+	str += "</select>";
+	return(str);
+	}
+
+var g_loc_selector_number = 1;
+var g_basic_nslos = ["w","w*","z","q"];
+var g_loc_selections_n = 0;
+
+var g_loc_selections = [];
+
+function upd_loc_selector() {
+	var i;
+	var str = "";
+	var k = document.getElementById("loc_selector_type").value;
+	if (k == 3 || k == 6) {
+		for (i = 0; i < g_loc_selector_number; i++) {
+			str += selector_html("loc_selector_"+i,"upd_loc_lo(event)",g_loc_selections[i]);
+			}
+		str += "<button onclick='g_loc_selector_number++;upd_loc_selector();'>+</button>";
+		if (i > 1) {
+			str += "<button onclick='g_loc_selector_number--;upd_loc_selector();'>-</button>";
+			}
+		}
+	else if (k == 2) {
+		str = "<input type='number' id='loc_selector_n' min=0 step=1 value=";
+		if (g_loc_selections[0] < 0) {str += -g_loc_selections[0];}
+		else if (g_loc_selections[0] < 10) {str += g_loc_selections[0];}
+		else {str += "0";}
+		str += " style='width:3em' oninput='upd_loc_lo(event)'>";
+		}
+	else if (k == 1) {
+		str = "<select id='loc_selector_sel' oninput='upd_loc_lo(event)'>";
+		for (i = 10; i <= 13; i++) {
+			str += "<option value='"+i+"'";
+			if (i == g_loc_selections[i]) {
+				str += " selected ";
+				}
+			str += ">" + nslo_to_str(g_built_in_nslos[i]) + "</option>";
+			}
+		str += "</select>";
+		}
+	else {
+		str = selector_html("loc_selector","upd_loc_lo(event)",g_loc_selections[0]);
+		}
+	document.getElementById("loc_selector").innerHTML = str;
+	upd_loc_lo();
+	}
+
+function upd_loc_lo(e) {
+	if (e) {
+		if (e.target.id == "loc_selector_sel") {
+			g_loc_selections[0] = Number(e.target.value);
+			}
+		else if (e.target.id == "loc_selector_n") {
+			if (e.target.value < 10) {
+				g_loc_selections[0] = Number(e.target.value);
+				}
+			else {g_loc_selections[0] = -Number(e.target.value);}
+			}
+		else if (e.target.id.slice(0,13) == "loc_selector_") {//loc_selector_[i]_sel
+			i = Number(e.target.id.slice(13,-4));
+			g_loc_selections[i] = Number(e.target.value);
+			}
+		}
+	var t = get_loc_selector_nslo();
+	g_LO["loc"] = standardize(t);
+	document.getElementById("loc_name").innerHTML = nslo_to_str(t);
+	g_zoomies.loc = {drag_x:"NO", min_x:0, max_x:g_w}
+	drawcanv("loc");
+	}
+
+function get_loc_selector_nslo() {
+	var k = document.getElementById("loc_selector_type").value;
+	var j = g_loc_selector_number;
+	var l,i;
+	if (k == 0 || k == 1) {
+		return(g_built_in_nslos[document.getElementById("loc_selector_sel").value]);
+		}
+	else if (k == 2) {
+		return(Number(document.getElementById("loc_selector_n").value));
+		}
+	else if (k == 3) {
+		l = ["+"];
+		for (i = 0; i < g_loc_selector_number; i++) {
+			l.push(g_built_in_nslos[document.getElementById("loc_selector_"+i+"_sel").value]);
+			}
+		return(l);
+		}
+	else if (k == 4) {
+		return(["w",g_built_in_nslos[document.getElementById("loc_selector_sel").value]]);
+		}
+	else if (k == 5) {
+		return(["w*",g_built_in_nslos[document.getElementById("loc_selector_sel").value]]);
+		}
+	else if (k == 6) {
+		l = ["s"];
+		for (i = 0; i < g_loc_selector_number; i++) {
+			l.push(g_built_in_nslos[document.getElementById("loc_selector_"+i+"_sel").value]);
+			}
+		return(l);
+		}
+	}
+
+function upd_game_sel() {
+	g_LO.top = standardize(g_built_in_nslos[document.getElementById("top_sel_sel").value]);
+	g_LO.bot = standardize(g_built_in_nslos[document.getElementById("bot_sel_sel").value]);
+	g_zoomies.top = {drag_x:"NO", min_x:0, max_x:g_w};
+	g_zoomies.bot = {drag_x:"NO", min_x:0, max_x:g_w};
+	
+	new_game();	
+
+	draw();
+	}
+
+function add_to(L) {
+	var i;
+	var k = "NO";
+	for (i = 0; i < g_built_in_nslos.length; i++) {
+		if (recursivelistcompare(L,g_built_in_nslos[i])) {k = i;}
+		}
+	if (k == "NO") {
+		g_built_in_nslos.push(L);
+		upd_loc_selector();
+		document.getElementById("top_sel").innerHTML = selector_html("top_sel","upd_game_sel()",document.getElementById("top_sel_sel").value);
+		document.getElementById("bot_sel").innerHTML = selector_html("bot_sel","upd_game_sel()",document.getElementById("bot_sel_sel").value);
+		return(g_built_in_nslos.length-1);
+		}
+	else {
+		return(k);
+		}
+	}
+
+function set_as(tb) {
+	var k = add_to(get_loc_selector_nslo());
+	if (tb == 0) {
+		document.getElementById("top_sel").innerHTML = selector_html("top_sel","upd_game_sel()",k);
+		upd_game_sel();
+		}
+	else {
+		document.getElementById("bot_sel").innerHTML = selector_html("bot_sel","upd_game_sel()",k);
+		upd_game_sel();
+		}
+	}
+
+function shelcompare(l1,l2) { //returns -1 if l1 is more, 0 if they're equal, 1 if l2 more
+	var i;
+	var k = Math.max(l1.length,l2.length);
+	for (i = 0; i < k; i++) {
+		if (i >= l1.length) {
+			if(l2[i] == 0) {return(-1);}
+			if(l2[i] == 1) {return(1);}
+			}
+		if (i >= l2.length) {
+			if(l1[i] == 0) {return(1);}
+			if(l1[i] == 1) {return(-1);}
+			}
+		if (l1[i] < l2[i]) {return(1);}
+		if (l1[i] > l2[i]) {return(-1);}
+		}
+	return(0);
+	}
+
+function elcompare(el1,el2) {
+	var i;
+	var k = Math.max(el1.length,el2.length);
+	for (i = 0; i < k; i++) {
+		if (Array.isArray(el1[i]) != Array.isArray(el2[i])) {alert("WHAT"); console.log(el1,el2)}
+		else if (Array.isArray(el1[i])) {
+			var t = shelcompare(el1[i],el2[i]);
+			if (t != 0) {return(t);}
+			}
+		else if (el1[i] < el2[i]) {return(1);}
+		else if (el1[i] > el2[i]) {return(-1);}
+		}
+	return(0);
+	}
+
+function elc_test() {
+	var x1 = ribet(0,1000);
+	var x2 = ribet(0,1000);
+	if (x1 > x2) {
+		var t = x2;
+		x2 = x1;
+		x1 = t;
+		}
+	var el1 = point_to_el(x1,g_c,g_LO.top,0,1000);
+	var el2 = point_to_el(x2,g_c,g_LO.top,0,1000);
+	if (el1 && el2) {console.log(el1,el2,elcompare(el1,el2));}
+	if (el1 && el2 && elcompare(el1,el2) == -1) {alert(el1,el2);}
+	}
+
+function is_valid_spoiler_move(tb,el,hist) {
+	var i;
+	for (i = 0; i < hist.length; i++) {
+		if (elcompare(el,hist[i][tb]) == 0) {return(false);}
+		}
+	return(true);
+	}
+
+function is_valid_duplicator_move(tb,el,hist,stb,sel) {
+	if (tb == stb) {return(false);}
+	var topmove, botmove;
+	var i;
+	for (i = 0; i < hist.length; i++) {
+		if (elcompare(el,hist[i][tb]) == 0) {return(false);}
+		}
+	if (tb == 0) {
+		topmove = el;
+		botmove = sel;
+		}
+	else {
+		topmove = sel;
+		botmove = el;
+		}
+	for (i = 0; i < hist.length; i++) {
+		if (elcompare(topmove,hist[i][0]) != elcompare(botmove,hist[i][1])) {return(false);}
+		}
+	return(true);
+	}
+
+var g_previous_moves = [];
+var g_game_state = -1;
+var g_spoiler_move = "NO";
+
+function try_to_make_move(tb,el) { //user has clicked on a point and we need to figure out if it's a valid move and if so, make it.
+	if (g_game_state == -1) {
+		if (is_valid_spoiler_move(tb,el,g_previous_moves)) {
+			spoiler_moved(tb,el);
+			}
+		else {
+			warn("Invalid Spoiler Move");
+			}
+		}
+	else {
+		if (is_valid_duplicator_move(tb,el,g_previous_moves,g_game_state,g_spoiler_move)) {
+			duplicator_moved(tb,el);
+			}
+		else {
+			warn("Invalid Duplicator Move");
+			}
+		}
+	}
+
+function spoiler_moved(tb,el) { //once we've decided where spoiler moves, actually handle the updates
+	document.getElementById("out").innerHTML = "";
+	g_game_state = tb;
+	g_spoiler_move = el;
+	draw();
+	document.getElementById("turn").innerHTML = "Duplicator (Player 2)'s turn";
+	}
+
+function duplicator_moved(tb,el) {
+	document.getElementById("out").innerHTML = "";
+	g_game_state = -1;
+	if (tb == 0) {
+		g_previous_moves.push([el,g_spoiler_move]);
+		}
+	else {
+		g_previous_moves.push([g_spoiler_move,el]);
+		}
+	g_spoiler_move = "NO";
+	document.getElementById("turntimer").value--;
+	draw();
+	document.getElementById("turn").innerHTML = "Spoiler (Player 1)'s turn";
+	}
+
+function new_game() {
+	g_previous_moves = [];
+	g_game_state = -1;
+	g_spoiler_move = "NO";
+	document.getElementById("turn").innerHTML = "Spoiler (Player 1)'s turn";
+	document.getElementById("out").innerHTML = "";
+	g_zoomies.top = {drag_x:"NO", min_x:0, max_x:g_w};
+	g_zoomies.bot = {drag_x:"NO", min_x:0, max_x:g_w};
+	draw();
+	}
+
+function warn(str) {
+	document.getElementById("out").innerHTML = str;
+	}
+
+function chk_turntimer() {
+	if (document.getElementById("chk_turntimer").checked) {
+		document.getElementById("turntimerspan").style.display = "";
+		}
+	else {
+		document.getElementById("turntimerspan").style.display = "none";
+		}
+	}
+
+function boot() {
+	bootcanv("loc",0);
+	upd_loc_selector();
+	document.getElementById("top_sel").innerHTML = selector_html("top_sel","upd_game_sel()",ribet(0,g_built_in_nslos.length-1));
+	document.getElementById("bot_sel").innerHTML = selector_html("bot_sel","upd_game_sel()",ribet(0,g_built_in_nslos.length-1));
+	upd_game_sel();
+	upd_loc_lo();
+	bootcanv("om",["w",1]);
+	bootcanv("os",["w*",1]);
+	bootcanv("ze",["+",["w*",1],["w",1]]);
+	bootcanv("et",["s",1]);
+	bootcanv("top0",standardize(["A","w",["+","z","z"]]));
+	bootcanv("top1",standardize(["A","w","z"]));
+	bootcanv("top2",standardize(["A","w",["s","z"]]));
+	bootcanv("top3",standardize(["A","w",["w","z"]]));
+	bootcanv("top4",standardize(["A","w",["w*","z"]]));
+	bootcanv("top5",standardize(["A","w",["+",["w","z"],["w*","z"]]]));
+	bootcanv("top6",standardize(["A","w",["+",["w*","z"],["w","z"]]]));
+	}
+
+</script>
+</head>
+<body onload="boot();" style="background-color:white">
+
+<canvas id="top0" width=1000 height=100 style="border:1px solid" onmousedown="mdown2(event)" onmousemove="mmove2(event)" onmouseup="mup2(event)" onwheel="mwheel2(event)"></canvas>
+<canvas id="top1" width=1000 height=100 style="border:1px solid" onmousedown="mdown2(event)" onmousemove="mmove2(event)" onmouseup="mup2(event)" onwheel="mwheel2(event)"></canvas>
+<canvas id="top2" width=1000 height=100 style="border:1px solid" onmousedown="mdown2(event)" onmousemove="mmove2(event)" onmouseup="mup2(event)" onwheel="mwheel2(event)"></canvas>
+<canvas id="top3" width=1000 height=100 style="border:1px solid" onmousedown="mdown2(event)" onmousemove="mmove2(event)" onmouseup="mup2(event)" onwheel="mwheel2(event)"></canvas>
+<canvas id="top4" width=1000 height=100 style="border:1px solid" onmousedown="mdown2(event)" onmousemove="mmove2(event)" onmouseup="mup2(event)" onwheel="mwheel2(event)"></canvas>
+<canvas id="top5" width=1000 height=100 style="border:1px solid" onmousedown="mdown2(event)" onmousemove="mmove2(event)" onmouseup="mup2(event)" onwheel="mwheel2(event)"></canvas>
+<canvas id="top6" width=1000 height=100 style="border:1px solid" onmousedown="mdown2(event)" onmousemove="mmove2(event)" onmouseup="mup2(event)" onwheel="mwheel2(event)"></canvas>
+
+Top: <span id="top_sel"></span> <span id="turn"></span> <button onclick="new_game();draw();">New Game</button><br>
+Bottom: <span id="bot_sel"></span> <span id="turntimerspan" style="display:none">Turns Remaining: <input type="number" id="turntimer" min=0 value=0 style="width:3em"> </span> <span id="out"></span><br>
+<canvas width=1000 height=200 style="border:1px solid" id="c" onmousedown="mdown(event)" onmousemove="mmove(event)" onmouseup="mup(event)" onwheel="mwheel(event)"></canvas>
+<h1>Linear Order Creator and Options</h1>
+<table border=1>
+<tr><td>
+Linear Order Creator: <span id="loc_name"></span> <button onclick="add_to(get_loc_selector_nslo())">Add to drop down menu</button> <button onclick="set_as(0)">Set as Top</button> <button onclick="set_as(1)">Set as Bottom</button>
+</td></tr>
+<tr><td>
+<select id="loc_selector_type" onchange="upd_loc_selector()">
+<option value=2>Finite:</option>
+<option value=3>Concatenation:</option>
+<option value=4>Omega copies:</option>
+<option value=5>Omega* copies:</option>
+<option value=6>Shuffle:</option>
+</select>
+<span id="loc_selector"></span><br>
+<canvas width=1000 height=100 style="border:1px solid" id="loc" onmousedown="mdown2(event)" onmousemove="mmove2(event)" onmouseup="mup2(event)" onwheel="mwheel2(event)"></canvas>
+</td></tr>
+</table>
+
+
+<input type="checkbox" id="chk_turntimer" onchange="chk_turntimer()"> Show Turn Timer
+<input type="checkbox" id="chk_highlight_spm" onchange="draw()"> Highlight Spoiler's Last Move
+
+<h1> Ehrenfeucht-Fraïssé Games on Läuchli-Leonard Linear Orderings </h1>
+
+<h2> Playing </h2>
+The Ehrenfeucht-Fraïssé Game is a game about first order logic. Players take turns matching up the points of two linear orderings. The two linear orderings are shown above each other in the same window, one in the top half and the other in the bottom half.
+<ol>
+<li> First, Player I (Spoiler) selects a point in <b>either</b> linear ordering that has yet to be selected, and colors it a new color. </li>
+<li> Next, Player II (Duplicator) selects a point in the <b>other</b> linear ordering that has yet to be selected, and colors it the same color and draws a line between the two points. </li>
+</ol>
+Lines cannot cross, and players cannot select points that have already been picked. The game ends if either player cannot move.
+Spoiler's (Player I's) goal is to end the game as quickly as possible. Duplicator's (Player II's) goal is to last as long as possible.</body>
+
+<h2> Controls </h2>
+Many of the linear orderings in this game are infinite and in order to access all their points, you're going to need to zoom in. The top and bottom linear orderings pan and zoom independently.
+<ul>
+<li> Zoom in or out with the mouse wheel.
+<li> Pan by clicking and dragging.
+<li> Click on a point to move there.
+<li> Arrows will appear on the left and right edges of the linear orderings to indicate that the linear ordering continues in that direction. Click on them to zoom out in that direction.
+</ul>
+
+<h2> Turns Remaining </h2>
+Because the linear orderings are infinite, it's possible for the game to go on forever. There are three possible ways of resolving this:
+<ul>
+<li> Players determine between themselves if the game will go on forever, and if it does, duplicator is declared victor.
+<li> Players agree before starting the game a maximum number of turns. If duplicator can last that number of turns, they win.
+<li> Spoiler decides before starting the game a maximum number of turns. If duplicator can last that number of turns, they win.
+</ul>
+For the later two options, a turn timer is available. Check the "Show Turns Timer" box under options.
+
+<h2> Linear Order Creator </h2>
+The linear orderings you can play on are those which appear in the theorem of Läuchli and Leonard, which, in some sense capture the interesting linear orderings to play EF games on. They include some basic linear orderings:
+<ul>
+<li> Finite linear orderings (n): We use numbers to represent the linear ordering with that many points (including 0).
+<li> Omega (ω): An infinite linear ordering that goes off infinitely to the right (the ordering of the positive integers):
+<br><canvas id="om" width=1000 height=100 style="border:1px solid" onmousedown="mdown2(event)" onmousemove="mmove2(event)" onmouseup="mup2(event)" onwheel="mwheel2(event)"></canvas>
+<li> Omega-Star (ω*): An infinite linear ordering that goes off infinitely to the left (the ordering of the negative integers):
+<br><canvas id="os" width=1000 height=100 style="border:1px solid" onmousedown="mdown2(event)" onmousemove="mmove2(event)" onmouseup="mup2(event)" onwheel="mwheel2(event)"></canvas>
+<li> Zeta (ζ): An infinite linear ordering that goes off infinitely to the left and right (the ordering of the integers):
+<br><canvas id="ze" width=1000 height=100 style="border:1px solid" onmousedown="mdown2(event)" onmousemove="mmove2(event)" onmouseup="mup2(event)" onwheel="mwheel2(event)"></canvas>
+<li> Eta (η): An infinite linear ordering where between any two points can be found another point (the ordering of the rational numbers, although points have been spread out for clarity):
+<br><canvas id="et" width=1000 height=100 style="border:1px solid" onmousedown="mdown2(event)" onmousemove="mmove2(event)" onmouseup="mup2(event)" onwheel="mwheel2(event)"></canvas>
+</ul>
+From these basic linear orderings, one can obtain the full collection of Läuchli-Leonard linear orderings by freely applying the following operations:
+<ul>
+<li> Concatenation (+): This operation puts linear orderings next to each other, in the order that they are added.
+<li> Omega Copies (⋅ω): This operation starts with the linear order ω and replaces every point by the linear order being copied, producing infinitely many copies of the original linear ordering going off to the right.
+<li> Omega-Star Copies (⋅ω*): This operation starts with the linear order ω* and replaces every point by the linear order being copied, producing infinitely many copies of the original linear ordering going off to the left.
+<li> Shuffle (σ): This operation takes any number of linear orderings and replaces the points of η in such a way that between every two points of the original η is a copy of each of the linear orderings being shuffled together.
+</ul>
+</html>

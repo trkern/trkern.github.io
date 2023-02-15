@@ -1014,11 +1014,11 @@ function tgr_update_bound_boxes(id) {
 	}
 
 function tgr_evt(id,e) {
-	tgr_graph_array[id].plotdata.xmin = document.getElementById("tgr_plotminx_"+id).value;
-	tgr_graph_array[id].plotdata.xmax = document.getElementById("tgr_plotmaxx_"+id).value;
+	tgr_graph_array[id].plotdata.xmin = Number(document.getElementById("tgr_plotminx_"+id).value);
+	tgr_graph_array[id].plotdata.xmax = Number(document.getElementById("tgr_plotmaxx_"+id).value);
 	if (!tgr_graph_array[id].plotdata.no_y) {
-		tgr_graph_array[id].plotdata.ymin = document.getElementById("tgr_plotminy_"+id).value;
-		tgr_graph_array[id].plotdata.ymax = document.getElementById("tgr_plotmaxy_"+id).value;
+		tgr_graph_array[id].plotdata.ymin = Number(document.getElementById("tgr_plotminy_"+id).value);
+		tgr_graph_array[id].plotdata.ymax = Number(document.getElementById("tgr_plotmaxy_"+id).value);
 		}
 	tgr_draw_graph(id);
 	}

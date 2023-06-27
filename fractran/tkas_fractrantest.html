@@ -1,0 +1,182 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="tkas_fractran.js"></script>
+<script src="underscore-min.js"></script>
+<script src="mod_kas.js"></script>
+<script>
+
+var one = {op: "NUM", c:1};
+
+var test = {op: "ROOT", subs:[one,one]}
+
+function outp(str) {
+	document.getElementById("out").innerHTML = str;
+	document.getElementById("out2").innerHTML = str;
+	document.getElementById("out3").innerHTML = str;
+	}
+
+function tkas_kas_test(str,k) {
+	var pt = tkas_kas_parse(str,{functions:["f","g"]});
+	console.log(pt);
+	outp(tkas_render(pt,[],{rendertype:k}));
+	}
+
+function tkas_test() {
+	document.getElementById("out").innerHTML = tkas_render({op:"ABS",subs:[one]},[],tkas_default_pgdecor);
+	}
+
+function root_test(str1,str2,k) {
+	var pt1 = tkas_kas_parse(str1);
+	var pt2 = tkas_kas_parse(str2);
+	var pt = {op:"ROOT",subs:[pt1,pt2]};
+	console.log(pt);
+	document.getElementById("out").innerHTML = tkas_render(pt,[],{rendertype:k,parentype:"css"});
+	}
+
+function tree_test(str) {
+	var T = test;//tkas_kas_parse(str);
+	document.getElementById("out").innerHTML = tkas_html_from_tps(tkas_tps_from_htree(tkas_htree_from_ptree(T)),{id:"tree"});
+	document.getElementById("out2").innerHTML = tkas_render(T,{id:"form"});
+	tkas_highlight(["Ttree","Fform"],T);
+	}
+
+var rn = /\d+\.\d*|\d+|\.\d*/g
+
+var rt = `(sqrt|root|ln|log|sin|cos|tan|sec|csc|abs)*`
+
+function rendertree(T) {
+	return(tkas_html_from_tps(tkas_tps_from_htree(tkas_htree_from_ptree(T))));
+	}
+
+function parsetest(str) {
+	var p = tkas_lex(str);
+	console.log(p);
+	document.getElementById("out").innerHTML = tkas_print_lexlist(p);
+	var fz = tkas_parse_find_parentheses(p,tkas_fz(p));
+	//var np = tkas_parse_merge(p,fz,["S",{op:"NUM",c:42}]);
+	//console.log(np);
+	//document.getElementById("out2").innerHTML = tkas_print_lexlist(np);
+	//console.log(tkas_pemdas_exponent(p,tkas_fz(p)));
+	console.log(p);
+	document.getElementById("out3").innerHTML = tkas_print_lexlist(tkas_pemdas_md(p));
+	console.log(tkas_pemdas_md(p));
+	}
+
+var g_T = "NOPE";
+
+function pemdastest(str) {
+	var p = tkas_lex(str);
+	var hstr = "";
+	hstr += tkas_print_lexlist(p);
+	var lastgood = p;
+	var o = tkas_pemdas(p);
+	console.log(o,p);
+	var i = 0;
+	while(o) {
+		lastgood = o;
+		console.log(i);
+		i++;
+		if (i > 100) {document.getElementById("out").innerHTML = hstr; return;}
+		hstr += tkas_print_lexlist(o);
+		hstr += "<br>";
+		o = tkas_pemdas(o);
+		console.log(o);
+		}
+	console.log(lastgood);
+	var T = tkas_parse_cleanup(lastgood[0][1]);
+	g_T = T;
+	document.getElementById("out3").innerHTML = hstr;
+	document.getElementById("out").innerHTML = tkas_html_from_tps(tkas_tps_from_htree(tkas_htree_from_ptree(T)),{id:"tree"});
+	document.getElementById("out2").innerHTML = tkas_render(T,{id:"form"});
+	document.getElementById("jsout").innerHTML = tkas_restriction_test(T,tkas_restriction_diophantine) + ":" + tkas_js_from_ptree(T);
+	tkas_highlight(["Ttree","Fform"],T,{select:true});
+	}
+
+function colorif() {
+	if (g_T == "NOPE") {return;}
+	tkas_colorify(["Ttree","Fform"],g_T);
+	}
+
+function make_menu(x,y) {
+	var str = "<table border=1><tr><td>hello</td></tr><tr><td>hello</td></tr><tr><td>hello</td></tr><tr><td>hello</td></tr><tr><td>hello</td></tr><tr><td>hello</td></tr></table>";
+	var menu = document.createElement("span");
+	menu.style.position = "absolute";
+	menu.style.bottom = y + "px";
+	menu.style.left = x + "px";
+	menu.style.backgroundColor = "white";
+	menu.innerHTML = str;
+	menu.addEventListener("mouseleave", function() {document.body.removeChild(menu)});
+	document.body.appendChild(menu);
+	}
+
+function menu_test() {
+	document.getElementById("menutest").addEventListener('mousedown', function(e) {make_menu(e.offsetX,e.offsetY)});
+	}
+
+function rule_test() {
+	var T2 = tkas_parse("1+(x+y+4)3");
+	var T = tkas_rule_right_distributivity(T2,[1]);
+	document.getElementById("out").innerHTML = tkas_html_from_tps(tkas_tps_from_htree(tkas_htree_from_ptree(T)),{id:"tree"});
+	document.getElementById("out2").innerHTML = tkas_render(T,{id:"form"});
+	}
+
+function grab_test(s1,s2) {
+	console.log(tkas_parse(s1),tkas_parse(s2));
+	console.log(tkas_rule_grab_variables(tkas_parse(s1),tkas_parse(s2)));
+	}
+
+function sr_test(s1,s2,L) {
+	var T = tkas_rule_simple_rule(tkas_parse(s1),tkas_parse(s2),L);
+	document.getElementById("out").innerHTML = tkas_html_from_tps(tkas_tps_from_htree(tkas_htree_from_ptree(T)),{id:"tree"});
+	document.getElementById("out2").innerHTML = tkas_render(T,{id:"form"});
+	tkas_highlight(["Ttree","Fform"],T);
+	}
+
+function draw(T) {
+	document.getElementById("out").innerHTML = tkas_html_from_tps(tkas_tps_from_htree(tkas_htree_from_ptree(T)),{id:"tree"});
+	document.getElementById("out2").innerHTML = tkas_render(T,{id:"form"});
+	tkas_highlight(["Ttree","Fform"],T);
+	}
+
+</script>
+<style>
+textarea {
+	z-index:-2;
+	}
+body {
+	}
+sup {
+	font-size: 70%;
+	}
+</style>
+</head>
+<body>
+Please enter a formula in the text box below and hit "parse!" <br>
+Supported math:
+<ul>
+<li> +, - , *, /, ^
+<li> Absolute value, as |x| or abs(x)
+<li> sqrt, root(a,b) for the ath root of b
+<li> ln, log, sin-csc
+<li> =, <, >, <=, >=, !=
+</ul>
+Three things will appear:
+<ul>
+<li> A tree representing the internal structure of the formula (hover your mouse over the nodes!)
+<li> The formula itself, pretty-printed (hover your mouse over the formula!)
+<li> The steps of the parse process (for debugging purposes)
+</ul>
+The "colorify" button will color each node of the tree for debugging purposes<br>
+<input id="in"> <button onclick="pemdastest(document.getElementById('in').value)">Parse!</button> <button onclick="colorif()">Colorify</button>
+<span id="jsout"></span>
+<span id="out" style="font-size:100%"></span>
+<br>
+<span id="out2" style="font-size:300%"></span>
+<br>
+<span id="out3" style="font-size:100%"></span>
+<br>
+<span id="out4"></span>
+</body>
+</html>

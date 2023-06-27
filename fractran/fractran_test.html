@@ -1,0 +1,511 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="frac.png">
+<link rel="image_src" href="frac.png">
+<meta name=description content="">
+<title> Fractran </title>
+<script>
+
+var cursor_str = "<span style='border-left: 1px solid black; margin-left:-1px;padding:0'>&#8203;</span>";
+
+var prime_list = [2]; //DO NOT ACCESS DIRECTLY, use nth_prime
+
+function nth_prime(n) {
+	while (!(n in prime_list)) {
+		var k = prime_list[prime_list.length-1] + 1;
+		var new_prime_found = false;
+		a: while (!new_prime_found) {
+			var i;
+			for (i = 0; prime_list[i] <= Math.sqrt(k); i++) {
+				if (k % prime_list[i] == 0) {k++; continue a;}
+				}
+			new_prime_found = true;
+			prime_list.push(k);
+			}
+		}
+	return(prime_list[n]);
+	}
+
+function prime_factor(n) {
+	if ((!Number.isInteger(n))||(n<=0)) {console.log("prime_factor error: bad input ", n); return([]);}
+	var rval = [];
+	var handled = 1;
+	var unhandled = n;
+	var i, k, j, p;
+	for (i = 0; handled != n; i++) {
+		p = nth_prime(i);
+		j = 1;
+		k = 0;
+		while (unhandled % (j*p) == 0) {
+			k++;
+			j *= p;
+			}
+		rval.push(k);
+		unhandled /= j;
+		if (!Number.isInteger(unhandled)) {console.log("prime_factor error: no longer integer ", unhandled); return([]);}
+		handled *= j;
+		}
+	return(rval);
+	}
+
+function printlist(l) {
+	if (!(Array.isArray(l))) {return(l);}
+	var i;
+	var rval = "["
+	for (i = 0; i < l.length; i++) {
+		if (i > 0) {rval += ","}
+		rval += printlist(l[i]);
+		}
+	rval += "]";
+	return(rval);
+	}
+
+function insert_into_string(str,c,p) {
+	return(str.slice(0,p) + c + str.slice(p));
+	}
+
+function remove_from_string(str,p) {
+	var rval = "";
+	var i;
+	for (i = 0; i < str.length; i++) {
+		if (i != p) {rval += str[i]};
+		}
+	return(rval);
+	}
+
+function remove_from_array(l,p) {
+	var rval = [];
+	var i;
+	for (i = 0; i < l.length; i++) {
+		if (i != p) {rval.push(l[i])};
+		}
+	return(rval);
+	}
+
+function pl_to_int(l) {
+	var i;
+	var rval = 1;
+	for (i = 0; i < l.length; i++) {
+		if (l[i] == "") {
+			}
+		else {
+			rval *= Math.pow(nth_prime(i),l[i]);
+			}
+		}
+	return(rval);
+	}
+
+function pl_to_html(l, cl) { //cl should be false, or a pair [which prime the cursor is in, where in the string the cursor is in]
+	var option_dot_after_exponents = true;
+	var option_zero_exponents = "show"; //can be "hide", "dim", "show"
+	var option_one_exponents = "show";
+	var i;
+	var rval = "";
+	var needs_dot = false;
+	var expstr;
+	if (l.length == 0) {return("1");}
+	for (i = 0; i < l.length; i++) {
+		if (needs_dot) {rval += "&sdot;"}
+		expstr = l[i];
+		if (cl[0] == i && l[i] != "") {
+			expstr = insert_into_string(expstr,cursor_str,cl[1]);
+			}
+		if (l[i] == "") {
+			if (cl[0] == i) {
+				expstr = "<span style='color:gray;border:1px solid black; margin:0px'>0</span>";
+				}
+			else {
+				expstr = "<span style='color:gray;border:1px dashed; margin:0px'>0</span>";
+				}
+			}
+		else if (l[i] == 0) {
+			if (option_zero_exponents == "hide") {
+				needs_dot = false;
+				continue;
+				}
+			else if (option_zero_exponents == "dim") {
+				needs_dot = true;
+				expstr = "<span style='color:gray'>" + expstr + "</span>";
+				}
+			else if (option_zero_exponents == "show") {
+				needs_dot = true;
+				}
+			}
+		else if (l[i] == 1) {
+			if (option_one_exponents == "hide") {
+				needs_dot=true;
+				expstr = "";
+				}
+			else if (option_one_exponents == "dim") {
+				needs_dot = true;
+				expstr = "<span style='color:gray'>" + expstr + "</span>";
+				}
+			else if (option_one_exponents == "show") {
+				needs_dot = true;
+				}
+			}
+		else {
+			needs_dot = option_dot_after_exponents;
+			}
+		rval += "" + nth_prime(i) + "<sup>" + expstr + "</sup>";
+		}
+	return(rval);
+	}
+
+/*
+function pl_to_html(l, cl) { //cl should be false, or a pair [which prime the cursor is in, where in the string the cursor is in]
+	var option_dot_after_exponents = true;
+	var option_zero_exponents = "show"; //can be "hide", "dim", "show"
+	var option_one_exponents = "show";
+	var i;
+	var rval = "";
+	var needs_dot = false;
+	var expstr;
+	if (l.length == 0) {return("1");}
+	for (i = 0; i < l.length; i++) {
+		if (needs_dot) {rval += "&sdot;"}
+		expstr = l[i];
+		if (l[i] == "") {
+			rval += nth_prime(i)+"<sup style='color:gray;border:1px dashed; margin:0px'>0</sup>";
+			}
+		else if (l[i] == 0) {
+			if (option_zero_exponents == "hide") {
+				needs_dot = false;
+				}
+			else if (option_zero_exponents == "dim") {
+				needs_dot = true;
+				rval += nth_prime(i)+"<sup style='color:gray'>" + l[i] + "</sup>";
+				}
+			else if (option_zero_exponents == "show") {
+				needs_dot = true;
+				rval += nth_prime(i)+"<sup>" + l[i] + "</sup>";
+				}
+			}
+		else if (l[i] == 1) {
+			if (option_one_exponents == "hide") {
+				needs_dot=true;
+				rval += nth_prime(i); 
+				}
+			else if (option_one_exponents == "dim") {
+				needs_dot = true;
+				rval += nth_prime(i)+"<sup style='color:gray'>" + l[i] + "</sup>";
+				}
+			else if (option_one_exponents == "show") {
+				needs_dot = true;
+				rval += nth_prime(i)+"<sup>" + l[i] + "</sup>";
+				}
+			}
+		else {
+			rval += "" + nth_prime(i) + "<sup>" + l[i] + "</sup>";
+			needs_dot = option_dot_after_exponents;
+			}
+		}
+	return(rval);
+	}
+*/
+
+function fracstrings(s1,s2) {
+	var rval = "<table style='vertical-align:middle; border-spacing:0px'><tr><td style='text-align:center; padding:0px; border-bottom:solid 2px'>" + s1 + "</td></tr><tr><td style='text-align:center'>" + s2 + "</td></tr></table>";
+	return(rval);
+	}
+
+function render_fin(l) {
+	var i;
+	var rval = "<table><tr>";
+	var b;
+	for (i = 0; i < l.length; i++) {
+		if (i > 0) {rval += "<td style='width:.25em'></td>"};
+		if (g_fin_loc[0] == i && g_fin_loc[1] == 0) {
+			b = [g_fin_loc[2],g_fin_loc[3]];
+			}
+		else {
+			b = false;
+			}
+		rval += "<td style='text-align:center;border-bottom:solid 2px'>" + pl_to_html(l[i][0],b) + "</td>";
+		}
+	rval += "</tr><tr>";
+	for (i = 0; i < l.length; i++) {
+		if (i > 0) {rval += "<td style='width:.25em'></td>"};
+		if (g_fin_loc[0] == i && g_fin_loc[1] == 1) {
+			b = [g_fin_loc[2],g_fin_loc[3]];
+			}
+		else {
+			b = false;
+			}
+		rval += "<td style='text-align:center'>" + pl_to_html(l[i][1],b) + "</td>";
+		}
+	rval += "</table>";
+	return(rval);
+	}
+
+function fancy_split(str,c) {
+	var rval = str.split(c);
+	if (rval == "") {return([]);}
+	return(rval);
+	}
+
+var g_old_fin = "";
+var g_old_fin_selection; //for the textbox
+var g_fin_loc = [0,0,0,0]; //which fraction, numerator or denominator, which prime, where in string
+var g_fracl = [];
+
+function do_fin() {
+	var str = document.getElementById("fin").value;
+	var sst = document.getElementById("fin").selectionStart;
+	var forbiddenchar = "g"
+	if (str.indexOf(forbiddenchar) != -1) {
+		document.getElementById("fin").value = g_old_fin;
+		document.getElementById("fin").setSelectionRange(g_old_fin_selection,g_old_fin_selection);
+		return;
+		}
+	str = str.slice(0,sst) + forbiddenchar + str.slice(sst);
+	l = fancy_split(str,/\s/);
+	var valid_frac_regex = new RegExp("^(,|\\d|"+forbiddenchar+")*(\\/(,|\\d|"+forbiddenchar+")*)?$");
+	var i, t, j, k, nd;
+	for (i = 0; i < l.length; i++) {
+		if (!(valid_frac_regex.test(l[i]))) {
+			document.getElementById("fin").value = g_old_fin;
+			document.getElementById("fin").setSelectionRange(g_old_fin_selection,g_old_fin_selection);
+			return;
+			}
+		t = l[i].split("/");
+		if (t.length == 0) {l[i] = [[],[]]}
+		else if (t.length == 1) {l[i] = [fancy_split(t[0],","),[]]}
+		else {l[i] = [fancy_split(t[0],","),fancy_split(t[1],",")];}
+		for (nd = 0; nd <= 1; nd++) {
+			for (j = 0; j < l[i][nd].length; j++) { //hunt for the forbiddenchar
+				k = l[i][nd][j].indexOf(forbiddenchar);
+				if (k != -1) {
+					l[i][nd][j] = remove_from_string(l[i][nd][j], k);
+					g_fin_loc = [i, nd, j, k];
+					}
+				}
+			}
+		}
+	g_old_fin = document.getElementById("fin").value;
+	document.getElementById("fout").innerHTML = render_fin(l);
+	g_fracl = l;
+	g_old_fin_selection = document.getElementById("fin").selectionStart;
+	}
+
+/////////////////////////////////////////////////////////////////////////////////////
+function render_kin(l) {
+	var i;
+	var rval = "<table><tr>";
+	var tstr = "";
+	var sstr = "";
+	for (i = 0; i < l.length; i++) {
+		if (i > 0) {rval += "<td style='width:.25em'></td>"};
+		sstr = "";
+		tstr = l[i][0];
+		if (l[i][0] == "") {
+			tstr = "<span style='color:gray'>1</span>";
+			}
+		if (g_kin_loc[0] == i && g_kin_loc[1] == 0 && !g_kin_backspace_confirm) {
+			tstr = insert_into_string(tstr,cursor_str,g_kin_loc[2]);
+			}
+		if (g_kin_loc[0] == i && g_kin_backspace_confirm) {
+			sstr = "background-color:blue;";
+			}
+		rval += "<td style='text-align:center;"+sstr+"border-bottom:solid 2px'>" + tstr + "</td>";
+		}
+	rval += "</tr><tr>";
+	for (i = 0; i < l.length; i++) {
+		if (i > 0) {rval += "<td style='width:.25em'></td>"};
+		tstr = l[i][1];
+		sstr = "";
+		if (l[i][1] == "") {
+			tstr = "<span style='color:gray'>1</span>";
+			}
+		if (g_kin_loc[0] == i && g_kin_loc[1] == 1 && !g_kin_backspace_confirm) {
+			tstr = insert_into_string(tstr,cursor_str,g_kin_loc[2]);
+			}
+		if (g_kin_loc[0] == i && g_kin_backspace_confirm) {
+			sstr = "background-color:blue;";
+			}
+		rval += "<td style='text-align:center;"+sstr+"'>" + tstr + "</td>";
+		}
+	rval += "</table>";
+	return(rval);
+	}
+
+var g_kin_fl = [["",""]];
+var g_kin_loc = [0,0,0]; //which fraction, numerator or denominator, where in string 
+var g_kin_backspace_confirm = false;
+
+function do_kin(e) {
+	e.preventDefault();
+	console.log(e.key);
+
+	if (g_kin_backspace_confirm && e.key == "Backspace") {
+		g_kin_fl = remove_from_array(g_kin_fl, g_kin_loc[0]);
+		g_kin_loc[0]--;
+		g_kin_backspace_confirm = false;
+		document.getElementById("kin").innerHTML = render_kin(g_kin_fl);
+		return;
+		}
+	g_kin_backspace_confirm = false;
+
+	if (/^\d$/.test(e.key)) {
+		g_kin_fl[g_kin_loc[0]][g_kin_loc[1]] = insert_into_string(g_kin_fl[g_kin_loc[0]][g_kin_loc[1]],e.key,g_kin_loc[2]);
+		g_kin_loc[2]++;
+		}
+	else if (e.key == "ArrowLeft") {
+		if (g_kin_loc[2] > 0) {g_kin_loc[2]--;}
+		else { // at the end of num/denom
+			if (g_kin_loc[0] > 0) {
+				g_kin_loc[0]--;
+				g_kin_loc[2] = g_kin_fl[g_kin_loc[0]][g_kin_loc[1]].length;
+				}
+			}
+		}
+	else if (e.key == "ArrowRight") {
+		if (g_kin_loc[2] < g_kin_fl[g_kin_loc[0]][g_kin_loc[1]].length) {g_kin_loc[2]++;}
+		else { // at the end of num/denom
+			if (g_kin_loc[0] < g_kin_fl.length-1) {
+				console.log("a");
+				g_kin_loc[0]++;
+				g_kin_loc[2] = 0;
+				}
+			else { //create new fraction
+				console.log("b");
+				g_kin_fl.push(["",""]);
+				g_kin_loc[0]++;
+				g_kin_loc[2] = 0;
+				}
+			}
+		}
+	else if (e.key == "/") {
+		if (g_kin_loc[1] == 0) {
+			g_kin_loc[1] = 1;
+			g_kin_loc[2] = 0;
+			if (! (1 in g_kin_fl[g_kin_loc[0]])) {
+				g_kin_fl[g_kin_loc[0]][1] = "";
+				}
+			}
+		}
+	else if (e.key == "Backspace") {
+		if (g_kin_loc[2] > 0) {
+			g_kin_fl[g_kin_loc[0]][g_kin_loc[1]] = remove_from_string(g_kin_fl[g_kin_loc[0]][g_kin_loc[1]], g_kin_loc[2]-1);
+			g_kin_loc[2]--;
+			}
+		else if (g_kin_fl[g_kin_loc[0]][0].length > 0 || g_kin_fl[g_kin_loc[0]][1].length > 0){
+			g_kin_backspace_confirm = true;
+			}
+		else {
+			g_kin_fl = remove_from_array(g_kin_fl, g_kin_loc[0]);
+			g_kin_loc[0]--;
+			}
+		}
+	else if (e.key == "ArrowUp") {
+		if (g_kin_loc[1] == 1) {
+			var topl = g_kin_fl[g_kin_loc[0]][0].length;
+			var botl = g_kin_fl[g_kin_loc[0]][1].length;
+			var newind = g_kin_loc[2] + Math.floor((topl-botl)/2);
+			if (newind < 0) {newind = 0;}
+			if (newind > g_kin_fl[g_kin_loc[0]][0].length) {newind = g_kin_fl[g_kin_loc[0]][0].length;}
+			g_kin_loc[2] = newind;
+			g_kin_loc[1] = 0;
+			}
+		}
+	else if (e.key == "ArrowDown") {
+		if (g_kin_loc[1] == 0) {
+			var topl = g_kin_fl[g_kin_loc[0]][0].length;
+			var botl = g_kin_fl[g_kin_loc[0]][1].length;
+			var newind = g_kin_loc[2] + Math.ceil((botl-topl)/2);
+			if (newind < 0) {newind = 0;}
+			if (newind > g_kin_fl[g_kin_loc[0]][1].length) {newind = g_kin_fl[g_kin_loc[0]][1].length;}
+			g_kin_loc[2] = newind;
+			g_kin_loc[1] = 1;
+			}
+		}
+	
+	document.getElementById("kin").innerHTML = render_kin(g_kin_fl);
+	}
+
+
+function apply_f_to_l(l,f) { //attempt to apply fraction(in list form) to list, return "nope" if failure
+	var i;
+	var rval = [];
+	for (i = 0; i < l.length; i++) {
+		rval.push(l[i]);
+		}
+	for (i = 0; i < f[1].length; i++) {
+		if (f[1][i] > 0 && (!(i in l))) {return("nope");}
+		if (f[1][i] > l[i]) {return("nope");}
+		rval[i] -= f[1][i];
+		}
+	for (i = 0; i < f[0].length; i++) {
+		if (!(i in l)) {rval.push(0);}
+		rval[i] += f[0][i];
+		}
+	return(rval);
+	}
+
+function testing_apply_f_to_l(wl,wn,wd) {
+	var l = prime_factor(wl);
+	var f = [prime_factor(wn),prime_factor(wd)];
+	var r = apply_f_to_l(l,f);
+	if (r != "nope") {
+		r = pl_to_int(r);
+		}
+	return(r);
+	}
+
+function apply_fl_to_l(l, fl) { //attempt to apply fractionlist (each in list form) to list, return "nope" if failure
+	var i;
+	var t;
+	for (i = 0; i < fl.length; i++) {
+		var t = apply_f_to_l(l, fl[i]);
+		if (t != "nope") {
+			return(t);
+			}
+		}
+	return("nope");
+	}
+
+function iterated_apply_fl_to_l(l, fl) { //apply fl to l repeatedly until it can't. return "loop" if loops
+	var action_list = [pl_to_int(l)];
+	var curl = l;
+	var b = true;
+	while (b) {
+		curl = apply_fl_to_l(curl, fl);
+		if (curl == "nope") {b = false;}
+		else if (action_list.indexOf(pl_to_int(curl)) != -1) {console.log(action_list); return("loop")}
+		else {action_list.push(pl_to_int(curl));}
+		}
+	console.log(action_list);
+	return(action_list[action_list.length-1]);
+	}
+
+function iapp(n) {
+	var l = prime_factor(n);
+	var k = iterated_apply_fl_to_l(l, g_fracl);
+	return(k);
+	}
+
+var levels = [];
+levels[0] = {
+	name: "intro1",
+	desc: "create a program that turns 2 into 3, then halts",
+	test: function () {
+		return(iapp(2) == 3);
+		}
+	}
+
+//<div id="kin" tabindex="0" onclick="event.target.focus()" onkeydown="do_kin(event)" style="border:1px solid"></div>
+
+</script>
+</head>
+<body onload="do_fin()">
+
+<textarea id="fin" onkeyup="do_fin()"></textarea>
+
+<div id="fout"></div>
+
+
+
+</body>
+</html>

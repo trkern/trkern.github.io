@@ -1,0 +1,355 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="frac.png">
+<link rel="image_src" href="frac.png">
+<meta name=description content="">
+<title> Fractran </title>
+<script>
+
+var cursor_str = "<span style='border-left: 1px solid black; margin-left:-1px;padding:0'>&#8203;</span>";
+
+var prime_list = [2]; //DO NOT ACCESS DIRECTLY, use nth_prime
+
+function nth_prime(n) {
+	while (!(n in prime_list)) {
+		var k = prime_list[prime_list.length-1] + 1;
+		var new_prime_found = false;
+		a: while (!new_prime_found) {
+			var i;
+			for (i = 0; prime_list[i] <= Math.sqrt(k); i++) {
+				if (k % prime_list[i] == 0) {k++; continue a;}
+				}
+			new_prime_found = true;
+			prime_list.push(k);
+			}
+		}
+	return(prime_list[n]);
+	}
+
+function prime_factor(n) {
+	if ((!Number.isInteger(n))||(n<=0)) {console.log("prime_factor error: bad input ", n); return([]);}
+	var rval = [];
+	var handled = 1;
+	var unhandled = n;
+	var i, k, j, p;
+	for (i = 0; handled != n; i++) {
+		p = nth_prime(i);
+		j = 1;
+		k = 0;
+		while (unhandled % (j*p) == 0) {
+			k++;
+			j *= p;
+			}
+		rval.push(k);
+		unhandled /= j;
+		if (!Number.isInteger(unhandled)) {console.log("prime_factor error: no longer integer ", unhandled); return([]);}
+		handled *= j;
+		}
+	return(rval);
+	}
+
+function printlist(l) {
+	if (!(Array.isArray(l))) {return(l);}
+	var i;
+	var rval = "["
+	for (i = 0; i < l.length; i++) {
+		if (i > 0) {rval += ","}
+		rval += printlist(l[i]);
+		}
+	rval += "]";
+	return(rval);
+	}
+
+function insert_into_string(str,c,p) {
+	return(str.slice(0,p) + c + str.slice(p));
+	}
+
+function remove_from_string(str,p) {
+	var rval = "";
+	var i;
+	for (i = 0; i < str.length; i++) {
+		if (i != p) {rval += str[i]};
+		}
+	return(rval);
+	}
+
+function remove_from_array(l,p) {
+	var rval = [];
+	var i;
+	for (i = 0; i < l.length; i++) {
+		if (i != p) {rval.push(l[i])};
+		}
+	return(rval);
+	}
+
+function pl_to_int(l) {
+	var i;
+	var rval = 1;
+	for (i = 0; i < l.length; i++) {
+		if (l[i] == "") {
+			}
+		else {
+			rval *= Math.pow(nth_prime(i),l[i]);
+			}
+		}
+	return(rval);
+	}
+
+function pl_to_html(l, cl) { //cl should be false, or a pair [which prime the cursor is in, where in the string the cursor is in]
+	var option_dot_after_exponents = true;
+	var option_zero_exponents = "show"; //can be "hide", "dim", "show"
+	var option_one_exponents = "show";
+	var i;
+	var rval = "";
+	var needs_dot = false;
+	var expstr;
+	if (l.length == 0) {return("1");}
+	for (i = 0; i < l.length; i++) {
+		if (needs_dot) {rval += "&sdot;"}
+		expstr = l[i];
+		if (cl[0] == i && l[i] != "") {
+			expstr = insert_into_string(expstr,cursor_str,cl[1]);
+			}
+		if (l[i] == "") {
+			if (cl[0] == i) {
+				expstr = "<span style='color:gray;border:1px solid black; margin:0px'>0</span>";
+				}
+			else {
+				expstr = "<span style='color:gray;border:1px dashed; margin:0px'>0</span>";
+				}
+			}
+		else if (l[i] == 0) {
+			if (option_zero_exponents == "hide") {
+				needs_dot = false;
+				continue;
+				}
+			else if (option_zero_exponents == "dim") {
+				needs_dot = true;
+				expstr = "<span style='color:gray'>" + expstr + "</span>";
+				}
+			else if (option_zero_exponents == "show") {
+				needs_dot = true;
+				}
+			}
+		else if (l[i] == 1) {
+			if (option_one_exponents == "hide") {
+				needs_dot=true;
+				expstr = "";
+				}
+			else if (option_one_exponents == "dim") {
+				needs_dot = true;
+				expstr = "<span style='color:gray'>" + expstr + "</span>";
+				}
+			else if (option_one_exponents == "show") {
+				needs_dot = true;
+				}
+			}
+		else {
+			needs_dot = option_dot_after_exponents;
+			}
+		rval += "" + nth_prime(i) + "<sup>" + expstr + "</sup>";
+		}
+	return(rval);
+	}
+
+
+function apply_f_to_l(l,f) { //attempt to apply fraction(in list form) to list, return "nope" if failure
+	var i;
+	var rval = [];
+	for (i = 0; i < l.length; i++) {
+		rval.push(l[i]);
+		}
+	for (i = 0; i < f[1].length; i++) {
+		if (f[1][i] > 0 && (!(i in l))) {return("nope");}
+		if (f[1][i] > l[i]) {return("nope");}
+		rval[i] -= f[1][i];
+		}
+	for (i = 0; i < f[0].length; i++) {
+		if (!(i in l)) {rval.push(0);}
+		rval[i] += f[0][i];
+		}
+	return(rval);
+	}
+
+function testing_apply_f_to_l(wl,wn,wd) {
+	var l = prime_factor(wl);
+	var f = [prime_factor(wn),prime_factor(wd)];
+	var r = apply_f_to_l(l,f);
+	if (r != "nope") {
+		r = pl_to_int(r);
+		}
+	return(r);
+	}
+
+function apply_fl_to_l(l, fl) { //attempt to apply fractionlist (each in list form) to list, return "nope" if failure
+	var i;
+	var t;
+	for (i = 0; i < fl.length; i++) {
+		var t = apply_f_to_l(l, fl[i]);
+		if (t != "nope") {
+			return(t);
+			}
+		}
+	return("nope");
+	}
+
+function iterated_apply_fl_to_l(l, fl) { //apply fl to l repeatedly until it can't. return "loop" if loops
+	var action_list = [pl_to_int(l)];
+	var curl = l;
+	var b = true;
+	while (b) {
+		curl = apply_fl_to_l(curl, fl);
+		if (curl == "nope") {b = false;}
+		else if (action_list.indexOf(pl_to_int(curl)) != -1) {console.log(action_list); return("loop")}
+		else {action_list.push(pl_to_int(curl));}
+		}
+	console.log(action_list);
+	return(action_list[action_list.length-1]);
+	}
+
+function iapp(n) {
+	var l = prime_factor(n);
+	var k = iterated_apply_fl_to_l(l, g_fracl);
+	return(k);
+	}
+
+function str_to_rawpl(str) { //converts a string 2^3*4^6*5 etc into a power list (with unsorted, nonprime bases)
+	var l = str.split("*");
+	var i;
+	var rval = [];
+	for (i = 0; i < l.length; i++) {
+		var k = l[i].split("^");
+		if (k.length == 1) {
+			var b = Number(k[0]);
+			if (!Number.isInteger(b) || b <= 0) {console.log("parse failed at ", l[i]);}
+			rval.push([b,1]);
+			}
+		if (k.length == 2) {
+			var b = Number(k[0]);
+			if (!Number.isInteger(b) || b <= 0) {console.log("parse failed at ", l[i]);}
+			var e = Number(k[1]);
+			if (!Number.isInteger(b) || b <= 0) {console.log("parse failed at ", l[i]);}
+			rval.push([b,e]);
+			}
+		}
+	return(rval);
+	}
+
+function str_to_rawfl(str) {
+	var l = str.split(/\s|,/);
+	var i;
+	var rval = [];
+	for (i = 0; i < l.length; i++) {
+		if (l[i] == "") {continue;}
+		var k = l[i].split("/");
+		if (k.length == 1) {
+			rval.push([str_to_rawpl(k[0]), []]);
+			}
+		if (k.length == 2) {
+			rval.push([str_to_rawpl(k[0]), str_to_rawpl(k[1])]);
+			}
+		}
+	return(rval);
+	}
+
+function rawpl_to_html(l) {
+	var i;
+	var rval = "";
+	if (l.length == 0) {rval = "1";}
+	for (i = 0; i < l.length; i++) {
+		rval += l[i][0] + "<sup>" + l[i][1] + "</sup>"; 
+		}
+	return(rval);
+	}
+
+function fracstrings(s1,s2) {
+	var rval = "<table style='display:inline-block;vertical-align:middle; border-spacing:0px'><tr><td style='height:1.5em;text-align:center; padding:0px; border-bottom:solid 2px'>" + s1 + "</td></tr><tr><td style='height:1.5em;text-align:center'>" + s2 + "</td></tr></table>";
+	return(rval);
+	}
+
+function rawplfrac_to_html(l1,l2) {
+	return(fracstrings(rawpl_to_html(l1),rawpl_to_html(l2)));
+	}
+
+function rawfl_to_html(l) {
+	var i;
+	var rval = "";
+	for (i = 0; i < l.length; i++) {
+		if (i > 0) {rval += "<span style='width:1em'>&nbsp;</span>";}
+		rval += rawplfrac_to_html(l[i][0],l[i][1]);
+		}
+	return(rval);
+	}
+
+function rawpl_to_pl(l) {
+	var i;
+	var factoredbases = [];
+	var maxl = 0;
+	for (i = 0; i < l.length; i++) {
+		var t = prime_factor(l[i][0]);
+		factoredbases.push(t);
+		maxl = Math.max(t.length, maxl);
+		}
+	var rval = [];
+	for (i = 0; i < maxl; i++) {
+		rval.push(0);
+		}
+	for (i = 0; i < l.length; i++) {
+		for (j = 0; j < factoredbases[i].length; j++) {
+			rval[j] += factoredbases[i][j] * l[i][1];
+			}
+		}
+	return(rval);
+	}
+
+function rawfl_to_fl(l) {
+	var i;
+	var rval = [];
+	for (i = 0; i < l.length; i++) {
+		var t_num = rawpl_to_pl(l[i][0]);
+		var t_den = rawpl_to_pl(l[i][1]);
+		var j;
+		for (j = 0; j < Math.min(t_num.length,t_den.length); j++) {
+			if (t_num[j] > 0 && t_den[j] > 0) {
+				var t = Math.min(t_num[j],t_den[j]);
+				t_num[j] -= t;
+				t_den[j] -= t;
+				}
+			}
+		rval.push([t_num,t_den]);
+		}
+	return(rval);
+	}
+
+function test() {
+	var str = document.getElementById("in").value;
+	document.getElementById("out").innerHTML = rawfl_to_html(str_to_rawfl(str)) + "<br>" + printlist(rawfl_to_fl(str_to_rawfl(str)));
+	}
+
+function boot() {
+	
+	}
+
+var levels = [];
+levels[0] = {
+	name: "intro1",
+	desc: "create a program that turns 2 into 3, then halts",
+	test: function () {
+		return(iapp(2) == 3);
+		}
+	}
+
+</script>
+</head>
+<body onload="boot()">
+
+<input type="text" id="in" oninput="test()">
+
+<div id="out"></div>
+
+
+
+</body>
+</html>

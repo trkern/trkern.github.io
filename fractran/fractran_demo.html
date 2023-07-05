@@ -231,7 +231,7 @@ function rawfl_to_html(l, opts) {
 	var i;
 	var rval = "";
 	for (i = 0; i < l.length; i++) {
-		if (i > 0) {rval += "<span style='width:1em'>&nbsp;</span>";}
+		if (i > 0) {rval += ",<span style='width:1em'>&nbsp;</span>";}
 		rval += rawplfrac_to_html(l[i][0],l[i][1], opts);
 		}
 	return(rval);
@@ -373,20 +373,39 @@ function rawpl_to_pl(l) {
 function rawfl_to_fl(l) {
 	var i;
 	var rval = [];
+	var frontfracs = [];
+	var maxprimen = 0;
+	for (i = 0; i < l.length; i++) {
+		maxprimen = Math.max(rawpl_to_pl(l[i][0]).length, rawpl_to_pl(l[i][1]).length, maxprimen);
+		}
 	for (i = 0; i < l.length; i++) {
 		var t_num = rawpl_to_pl(l[i][0]);
 		var t_den = rawpl_to_pl(l[i][1]);
 		var j;
-		for (j = 0; j < Math.min(t_num.length,t_den.length); j++) {
-			if (t_num[j] > 0 && t_den[j] > 0) {
-				var t = Math.min(t_num[j],t_den[j]);
-				t_num[j] -= t;
-				t_den[j] -= t;
+		if (! document.getElementById("chk_no_cancel").checked) {
+			for (j = 0; j < Math.min(t_num.length,t_den.length); j++) {
+				if (t_num[j] > 0 && t_den[j] > 0) {
+					var t = Math.min(t_num[j],t_den[j]);
+					t_num[j] -= t;
+					t_den[j] -= t;
+					}
+				}
+			}
+		else {
+			var needscancel = false;
+			for (j = 0; j < Math.min(t_num.length, t_den.length); j++) {
+				if (t_num[j] > 0 && t_den[j] > 0) {needscancel = true;}
+				}
+			if (needscancel) {
+				var newprime = rawpl_to_pl([[nth_prime(maxprimen),1]]);
+				frontfracs.push([t_num,newprime]);
+				t_num = newprime;
+				maxprimen++;
 				}
 			}
 		rval.push([t_num,t_den]);
 		}
-	return(rval);
+	return(frontfracs.concat(rval));
 	}
 
 function pl_to_rawpl(l, extra_powers) {
@@ -566,7 +585,10 @@ function do_flist_out() {
 		str += "<td style='text-align:center;background-color:"+hi_color(i)+"'>" + number_to_letter(i) + "</td>";
 		}
 	str += "</tr><tr><td>As Entered:</td>";
-	for (i = 0; i < g_fracl.length; i++) {
+	for (i = 0; i < g_fracl.length - g_rawfl.length; i++) {
+		str += "<td></td>";
+		}
+	for (i = 0; i < g_rawfl.length; i++) {
 		str += "<td>" + rawplfrac_to_html(...g_rawfl[i]) + "</td>";
 		}
 	str += "</tr><tr><td>Raw Numbers:</td>";
@@ -579,6 +601,10 @@ function do_flist_out() {
 		}
 	str += "</tr></table>";
 	document.getElementById("flist_out").innerHTML = str;
+	}
+
+function do_chk_no_cancel() {
+	do_input();
 	}
 
 function do_input() { //specific functions (do_text_in, do_mq_in) drop off data in g_rawfl, then call do_input to display the result, do other changes on changing the fraction list, update g_fracl
@@ -687,8 +713,6 @@ function do_sel_inp() {
 		document.getElementById("ttext_instructions").style.display = "";
 		}
 	}
-
-
 
 function tablerow(l,fl) {
 	var number_display_format = "factored" //"number" or "factored"
@@ -816,7 +840,7 @@ function load_level(i) {
 		str += "<hr>";
 		};
 	str += levels[i].desc;
-	str += "<button onclick='test_level("+i+")'>Test Solution</button>";
+	str += " <button onclick='test_level("+i+")'>Test Solution</button>";
 	document.getElementById("level_text").innerHTML = str;
 	document.getElementById("check_out").innerHTML = "";
 	}
@@ -826,6 +850,9 @@ function test_level(i) {
 	var k = levels[i].test();
 	if (k) {
 		document.getElementById("check_out").innerHTML = "All tests " + passstr + "<br><table border=1>" + g_check_out_string + "</table>";
+		local_data.levels[i].completed = true;
+		update_level_select();
+		store_local_data();
 		}
 	else {
 		document.getElementById("check_out").innerHTML = "Some tests " + failstr + "<br><table border=1>" + g_check_out_string + "</table>";
@@ -884,6 +911,73 @@ function checkotron(in_pl,out_pl) { //checks to see if in_pl creates out_pl, ret
 	return(rval);
 	}
 
+function call_this_on_changing_local_data() { //changes visual components reflecting local data
+	update_level_select();
+	if (local_data.no_cancel_unlocked) {
+		document.getElementById("chk_no_cancel_container").display = "";
+		}
+	else {
+		document.getElementById("chk_no_cancel_container").display = "none";
+		document.getElementById("chk_no_cancel").checked = false;	
+		}
+	}
+
+function reset_local_data() {
+	var local_level_data = [];
+	var i;
+	for (i = 0; i < levels.length; i++) {
+		local_level_data.push({
+			completed: false
+			});
+		}
+	local_data.levels = local_level_data;
+	local_data.no_cancel_unlocked = true;
+	store_local_data();
+	}
+
+function boot_local_data() {
+	if (!localStorage.getItem("trkern_fractran_local_data")) {
+		reset_local_data();
+		}
+	else {
+		var lld_string = localStorage.getItem("trkern_fractran_local_data");
+		local_data = JSON.parse(lld_string);
+		call_this_on_changing_local_data();
+		}
+	}
+
+function store_local_data() {
+	localStorage.setItem("trkern_fractran_local_data", JSON.stringify(local_data));
+	call_this_on_changing_local_data();
+	}
+
+function update_level_select() {
+	var k = document.getElementById("sel_lev");
+	if (k) {
+		k = k.value;
+		}
+	var i;
+	var str = "<select id='sel_lev' onchange='load_level(event.target.value)'>";
+	for (i = 0; i < levels.length; i++) {
+		if (i == k) {
+			str += "<option value="+i+" selected>";
+			}
+		else {
+			str += "<option value="+i+" >";
+			}
+		console.log(local_data);
+		if (local_data.levels[i].completed) {
+			str += "+";
+			}
+		else {
+			str += "-";
+			}
+		str += i+": "+levels[i].name+"</option>";
+		}
+	str += "</select>";
+	document.getElementById("level_sel").innerHTML = str;
+	}
+
 function boot() {
 	MQ.MathField(document.getElementById("mq_in"), {
 		handlers: {
@@ -891,17 +985,8 @@ function boot() {
 			}
 		});
 	do_sel_inp();
-	var i;
-	var str = "<select id='sel_lev' onchange='load_level(event.target.value)'>";
-	for (i = 0; i < levels.length; i++) {
-		str += "<option value="+i+" >"+i+": "+levels[i].name+"</option>";
-		}
-	str += "</select>";
-	document.getElementById("level_sel").innerHTML = str;
 	load_level(0);
-	/*for (i = 0; i < 20; i++) {
-		document.getElementById("check_out").innerHTML += i + arrowtron(i);
-		}*/
+	boot_local_data();
 	}
 
 var levels = [];
@@ -1127,6 +1212,23 @@ levels.push({
 		}
 	});
 
+levels.push({
+	name: "Control 3",
+	desc: "",
+	test: function() {
+		}
+	});
+
+levels.push({
+	name: "Unlocking nocancel",
+	guide: "Constantly having to swap back and forth between control primes is a real nuisance. If only fractions didn't cancel, since this <code>FRACTRAN</code> interpreter first checks divisibility by the denominator before multiplying by the numerator, you could write programs much more simply! For instance, the program "+rawfl_to_html(str_to_rawfl("3*11/2*11, 5*17/2*17"))+ " would be a shorter solution to 'Control 2'. Complete this stage and the next to unlock nocancel mode.",
+	desc: "Create a program that, when run for two steps on a number, is the same as running the un-canceled program " + rawfl_to_html(str_to_rawfl("2^3*5^4*11/2^4*5^3*11")) + " for one step. That is, if the number is divisible by 22000, in two steps it divides by 22000 and multiplies by 55000 and otherwise does nothing.",
+	test: function() {
+		}
+	});
+
+var local_data = {};
+
 var sample_primegame = "17/91 78/85 19/51 23/38 29/33 77/29 95/23 77/19 1/17 11/13 13/11 15/2 1/7 55/1"
 
 </script>
@@ -1152,7 +1254,7 @@ code {
 <span style='background-color: #266435; margin-left:10px; margin-right:10px; margin-bottom:0px; font-size:175%;color:white; font-family:tech'>
 Level Select:
 <span id="level_sel">
-</span>
+</span> <button onclick="reset_local_data()">Reset Progress</button>
 </span>
 
 <div style='background-color: #CCDDAA; padding:10px; margin:10px; margin-top:0px'>
@@ -1165,7 +1267,7 @@ Level Select:
 <span style='background-color: #266435; margin-left:10px; margin-right:10px; margin-bottom:0px; font-size:175%;color:white; font-family:tech'>
 Input Device: <select id="sel_inp" onchange="do_sel_inp(event)">
 <option value="tmq">TKAS Mathquill</option>
-<option value="ttext">TKAS Text</option>
+<option value="ttext" selected>TKAS Text</option>
 <option value="mq">Backup Mathquill</option>
 <option value="text">Backup Text</option>
 <option value="demo">Sample Programs</option>
@@ -1173,7 +1275,7 @@ Input Device: <select id="sel_inp" onchange="do_sel_inp(event)">
 </span>
 
 <div style='background-color: #CCDDAA; padding:10px; margin:10px; margin-top:0px'>
-
+<span id="chk_no_cancel_container"><input type="checkbox" id="chk_no_cancel" onchange="do_chk_no_cancel()"> nocancel </span>
 <div id="text_in_area">
 <div id="ttext_instructions">
 Using TKAS.js to parse. Separate fractions with commas. Please report bugs. Needing parentheses around denominators which are products is not a bug. If you encounter problems, drop down to "Backup Text".

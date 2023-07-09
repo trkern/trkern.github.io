@@ -9,7 +9,9 @@
  */
 
 /*
-Changes by Tom Kern: exponents always get {} when converted to LaTeX
+Changes by Tom Kern: 
+-exponents always get {} when converted to LaTeX
+-added a tk_override_mq_paste function when pasting text
 */
 
 (function() {
@@ -1588,6 +1590,7 @@ var saneKeyboardEvents = (function() {
     function pastedText() {
       var text = textarea.val();
       textarea.val('');
+	if (tk_override_mq_paste) {text = tk_override_mq_paste(text);}
       if (text) handlers.paste(text);
     }
 

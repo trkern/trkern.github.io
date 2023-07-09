@@ -325,7 +325,7 @@ function str_to_rawpl(str) { //converts a string 2^3*4^6*5 etc into a power list
 			var b = Number(k[0]);
 			if (!Number.isInteger(b) || b <= 0) {console.log("parse failed at ", l[i]);}
 			var e = Number(k[1]);
-			if (!Number.isInteger(b) || b <= 0) {console.log("parse failed at ", l[i]);}
+			if (!Number.isInteger(e)) {console.log("parse failed at ", l[i]);}
 			rval.push([b,e]);
 			}
 		}
@@ -347,6 +347,117 @@ function str_to_rawfl(str) {
 			}
 		}
 	return(rval);
+	}
+
+function str_looks_like_a_rawpl(str) {
+	var l = str.split("*");
+	var i;
+	for (i = 0; i < l.length; i++) {
+		var k = l[i].split("^");
+		if (k.length == 1) {
+			var b = Number(k[0]);
+			if (!Number.isInteger(b) || b <= 0) {return(false);}
+			}
+		else if (k.length == 2) {
+			var b = Number(k[0]);
+			if (!Number.isInteger(b) || b <= 0) {return(false);}
+			var e = Number(k[1]);
+			if (!Number.isInteger(e)) {return(false);}
+			}
+		else {return(false);}
+		}
+	return(true);
+	}
+
+function str_looks_like_a_rawfl(str) {
+	var l = str.split(/\s|,/);
+	var i;
+	for (i = 0; i < l.length; i++) {
+		if (l[i] == "") {continue;}
+		var k = l[i].split("/");
+		if (k.length == 1) {
+			if (!str_looks_like_a_rawpl(k[0])) {return(false);}
+			}
+		else if (k.length == 2) {
+			if (!str_looks_like_a_rawpl(k[0])) {return(false);}
+			if (!str_looks_like_a_rawpl(k[1])) {return(false);}
+			}
+		else {
+			return(false);
+			}
+		}
+	return(true);
+	}
+
+function rawpl_to_str(l) {
+	var i;
+	var str = "";
+	var needs_dot = false;
+	for (i = 0; i < l.length; i++) {
+		if (l[i][1] == 0) {continue;}
+		else if (l[i][1] == 1) {
+			if (needs_dot) {str += "*";}
+			str += l[i][0]; 
+			needs_dot = true;
+			}
+		else {
+			if (needs_dot) {str += "*";}
+			str += l[i][0] + "^" + l[i][1]; 
+			needs_dot = true;}
+		}
+	if (str == "") {str = "1";}
+	return(str);
+	}
+
+function rawfl_to_str(l) {
+	var i;
+	var str = "";
+	for (i = 0; i < l.length; i++) {
+		if (i > 0) {str += ", ";}
+		str += rawpl_to_str(l[i][0]) + "/" + rawpl_to_str(l[i][1]);
+		}
+	return(str);
+	}
+
+function tk_override_mq_paste(str) {
+	if (str_looks_like_a_rawfl(str)) {
+		return(rawfl_to_latex(str_to_rawfl(str)));
+		}
+	return(str);
+	}
+
+//22^3*4^5/3^3*2^10
+//22^{30}\cdot4^5
+
+function rawpl_to_latex(l) {
+	var i;
+	var str = "";
+	var needs_dot = false;
+	for (i = 0; i < l.length; i++) {
+		if (l[i][1] == 0) {continue;}
+		else if (l[i][1] == 1) {
+			if (needs_dot) {str += "\\cdot";}
+			str += l[i][0]; 
+			needs_dot = true;
+			}
+		else {
+			if (needs_dot) {str += "\\cdot";}
+			str += l[i][0] + "^{" + l[i][1] + "}"; 
+			needs_dot = true;
+			}
+		}
+	if (str == "") {str = "1";}
+	return(str);
+	}
+
+function rawfl_to_latex(l) {
+	var i;
+	var str = "";
+	for (i = 0; i < l.length; i++) {
+		if (i > 0) {str += ", ";}
+		str += "\\frac{"+rawpl_to_latex(l[i][0])+"}{"+rawpl_to_latex(l[i][1])+"}";
+		}
+	return(str);
 	}
 
 function rawpl_to_pl(l) {
@@ -600,6 +711,7 @@ function do_flist_out() {
 		str += "<td>" + rawplfrac_to_html(...g_fracl_rawfl[i]) + "</td>";
 		}
 	str += "</tr></table>";
+	str += rawfl_to_str(g_fracl_rawfl);
 	document.getElementById("flist_out").innerHTML = str;
 	}
 
@@ -614,6 +726,9 @@ function do_input() { //specific functions (do_text_in, do_mq_in) drop off data 
 	g_fracl = rawfl_to_fl(g_rawfl);
 
 	do_flist_out();
+
+	local_data.levels[g_current_level].program = g_rawfl;
+	store_local_data();
 
 	}
 
@@ -652,13 +767,12 @@ function do_tmq_in(m) {
 	var i;
 	var r = [];
 	for (i = 0; i < l.length; i++) {
-		console.log(l[i]);
 		if (l[i] == "") {continue;}
 		try{
 			var L = tkas_parse(l[i]);
 			r.push(fancy_tkas_to_rawpls(L));
 			}
-		catch (e) {console.log(e);}
+		catch (e) {}
 		}
 	g_rawfl = r;
 	do_input();
@@ -812,7 +926,7 @@ function butt_once() { //might make this fancier later
 
 function butt_many() {
 	var i;
-	for (i = 0; i < 100; i++) {
+	for (i = 0; i < 1000; i++) {
 		if (g_number_history.length == 0) {
 			var l = rawpl_to_pl(str_to_rawpl(document.getElementById("number_in").value));
 			g_number_history.push(l);
@@ -826,12 +940,18 @@ function butt_many() {
 	var str = generate_table_html(g_number_history, g_fracl);
 
 	document.getElementById("runtable").innerHTML = str;
+	if ("testing_ground_level" in levels[g_current_level]) {
+		local_data.levels[g_current_level].completed = true;
+		store_local_data();
+		}
 	}
 
 function load_program(str) {
 	document.getElementById("text_in").value = str;
 	do_text_in();
 	}
+
+var g_current_level = 0;
 
 function load_level(i) {
 	var str = "";
@@ -840,9 +960,15 @@ function load_level(i) {
 		str += "<hr>";
 		};
 	str += levels[i].desc;
-	str += " <button onclick='test_level("+i+")'>Test Solution</button>";
+	g_current_level = i;
+	str += " <button onclick='test_level(g_current_level)'>Test Solution</button>";
 	document.getElementById("level_text").innerHTML = str;
 	document.getElementById("check_out").innerHTML = "";
+
+	var loaded_rawfl = local_data.levels[g_current_level].program;
+	document.getElementById("text_in").value = rawfl_to_str(loaded_rawfl);
+	MQ(document.getElementById("mq_in")).latex(rawfl_to_latex(loaded_rawfl));
+	do_text_in();
 	}
 
 function test_level(i) {
@@ -851,7 +977,6 @@ function test_level(i) {
 	if (k) {
 		document.getElementById("check_out").innerHTML = "All tests " + passstr + "<br><table border=1>" + g_check_out_string + "</table>";
 		local_data.levels[i].completed = true;
-		update_level_select();
 		store_local_data();
 		}
 	else {
@@ -871,7 +996,7 @@ function compare_pls(pl1,pl2) {
 
 var g_check_out_string = "";
 
-function checkotron(in_pl,out_pl) { //checks to see if in_pl creates out_pl, returns boolean, updates g_check_out_string
+function checkotron(in_pl,out_pl,hard_steps = -1) { //checks to see if in_pl creates out_pl, returns boolean, updates g_check_out_string
 	var str = "<tr><td>" + rawpl_to_html(pl_to_rawpl(in_pl)) + "</td>";
 	var runstr = "";
 	var statusstr = "";
@@ -884,7 +1009,7 @@ function checkotron(in_pl,out_pl) { //checks to see if in_pl creates out_pl, ret
 	runstr += rawpl_to_html(pl_to_rawpl(current_pl));
 	for (i = 0; i < max_iterations; i++) {
 		var t = apply_fl_to_l_and_which(current_pl,g_fracl);
-		if (t == "nope") {
+		if (t == "nope" || i == hard_steps) {
 			if (compare_pls(out_pl,current_pl)) {
 				rval = true;
 				statusstr = passstr + " Expected: " + rawpl_to_html(pl_to_rawpl(out_pl));
@@ -914,24 +1039,29 @@ function checkotron(in_pl,out_pl) { //checks to see if in_pl creates out_pl, ret
 function call_this_on_changing_local_data() { //changes visual components reflecting local data
 	update_level_select();
 	if (local_data.no_cancel_unlocked) {
-		document.getElementById("chk_no_cancel_container").display = "";
+		document.getElementById("chk_no_cancel_container").style.display = "";
 		}
 	else {
-		document.getElementById("chk_no_cancel_container").display = "none";
+		document.getElementById("chk_no_cancel_container").style.display = "none";
 		document.getElementById("chk_no_cancel").checked = false;	
 		}
 	}
 
 function reset_local_data() {
+	localStorage.clear();
 	var local_level_data = [];
 	var i;
 	for (i = 0; i < levels.length; i++) {
+		var prg = [];
+		if ("preprogram" in levels[i]) {prg = levels[i].preprogram;}
 		local_level_data.push({
-			completed: false
+			completed: false,
+			program: prg,
+			notes: []
 			});
 		}
 	local_data.levels = local_level_data;
-	local_data.no_cancel_unlocked = true;
+	local_data.no_cancel_unlocked = false;
 	store_local_data();
 	}
 
@@ -965,7 +1095,6 @@ function update_level_select() {
 		else {
 			str += "<option value="+i+" >";
 			}
-		console.log(local_data);
 		if (local_data.levels[i].completed) {
 			str += "+";
 			}
@@ -982,18 +1111,27 @@ function boot() {
 	MQ.MathField(document.getElementById("mq_in"), {
 		handlers: {
 			edit: do_mq_in,
-			}
+			},
+		charsThatBreakOutOfSupSub: '+-=<>*/'
 		});
+	boot_local_data();
 	do_sel_inp();
 	load_level(0);
-	boot_local_data();
 	}
 
 var levels = [];
 levels.push({
+	testing_ground_level: true,
+	preprogram: str_to_rawfl("17/91 78/85 19/51 23/38 29/33 77/29 95/23 77/19 1/17 11/13 13/11 15/2 1/7 55/1"),
+	name: "Welcome to Fractran!",
+	guide: "<p>Welcome to <code>FRACTRAN</code>! <code>FRACTRAN</code> is a Turing-complete programming language created by John Conway. This interactive will guide you through some basic programming practice in <code>FRACTRAN</code> until you are an EXPERT <code>FRACTRAN</code> PROGRAMMER!</p><p>A program in <code>FRACTRAN</code> is a list of fractions.</p> Execution:<ul><li> The program takes in a number as an input and stores it in the STATE VARIABLE<li> At each step of execution, the STATE VARIABLE number gets multiplied by the first fraction in your program that leaves the number as an integer.<li> This process repeats: the new STATE VARIABLE is multiplied by the FIRST fraction in your program that leaves the number as an integer.<li> If no fraction is available, the program HALTS and outputs the current STATE VARIABLE.</ul>",
+	desc: "Each level will ask you to create a program to perform a certain task. This level has been pre-programmed with the PRIMEGAME program. <ol><li>Scroll down to the 'Testing Ground'<li>Enter the number 2<li>Press the 'Advance 1000 Steps' button a few times.<li>A little + will appear in the level select to indicate that you've completed this level.</ol>"
+	});
+
+levels.push({
 	name: "Introduction",
-	guide: "<p>Welcome to <code>FRACTRAN</code>! <code>FRACTRAN</code> is a Turing-complete programming language created by John Conway. This interactive will guide you through some basic programming practice in <code>FRACTRAN</code> until you are an EXPERT <code>FRACTRAN</code> PROGRAMMER!</p><p>A program in <code>FRACTRAN</code> is a list of fractions. Several INPUT DEVICES have been provided for you below: you can read about each one by selecting it from the drop down menu. Please choose the input device that works best for you!</p>Execution:<ul><li> The program takes in a number as an input and stores it in the STATE VARIABLE<li> At each step of execution, the STATE VARIABLE number gets multiplied by the first fraction in your program that leaves the number as an integer.<li> This process repeats: the new STATE VARIABLE is multiplied by the FIRST fraction in your program that leaves the number as an integer.<li> If no fraction is available, the program HALTS and outputs the current STATE VARIABLE.</ul>",
-	desc: "Create a program that maps 2 to 3.",
+	guide: "<p>A program in <code>FRACTRAN</code> is a list of fractions. Several INPUT DEVICES have been provided for you below: you can read about each one by selecting it from the drop down menu. Please choose the input device that works best for you!</p>Execution:<ul><li> The program takes in a number as an input and stores it in the STATE VARIABLE<li> At each step of execution, the STATE VARIABLE number gets multiplied by the first fraction in your program that leaves the number as an integer.<li> This process repeats: the new STATE VARIABLE is multiplied by the FIRST fraction in your program that leaves the number as an integer.<li> If no fraction is available, the program HALTS and outputs the current STATE VARIABLE.</ul>",
+	desc: "Create a program that maps 2 to 3. Press the 'Test Solution' button to check your answer.",
 	test: function() {
 		return(checkotron([1],[0,1]));
 		}
@@ -1213,19 +1351,55 @@ levels.push({
 	});
 
 levels.push({
-	name: "Control 3",
-	desc: "",
+	name: "Remainders 2",
+	guide: "Having a control prime present in the input opens up some additional possibilities.",
+	desc: "Create a program that turns 2<sup>n</sup>11 into 5 if n is even and 3 if n is odd.",
 	test: function() {
+		var rval = true;
+		for (var i = 0; i < 7; i++) {
+			if (!checkotron([2*i,0,0,0,1],[0,0,1])) {rval = false;}
+			if (!checkotron([2*i+1,0,0,0,1],[0,1])) {rval = false;}
+			}
+		return(rval);
 		}
 	});
 
 levels.push({
 	name: "Unlocking nocancel",
-	guide: "Constantly having to swap back and forth between control primes is a real nuisance. If only fractions didn't cancel, since this <code>FRACTRAN</code> interpreter first checks divisibility by the denominator before multiplying by the numerator, you could write programs much more simply! For instance, the program "+rawfl_to_html(str_to_rawfl("3*11/2*11, 5*17/2*17"))+ " would be a shorter solution to 'Control 2'. Complete this stage and the next to unlock nocancel mode.",
-	desc: "Create a program that, when run for two steps on a number, is the same as running the un-canceled program " + rawfl_to_html(str_to_rawfl("2^3*5^4*11/2^4*5^3*11")) + " for one step. That is, if the number is divisible by 22000, in two steps it divides by 22000 and multiplies by 55000 and otherwise does nothing.",
+	guide: "Constantly having to swap back and forth between control primes is a real nuisance. If only fractions didn't cancel, since this <code>FRACTRAN</code> interpreter first checks divisibility by the denominator before multiplying by the numerator, you could write programs much more simply! For instance, the program "+rawfl_to_html(str_to_rawfl("3*11/2*11, 5*17/2*17"))+ " would be a shorter solution to 'Control 2'. Complete this stage to unlock nocancel mode.",
+	desc: "Create a program that, when run for two steps on a number, is the same as running the un-canceled program " + rawfl_to_html(str_to_rawfl("2^3*5^4*11/2^4*5^3*11")) + " i.e. " + rawfl_to_html(str_to_rawfl("55000/22000")) + " for one step. That is, if the number is divisible by 22000, in two steps it divides by 22000 and multiplies by 55000 and otherwise does nothing.",
 	test: function() {
+		var rval = true;
+		for (var i = 2; i <= 5; i++) {
+			for (var j = 2; j <= 5; j++) {
+				for (var k = 0; k <= 2; k++) {
+					var t = [i,0,j,0,k];
+					if (i >= 4 && j >= 3 && k >= 1) {
+						t = [i-1,0,j+1,0,k];
+						}
+					if (!checkotron([i,0,j,0,k], t, 2)) {rval = false;}
+					}
+				}
+			}
+		if (rval) {
+			local_data.no_cancel_unlocked = true;
+			}
+		return(rval);
 		}
 	});
+
+levels.push({ //11/13, 3*5*13/2*11, 19/11, 17/19, 19*2/5*17
+	name: "There and Back",
+	desc: "Create a program that turns 2<sup>n</sup>11 into 2<sup>n</sup>3<sup>n</sup>17.",
+	test: function() {
+		var rval = true;
+		for (var i = 0; i < 7; i++) {
+			if (!checkotron([i,0,0,0,1],[i,i,0,0,0,0,1])) {rval = false;}
+			}
+		return(rval);
+		}
+	});
+
 
 var local_data = {};
 
@@ -1267,10 +1441,7 @@ Level Select:
 <span style='background-color: #266435; margin-left:10px; margin-right:10px; margin-bottom:0px; font-size:175%;color:white; font-family:tech'>
 Input Device: <select id="sel_inp" onchange="do_sel_inp(event)">
 <option value="tmq">TKAS Mathquill</option>
-<option value="ttext" selected>TKAS Text</option>
-<option value="mq">Backup Mathquill</option>
-<option value="text">Backup Text</option>
-<option value="demo">Sample Programs</option>
+<option value="text" selected>Text</option>
 </select>
 </span>
 
@@ -1316,6 +1487,7 @@ Using TKAS.js to parse. Separate fractions with commas. Use LEFT ARROW to break 
 </div>
 <div id="mq_in" style='background-color:white'></div>
 </div>
+<button onclick='test_level(g_current_level)'>Test Solution</button>
 </div>
 
 <span style='background-color: #266435; margin-left:10px; margin-right:10px; margin-bottom:0px; font-size:175%;color:white;  font-family:tech'>Your Program:
@@ -1328,7 +1500,7 @@ Using TKAS.js to parse. Separate fractions with commas. Use LEFT ARROW to break 
 <span style='background-color: #266435; margin-left:10px; margin-right:10px; margin-bottom:0px; font-size:175%;color:white;  font-family:tech'>Testing Ground:</span>
 
 <div style='background-color: #CCDDAA; padding:10px; margin:10px; margin-top:0px'>
-<input type="text" id="number_in" oninput="reset_runtable()"> <button onclick="butt_once()">Advance One Step</button> <button onclick="butt_many()">Advance 100 Steps</button>
+<input type="text" id="number_in" oninput="reset_runtable()"> <button onclick="butt_once()">Advance One Step</button> <button onclick="butt_many()">Advance 1000 Steps</button>
 <div id="runtable"></div>
 </div>
 

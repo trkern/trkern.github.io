@@ -104,6 +104,14 @@ function printlist(l) {
 	return(rval);
 	}
 
+function input_expand(e) {
+	var str = e.value;
+	if (str == "" && e.placeholder) {str = e.placeholder;}
+	var l = str.length;
+	if (l < 1) {l = 1;}
+	e.size = l;
+	}
+
 function insert_into_string(str,c,p) {
 	return(str.slice(0,p) + c + str.slice(p));
 	}
@@ -829,19 +837,15 @@ function do_sel_inp() {
 	}
 
 function tablerow(l,fl) {
-	var number_display_format = "factored" //"number" or "factored"
 	var display_fractions = false; //show fractions in each row or maybe just leave them to top?
 	var i;
 	var rawfl = fl_to_rawfl(fl);
 	var k = apply_fl_to_l_and_which(l, fl); //k[0] is the new number, k[1] is which fraction got multiplied, or maybe k is just "nope"
 
 	var str = "<tr><td>";
-	if (number_display_format == "number") {
-		str += pl_to_int(l);
-		}
-	else if (number_display_format == "factored") {
-		str += rawpl_to_html(pl_to_rawpl(l));
-		}
+	str += pl_to_int(l);
+	str += "</td><td>";
+	str += rawpl_to_html(pl_to_rawpl(l));
 	str += "</td>";
 
 	for (i = 0; i < fl.length; i++) {
@@ -861,10 +865,9 @@ function tablerow(l,fl) {
 	if (k == "nope") {
 		str += "Done!";
 		}
-	else if (number_display_format == "number") {
+	else {
 		str += pl_to_int(k[0]);
-		}
-	else if (number_display_format == "factored") {
+		str += "</td><td>";
 		str += rawpl_to_html(pl_to_rawpl(k[0]));
 		}
 	str += "</td>";
@@ -881,13 +884,13 @@ function generate_table_html(nh, fl) { //meant to be fed in g_number_history and
 	var rawfl = fl_to_rawfl(fl);
 
 	if (top_fractions) {
-		str += "<tr><td></td>";
+		str += "<tr><td></td><td></td>";
 		for (i = 0; i < fl.length; i++) {
 			str += "<td>";
 			str += rawplfrac_to_html(rawfl[i][0],rawfl[i][1]);
 			str += "</td>";
 			}
-		str += "<td></td></tr>";
+		str += "<td></td><td></td></tr>";
 		}
 
 	for (i = 0; i < nh.length; i++) {
@@ -946,6 +949,93 @@ function butt_many() {
 		}
 	}
 
+function do_animate(f) {
+	var f = Number(document.getElementById("animation_framecount").value);
+	var frames_per_move = 20;
+	var moves = Math.floor(f/frames_per_move);
+	var remainder = f-(moves*frames_per_move);
+	
+	var cell_width_in_em = 2;
+
+	var str = "<div style='position:relative; background-color:white'>";
+	var i;
+	var rawfl = fl_to_rawfl(g_fracl);
+	str += "<span style='display:inline-block; width:"+cell_width_in_em+"em'></span>";
+	for (i = 0; i < g_fracl.length; i++) {
+		str += "<span style='display:inline-block; width:"+cell_width_in_em+"em'>";
+		str += "<span style='display:inline-block; background-color:"+hi_color(i)+"'>";
+		str += rawplfrac_to_html(rawfl[i][0],rawfl[i][1],{actually_numbers:true});
+		str += "</span></span>";
+		}
+
+	var moves_into_round = 0;
+	var rounds = 0;
+	var are_we_at_end_of_row = false;
+	var are_we_nearly_at_end_of_row = false;
+
+	if (g_number_history.length == 0) {butt_once();}
+	for (i = 0; i < moves;) {
+		if (!(rounds in g_number_history)) {
+			butt_once();
+			}
+		var k = apply_fl_to_l_and_which(g_number_history[rounds], g_fracl);
+		if (k != "nope") {
+			if (i + k[1] + 1 < moves) {
+				i += (k[1]+2);
+				rounds++;
+				}
+			else {
+				moves_into_round = moves - i;
+				if (moves_into_round == k[1]) {are_we_nearly_at_end_of_row = true;}
+				if (moves_into_round == k[1]+1) {are_we_at_end_of_row = true;}
+				break;
+				}
+			}
+		else {break;}
+		}
+
+	var dist = cell_width_in_em*(moves_into_round + remainder/frames_per_move);
+	if (are_we_at_end_of_row) {dist = cell_width_in_em*(moves_into_round);}
+	dist += .5
+
+	if (!(rounds in g_number_history)) {butt_once();}
+
+	var currentnumber = pl_to_int(g_number_history[rounds]);
+
+	str += "<div style='position:absolute; top:1em; left:" + dist + "em; border:1px solid black;background-color:white; transform: translateX(-50%)'>";
+	str += currentnumber;
+	str += "</div>";
+
+	if (are_we_at_end_of_row) {str += currentnumber + " is divisible by " + pl_to_int(g_fracl[moves_into_round-1][1]) + ". Multiplying fraction!";}
+	else if (are_we_nearly_at_end_of_row) {str += currentnumber + " is divisible by " + pl_to_int(g_fracl[moves_into_round][1]) + ". Multiplying fraction!";}
+	else {str += currentnumber + " is not divisible by " + pl_to_int(g_fracl[moves_into_round][1]) + ".";}
+
+	str += "</div>";
+
+	document.getElementById("animation").innerHTML = str;
+	}
+
+var g_ani_flag = false;
+
+function butt_ani_go() {
+	var n = Number(document.getElementById("animation_framecount").value);
+	document.getElementById("animation_framecount").value = n+1;
+	do_animate();
+	if (g_ani_flag) {
+		requestAnimationFrame(butt_ani_go);
+		}
+	}
+
+function butt_ani_pp() {
+	if (g_ani_flag) {
+		g_ani_flag = false;
+		}
+	else {
+		g_ani_flag = true;
+		requestAnimationFrame(butt_ani_go);
+		}
+	}
+
 function load_program(str) {
 	document.getElementById("text_in").value = str;
 	do_text_in();
@@ -969,6 +1059,7 @@ function load_level(i) {
 	document.getElementById("text_in").value = rawfl_to_str(loaded_rawfl);
 	MQ(document.getElementById("mq_in")).latex(rawfl_to_latex(loaded_rawfl));
 	do_text_in();
+	load_comments();
 	}
 
 function test_level(i) {
@@ -1036,6 +1127,82 @@ function checkotron(in_pl,out_pl,hard_steps = -1) { //checks to see if in_pl cre
 	return(rval);
 	}
 
+function do_chk_comments() {
+	if (document.getElementById("chk_comments").checked) {
+		document.getElementById("comment_zone").style.display = "";
+		}
+	else {
+		document.getElementById("comment_zone").style.display = "none";
+		}
+	}
+
+function do_comment_key(i, e) {
+	console.log(e.key);
+	if (e.key == "Enter") {
+		if (i == local_data.levels[g_current_level].notes.length-1) {
+			add_comment();
+			}
+		else {
+			document.getElementById("comment_box"+(i+1)).focus();
+			}
+		}
+	if (e.key == "ArrowDown") {
+		if (i < local_data.levels[g_current_level].notes.length-1) {
+			document.getElementById("comment_box"+(i+1)).focus();
+			}
+		}
+	if (e.key == "ArrowUp") {
+		if (i > 0) {
+			document.getElementById("comment_box"+(i-1)).focus();
+			}
+		}
+	if (e.key == "Backspace") {
+		if (i > 0 && i == local_data.levels[g_current_level].notes.length-1 && local_data.levels[g_current_level].notes[i] == "") {
+			local_data.levels[g_current_level].notes.pop();
+			load_comments();
+			requestAnimationFrame(function() {
+				document.getElementById("comment_box"+(i-1)).focus();
+				});
+			}
+		}
+	}
+
+function do_comments(i,v) {
+	local_data.levels[g_current_level].notes[i] = v;
+	store_local_data();
+	}
+
+function add_comment() {
+	local_data.levels[g_current_level].notes.push("");
+	load_comments();
+	requestAnimationFrame(function() {
+		var i = local_data.levels[g_current_level].notes.length-1;
+		document.getElementById("comment_box"+i).focus();
+		})
+	}
+
+function remove_comment() {
+	local_data.levels[g_current_level].notes.pop();
+	load_comments();
+	}
+
+function load_comments() {
+	var l = local_data.levels[g_current_level].notes;
+	var i;
+	var str = "<ol>";
+	for (i = 0; i < l.length; i++) {
+		var n = "";
+		if (i in l) {n = l[i];}
+		var lg = n.length;
+		if (lg < 1) {lg = 1;}
+		str += "<li style='font-family:monospace' value='"+nth_prime(i)+"'><input id='comment_box"+i+"' size="+lg+" value='"+n+"' oninput='do_comments("+i+", event.target.value); input_expand(event.target)' onkeydown='do_comment_key("+i+", event)'>";
+		}
+	str += "<li style='font-family:monospace' value='"+nth_prime(i)+"'> <button onclick='add_comment()'>+</button>";
+	str += "<button onclick='remove_comment()'>-</button>";
+	str += "</ol>";
+	document.getElementById("comment_zone").innerHTML = str;
+	}
+
 function call_this_on_changing_local_data() { //changes visual components reflecting local data
 	update_level_select();
 	if (local_data.no_cancel_unlocked) {
@@ -1044,6 +1211,13 @@ function call_this_on_changing_local_data() { //changes visual components reflec
 	else {
 		document.getElementById("chk_no_cancel_container").style.display = "none";
 		document.getElementById("chk_no_cancel").checked = false;	
+		}
+	if (local_data.comments_unlocked) {
+		document.getElementById("chk_comments_container").style.display = "";
+		}
+	else {
+		document.getElementById("chk_comments_container").style.display = "none";
+		document.getElementById("chk_comments").checked = false;
 		}
 	}
 
@@ -1054,14 +1228,17 @@ function reset_local_data() {
 	for (i = 0; i < levels.length; i++) {
 		var prg = [];
 		if ("preprogram" in levels[i]) {prg = levels[i].preprogram;}
+		var n = ["","","","",""];
+		if ("notes" in levels[i]) {n = levels[i].notes;}
 		local_level_data.push({
 			completed: false,
 			program: prg,
-			notes: []
+			notes: n
 			});
 		}
 	local_data.levels = local_level_data;
 	local_data.no_cancel_unlocked = false;
+	local_data.comments_unlocked = true;
 	store_local_data();
 	}
 
@@ -1116,6 +1293,7 @@ function boot() {
 		});
 	boot_local_data();
 	do_sel_inp();
+	do_chk_comments();
 	load_level(0);
 	}
 
@@ -1419,6 +1597,15 @@ code {
 	font-family: "tech", monospace;
 	font-size: 120%;
 	}
+kbd {
+	background-color:white;
+	border-radius: 3px;
+	padding: 2px;
+	border: 1px solid black;
+	}
+input {
+	font-family: monospace;
+	}
 </style>
 </head>
 <body onload="boot()">
@@ -1447,6 +1634,7 @@ Input Device: <select id="sel_inp" onchange="do_sel_inp(event)">
 
 <div style='background-color: #CCDDAA; padding:10px; margin:10px; margin-top:0px'>
 <span id="chk_no_cancel_container"><input type="checkbox" id="chk_no_cancel" onchange="do_chk_no_cancel()"> nocancel </span>
+<span id="chk_comments_container"><input type="checkbox" id="chk_comments" onchange="do_chk_comments()"> Show Comment Box </span>
 <div id="text_in_area">
 <div id="ttext_instructions">
 Using TKAS.js to parse. Separate fractions with commas. Please report bugs. Needing parentheses around denominators which are products is not a bug. If you encounter problems, drop down to "Backup Text".
@@ -1454,13 +1642,13 @@ Using TKAS.js to parse. Separate fractions with commas. Please report bugs. Need
 <div id="text_instructions">
 <ul>
 <li> Fractions are separated with spaces or commas.
-<li> Separate numerator and denominator with "/". Do not include spaces within a fraction.
+<li> Separate numerator and denominator with <kbd>/</kbd>. Do not include spaces within a fraction.
 <li> Numerator and denominator should be products of numbers (to powers).
-<li> Enter powers with "^".
-<li> Multiply with "*".
+<li> Enter powers with <kbd>^</kbd>.
+<li> Multiply with <kbd>*</kbd>.
 <li> Do not use parentheses.
 </ul>
-<p>Example Program: 7*3*11/2^3*5, 3*5^6/7*11^12*13, 4/3^2</p>
+<p>Example Program: 3/4*5, 2^3/5^4, 4*10^2/3^2*5</p>
 </div>
 <textarea type="text" id="text_in" oninput="do_text_in()"></textarea>
 </div>
@@ -1473,20 +1661,21 @@ Using TKAS.js to parse. Separate fractions with commas. Please report bugs. Need
 
 <div id="mq_in_area">
 <div id="tmq_instructions">
-Using TKAS.js to parse. Separate fractions with commas. Use LEFT ARROW to break out of exponents and fractions. Please report bugs. If you encounter parse errors, drop down to "Backup Mathquill".
+Use <kbd>/</kbd> and <kbd>^</kbd> to create fractions, exponents. Separate fractions with commas. Use LEFT ARROW to break out of exponents and fractions. Please report bugs. If you encounter parse errors, drop down to "Backup Mathquill".
 </div>
 <div id="mq_instructions">
 <ul>
 <li> Fractions can be separated by spaces or commas.
-<li> Use "/" and "^" to create fractions, exponents.
+<li> Use <kbd>/</kbd> and <kbd>^</kbd> to create fractions, exponents.
 <li> Use arrow keys to navigate / break out of exponents and fractions.
 <li> Numerator and denominator should be products of numbers (to powers).
-<li> Multiply with "*".
+<li> Multiply with <kbd>*</kbd>.
 <li> Do not use parentheses.
 </ul>
 </div>
 <div id="mq_in" style='background-color:white'></div>
 </div>
+<div id="comment_zone"></div>
 <button onclick='test_level(g_current_level)'>Test Solution</button>
 </div>
 
@@ -1500,7 +1689,9 @@ Using TKAS.js to parse. Separate fractions with commas. Use LEFT ARROW to break 
 <span style='background-color: #266435; margin-left:10px; margin-right:10px; margin-bottom:0px; font-size:175%;color:white;  font-family:tech'>Testing Ground:</span>
 
 <div style='background-color: #CCDDAA; padding:10px; margin:10px; margin-top:0px'>
-<input type="text" id="number_in" oninput="reset_runtable()"> <button onclick="butt_once()">Advance One Step</button> <button onclick="butt_many()">Advance 1000 Steps</button>
+<input type="text" value=2 id="number_in" oninput="reset_runtable()"> <button onclick="butt_once()">Advance One Step</button> <button onclick="butt_many()">Advance 1000 Steps</button>
+<input type="number" value=0 id="animation_framecount" oninput="do_animate()"> <button id='ani_pp' onclick='butt_ani_pp()'>Play</button>
+<div id="animation"></div>
 <div id="runtable"></div>
 </div>
 

@@ -1074,7 +1074,6 @@ function load_level(i) {
 	str += levels[i].desc;
 	str += "</td></tr></table>";
 	g_current_level = i;
-	str += " <button onclick='test_level(g_current_level)'>Test Solution</button>";
 	document.getElementById("level_text").innerHTML = str;
 	document.getElementById("check_out").innerHTML = "";
 
@@ -1099,6 +1098,7 @@ function test_level(i) {
 		}
 	str = "<h2>Test Results:</h2><div class='zone'><table border=1 style='background-color:white'><tr><td>" + str + "</td></tr></table></div>";
 	document.getElementById("check_out").innerHTML = str;
+	document.getElementById("check_out").scrollIntoView();
 	}
 
 function compare_pls(pl1,pl2) {

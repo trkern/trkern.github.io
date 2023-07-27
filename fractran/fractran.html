@@ -193,7 +193,7 @@ function rawpl_to_html(l, opts) {
 		}
 	opts = Object.assign({},default_options,opts);
 
-	if (opts.actually_numbers) { return(pl_to_int(rawpl_to_pl(l)));}
+	if (opts.actually_numbers) { return("<code>"+pl_to_int(rawpl_to_pl(l))+"</code>");}
 
 	var i;
 	var rval = "";
@@ -204,7 +204,7 @@ function rawpl_to_html(l, opts) {
 	for (i = 0; i < l.length; i++) {
 		if (l[i][1] != 0) {isempty = false;}
 		}
-	if (isempty) {return("1<sup></sup>");}
+	if (isempty) {return("<code>1<sup></sup></code>");}
 
 	for (i = 0; i < l.length; i++) {
 		expstr = l[i][1];
@@ -238,14 +238,14 @@ function rawpl_to_html(l, opts) {
 		else {
 			needs_dot = opts.dot_after_exponents;
 			}
-		if (old_needs_dot) {rval += "&middot;"}
+		if (old_needs_dot) {rval += "&sdot;"}
 		rval += "" + l[i][0] + "<sup>" + expstr + "</sup>";
 		}
-	return(rval);
+	return("<code>" + rval + "</code>");
 	}
 
 function fracstrings(s1,s2) {
-	var rval = "<table style='display:inline-block;vertical-align:middle; border-spacing:0px'><tr><td style='height:1.5em;text-align:center; padding:0px; border-bottom:solid 2px'>" + s1 + "</td></tr><tr><td style='height:1.5em;text-align:center'>" + s2 + "</td></tr></table>";
+	var rval = "<table style='display:inline-block;vertical-align:middle; border-spacing:0px'><tr><td style='height:1.5em;text-align:center; padding:0px; border-bottom:solid 2px; font-size:80%'>" + s1 + "</td></tr><tr><td style='height:1.5em;text-align:center;font-size:80%'>" + s2 + "</td></tr></table>";
 	return(rval);
 	}
 
@@ -254,7 +254,6 @@ function rawplfrac_to_html(l1,l2,opts) {
 	}
 
 function rawfl_to_html(l, opts) {
-
 	var i;
 	var rval = "";
 	for (i = 0; i < l.length; i++) {
@@ -452,9 +451,6 @@ function tk_override_mq_paste(str) {
 		}
 	return(str);
 	}
-
-//22^3*4^5/3^3*2^10
-//22^{30}\cdot4^5
 
 function rawpl_to_latex(l) {
 	var i;
@@ -682,38 +678,6 @@ function fancy_tkas_to_rawpls(L) {
 var g_rawfl = [];
 var g_fracl = [];
 
-function old_do_flist_out() {
-
-		//dot_after_exponents: true,
-		//zero_exponents: "hide", //can be "hide", "dim", "show"
-		//one_exponents: "hide", //can be "hide", "dim", "show"
-		//actually_numbers: false
-
-	var k = document.getElementById("sel_flist_out_type").value;
-	var str;
-	var g_fracl_rawfl = fl_to_rawfl(g_fracl);
-	if (k == "in") {
-		str = rawfl_to_html(g_rawfl);
-		}
-	if (k == "num") {
-		str = rawfl_to_html(g_fracl_rawfl, {actually_numbers:true});
-		}
-	if (k == "pf1") {
-		str = rawfl_to_html(g_fracl_rawfl);
-		}
-	if (k == "pf2") {
-		str = rawfl_to_html(g_fracl_rawfl, {zero_exponents: "dim", one_exponents:"dim"});
-		}
-	if (k == "pf3") {
-		str = rawfl_to_html(g_fracl_rawfl, {zero_exponents: "show", one_exponents:"show"});
-		}
-	if (k == "pf4") {
-		g_fracl_rawfl = fl_to_rawfl(g_fracl, fl_max_power(g_fracl));
-		str = rawfl_to_html(g_fracl_rawfl, {zero_exponents: "show", one_exponents:"show"});
-		}
-	document.getElementById("flist_out").innerHTML = str;
-	}
-
 function do_flist_out() {
 	if (g_fracl.length == 0) {
 		document.getElementById("flist_out").innerHTML = "";
@@ -737,12 +701,12 @@ function do_flist_out() {
 	for (i = 0; i < g_fracl.length; i++) {
 		str += "<td>" + rawplfrac_to_html(...g_fracl_rawfl[i], {actually_numbers:true}) + "</td>";
 		}
-	str += "</tr><tr><td>Factored Form:</td>";
+/*	str += "</tr><tr><td>Factored Form:</td>";
 	for (i = 0; i < g_fracl.length; i++) {
 		str += "<td>" + rawplfrac_to_html(...g_fracl_rawfl[i]) + "</td>";
-		}
+		}*/
 	str += "</tr></table>";
-	str += rawfl_to_str(g_fracl_rawfl);
+	str += "Factored Form: <kbd>" + rawfl_to_str(g_fracl_rawfl) + "</kbd>";
 	document.getElementById("flist_out").innerHTML = str;
 	}
 
@@ -1153,6 +1117,17 @@ function checkotron(in_pl,out_pl,hard_steps = -1) { //checks to see if in_pl cre
 	return(rval);
 	}
 
+function do_chk_show_instructions() {
+	if (document.getElementById("chk_show_instructions").checked) {
+		document.getElementById("text_instructions").style.display = "";
+		document.getElementById("mq_instructions").style.display = "";
+		}
+	else {
+		document.getElementById("text_instructions").style.display = "none";
+		document.getElementById("mq_instructions").style.display = "none";
+		}
+	}
+
 function do_chk_comments() {
 	if (document.getElementById("chk_comments").checked) {
 		document.getElementById("comment_zone").style.display = "";
@@ -1273,9 +1248,12 @@ function boot_local_data() {
 		reset_local_data();
 		}
 	else {
-		var lld_string = localStorage.getItem("trkern_fractran_local_data");
+		try{var lld_string = localStorage.getItem("trkern_fractran_local_data");
 		local_data = JSON.parse(lld_string);
-		call_this_on_changing_local_data();
+		call_this_on_changing_local_data();}
+		catch(e) {
+			reset_local_data();
+			}
 		}
 	}
 
@@ -1332,6 +1310,7 @@ function update_level_select_butts() {
 		str += "</button>";
 		}
 	str += "</td></tr></table>";
+	str += "<button onclick='reset_local_data()'>Reset Progress</button>";
 	document.getElementById("level_select_butts").innerHTML = str;
 	document.getElementById("current_level_name").innerHTML = k + ". " + levels[k].name;
 	}
@@ -1354,8 +1333,11 @@ levels.push({
 	testing_ground_level: true,
 	preprogram: str_to_rawfl("17/91 78/85 19/51 23/38 29/33 77/29 95/23 77/19 1/17 11/13 13/11 15/2 1/7 55/1"),
 	name: "Welcome to Fractran!",
-	guide: "<p>Welcome to <code>FRACTRAN</code>! <code>FRACTRAN</code> is a Turing-complete programming language created by John Conway. This interactive will guide you through some basic programming practice in <code>FRACTRAN</code> until you are an EXPERT <code>FRACTRAN</code> PROGRAMMER!</p><p>A program in <code>FRACTRAN</code> is a list of fractions.</p> Execution:<ul><li> The program takes in a number as an input and stores it in the STATE VARIABLE<li> At each step of execution, the STATE VARIABLE number gets multiplied by the first fraction in your program that leaves the number as an integer.<li> This process repeats: the new STATE VARIABLE is multiplied by the FIRST fraction in your program that leaves the number as an integer.<li> If no fraction is available, the program HALTS and outputs the current STATE VARIABLE.</ul>",
-	desc: "Each level will ask you to create a program to perform a certain task. This level has been pre-programmed with the PRIMEGAME program. <ol><li>Scroll down to the 'Testing Ground'<li>Enter the number 2<li>Press the 'Advance 1000 Steps' button a few times.<li>A little + will appear in the level select to indicate that you've completed this level.</ol>",
+	guide: "<p>Welcome to <span class='fractran'>FRACTRAN</span>! <span class='fractran'>FRACTRAN</span> is a Turing-complete programming language created by John Conway. This interactive will guide you through some basic programming practice in <span class='fractran'>FRACTRAN</span> until you are an EXPERT <span class='fractran'>FRACTRAN</span> PROGRAMMER!</p><p>A program in <span class='fractran'>FRACTRAN</span> is a list of fractions.</p> Execution:<ul><li> The program takes in a number as an input and stores it in the STATE VARIABLE<li> At each step of execution, the STATE VARIABLE number gets multiplied by the first fraction in your program that leaves the number as an integer.<li> This process repeats: the new STATE VARIABLE is multiplied by the FIRST fraction in your program that leaves the number as an integer.<li> If no fraction is available, the program HALTS and outputs the current STATE VARIABLE.</ul>",
+	desc: "Each level will ask you to create a program to perform a certain task. This level has been pre-programmed with the PRIMEGAME program: <kbd>17/91, 78/85, 19/51, 23/38, 29/33, 77/29, 95/23, 77/19, 1/17, 11/13, 13/11, 15/2, 1/7, 55/1</kbd><ol><li>Scroll down to the 'Testing Ground'<li>Enter the number <kbd>2</kbd><li>Press the 'Advance 1000 Steps' button a few times.<li>A little + will appear in the level select to indicate that you've completed this level.</ol>",
+	hint: "Read the directions carefully!",
+	solution: "",
+	solution_idea: "Press the 'Advance 1000 Steps' button under 'Testing Ground'",
 	test: function() {
 		alert("Normally, you should use this button to complete a level. However, the goal of this level is to get you to use the TESTING GROUND below. Please press the 'Advance 1000 Steps' button to complete this level.");
 		return(false);
@@ -1364,8 +1346,11 @@ levels.push({
 
 levels.push({
 	name: "Introduction",
-	guide: "<p>A program in <code>FRACTRAN</code> is a list of fractions. Several INPUT DEVICES have been provided for you below: you can read about each one by selecting it from the drop down menu. Please choose the input device that works best for you!</p>Execution:<ul><li> The program takes in a number as an input and stores it in the STATE VARIABLE<li> At each step of execution, the STATE VARIABLE number gets multiplied by the first fraction in your program that leaves the number as an integer.<li> This process repeats: the new STATE VARIABLE is multiplied by the FIRST fraction in your program that leaves the number as an integer.<li> If no fraction is available, the program HALTS and outputs the current STATE VARIABLE.</ul>",
-	desc: "Create a program that maps 2 to 3. Press the 'Test Solution' button to check your answer.",
+	guide: "<p>A program in <span class='fractran'>FRACTRAN</span> is a list of fractions. Several INPUT DEVICES have been provided for you below: you can read about each one by selecting it from the drop down menu. Please choose the input device that works best for you!</p>Execution:<ul><li> The program takes in a number as an input and stores it in the STATE VARIABLE<li> At each step of execution, the STATE VARIABLE number gets multiplied by the first fraction in your program that leaves the number as an integer.<li> This process repeats: the new STATE VARIABLE is multiplied by the FIRST fraction in your program that leaves the number as an integer.<li> If no fraction is available, the program HALTS and outputs the current STATE VARIABLE.</ul>",
+	desc: "Create a program that maps <code>2</code> to <code>3</code>. Press the 'Test Solution' button to check your answer.",
+	hint: "These first few levels are really simple to get you adjusted. One valid solution has only one fraction in it.",
+	solution: "3/2",
+	solution_idea: "What fraction, when multiplied by 2, gives you 3?",
 	test: function() {
 		return(checkotron([1],[0,1]));
 		}
@@ -1374,7 +1359,10 @@ levels.push({
 levels.push({
 	name: "Multiple Fractions",
 	guide: "<p>REMEMBER: your program can consist of multiple fractions! At each step, the number gets multiplied by the first fraction that keeps it a whole number, and ignores the rest.</p>",
-	desc: "Create a program that maps 2 to 3 and 5 to 7.",
+	desc: "Create a program that maps <code>2</code> to <code>3</code> and <code>5</code> to <code>7</code>.",
+	hint: "Sometimes fractions won't interact with each other.",
+	solution: "3/2, 7/5",
+	solution_idea: "Find two fractions to do these two tasks (mapping 2 to 3 and 5 to 7) separately.",
 	test: function() {
 		var rval = true;
 		if (!checkotron([1],[0,1])) {rval = false;}
@@ -1386,7 +1374,10 @@ levels.push({
 levels.push({
 	name: "Order Matters",
 	guide: "<p>REMEMBER: the order of fractions in your program matters! At each step, the number gets multiplied by the FIRST fraction that keeps it a whole number, and ignores the rest. In other words, the order of fractions is not the order to carry the instructions out, but an order of PRIORITY.</p>",
-	desc: "Create a program that maps 2 to 5, 3 to 7, and 6 to 11.",
+	desc: "Create a program that maps <code>2</code> to <code>5</code>, <code>3</code> to <code>7</code>, and <code>6</code> to <code>11</code>.",
+	hint: "Each desired mapping will correspond to a separate fraction. Play around with the order you enter them in.",
+	solution: "11/6, 5/2, 7/3",
+	solution_idea: "The 11/6 must go first, since otherwise when you input a 6, it will get caught by the denominators 2 or 3.",
 	test: function() {
 		var rval = true;
 		if (!checkotron([1],[0,0,1])) {rval = false;}
@@ -1399,7 +1390,10 @@ levels.push({
 levels.push({
 	name: "Introduction Again",
 	guide: "<p>This process of multiplying the current number by the first fraction happens repeatedly until there is no fraction in the list that can be multiplied by the current number to get an integer.</p>",
-	desc: "Create a program that maps 2<sup>n</sup> to 3<sup>n</sup>.",
+	desc: "Create a program that maps <code>2<sup>n</sup></code> to <code>3<sup>n</sup></code>.",
+	hint: "This level is still really simple. There's no need to try to calculate n.",
+	solution: "3/2",
+	solution_idea: "A fraction will keep replacing the denominator by the numerator until it can't or a higher priority fraction can be applied.",
 	test: function() {
 		var rval = true;
 		for (var i = 0; i < 10; i++) {
@@ -1412,7 +1406,10 @@ levels.push({
 levels.push({
 	name: "Multiple Fractions Again",
 	guide: "<p>This process of multiplying the current number by the first fraction happens repeatedly until there is no fraction in the list that can be multiplied by the current number to get an integer.</p>",
-	desc: "Create a program that maps 2<sup>n</sup> to 3<sup>n</sup> and 5<sup>n</sup> to 7<sup>n</sup>.",
+	desc: "Create a program that maps <code>2<sup>n</sup><code> to <code>3<sup>n</sup><code> and <code>5<sup>n</sup></code> to <code>7<sup>n</sup></code>.",
+	hint: "This is the same problem as before.",
+	solution: "3/2, 7/5",
+	solution_idea: "Fractions are usually independent of each other, unless there are common factors.",
 	test: function() {
 		var rval = true;
 		for (var i = 0; i < 7; i++) {
@@ -1427,8 +1424,11 @@ levels.push({
 
 levels.push({
 	name: "Deleting Data",
-	guide: "<p>Looking at numbers in terms of their prime factorizations is essential to understanding a <code>FRACTRAN</code> program.</p>",
-	desc: "Create a program that maps 2<sup>n</sup> 3<sup>m</sup> to 2<sup>n</sup>.",
+	guide: "<p>Looking at numbers in terms of their prime factorizations is essential to understanding a <span class='fractran'>FRACTRAN</span> program.</p>",
+	desc: "Create a program that maps <code>2<sup>n</sup>&sdot;3<sup>m</sup></code> to <code>2<sup>n</sup></code>.",
+	hint: "How could you turn 2^n*3 into 2^n?",
+	solution: "1/3",
+	solution_idea: "Usually, fractions replace the denominator with the numerator. However, if the numerator is 1, the fraction simply deletes the denominator.",
 	test: function() {
 		var rval = true;
 		for (var i = 0; i < 6; i++) {
@@ -1442,7 +1442,10 @@ levels.push({
 
 levels.push({
 	name: "Copying Data",
-	desc: "Create a program that turns 2<sup>n</sup> into 3<sup>n</sup> 5<sup>n</sup>.",
+	desc: "Create a program that turns <code>2<sup>n</sup></code> into <code>3<sup>n</sup> &sdot;5<sup>n</sup></code>.",
+	hint: "This level is still simple! There is a 1 fraction solution.",
+	solution: "15/2",
+	solution_idea: "Remember your exponent rules: a^n * b^n = (ab)^n.",
 	test: function() {
 		var rval = true;
 		for (var i = 0; i < 10; i++) {
@@ -1454,7 +1457,10 @@ levels.push({
 
 levels.push({
 	name: "Addition",
-	desc: "Create a program that turns 2<sup>n</sup> 3<sup>m</sup> into 5<sup>n+m</sup>.",
+	desc: "Create a program that turns <code>2<sup>n</sup>&sdot;3<sup>m</sup></code> into <code>5<sup>n+m</sup></code>.",
+	hint: "It may help to think of each fraction as a path for draining exponent from one prime to another.",
+	solution: "5/2, 5/3",
+	solution_idea: "Turn the 2s into 5s and the 3s into 5s.",
 	test: function() {
 		var rval = true;
 		for (var i = 0; i < 7; i++) {
@@ -1468,7 +1474,10 @@ levels.push({
 
 levels.push({
 	name: "Doubling",
-	desc: "Create a program that turns 2<sup>n</sup> to 3<sup>2n</sup>.",
+	desc: "Create a program that turns <code>2<sup>n</sup></code> to <code>3<sup>2n</sup></code>.",
+	hint: "Look back at the 'Copying Data' level.",
+	solution: "9/2",
+	solution_idea: "Remember your exponent rules: a^(2n) = (a^2)^n.",
 	test: function() {
 		var rval = true;
 		for (var i = 0; i < 10; i++) {
@@ -1480,7 +1489,10 @@ levels.push({
 
 levels.push({
 	name: "Intermediate Registers",
-	desc: "Create a program that turns 2<sup>n</sup> to 3<sup>2n</sup>, but none of the numerators in your program can have a power of 3 larger than 1.",
+	desc: "Create a program that turns <code>2<sup>n</sup></code> to <code>3<sup>2n</sup></code>, but none of the numerators in your program can have <code>3</code> to a power larger than <code>1</code>.",
+	hint: "Start with your solution to 'Copying Data'.",
+	solution: "15/2, 3/5",
+	solution_idea: "Copy the 2s into 3s and 5s simultaneously, then turn the 5s into 3s.",
 	test: function() {
 		var rval = true;
 		for (var i = 0; i < g_fracl.length; i++) {
@@ -1498,7 +1510,9 @@ levels.push({
 
 levels.push({
 	name: "Subtraction",
-	desc: "Create a program that turns 2<sup>n</sup> 3<sup>m</sup> (for n < m) into 3<sup>m-n</sup>.",
+	desc: "Create a program that turns <code>2<sup>n</sup>&sdot;3<sup>m</sup></code> (for <code>n < m</code>) into <code>3<sup>m-n</sup></code>.",
+	hint: "There is a single fraction solution to this puzzle.",
+	solution: "1/6",
 	test: function() {
 		var rval = true;
 		for (var i = 0; i < 7; i++) {
@@ -1512,7 +1526,10 @@ levels.push({
 
 levels.push({
 	name: "Proper Subtraction",
-	desc: "Create a program that turns 2<sup>n</sup> 3<sup>m</sup> into 5<sup>|m-n|</sup>.",
+	desc: "Create a program that turns <code>2<sup>n</sup>&sdot;3<sup>m</sup></code> into <code>5<sup>|m-n|</sup></code>.",
+	hint: "Start with your solution to the 'Subtraction' level.",
+	solution: "1/6, 5/3, 5/2",
+	solution_idea: "First, remove 2s and 3s until one pile is empty. Then move the remaining pile to 5s.",
 	test: function() {
 		var rval = true;
 		for (var i = 0; i < 7; i++) {
@@ -1526,7 +1543,10 @@ levels.push({
 
 levels.push({
 	name: "Remainders",
-	desc: "Create a program that turns 2<sup>k</sup> into 1 if k is even and 3 if k is odd.",
+	desc: "Create a program that turns <code>2<sup>k</sup></code> into <code>1</code> if <code>k</code> is even and <code>3</code> if <code>k</code> is odd.",
+	hint: "You can remove multiple values at once if your denominator has multiple factors.",
+	solution: "1/4, 3/2",
+	solution_idea: "We first remove 2s in pairs. If there is a leftover 2, we turn it into a 3.",
 	test: function() {
 		var rval = true;
 		for (var i = 0; i < 5; i++) {
@@ -1539,8 +1559,10 @@ levels.push({
 
 levels.push({
 	name: "Control",
-	guide: "<p>We've seen the primes' exponents acting as registers to temporarily store data, but they can just as easily serve as booleans (0 or 1) to control the flow of our programs, executing different code depending on which of a list of primes is present.</p>",
-	desc: "Create a program that turns 2<sup>n</sup>11 into 2<sup>n+1</sup> and 2<sup>n</sup>17 into 2<sup>n-1</sup>",
+	guide: "<p>We've seen the primes' exponents acting as registers to temporarily store data, but they can just as easily serve as booleans (<code>0</code> or <code>1</code>) to control the flow of our programs, executing different code depending on which of a list of primes is present.</p>",
+	desc: "Create a program that turns <code>2<sup>n</sup>&sdot;11</code> into <code>2<sup>n+1</sup></code> and <code>2<sup>n</sup>&sdot;17</code> into <code>2<sup>n-1</sup></code>.",
+	hint: "If there is a factor of 11 in the denominator of a fraction, it will only catch numbers that have a factor of 11.",
+	solution: "2/11, 1/17*2",
 	test: function() {
 		var rval = true;
 		for (var i = 0; i < 7; i++) {
@@ -1555,8 +1577,10 @@ levels.push({
 
 levels.push({
 	name: "Control 2",
-	guide: "<p>Control is a bit tricky in <code>FRACTRAN</code>. When a program reads a control prime present in the current number, it consumes it, and one cannot put it back directly without creating fractions that cancel (losing their utility). Try the next level for a hint.</p>",
-	desc: "Create a program that turns 2<sup>n</sup>11 into 3<sup>n</sup>11 and 2<sup>n</sup>17 into 5<sup>n</sup>17",
+	guide: "<p>Control is a bit tricky in <span class='fractran'>FRACTRAN</span>. When a program reads a control prime present in the current number, it consumes it, and one cannot put it back directly without creating fractions that cancel (losing their utility). Try the next level for a hint.</p>",
+	desc: "Create a program that turns <code>2<sup>n</sup>&sdot;11</code> into <code>3<sup>n</sup>&sdot;11</code> and <code>2<sup>n</sup>17&sdot;</code> into </code>5<sup>n</sup>&sdot;17</code>",
+	hint: "As usual, move exponents from one prime to another one unit at a time.",
+	solution: "3*13/11*2, 11/13, 5*19/17*2, 17/19",
 	test: function() {
 		var rval = true;
 		for (var i = 0; i < 7; i++) {
@@ -1571,7 +1595,9 @@ levels.push({
 
 levels.push({
 	name: "Control 2 Hint",
-	desc: "Create a program that turns 2<sup>n</sup>11 into 2<sup>n+1</sup>13 and 2<sup>n</sup>17 into 2<sup>n-1</sup>19",
+	desc: "Create a program that turns <code>2<sup>n</sup>&sdot;11</code> into <code>2<sup>n+1</sup>&sdot;13</code> and <code>2<sup>n</sup>&sdot;17</code> into <code>2<sup>n-1</sup>&sdot;19</code>",
+	hint: "Look back at your solution to 'Control'.",
+	solution: "2*13/11, 19/2*17",
 	test: function() {
 		var rval = true;
 		for (var i = 0; i < 7; i++) {
@@ -1587,7 +1613,9 @@ levels.push({
 levels.push({
 	name: "Remainders 2",
 	guide: "Having a control prime present in the input opens up some additional possibilities.",
-	desc: "Create a program that turns 2<sup>n</sup>11 into 5 if n is even and 3 if n is odd.",
+	desc: "Create a program that turns <code>2<sup>n</sup>11</code> into <code>5</code> if <code>n</code> is even and <code>3</code> if <code>n</code> is odd.",
+	hint: "Start from your solution to 'Remainders'.",
+	solution: "1/4, 3/22, 5/11",
 	test: function() {
 		var rval = true;
 		for (var i = 0; i < 7; i++) {
@@ -1600,8 +1628,10 @@ levels.push({
 
 levels.push({
 	name: "Unlocking nocancel",
-	guide: "Constantly having to swap back and forth between control primes is a real nuisance. If only fractions didn't cancel, since this <code>FRACTRAN</code> interpreter first checks divisibility by the denominator before multiplying by the numerator, you could write programs much more simply! For instance, the program "+rawfl_to_html(str_to_rawfl("3*11/2*11, 5*17/2*17"))+ " would be a shorter solution to 'Control 2'. Complete this stage to unlock nocancel mode.",
-	desc: "Create a program that, when run for two steps on a number, is the same as running the un-canceled program " + rawfl_to_html(str_to_rawfl("2^3*5^4*11/2^4*5^3*11")) + " i.e. " + rawfl_to_html(str_to_rawfl("55000/22000")) + " for one step. That is, if the number is divisible by 22000, in two steps it divides by 22000 and multiplies by 55000 and otherwise does nothing.",
+	guide: "Constantly having to swap back and forth between control primes is a real nuisance. If only fractions didn't cancel, since this <span class='fractran'>FRACTRAN</span> interpreter first checks divisibility by the denominator before multiplying by the numerator, you could write programs much more simply! For instance, the program "+rawfl_to_html(str_to_rawfl("3*11/2*11, 5*17/2*17"))+ " would be a shorter solution to 'Control 2'. Complete this stage to unlock nocancel mode.",
+	desc: "Create a program that, when run for two steps on a number, is the same as running the un-canceled program " + rawfl_to_html(str_to_rawfl("2^3*5^4*11/2^4*5^3*11")) + " i.e. " + rawfl_to_html(str_to_rawfl("55000/22000")) + " for one step. That is, if the number is divisible by <code>22000</code>, in two steps it divides by <code>22000</code> and multiplies by <code>55000</code> and otherwise does nothing.",
+	hint: "Don't worry about the specific composition of the fractions.",
+	solution: "55000/13, 13/22000",
 	test: function() {
 		var rval = true;
 		for (var i = 2; i <= 5; i++) {
@@ -1622,9 +1652,12 @@ levels.push({
 		}
 	});
 
-levels.push({ //11/13, 3*5*13/2*11, 19/11, 17/19, 19*2/5*17
+levels.push({ //
 	name: "There and Back",
 	desc: "Create a program that turns 2<sup>n</sup>11 into 2<sup>n</sup>3<sup>n</sup>17.",
+	hint: "As in 'Intermediate Registers', you'll need a separate register.",
+	solution: "11/13, 3*5*13/2*11, 19/11, 17/19, 19*2/5*17",
+	solution_idea: "In order to measure how many 2s we have, we need to move all the exponent out of the 2s and into an intermediate register. Having a control prime allows us to detect when this process is finished, and we can switch to a different control prime to move n back into the 2s and into the 3s.",
 	test: function() {
 		var rval = true;
 		for (var i = 0; i < 7; i++) {
@@ -1636,7 +1669,22 @@ levels.push({ //11/13, 3*5*13/2*11, 19/11, 17/19, 19*2/5*17
 
 levels.push({
 	name: "Multiplication",
+	guide: "Now that we have the ability to copy data out of a register while leaving the original source unchanged, this opens up a wide variety of practical programs.",
 	desc: "Create a program that turns 2<sup>n</sup>3<sup>m</sup>11 into 5<sup>nm</sup>13.",
+	test: function() {
+		var rval = true;
+		for (var i = 0; i < 7; i++) {
+			for (var j = 0; j < 7; j++) {
+				if (!checkotron([i,j,0,0,1],[0,0,i*j,0,0,1])) {rval = false;}
+				}
+			}
+		return(rval);
+		}
+	});
+
+levels.push({
+	name: "Division",
+	desc: "Create a program that turns 2<sup>n</sup>3<sup>m</sup>11 into 5<sup>p</sup>7<sup>r</sup>13, where pn+r=m.",
 	test: function() {
 		var rval = true;
 		for (var i = 0; i < 7; i++) {
@@ -1656,26 +1704,35 @@ var sample_primegame = "17/91 78/85 19/51 23/38 29/33 77/29 95/23 77/19 1/17 11/
 </script>
 <style>
 @font-face {
-	font-family: "tech2";
-	src: url("VT323-Regular.ttf");
-	}
-@font-face {
 	font-family: "tech";
 	src: url("lmmonoproplt10-regular-webfont.woff");
 	}
-body{
-	font-size:large;
-	font-family: sans-serif;
+@font-face {
+	font-family: "questrial";
+	src: url("Questrial-Regular.ttf");
+	}
+body {
+	font-size:130%;
+	font-family: questrial, sans-serif;
+	}
+button {
+	font-size:90%;
+	font-family: questrial, sans-serif;
 	}
 code {
-	font-family: "tech", monospace;
-	font-size: 120%;
+	font-family: tech, monospace;
+	}
+.fractran {
+	font-family: tech, monospace;
 	}
 kbd {
 	background-color:white;
 	border-radius: 3px;
 	padding: 2px;
 	border: 1px solid black;
+	font-family: monospace;
+	margin:2px;
+	display:inline-block;
 	}
 input {
 	font-family: monospace;
@@ -1698,7 +1755,7 @@ h2 {
 	margin-top: 0px;
 	font-size:175%;
 	color:white;
-	font-family:tech;
+	font-family:tech, monospace;
 	display: inline-block;
 	font-weight: normal;
 	padding-left: 5px;
@@ -1715,11 +1772,11 @@ h2 {
 </head>
 <body onload="boot()">
 
-<h1 style="left:0;right:0;margin:auto;text-align:center;font-weight:normal"><code>FRACTRAN</code></h1>
+<h1 style="left:0;right:0;margin:auto;text-align:center;font-weight:normal"><span class='fractran'>FRACTRAN</span></h1>
 
 <h2> Level Select:
 <span id="level_sel" style='display:none'>
-</span> <button onclick="reset_local_data()">Reset Progress</button>
+</span>
 </h2>
 
 <div class="zone" id='level_select_butts'>
@@ -1742,9 +1799,11 @@ Input Device: <select id="sel_inp" onchange="do_sel_inp(event)">
 </h2>
 
 <div class="zone">
+<input type="checkbox" id="chk_show_instructions" onchange="do_chk_show_instructions()" checked> Show Instructions
 <span id="chk_no_cancel_container"><input type="checkbox" id="chk_no_cancel" onchange="do_chk_no_cancel()"> nocancel </span>
 <span id="chk_comments_container"><input type="checkbox" id="chk_comments" onchange="do_chk_comments()"> Show Comment Box </span>
 <div id="text_in_area">
+<div id="text_instructions">
 <ul>
 <li> Fractions are separated with spaces or commas.
 <li> Separate numerator and denominator with <kbd>/</kbd>. Do not include spaces within a fraction.
@@ -1752,22 +1811,28 @@ Input Device: <select id="sel_inp" onchange="do_sel_inp(event)">
 <li> Enter powers with <kbd>^</kbd>. Multiply with <kbd>*</kbd>.
 <li> Do not use parentheses.
 </ul>
-<p>Example Program: 3/4*5, 2^3/5^4, 4*10^2/3^2*5</p>
+<p>Example Program: <kbd>1/2, 3/4*5, 2^3/5^4, 4*10^2/3^2*5</kbd></p>
+</div>
+
 <textarea type="text" id="text_in" oninput="do_text_in(event)"></textarea>
 </div>
 
 <div id="mq_in_area">
-Use <kbd>/</kbd> and <kbd>^</kbd> to create fractions, exponents. Separate fractions with commas. Use LEFT ARROW to break out of exponents and fractions. Please report bugs. If you encounter parse errors, drop down to "Text".
+<div id="mq_instructions">
+<ul>
+<li>Use <kbd>/</kbd> and <kbd>^</kbd> to create fractions, exponents. 
+<li> Separate fractions with commas. 
+<li> Use LEFT ARROW to break out of exponents and fractions. 
+<li> Please report bugs. If you encounter parse errors, drop down to "Text".
+</ul>
+</div>
 <div id="mq_in" style='background-color:white'></div>
 </div>
+
 <div id="comment_zone"></div>
-</div>
 
-<h2>Your Program:</h2>
-
-<div class='zone'>
 <div id="flist_out" style="overflow-x:auto;white-space:nowrap"></div>
-<button style='font-size:300%' onclick='test_level(g_current_level)'>Test Solution</button>
+<button style='font-size:200%' onclick='test_level(g_current_level)'>Test Solution</button>
 </div>
 
 <div id="check_out"></div>

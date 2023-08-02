@@ -35,7 +35,7 @@ function nth_prime(n) {
 	}
 
 function prime_factor(n) {
-	if ((!Number.isInteger(n))||(n<=0)) {console.log("prime_factor error: bad input ", n); return([]);}
+	if ((!Number.isInteger(n))||(n<=0)) {return([]);}
 	var rval = [];
 	var handled = 1;
 	var unhandled = n;
@@ -50,8 +50,21 @@ function prime_factor(n) {
 			}
 		rval.push(k);
 		unhandled /= j;
-		if (!Number.isInteger(unhandled)) {console.log("prime_factor error: no longer integer ", unhandled); return([]);}
+		if (!Number.isInteger(unhandled)) {return([]);}
 		handled *= j;
+		}
+	return(rval);
+	}
+
+function multiply_pls(l1,l2) {
+	var i;
+	var rval = [];
+	for (i = 0; i < Math.max(l1.length, l2.length); i++) {
+		var a = 0;
+		if (i in l1) {a = l1[i];}
+		var b = 0;
+		if (i in l2) {b = l2[i];}
+		rval.push(a+b);
 		}
 	return(rval);
 	}
@@ -323,10 +336,9 @@ function iterated_apply_fl_to_l(l, fl) { //apply fl to l repeatedly until it can
 	while (b) {
 		curl = apply_fl_to_l(curl, fl);
 		if (curl == "nope") {b = false;}
-		else if (action_list.indexOf(pl_to_int(curl)) != -1) {console.log(action_list); return("loop")}
+		else if (action_list.indexOf(pl_to_int(curl)) != -1) {return("loop")}
 		else {action_list.push(pl_to_int(curl));}
 		}
-	console.log(action_list);
 	return(action_list[action_list.length-1]);
 	}
 
@@ -344,14 +356,14 @@ function str_to_rawpl(str) { //converts a string 2^3*4^6*5 etc into a power list
 		var k = l[i].split("^");
 		if (k.length == 1) {
 			var b = Number(k[0]);
-			if (!Number.isInteger(b) || b <= 0) {console.log("parse failed at ", l[i]);}
+			//if (!Number.isInteger(b) || b <= 0) {console.log("parse failed at ", l[i]);}
 			rval.push([b,1]);
 			}
 		if (k.length == 2) {
 			var b = Number(k[0]);
-			if (!Number.isInteger(b) || b <= 0) {console.log("parse failed at ", l[i]);}
+			//if (!Number.isInteger(b) || b <= 0) {console.log("parse failed at ", l[i]);}
 			var e = Number(k[1]);
-			if (!Number.isInteger(e)) {console.log("parse failed at ", l[i]);}
+			//if (!Number.isInteger(e)) {console.log("parse failed at ", l[i]);}
 			rval.push([b,e]);
 			}
 		}
@@ -727,28 +739,10 @@ function do_input() { //specific functions (do_text_in, do_mq_in) drop off data 
 
 	}
 
-function do_ttext_in() {
-	var str = document.getElementById("text_in").value;
-	var T = tkas_parse(str);
-	var i;
-	var l = str.split(",");
-	var r = [];
-	for (i = 0; i < l.length; i++) {
-		if (l[i] == "") {continue;}
-		try {
-			var L = tkas_parse(l[i]);
-			r.push(fancy_tkas_to_rawpls(L));
-			}
-		catch(e) {}
-		}
-	g_rawfl = r;
-	do_input();
-	}
-
 function do_text_in() {
 	var elt = document.getElementById("text_in");
 	elt.style.height = 0;
-	elt.style.height = (elt.scrollHeight) + "px";
+	elt.style.height = "max("+elt.scrollHeight + "px, 1.5em)";
 	var str = document.getElementById("text_in").value;
 	g_rawfl = str_to_rawfl(str);
 	do_input();
@@ -1029,14 +1023,35 @@ function load_program(str) {
 
 var g_current_level = 0;
 
+function butt_hint1() {
+	document.getElementById("hint1").innerHTML = levels[g_current_level].hint;
+	}
+
+function butt_hint2() {
+	document.getElementById("hint2").innerHTML = levels[g_current_level].solution_idea;
+	}
+
+function butt_hint3() {
+	var str = levels[g_current_level].solution;
+	document.getElementById("text_in").value = str;
+	MQ(document.getElementById("mq_in")).latex(rawfl_to_latex(str_to_rawfl(str)));
+	do_text_in();
+	}
+
 function load_level(i) {
 	var str = "";
 	if ("guide" in levels[i]) {
 		str += levels[i].guide;
 		};
+	str += "<h3>Level Goal:</h3>";
 	str += "<table border=1 style='background-color:white'><tr><td>";
 	str += levels[i].desc;
 	str += "</td></tr></table>";
+	if ("hint" in levels[i]) {str += "<button onclick='butt_hint1()'>Hint</button>";}
+	if ("solution_idea" in levels[i]) {str += "<button onclick='butt_hint2()'>Solution Idea</button>";}
+	if ("solution" in levels[i]) {str += "<button onclick='butt_hint3()'>Show Solution</button>";}
+	str += "<div id='hint1'></div>";
+	str += "<div id='hint2'></div>";
 	g_current_level = i;
 	document.getElementById("level_text").innerHTML = str;
 	document.getElementById("check_out").innerHTML = "";
@@ -1534,7 +1549,7 @@ levels.push({
 	});
 
 levels.push({
-	name: "Proper Subtraction",
+	name: "Absolute Subtraction",
 	desc: "Create a program that turns <code>2<sup>n</sup>&sdot;3<sup>m</sup></code> into <code>5<sup>|m-n|</sup></code>.",
 	hint: "Start with your solution to the 'Subtraction' level.",
 	solution: "1/6, 5/3, 5/2",
@@ -1572,6 +1587,7 @@ levels.push({
 	desc: "Create a program that turns <code>2<sup>n</sup>&sdot;11</code> into <code>2<sup>n+1</sup></code> and <code>2<sup>n</sup>&sdot;17</code> into <code>2<sup>n-1</sup></code>.",
 	hint: "If there is a factor of 11 in the denominator of a fraction, it will only catch numbers that have a factor of 11.",
 	solution: "2/11, 1/17*2",
+	solution_idea: "You can view fractions as having two parts multiplied together: one part which performs an operation multiplied by a part that looks for the control primes.",
 	test: function() {
 		var rval = true;
 		for (var i = 0; i < 7; i++) {
@@ -1590,6 +1606,7 @@ levels.push({
 	desc: "Create a program that turns <code>2<sup>n</sup>&sdot;11</code> into <code>3<sup>n</sup>&sdot;11</code> and <code>2<sup>n</sup>17&sdot;</code> into <code>5<sup>n</sup>&sdot;17</code>",
 	hint: "As usual, move exponents from one prime to another one unit at a time.",
 	solution: "3*13/11*2, 11/13, 5*19/17*2, 17/19",
+	solution_idea: "Every step, the control prime must change. To simulate the control prime not changing, you need to add a secondary control prime for each original control prime. Then, when that secondary control prime is active, do nothing but change back to the original control prime.",
 	test: function() {
 		var rval = true;
 		for (var i = 0; i < 7; i++) {
@@ -1606,6 +1623,7 @@ levels.push({
 	name: "Control 2 Hint",
 	desc: "Create a program that turns <code>2<sup>n</sup>&sdot;11</code> into <code>2<sup>n+1</sup>&sdot;13</code> and <code>2<sup>n</sup>&sdot;17</code> into <code>2<sup>n-1</sup>&sdot;19</code>",
 	hint: "Look back at your solution to 'Control'.",
+	solution_idea: "You can view fractions as having two parts multiplied together: one part which performs an operation multiplied by a part that looks for and operates on the control primes.",
 	solution: "2*13/11, 19/2*17",
 	test: function() {
 		var rval = true;
@@ -1625,6 +1643,7 @@ levels.push({
 	desc: "Create a program that turns <code>2<sup>n</sup>11</code> into <code>5</code> if <code>n</code> is even and <code>3</code> if <code>n</code> is odd.",
 	hint: "Start from your solution to 'Remainders'.",
 	solution: "1/4, 3/22, 5/11",
+	solution_idea: "If your program contains a fraction with denominator 1, it will run forever. So if the program state ever gets to 1, you can't escape. Having an extra prime present can prevent that.",
 	test: function() {
 		var rval = true;
 		for (var i = 0; i < 7; i++) {
@@ -1641,6 +1660,7 @@ levels.push({
 	desc: "Create a program that, when run for two steps on a number, is the same as running the un-canceled program " + rawfl_to_html(str_to_rawfl("2^3*5^4*11/2^4*5^3*11")) + " i.e. " + rawfl_to_html(str_to_rawfl("55000/22000")) + " for one step. That is, if the number is divisible by <code>22000</code>, in two steps it divides by <code>22000</code> and multiplies by <code>55000</code> and otherwise does nothing.",
 	hint: "Don't worry about the specific composition of the fractions.",
 	solution: "55000/13, 13/22000",
+	solution_idea: "We add a new prime, that when present, indicates that we're halfway through the process of dividing by 22000 and then multiplying by 55000. Since this prime is new, it cannot cancel with 22000 or 55000.",
 	test: function() {
 		var rval = true;
 		for (var i = 2; i <= 5; i++) {
@@ -1680,6 +1700,7 @@ levels.push({
 	name: "Multiplication",
 	guide: "<p>Now that we have the ability to copy data out of a register while leaving the original source unchanged, this opens up a wide variety of practical programs.</p>",
 	desc: "Create a program that turns <code>2<sup>n</sup>&sdot;3<sup>m</sup>11</code> into <code>5<sup>nm</sup>&sdot;13</code>.",
+	hint: "You can store one of the multiplicands in two places: one to keep it safe so it can be reused, and one to gradually decrement as you add it to the product.",
 	solution: "7*11/2*11, 17/3*11, 13/11, 2*5*17/7*17, 11/17, 1/7",
 	//solution: "7*11/19, 2*5*17/23, 19/2*11, 17/3*11, 13/11, 23/7*17, 11/17, 1/7",
 	solution_idea: "We start in (11). Here we copy all the 2s to 7s. When there are none left, we remove a 3 and switch to (17). In (17), we move 7s back to 2s and 5s. When that's finished, we switch back to (11).",
@@ -1698,6 +1719,7 @@ levels.push({
 	name: "Squaring",
 	guide: "<p>It can help to modify programs from previous levels.</p>",
 	desc: "Create a program that turns <code>2<sup>n</sup>&sdot;19</code> into <code>5<sup>(n<sup>2</sup>)&sdot;</sup>13</code>.",
+	hint: "First, set things up so you can use your multiplication program.",
 	solution: "3*23*19/2*19, 11/19, 7*11/23*11, 17/3*11, 13/11, 23*5*17/7*17, 11/17, 1/7",
 	solution_idea: "(19) Copy all 2s into 3s and 23s. When there are no more, switch to (11) and implement multiplication but with 2 replaced by 23.",
 	test: function() {
@@ -1711,14 +1733,92 @@ levels.push({
 
 levels.push({
 	name: "Division",
-	desc: "Create a program that turns 2<sup>n</sup>3<sup>m</sup>11 into 5<sup>p</sup>7<sup>r</sup>13, where pn+r=m.",
+	desc: "Create a program that turns <code>2<sup>m</sup>&sdot;3<sup>n</sup>&sdot;11</code> into <code>2<sup>r</sup>&sdot;5<sup>q</sup>&sdot;13</code>, where <code>m</code> divided by <code>n</code> is <code>q</code> remainder <code>r</code>. That is, <code>m = q&sdot;n+r</code>.",
 	test: function() {
 		var rval = true;
-		for (var i = 0; i < 7; i++) {
-			for (var j = 0; j < 7; j++) {
-				if (!checkotron([i,j,0,0,1],[0,0,i*j,0,0,1])) {rval = false;}
+		for (var m = 0; m <= 12; m++) {
+			for (var n = 1; n < 6; n++) {
+				if (!checkotron([m,n,0,0,1],[m%n,0,Math.floor(m/n),0,0,1])) {rval = false;}
 				}
 			}
+		return(rval);
+		}
+	});
+
+var automaton_table_string = "<code><table border=1><tr><td>p\\i</td><td>1</td><td>2</td></tr><tr><td>23</td><td>29</td><td>31</td></tr><tr><td>29</td><td>23</td><td>23</td></tr><tr><td>31</td><td>31</td><td>29</td></tr></table></code>"
+
+function f1(x) {if (x == 23) {return(29)} if (x == 29) {return(23)} if (x==31) {return(31)}}
+function f2(x) {if (x == 23) {return(31)} if (x == 29) {return(23)} if (x==31) {return(29)}}
+
+levels.push({
+	name: "Finite Automaton Setup",
+	desc: "Create a program that takes in an input of the form <code>3<sup>i</sup>&sdot;11&sdot;p</code>, where <code>i</code> is one of <code>1, 2</code> and <code>p</code> is one of <code>23,29,31</code>, and then outputs <code>11&sdot;q</code> where <code>q</code> is given by the table: " + automaton_table_string,
+	test: function() {
+		var rval = true;
+		if (!checkotron(prime_factor(3*11*23),prime_factor(11*f1(23)))) {rval = false;}
+		if (!checkotron(prime_factor(3*11*29),prime_factor(11*f1(29)))) {rval = false;}
+		if (!checkotron(prime_factor(3*11*31),prime_factor(11*f1(31)))) {rval = false;}
+		if (!checkotron(prime_factor(9*11*23),prime_factor(11*f2(23)))) {rval = false;}
+		if (!checkotron(prime_factor(9*11*29),prime_factor(11*f2(29)))) {rval = false;}
+		if (!checkotron(prime_factor(9*11*31),prime_factor(11*f2(31)))) {rval = false;}
+		return(rval);
+		}
+	});
+
+levels.push({
+	name: "Finite Automata",
+	guide: "<p>Now that we have the ability to divide and multiply exponents, we can treat them as strings! We can 'read a character' from the end of the string by dividing by 10. The remainder is the character, and the quotient is the string with that character removed.<p>",
+	desc: "Create a program that takes in <code>2<sup>n</sup>&sdot;11&sdot;23</code> where <code>n</code> is some number whose only digits are <code>1</code>s and <code>2</code>s. Your program should successively read in the digits of <code>n</code> starting from the ones digit, and depending on which number it reads, should change which of <code>23, 29, 31</code> is present, according to the table: " + automaton_table_string,
+	hint: "Dividing by a fixed number like 10 is easier than dividing by a user-input number.",
+	test: function() {
+		var rval = true;
+		if (!checkotron(multiply_pls([1],prime_factor(11*23)),prime_factor(f1(23)))) {rval = false;}
+		if (!checkotron(multiply_pls([2],prime_factor(11*23)),prime_factor(f2(23)))) {rval = false;}
+		if (!checkotron(multiply_pls([11],prime_factor(11*23)),prime_factor(f1(f1(23))))) {rval = false;}
+		if (!checkotron(multiply_pls([12],prime_factor(11*23)),prime_factor(f1(f2(23))))) {rval = false;}
+		if (!checkotron(multiply_pls([21],prime_factor(11*23)),prime_factor(f2(f1(23))))) {rval = false;}
+		if (!checkotron(multiply_pls([22],prime_factor(11*23)),prime_factor(f2(f2(23))))) {rval = false;}
+		if (!checkotron(multiply_pls([111],prime_factor(11*23)),prime_factor(f1(f1(f1(23)))))) {rval = false;}
+		if (!checkotron(multiply_pls([112],prime_factor(11*23)),prime_factor(f1(f1(f2(23)))))) {rval = false;}
+		if (!checkotron(multiply_pls([121],prime_factor(11*23)),prime_factor(f1(f2(f1(23)))))) {rval = false;}
+		if (!checkotron(multiply_pls([122],prime_factor(11*23)),prime_factor(f1(f2(f2(23)))))) {rval = false;}
+		if (!checkotron(multiply_pls([211],prime_factor(11*23)),prime_factor(f2(f1(f1(23)))))) {rval = false;}
+		if (!checkotron(multiply_pls([212],prime_factor(11*23)),prime_factor(f2(f1(f2(23)))))) {rval = false;}
+		if (!checkotron(multiply_pls([221],prime_factor(11*23)),prime_factor(f2(f2(f1(23)))))) {rval = false;}
+		if (!checkotron(multiply_pls([222],prime_factor(11*23)),prime_factor(f2(f2(f2(23)))))) {rval = false;}
+		return(rval);
+		}
+	});
+
+levels.push({
+	name: "Reversal",
+	guide: "<p>Not only can we read from the strings/stacks of digits that form exponents, but we can also write to them. You can reverse a string by simply reading digits one by one from one end of a string, and then pushing them onto another string as you read them.</p>",
+	desc: "Create a program that takes in an input of the form <code>2<sup>n</sup>&sdot;11</code>, and outputs a number of the form <code>3<sup>m</sup>&sdot;13</code>, where the digits of <code>m</code> are the reverse of the digits of <code>n</code> in base 10.",
+	test: function() {
+		var rval = true;
+		if (!checkotron(multiply_pls([3],prime_factor(11)),multiply_pls([0,3],prime_factor(13)))) {rval = false;}
+		if (!checkotron(multiply_pls([23],prime_factor(11)),multiply_pls([0,32],prime_factor(13)))) {rval = false;}
+		if (!checkotron(multiply_pls([123],prime_factor(11)),multiply_pls([0,321],prime_factor(13)))) {rval = false;}
+		if (!checkotron(multiply_pls([1234],prime_factor(11)),multiply_pls([0,4321],prime_factor(13)))) {rval = false;}
+		if (!checkotron(multiply_pls([567],prime_factor(11)),multiply_pls([0,765],prime_factor(13)))) {rval = false;}
+		if (!checkotron(multiply_pls([89],prime_factor(11)),multiply_pls([0,98],prime_factor(13)))) {rval = false;}
+		return(rval);
+		}
+	});
+
+
+levels.push({
+	name: "Turing Completeness",
+	guide: "<p>If you're familiar with the notion of a <a href='https://esolangs.org/wiki/Minsky_machine'>Minsky Machine</a>, you're probably already convinced that <span class='fractran'>FRACTRAN</span> is Turing Complete. If not, you can build a Turing Machine using two stacks in the exponents, one representing the characters to the right of the head and one representing the characters to the left of the head, with the ones digits representing the characters closest to the head (so the characters to the right are stored backwards).</p>",
+	desc: "Create a program that turns <code>2<sup>n</sup>11</code> into <code>37</code> if <code>n</code> is a palindrome and <code>41</code> if <code>n</code> is not a palindrome. You can implement a palindrome-checker as a Turing machine that traverses a string back and forth, marking off digits from the outside in until it finds a pair that don't agree.",
+	test: function() {
+		var rval = true;
+		if (!checkotron(multiply_pls([33],prime_factor(11)),prime_factor(37))) {rval = false;}
+		if (!checkotron(multiply_pls([343],prime_factor(11)),prime_factor(37))) {rval = false;}
+		if (!checkotron(multiply_pls([34543],prime_factor(11)),prime_factor(37))) {rval = false;}
+		if (!checkotron(multiply_pls([123],prime_factor(11)),prime_factor(41))) {rval = false;}
+		if (!checkotron(multiply_pls([23],prime_factor(11)),prime_factor(41))) {rval = false;}
+		if (!checkotron(multiply_pls([3434],prime_factor(11)),prime_factor(41))) {rval = false;}
 		return(rval);
 		}
 	});
@@ -1782,6 +1882,21 @@ h2 {
 	margin-top: 0px;
 	font-size:175%;
 	color:white;
+	font-family:tech, monospace;
+	display: inline-block;
+	font-weight: normal;
+	padding-left: 5px;
+	padding-right: 5px;
+	}
+
+h3 {
+	background-color: white;
+	margin-left:0px;
+	margin-right:10px;
+	margin-bottom:0px;
+	margin-top: 0px;
+	font-size:175%;
+	color:black;
 	font-family:tech, monospace;
 	display: inline-block;
 	font-weight: normal;
@@ -1870,10 +1985,14 @@ Type Program Here: <span id="mq_in" style='background-color:white'></span>
 
 <p>
 This isn't necessary for the game, but it can be useful to test your program on various inputs, to get an instinct for what <span class='fractran'>FRACTRAN</span> programs do. The area below provides some tools for doing that.
+<ul>
+<li> Enter an input value in the box and either the "Advance One Step" or "Advance 1000 Steps" buttons
+<li> You can also view a rudimentary animation of running numbers through the program
+</ul>
 </p>
 
 Input: <input type="text" value=2 style='width:10em' id="number_in" oninput="reset_runtable()"> <button onclick="butt_once()">Advance One Step</button> <button onclick="butt_many()">Advance 1000 Steps</button>
-Animation: <button id='ani_pp' onclick='butt_ani_pp()'>Play</button> Frame Number: <input type="number" value=0 id="animation_framecount" oninput="do_animate()"> 
+Animation: <button id='ani_pp' onclick='butt_ani_pp()'>Play</button> Frame Number: <input type="number" style='width:5em' value=0 id="animation_framecount" oninput="do_animate()"> <button onclick='document.getElementById("animation_framecount").value = 0; do_animate()'>Reset</button>
 <div id="animation"></div>
 <div id="runtable"></div>
 </div>

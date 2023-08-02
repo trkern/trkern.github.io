@@ -1810,15 +1810,15 @@ levels.push({
 levels.push({
 	name: "Turing Completeness",
 	guide: "<p>If you're familiar with the notion of a <a href='https://esolangs.org/wiki/Minsky_machine'>Minsky Machine</a>, you're probably already convinced that <span class='fractran'>FRACTRAN</span> is Turing Complete. If not, you can build a Turing Machine using two stacks in the exponents, one representing the characters to the right of the head and one representing the characters to the left of the head, with the ones digits representing the characters closest to the head (so the characters to the right are stored backwards).</p>",
-	desc: "Create a program that turns <code>2<sup>n</sup>11</code> into <code>37</code> if <code>n</code> is a palindrome and <code>41</code> if <code>n</code> is not a palindrome. You can implement a palindrome-checker as a Turing machine that traverses a string back and forth, marking off digits from the outside in until it finds a pair that don't agree.",
+	desc: "Create a program that turns <code>2<sup>n</sup>11</code> into <code>37</code> if <code>n</code> is a palindrome and <code>41</code> if <code>n</code> is not a palindrome. The digits of <code>n</code> will always be <code>1</code>s and <code>2</code>s. You can implement a palindrome-checker as a Turing machine that traverses a string back and forth, marking off digits from the outside in until it finds a pair that don't agree.",
 	test: function() {
 		var rval = true;
-		if (!checkotron(multiply_pls([33],prime_factor(11)),prime_factor(37))) {rval = false;}
-		if (!checkotron(multiply_pls([343],prime_factor(11)),prime_factor(37))) {rval = false;}
-		if (!checkotron(multiply_pls([34543],prime_factor(11)),prime_factor(37))) {rval = false;}
-		if (!checkotron(multiply_pls([123],prime_factor(11)),prime_factor(41))) {rval = false;}
-		if (!checkotron(multiply_pls([23],prime_factor(11)),prime_factor(41))) {rval = false;}
-		if (!checkotron(multiply_pls([3434],prime_factor(11)),prime_factor(41))) {rval = false;}
+		if (!checkotron(multiply_pls([11],prime_factor(11)),prime_factor(37))) {rval = false;}
+		if (!checkotron(multiply_pls([121],prime_factor(11)),prime_factor(37))) {rval = false;}
+		if (!checkotron(multiply_pls([12121],prime_factor(11)),prime_factor(37))) {rval = false;}
+		if (!checkotron(multiply_pls([122],prime_factor(11)),prime_factor(41))) {rval = false;}
+		if (!checkotron(multiply_pls([21],prime_factor(11)),prime_factor(41))) {rval = false;}
+		if (!checkotron(multiply_pls([2121],prime_factor(11)),prime_factor(41))) {rval = false;}
 		return(rval);
 		}
 	});

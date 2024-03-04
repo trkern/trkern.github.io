@@ -16,11 +16,11 @@ var MQ = MathQuill.getInterface(2);
 
 var cursor_str = "<span style='border-left: 1px solid black; margin-left:-1px;padding:0'>&#8203;</span>";
 
-var prime_list = [2]; //DO NOT ACCESS DIRECTLY, use nth_prime
+var prime_list = [2, 3]; //DO NOT ACCESS DIRECTLY, use nth_prime
 
 function nth_prime(n) {
 	while (!(n in prime_list)) {
-		var k = prime_list[prime_list.length-1] + 1;
+		var k = prime_list[prime_list.length-1] + 2;
 		var new_prime_found = false;
 		a: while (!new_prime_found) {
 			var i;

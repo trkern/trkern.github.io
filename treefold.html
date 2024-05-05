@@ -1,0 +1,483 @@
+<!doctype HTML>
+<html>
+<head>
+<script src="tkas.js"></script>
+<script src="omggif.js"></script>
+<script>
+
+function lerp(x,y,t) {
+	if (Array.isArray(x)) {
+		return([x[0]*(1-t)+y[0]*t,x[1]*(1-t)+y[1]*t]);
+		}
+	else {
+		return(x*(1-t)+y*t);
+		}
+	}
+
+function number_of_as(htree) {
+	var i;
+	var acount = 0;
+	if (htree.c == "a") {acount++;}
+	for (i = 0; i < htree.subs.length; i++) {
+		acount += number_of_as(htree.subs[i]);
+		}
+	return(acount);
+	}
+
+function randomhtree_with_odd_number_of_as(numv) {
+	var rval = randomhtree(numv);
+	if (number_of_as(rval) % 2 == 0) {
+		if (rval.c == "a") {rval.c = "b"}
+		else {rval.c = "a"}
+		}
+	return(rval);
+	}
+
+function randomhtree(numv) {
+	if (numv == 0) {return({c:"#", subs:[]});}
+	var lnumv = ribet(0,numv-1);
+	return({c:["a","b"][ribet(0,1)], subs:[randomhtree(lnumv), randomhtree(numv-1-lnumv)]});
+	}
+
+function ribet(mn,mx) {
+	return(Math.floor(Math.random()*(mx-mn+1))+mn);
+	}
+
+function drawarc(ctx, pt1, pt2, c, arrowhead, G) {
+	var endtanx, endtany;
+	var ept;
+	if (arrowhead && !G) {G = 0;}
+	if (c == 0) {
+		ctx.beginPath();
+		ctx.moveTo(...pt1);
+		ctx.lineTo(...pt2);
+		ctx.stroke();
+		endtanx = pt2[0]-pt1[0];
+		endtany = pt2[1]-pt1[1];
+		var d = Math.sqrt((pt1[0]-pt2[0])**2 + (pt1[1]-pt2[1])**2);
+		ept = [pt2[0] - G*endtanx/d, pt2[1] - G*endtany/d];
+		}
+	else {
+		var sgn = Math.sign(c);
+		c = c*sgn;
+		var midx = (pt1[0] + pt2[0])/2;
+		var midy = (pt1[1] + pt2[1])/2;
+		var d = Math.sqrt((pt1[0]-pt2[0])**2 + (pt1[1]-pt2[1])**2);
+		var r = (d*d/4 + c*c)/(2*c);
+		var cx = midx - sgn*(r-c)*(pt2[1]-pt1[1])/d;
+		var cy = midy + sgn*(r-c)*(pt2[0]-pt1[0])/d;
+		var a1 = Math.atan2(pt1[1]-cy,pt1[0]-cx);
+		var a2 = Math.atan2(pt2[1]-cy,pt2[0]-cx);
+		ctx.beginPath();
+		ctx.arc(cx,cy,r,a1,a2, sgn<0);
+		ctx.stroke();
+		var Ga = 2*Math.asin(G/(2*r));
+		ept = [cx+r*Math.cos(a2-sgn*Ga), cy+r*Math.sin(a2-sgn*Ga)];
+		var endtanx = cy - ept[1];
+		var endtany = -(cx - ept[0]);
+		if (sgn < 0) {
+			endtanx *= -1;
+			endtany *= -1;
+			} 
+		}
+	if (arrowhead) {
+		var endtand = Math.sqrt(endtanx**2 + endtany**2);
+		var exn = 5*endtanx/endtand;
+		var eyn = 5*endtany/endtand;
+		ctx.beginPath();
+		ctx.moveTo(ept[0],ept[1]);
+		ctx.lineTo(ept[0]-2*exn-eyn, ept[1]-2*eyn+exn);
+		ctx.stroke();
+		ctx.moveTo(ept[0],ept[1]);
+		ctx.lineTo(ept[0]-2*exn+eyn, ept[1]-2*eyn-exn);
+		ctx.stroke();
+		}
+	}
+
+function drawcircle(ctx, pt, r) {
+	ctx.beginPath();
+	ctx.arc(...pt, r, 0, 2*Math.PI);
+	ctx.stroke();
+	}
+
+function drawlabelcircle(ctx,pt,r,l) {
+	ctx.beginPath();
+	ctx.arc(...pt, r, 0, 2*Math.PI);
+	ctx.fillStyle = "white";
+	ctx.fill();
+	ctx.stroke();
+	if (r == 0) {r = 20;}
+	ctx.font = r + "px sans-serif";
+	ctx.textBaseline = "middle";
+	ctx.textAlign = "center";
+	ctx.fillStyle = "black";
+	ctx.fillText(l, ...pt);
+	}
+
+
+var transition_diagram_transitions = [
+	{i:0, sl:0, sr:0, e:1, c:"a", p:[327,300], cl:10, cr:-10, ce:70},
+	{i:1, sl:0, sr:0, e:0, c:"b", p:[227,400], cl:10, cr:-10, ce:20},
+	{i:2, sl:0, sr:1, e:0, c:"a", p:[500,370], cl:-10, cr:10, ce:-70},
+	{i:3, sl:0, sr:1, e:1, c:"b", p:[500,430], cl:10, cr:-10, ce:-70},
+	{i:4, sl:0, sr:2, e:1, c:"a", p:[600,300], cl:0, cr:0, ce:0, pr:[620,280]},
+	{i:5, sl:0, sr:2, e:0, c:"b", p:[327,500], cl:10, cr:0, ce:10, pr:[327,530]},
+	{i:6, sl:1, sr:0, e:0, c:"a", p:[500,370], cl:10, cr:-10, ce:-70, redundant:true},
+	{i:7, sl:1, sr:0, e:1, c:"b", p:[500,430], cl:-10, cr:10, ce:-70, redundant:true},
+	{i:8, sl:1, sr:1, e:1, c:"a", p:[773,400], cl:10, cr:-10, ce:20},
+	{i:9, sl:1, sr:1, e:0, c:"b", p:[673,500], cl:-10, cr:10, ce:70},
+	{i:10,sl:1, sr:2, e:0, c:"a", p:[400,500], cl:0, cr:0, ce:0, pr:[380,520]},
+	{i:11,sl:1, sr:2, e:1, c:"b", p:[673,300], cl:10, cr:0, ce:10, pr:[673,270]},
+	{i:12,sl:2, sr:0, e:1, c:"a", p:[600,300], cl:0, cr:0, ce:0, pl:[620,280], redundant:true},
+	{i:13,sl:2, sr:0, e:0, c:"b", p:[327,500], cl:0, cr:10, ce:10, pl:[327,530], redundant:true},
+	{i:14,sl:2, sr:1, e:0, c:"a", p:[400,500], cl:0, cr:0, ce:0, pl:[380,520], redundant:true},
+	{i:15,sl:2, sr:1, e:1, c:"b", p:[673,300], cl:0, cr:10, ce:10, pl:[673,270], redundant:true},
+	{i:16,sl:2, sr:2, e:1, c:"a", p:[743,330], cl:0, cr:0, ce:0, pl:[773,330], pr:[743,300]},
+	{i:17,sl:2, sr:2, e:0, c:"b", p:[257,470], cl:0, cr:0, ce:0, pl:[227,470], pr:[257,500]},
+	];
+
+var tree_diagram_pts = [
+	{i:0, p:[500,50], c:"R", r:0, t:22},
+	{i:1, p:[500,100], c:"b", r:10, t:3},
+	{i:2, p:[455,125], c:"", r:0, t:1},
+	{i:3, p:[410,150], c:"b", r:10, t:14},
+	{i:4, p:[385,175], c:"", r:0, t:1},
+	{i:5, p:[360,200], c:"a", r:10, t:8},
+	{i:6, p:[335,225], c:"#", r:0, t:9},
+	{i:7, p:[385,225], c:"", r:0, t:0},
+	{i:8, p:[410,250], c:"b", r:10, t:16},
+	{i:9, p:[385,275], c:"#", r:0, t:17},
+	{i:10,p:[435,275], c:"#", r:0, t:18},
+	{i:11,p:[435,175], c:"#", r:0, t:15},
+	{i:12,p:[545,125], c:"", r:0, t:0},
+	{i:13,p:[590,150], c:"a", r:10, t:2},
+	{i:14,p:[565,175], c:"", r:0, t:0},
+	{i:15,p:[540,200], c:"b", r:10, t:16},
+	{i:16,p:[525,225], c:"#", r:0, t:17},
+	{i:17,p:[555,225], c:"#", r:0, t:18},
+	{i:18,p:[615,175], c:"", r:0, t:1},
+	{i:19,p:[640,200], c:"a", r:10, t:19},
+	{i:20,p:[625,225], c:"#", r:0, t:20},
+	{i:21,p:[655,225], c:"#", r:0, t:21},
+	{i:22,p:[500,75], c:"", r:0, t:1},
+	];
+
+var tree_diagram_lines = [
+	{s:0, e:22},
+	{s:22,e:1},
+	{s:1, e:2},
+	{s:2, e:3},
+	{s:3, e:4},
+	{s:4, e:5},
+	{s:5, e:6},
+	{s:5, e:7},
+	{s:7, e:8},
+	{s:8, e:9},
+	{s:8, e:10},
+	{s:3, e:11},
+	{s:1, e:12},
+	{s:12, e:13},
+	{s:13, e:14},
+	{s:14, e:15},
+	{s:15, e:16},
+	{s:15, e:17},
+	{s:13, e:18},
+	{s:18, e:19},
+	{s:19, e:20},
+	{s:19, e:21},
+	];
+
+var p0 = [327,400];
+var p1 = [673,400];
+var pts = [p0,p1];
+var rootpt = [743,470];
+
+function draw() {
+	var z = Number(document.getElementById("t").value);
+	var ctx = document.getElementById("c").getContext("2d");
+	ctx.fillStyle = "white";
+	ctx.fillRect(0,0,1000,1000);
+	var i;
+
+
+
+	for (i = 0; i < transition_diagram_transitions.length; i++) {
+		var t = transition_diagram_transitions[i];
+		if (t.redundant) {continue;}
+		var leftpt = pts[t.sl];
+		if ("pl" in t) {leftpt = t.pl};
+		var rightpt = pts[t.sr];
+		if ("pr" in t) {rightpt = t.pr};
+		var midpt = t.p;
+		var endpt = pts[t.e];
+		drawarc(ctx, leftpt, midpt, t.cl);
+		drawarc(ctx, rightpt, midpt, t.cr);
+		drawarc(ctx, midpt, endpt, t.ce, true, 20);
+		}
+
+	drawarc(ctx, p1, rootpt, 0);
+
+	for (i = 0; i < transition_diagram_transitions.length; i++) {
+		var t = transition_diagram_transitions[i];
+		if (t.redundant) {continue;}
+		drawlabelcircle(ctx, t.p, 10, t.c);
+		if ("pl" in t) {
+			drawlabelcircle(ctx, t.pl, 0, "#");
+			}
+		if ("pr" in t) {
+			drawlabelcircle(ctx, t.pr, 0, "#");
+			}
+		}
+
+	drawlabelcircle(ctx, p0, 20, "0");
+	drawlabelcircle(ctx, p1, 20, "1");
+	drawlabelcircle(ctx, rootpt, 0, "R");
+
+	for (i = 0; i < tree_diagram_lines.length; i++) {
+		var t = tree_diagram_lines[i];
+		var s = tree_diagram_pts[t.s];
+		var e = tree_diagram_pts[t.e];
+		var k;
+		var cg = t.cg;
+		ctx.lineWidth = 5;
+		ctx.strokeStyle = "hsl("+(i*10)+", 100%, 40%)";
+		drawarc(ctx, lerp(s.p,s.t,z), lerp(e.p,e.t,z), cg*z*z);
+		ctx.lineWidth = 1;
+		ctx.strokeStyle = "black";
+		//console.log(t,s,e,lerp(s.p,s.t,z), lerp(e.p, e.t,z));
+		}
+
+	for (i = 0; i < tree_diagram_pts.length; i++) {
+		var t = tree_diagram_pts[i];
+		drawlabelcircle(ctx, lerp(t.p,t.t,z), t.r, t.c);
+		}
+
+	}
+
+function parentlix(lix) {
+	return(lix.slice(0,-1));
+	}
+
+function lix_to_arrayindex(lix,ar) {
+	var i;
+	var six = tkas_six_from_lix(lix);
+	for (i = 0; i < ar.length; i++) {
+		if ("lix" in ar[i] && tkas_six_from_lix(ar[i].lix) == six) {return(i);}
+		}
+	return(-1);
+	}
+
+function parentelt(lix,ar) {
+	return(ar[lix_to_arrayindex(parentlix(lix),ar)]);
+	}
+
+function transition_diagram_lookup(c, sl, sr) {
+	var k;
+	for (k = 0; k < transition_diagram_transitions.length; k++) {
+		var t = transition_diagram_transitions[k];
+		if (t.c == c && t.sl == sl && t.sr == sr) {
+			return(t);
+			}
+		}
+	}
+
+var hl = {c:"#", subs:[]};
+var al = {c:"a", subs:[{c:"#",subs:[]},{c:"#",subs:[]}]};
+var bl = {c:"b", subs:[{c:"#",subs:[]},{c:"#",subs:[]}]};
+var origtree = {c:"b", subs:[
+		{c:"b", subs:[{c:"a",subs:[hl, bl]},hl]},
+		{c:"a", subs:[bl,al]}]};
+
+function randomize_tree(t) {
+	if (!t) {t = randomhtree_with_odd_number_of_as(ribet(3,10));}
+	var tree_diagram_tps = tkas_tps_from_htree(t);
+	tree_diagram_pts = [];
+	tree_diagram_lines = [];
+	var rootx = 0;
+	var i, j;
+	for (i = 0; i < tree_diagram_tps.nodes.length; i++) {
+		var acount = 0;
+		for (j = 0; j < tree_diagram_tps.nodes.length; j++) {
+			if (tkas_six_from_lix(tree_diagram_tps.nodes[j].lix).startsWith(tkas_six_from_lix(tree_diagram_tps.nodes[i].lix)) && tree_diagram_tps.nodes[j].c[0] == "a") {
+				acount++;
+				}
+			}
+		tree_diagram_tps.nodes[i].acount = acount%2;
+		if (tree_diagram_tps.nodes[i].lix.length == 0) {
+			rootx = (tree_diagram_tps.nodes[i].left + tree_diagram_tps.nodes[i].right)/2;
+			}
+		}
+
+	for (i = 0; i < tree_diagram_tps.nodes.length; i++) {
+		var t = tree_diagram_tps.nodes[i];
+		tree_diagram_tps.nodes[i].center = [500-rootx+(t.left+t.right)/2,(t.top+t.bottom)/2+60];
+		}
+
+	for (i = 0; i < tree_diagram_tps.nodes.length; i++) {
+		var t = tree_diagram_tps.nodes[i];
+		var pval = {p:t.center, c:t.c, r:10, t:0, lix:t.lix, acount:t.acount};
+		var parentnode = parentelt(t.lix,tree_diagram_tps.nodes);
+		if (t.c == "#") {
+			pval.p = lerp(t.center, parentnode.center, 0.5);
+			pval.r = 0;
+			}
+		else if (t.lix.length != 0) {
+			var cval = {p:lerp(t.center, parentnode.center, 0.5), c:"", r:0, t:0, lower_lix:t.lix, lower_acount:t.acount};
+			cval.i = tree_diagram_pts.length;
+			tree_diagram_pts.push(cval);
+			}
+		pval.i = tree_diagram_pts.length;
+		tree_diagram_pts.push(pval);
+		}
+	for (i = 0; i < tree_diagram_pts.length; i++) {
+		var t = tree_diagram_pts[i];
+		if (t.c == "#") {
+			}
+		else if (t.c == "") {
+			tree_diagram_pts[i].t = pts[tree_diagram_pts[i].lower_acount];
+			}
+		else {
+			var left_child_index = lix_to_arrayindex(t.lix.concat([0]), tree_diagram_pts);
+			var right_child_index = lix_to_arrayindex(t.lix.concat([1]), tree_diagram_pts);
+			var left_child = tree_diagram_pts[left_child_index];
+			var right_child = tree_diagram_pts[right_child_index];
+			var left_child_acount = left_child.acount;
+			var right_child_acount = right_child.acount;
+			if (left_child.c == "#") {left_child_acount = 2;}
+			if (right_child.c == "#") {right_child_acount = 2;}
+			var tdl = transition_diagram_lookup(t.c, left_child_acount, right_child_acount);
+			tree_diagram_pts[i].t = tdl.p;
+			var left_endpoint = left_child_index-1;
+			var right_endpoint = right_child_index-1;
+			var parent_endpoint = i-1;
+			if (left_child.c == "#") {tree_diagram_pts[left_child_index].t = tdl.pl; left_endpoint = left_child_index}
+			if (right_child.c == "#") {tree_diagram_pts[right_child_index].t = tdl.pr; right_endpoint = right_child_index}
+			if (i == 0) {parent_endpoint = tree_diagram_pts.length;}
+			tree_diagram_lines.push({s:parent_endpoint, e:i, cg:-tdl.ce, hi:1});
+			tree_diagram_lines.push({s:i, e:right_endpoint, cg:-tdl.cr});
+			tree_diagram_lines.push({s:i, e:left_endpoint, cg:-tdl.cl});
+
+			}
+		}
+
+	//handle roots:
+	var rootnodeindex = lix_to_arrayindex([],tree_diagram_pts);
+	var rootnode = tree_diagram_pts[rootnodeindex];
+	var pval = {i: tree_diagram_pts.length, c:"", p:[rootnode.p[0],rootnode.p[1]-20], t:p1, r:0};
+	tree_diagram_pts.push(pval);
+	var pval = {i: tree_diagram_pts.length, c:"R", p:[rootnode.p[0],rootnode.p[1]-40], t:rootpt, r:0};
+	tree_diagram_pts.push(pval);
+	tree_diagram_lines.unshift({s:tree_diagram_pts.length-2, e:tree_diagram_pts.length-1, cg:0});
+	}
+
+function mm(e) {
+	document.getElementById("c").title = e.offsetX + "," + e.offsetY;
+	}
+
+function gifdraw(x) {
+	var t = lerp(-0.1, 1.1, x);
+	if (t < 0) {t = 0;}
+	if (t > 1) {t = 1;}
+	document.getElementById("t").value = t;
+	draw();
+	}
+
+function boot_gif() {
+	document.getElementById("gif_butt").addEventListener("click", async function() {
+		const buffer = await generateGIF(document.getElementById("c"), gifdraw, 5, 30);
+
+		const blob = new Blob( [ buffer ], { type: 'image/gif' } );
+
+		const link = document.createElement( 'a' );
+		link.href = URL.createObjectURL( blob );
+		link.download = 'treefold.gif';
+		link.dispatchEvent( new MouseEvent( 'click' ) );
+		});
+	}
+
+		function generateGIF( element, renderFunction, duration = 1, fps = 30 ) { //from https://mrdoob.github.io/omggif-example/
+
+				const frames = duration * fps;
+
+				const canvas = document.createElement( 'canvas' );
+				canvas.width = element.width;
+				canvas.height = element.height;
+
+				const context = canvas.getContext( '2d' );
+
+				const buffer = new Uint8Array( canvas.width * canvas.height * frames * 5 );
+				const pixels = new Uint8Array( canvas.width * canvas.height );
+				const writer = new GifWriter( buffer, canvas.width, canvas.height, { loop: 0 } );
+
+				let current = 0;
+
+				return new Promise( async function addFrame( resolve ) {
+
+					renderFunction( current / frames );
+
+					context.drawImage( element, 0, 0 );
+
+					const data = context.getImageData( 0, 0, canvas.width, canvas.height ).data;
+
+					const palette = [];
+
+					for ( var j = 0, k = 0, jl = data.length; j < jl; j += 4, k ++ ) {
+
+						const r = Math.floor( data[ j + 0 ] / 64 ) * 64;
+						const g = Math.floor( data[ j + 1 ] / 32 ) * 32;
+						const b = Math.floor( data[ j + 2 ] / 64 ) * 64;
+						if (data[j+0] == 255 && data[j+1] == 255 && data[j+2] == 255) {var color = 255 << 16 | 255 << 8 | 255 << 0;}
+						else {var color = r << 16 | g << 8 | b << 0;}
+						
+						const index = palette.indexOf( color );
+
+						if ( index === -1 ) {
+
+							pixels[ k ] = palette.length;
+							palette.push( color );
+
+						} else {
+
+							pixels[ k ] = index;
+
+						}
+
+					}
+
+					// Force palette to be power of 2
+
+					let powof2 = 2;
+					while ( powof2 < palette.length ) powof2 <<= 1;
+					palette.length = powof2;
+
+					const delay = 100 / fps; // Delay in hundredths of a sec (100 = 1s)
+					const options = { palette: new Uint32Array( palette ), delay: delay };
+					writer.addFrame( 0, 0, canvas.width, canvas.height, pixels, options );
+
+					current ++;
+
+					if ( current < frames ) {
+
+						await setTimeout( addFrame, 0, resolve );
+
+					} else {
+
+						resolve( buffer.subarray( 0, writer.end() ) );
+
+					}
+
+				} );
+
+			}
+
+
+</script>
+</head>
+<body onload='boot_gif(); randomize_tree(origtree); draw()'>
+<canvas id='c' width=1000 height=700 style='border:1px solid' onmousemove='mm(event)'></canvas>
+
+<br> t:<input type='range' id='t' min=0 max=1 value=0 step=0.02 oninput='draw()'> <button onclick='randomize_tree();draw()'>Randomize Tree</button>
+<button id='gif_butt'>GIF</button>
+
+</body>
+</html>

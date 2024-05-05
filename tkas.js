@@ -785,6 +785,8 @@ var tkas_tdraw_default_treedecor = {
 	centermode: "averagechildren",
 	orientation: "bottomtotop",
 	id: "undefined",
+	nodetype:"div",
+	nodestyle:""
 	};
 
 function tkas_tps_from_htree(H,TD) {
@@ -856,7 +858,7 @@ function tkas_html_from_tps(tps, TD) {
 		xmax = Math.max(xmax,tps.nodes[i].right);
 		ymax = Math.max(ymax,tps.nodes[i].bottom);
 		}
-	var rstr = "<div style='position:relative;width:"+xmax+"px;height:"+ymax+"px'>";
+	var rstr = "<"+TD.nodetype+" style='position:relative;width:"+xmax+"px;height:"+ymax+"px;"+TD.nodestyle+"'>";
 	rstr += "<svg style='position:absolute;top:0px;left:0px' width="+xmax+"px height="+ymax+"px>";
 	rstr += "<g style='stroke:black;stroke-width:2'>";
 	for (i = 0; i < tps.nodes.length; i++) {
@@ -884,7 +886,7 @@ function tkas_html_from_tps(tps, TD) {
 		rstr += "</span>";
 		}
 
-	rstr += "</div>";
+	rstr += "</"+TD.nodetype+">";
 	return(rstr);
 	}
 
@@ -1420,8 +1422,7 @@ function tkas_pemdas_as(L,fz) {
 	}
 
 function tkas_pemdas(L) {
-	//var fz = tkas_parse_find_paren_focuszone(L);
-	var fz = [0,L.length-1];
+	var fz = tkas_parse_find_paren_focuszone(L);
 	return(
 		tkas_pemdas_function(L,fz) ||
 		tkas_pemdas_abs(L,fz) ||
@@ -1506,9 +1507,11 @@ function tkas_parse(str,opts) {
 	var lastgood = p;
 	var o = tkas_pemdas(p);
 	while(o) {
+		console.log(o);
 		lastgood = o;
 		o = tkas_pemdas(o);
 		}
+	console.log(lastgood);
 	if (lastgood.length == 0) {return(false)}
 	return(tkas_parse_cleanup(lastgood[0][1],opts));
 	}

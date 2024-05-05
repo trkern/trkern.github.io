@@ -108,6 +108,7 @@ function drawlabelcircle(ctx,pt,r,l) {
 	ctx.stroke();
 	if (r == 0) {r = 20;}
 	ctx.font = r + "px sans-serif";
+	if (r == 10) {ctx.font = "16px sans-serif"}
 	ctx.textBaseline = "middle";
 	ctx.textAlign = "center";
 	ctx.fillStyle = "black";
@@ -310,7 +311,7 @@ function randomize_tree(t) {
 
 	for (i = 0; i < tree_diagram_tps.nodes.length; i++) {
 		var t = tree_diagram_tps.nodes[i];
-		tree_diagram_tps.nodes[i].center = [500-rootx+(t.left+t.right)/2,(t.top+t.bottom)/2+60];
+		tree_diagram_tps.nodes[i].center = [500-rootx+(t.left+t.right)/2,(t.top+t.bottom)/2+110];
 		}
 
 	for (i = 0; i < tree_diagram_tps.nodes.length; i++) {

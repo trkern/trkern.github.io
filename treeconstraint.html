@@ -1,0 +1,325 @@
+<!doctype HTML>
+<html>
+<head>
+<script src="tkas.js"></script>
+<script>
+
+var colorlookup = {
+	a: "#EEDD88",
+	b: "#44BB99",
+	0: "#AAAA00",
+	1: "#EE8866",
+	2: "#99DDFF",
+	"-1": "white"
+	};
+
+var g_numstates = 3;
+var g_numchars = 2;
+var g_htree = [];
+var g_pieces = [];
+var g_roots = [];
+
+function ribet(mn,mx) {
+	return(Math.floor(Math.random()*(mx-mn+1))+mn);
+	}
+
+function htree_to_html(H) {
+	return(tkas_html_from_tps(tkas_tps_from_htree(H),{orientation:"toptobottom"}));
+	}
+
+function randomhtree(numv) {
+	if (numv == 0) {return({c:"#", subs:[]});}
+	var lnumv = ribet(0,numv-1);
+	return({c:["a","b"][ribet(0,1)], subs:[randomhtree(lnumv), randomhtree(numv-1-lnumv)]});
+	}
+
+function fordisplay(c, lix) {
+	if (c == "#") {
+		return("<span style='font:32px sans-serif; color:#AAAAAA'>"+c+"</span>");
+		}
+	var str = "<span style='position:relative'>";
+	str = "<span style='font:32px sans-serif; background-color:"+colorlookup[c]+"'>"+c+"</span>"
+	if (lix.length == 0) {
+		str += "<span id='tag_root' style='position:absolute; top:-1em; font:bold 24px sans-serif'></span>";
+		}
+	str += "<span id='tag"+tkas_six_from_lix(lix)+"' style='position:absolute; bottom:-1em; font: bold 24px sans-serif;'></span>";
+	str += dropdown(lix);
+	str += "</span>"
+	return(str);
+	}
+
+function dd(e) {
+	e.target.parentElement.style.backgroundColor = colorlookup[e.target.value];
+	var lix = tkas_lix_from_six(event.target.id.slice(2));
+	checknode(lix);
+	if (lix.length > 0) {
+		checknode(lix.slice(0,-1));
+		}
+	}
+
+function checknode(lix) {
+	var mychar = tkas_ptree_deep_sub(g_htree,lix).c;
+	var leftchar = tkas_ptree_deep_sub(g_htree,lix.concat([0])).c;
+	var rightchar = tkas_ptree_deep_sub(g_htree,lix.concat([1])).c;
+	var mystate = Number(document.getElementById("dd"+tkas_six_from_lix(lix)).value);
+	var leftstate = leftchar;
+	var rightstate = rightchar;
+	var ready = true;
+	if (mystate == -1) {
+		ready = false;
+		}
+	if (leftchar != "#") {
+		leftstate = Number(document.getElementById("dd"+tkas_six_from_lix(lix.concat([0]))).value);
+		if (leftstate == -1) {ready = false;}
+		}
+	if (rightchar != "#") {
+		rightstate = Number(document.getElementById("dd"+tkas_six_from_lix(lix.concat([1]))).value);
+		if (rightstate == -1) {ready = false;}
+		}
+
+	var rval = -1;
+
+	var piece = mychar+mystate+leftstate+rightstate;
+	if (!ready) {
+		document.getElementById("tag"+tkas_six_from_lix(lix)).innerHTML = "";
+		}
+	else if (g_pieces.indexOf(piece) != -1) {
+		rval = 1;
+		document.getElementById("tag"+tkas_six_from_lix(lix)).innerHTML = "&#10004;";
+		document.getElementById("tag"+tkas_six_from_lix(lix)).style.color = "blue";
+		}
+	else {
+		rval = 0;
+		document.getElementById("tag"+tkas_six_from_lix(lix)).innerHTML = "X";
+		document.getElementById("tag"+tkas_six_from_lix(lix)).style.color = "red";
+		}
+
+	//also sort out root tag:
+	if (lix.length == 0) {
+		if (mystate == -1) {
+			document.getElementById("tag_root").innerHTML = "";
+			}
+		else if (g_roots.indexOf(mystate) == -1) {
+			document.getElementById("tag_root").innerHTML = "X";
+			document.getElementById("tag_root").style.color = "red";
+			}
+		else {
+			document.getElementById("tag_root").innerHTML = "&#10004;";
+			document.getElementById("tag_root").style.color = "blue";
+			}
+		}
+
+	}
+
+function dropdown(lix) {
+	var str = "<select id='dd" + tkas_six_from_lix(lix) + "' onchange='dd(event)' style='vertical-align:middle'>";
+	var i;
+	str += "<option value=-1></option>"
+	for (i = 0; i < g_numstates; i++) {
+		str += "<option value="+i+" style='background-color:"+colorlookup[i]+"'>"+i+"</option>";
+		}
+	str += "</select>";
+	return(str);
+	}
+
+function fancify(H, lix) { //turns data htree into html-ready htree
+	var rval;
+	if (H.c == "#") {
+		return({c:fordisplay("#"), subs:[]});
+		}
+	return({c: fordisplay(H.c, lix), subs:[fancify(H.subs[0], lix.concat([0])), fancify(H.subs[1], lix.concat([1]))]});
+	}
+
+function first_phase_random_pieces(htree) {
+	if (htree.c == "#") {return([]);}
+	var lchild = ribet(0,g_numstates-1);
+	var rchild = ribet(0,g_numstates-1);
+	var mystate = ribet(0,g_numstates-1);
+	if (htree.subs[0].c == "#") {lchild = "#";}
+	if (htree.subs[1].c == "#") {rchild = "#";}
+	if (ribet(0,3) != 0) {
+		return([htree.c + mystate + lchild + rchild].concat(first_phase_random_pieces(htree)));
+		}
+	else {
+		return([htree.c + mystate + lchild + rchild].concat(first_phase_random_pieces(htree.subs[0])).concat(first_phase_random_pieces(htree.subs[1])));
+		}
+	}
+
+function compareFn(a,b) {
+	var j = a[2] + a[3] + a[0] + a[1];
+	var k = b[2] + b[3] + b[0] + b[1];
+	return(j.localeCompare(k));
+	}
+
+function randompieces(htree) {
+	var rval0;
+	if (ribet(0,1)) {
+		rval0 = first_phase_random_pieces(htree);
+		}
+	else {
+		rval0 = pieceslist(associatestates(htree));
+		}
+	var i;
+	rval = [];
+
+	rval0.push("ab"[ribet(0,1)]+ribet(0,g_numstates-1)+ribet(0,g_numstates-1)+ribet(0,g_numstates-1));
+	rval0.push("ab"[ribet(0,1)]+ribet(0,g_numstates-1)+"#"+ribet(0,g_numstates-1));
+	rval0.push("ab"[ribet(0,1)]+ribet(0,g_numstates-1)+ribet(0,g_numstates-1)+"#");
+	for (i = 0; i < rval0.length; i++) {
+		if (ribet(0,9) == 0) {continue;}
+		if (rval.indexOf(rval0[i]) == -1) {
+			rval.push(rval0[i]);
+			}
+		}
+	rval.sort(compareFn);
+	return(rval);
+	}
+
+function randompiecessolvable(htree) {
+	var H2 = associatestates(htree);
+	}
+
+function associatestates(htree) {
+	if (htree.c == "#") {return({c:"#",s:"#",subs:[]})};
+	return({c:htree.c, s:ribet(0,g_numstates-1), subs:[associatestates(htree.subs[0]), associatestates(htree.subs[1])]});
+	}
+
+function pieceslist(htree) {
+	if (htree.c == "#") {return([]);}
+	var mysymbol = htree.c;
+	var mystate = htree.s;
+	var leftstate = htree.subs[0].s;
+	var rightstate = htree.subs[1].s;
+	return([mysymbol+mystate+leftstate+rightstate].concat(pieceslist(htree.subs[0])).concat(pieceslist(htree.subs[1])));
+	}
+
+function piece_to_htree(piece) {
+	function t(x) {
+		if (x == "#") {return("<span style='color:#999999; font-size:24px'>#</span>")}
+		return("<span style='font: 24px sans-serif; background-color:"+colorlookup[x]+"'>"+x+"</span>");
+		}
+	return({c:t(piece[0])+t(piece[1]), subs:[
+		{c:t(piece[2]), subs:[]},
+		{c:t(piece[3]), subs:[]},
+		]});
+	}
+
+function drawpieces(pieces, ends) {
+	var i;
+	var str = "";
+	for (i = 0; i < pieces.length; i++) {
+		str += "<span style='border:3px double black; display:inline-block; padding:4px; margin:5px'>" + htree_to_html(piece_to_htree(pieces[i])) + "</span>";
+		}
+	document.getElementById("piecestarg").innerHTML = str;
+	}
+
+
+function setofstates(htree) {
+	if (htree.c == "#") {return(["#"]);}
+	var mysymbol = htree.c;
+	var leftstates = setofstates(htree.subs[0]);
+	var rightstates = setofstates(htree.subs[1]);
+	var rval = [];
+	var i;
+	for (i = 0; i < g_pieces.length; i++) {
+		if (g_pieces[i][0] == mysymbol && (leftstates.indexOf(g_pieces[i][2]) != -1) && (rightstates.indexOf(g_pieces[i][3]) != -1)) {
+			if (rval.indexOf(g_pieces[i][1]) == -1) {rval.push(g_pieces[i][1]);} 
+			}
+		}
+	return(rval);
+	}
+
+function test() {
+	var H = randomhtree(ribet(3,10));
+	g_htree = H;
+	document.getElementById("treetarg").innerHTML = htree_to_html(fancify(H,[]));
+	g_pieces = randompieces(H);
+	drawpieces(g_pieces);
+
+	//sort out roots:
+	var rootstates = setofstates(g_htree);
+	var i;
+	var lroots = [];
+	lroots.push(ribet(0,g_numstates-1));
+	lroots.push(ribet(0,g_numstates-1));
+	for (i = 0; i < g_numstates; i++) {
+		if ((rootstates.indexOf(i) != -1) && ribet(0,1)) {g_roots.push(i);}
+		}
+	g_roots = [];
+	lroots.sort();
+	for (i = 0; i < lroots.length; i++) {
+		if (g_roots.indexOf(lroots[i]) == -1) {g_roots.push(lroots[i]);}
+		}
+	var str = "";
+	for (i = 0; i < g_roots.length; i++) {
+		str += "<span style='font: 24px sans-serif; background-color:"+colorlookup[g_roots[i]]+"'>"+g_roots[i]+"</span>"
+		}
+	document.getElementById("roots").innerHTML = str;
+
+	document.getElementById("o").innerHTML = "";
+	}
+
+function fancysetofstates(htree) {
+	if (htree.c == "#") {return({"#":true});}
+	var mysymbol = htree.c;
+	var leftstates = fancysetofstates(htree.subs[0]);
+	var rightstates = fancysetofstates(htree.subs[1]);
+	var rval = {};
+	var i;
+	for (i = 0; i < g_pieces.length; i++) {
+		if (g_pieces[i][0] == mysymbol && (g_pieces[i][2] in leftstates) && (g_pieces[i][3] in rightstates)) {
+			rval[g_pieces[i][1]] = g_pieces[i];
+			}
+		}
+	return(rval);
+	}
+
+function solve(htree, rootstate, lix) {
+	if (htree.c == "#") {return;}
+	var fancy = fancysetofstates(htree);
+	if (!(rootstate in fancy)) {return(false);}
+	var piece = fancy[rootstate];
+	document.getElementById("dd" + tkas_six_from_lix(lix)).value = piece[1];
+	dd({target:document.getElementById("dd" + tkas_six_from_lix(lix))});
+	solve(htree.subs[0], piece[2], lix.concat([0]));
+	solve(htree.subs[1], piece[3], lix.concat([1]));
+	}
+
+function solvebutt() {
+	var rootstates = setofstates(g_htree);
+	var rootstate = -1;
+	var i;
+	for (i = 0; i < g_roots.length; i++) {
+		if (rootstates.indexOf(g_roots[i].toString())!=-1) {rootstate = g_roots[i]}
+		}
+	if (rootstate == -1) {document.getElementById("o").innerHTML = "unsolvable!"; return;}
+	solve(g_htree, rootstate, []);
+	}
+
+function unsolve() {
+	var rootstates = setofstates(g_htree);
+	var rootstate = -1;
+	var i;
+	for (i = 0; i < g_roots.length; i++) {
+		if (rootstates.indexOf(g_roots[i].toString())!=-1) {rootstate = g_roots[i]}
+		}
+	if (rootstate == -1) {document.getElementById("o").innerHTML = "correct! unsolvable!"; return;}
+	document.getElementById("o").innerHTML = "incorrect! solvable!";
+	}
+
+</script>
+</head>
+<body onload='test()'>
+
+<br>
+<div id='treetarg'></div>
+<br>
+<div id='o'></div>
+<button onclick='solvebutt()'>Show Solution</button> <button onclick='unsolve()'>Unsolvable!</button> <button onclick='test()'>New Puzzle</button>
+<br>Roots:<span id='roots'></span>
+<br>Pieces:
+<div id='piecestarg'></div>
+
+
+</body>
+</html>

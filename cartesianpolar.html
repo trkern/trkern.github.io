@@ -1,0 +1,990 @@
+<!doctype HTML>
+<html>
+<head>
+<title>Cartesian and Polar Plots Overlap</title>
+<script src="katex.min.js"></script><script src="https://www.desmos.com/api/v1.5/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6"></script>
+<link rel="stylesheet" href="katex.min.css">
+<script>
+
+function togglek(e,t) {
+	if (t.dataset.hi == "0") {
+		t.style.backgroundColor = "#BBCCEE";
+		t.dataset.hi = 1;
+		}
+	else {
+		t.style.backgroundColor = "#ffffff";
+		t.dataset.hi = 0;
+		}
+	}
+
+function bootkatex() {
+	var l = document.getElementsByClassName("k");
+	var k = l.length;
+	var i;
+	for (i = 0; i < k; i++) {
+		katex.render(l[i].title,l[i],{});
+		l[i].dataset.hi = 0;
+		l[i].addEventListener("click", function(event){togglek(event, this)});
+		}
+	var l = document.getElementsByClassName("kl");
+	var k = l.length;
+	var i;
+	for (i = 0; i < k; i++) {
+		katex.render(l[i].title,l[i],{displayMode:true});
+		l[i].dataset.hi = 0;
+		l[i].addEventListener("click", function(event){togglek(event,this)});
+		}
+
+	}
+
+function sub(v1,v2) {
+	return([v1[0]-v2[0],v1[1]-v2[1]]);
+	}
+
+function lg(v1) {
+	return(Math.sqrt(v1[0]*v1[0] + v1[1]*v1[1]));
+	}
+
+function dot(v1,v2) {
+	return(v1[0]*v2[0] + v1[1]*v2[1]);
+	}
+
+function dist(v1,v2) {
+	return(lg(sub(v2,v1)));
+	}
+
+function ang(v0,v1,v2) {
+	var d1 = sub(v0,v1);
+	var d2 = sub(v2,v1);
+	var rval = Math.acos(dot(d1,d2)/(lg(d1)*lg(d2)))
+	if (isNaN(rval)) {return(Math.PI)}
+	return(Math.acos(dot(d1,d2)/(lg(d1)*lg(d2))));
+	}
+
+/*function fancyang(v0,v1,v2) {
+	var d1 = sub(v0,v1);
+	var d2 = sub(v2,v1);
+	var a1 = Math.atan2(d1[1],d1[0]);
+	var a2 = Math.atan2(d2[1],d2[0]);
+	//console.log(a1/Math.PI + "pi",a2/Math.PI + "pi");
+	return(a1+a2);
+	//var rval = Math.acos(dot(d1,d2)/(lg(d1)*lg(d2)))
+	//if (isNaN(rval)) {return(0)}
+	//return(Math.acos(dot(d1,d2)/(lg(d1)*lg(d2))));
+	}*/
+
+function fancyang(v0,v1,v2) {
+	var k = Math.PI-ang(v0,v1,v2);
+	var d1 = sub(v0,v1);
+	var d2 = sub(v2,v1);
+	var cross = d1[0]*d2[1]-d1[1]*d2[0];
+	if (cross < 0) {return(k);}
+	return(-k);
+	}
+
+
+function raise(x,y) {
+	//return([x+1,y+1]);
+	return([Math.atan2(y,x), Math.sqrt(x*x+y*y)]);
+	}
+
+function lower(x,y) {
+	//return([x-1,y-1]);
+	return([y*Math.cos(x),y*Math.sin(x)]);
+	}
+
+
+function ribet(mn,mx) {
+	return(Math.floor(Math.random()*(mx-mn+1))+mn);
+	}
+
+var d1;
+function boot_desmos() {
+	d1 = Desmos.GraphingCalculator(document.getElementById("d1"));
+	d1.setExpressions([
+		{id:"f",
+		hidden:true,
+		latex:"f\\left(x\\right)=x^{2}\\left\\{0\\le x\\le\\frac{\\pi}{2}\\right\\}"
+		},
+		{latex:'y=f\\left(x\\right)', color:Desmos.Colors.GREEN},
+		{latex:'r=f\\left(\\theta\\right)', color:Desmos.Colors.PURPLE},
+		]);
+	d1.setMathBounds({
+		left:-0.1,
+		right:2.1,
+		bottom:-0.1,
+		top:2.1
+		});
+	}
+
+function adv_desmos1() {
+	d1.setExpression({id:"f", latex:
+"f\\left(x\\right)=\\left(\\tan\\left(x\\right)\\right)^{1.3}\\left\\{0\\le x\\le\\frac{\\pi}{2}\\right\\}"});
+	}
+
+function adv_desmos1p5() {
+	d1.setExpression({id:"f", latex:"f\\left(x\\right) = 0.1489 x + \\frac{4.5274 x^2}{\\left(\\frac{\\pi}{2}\\right)^3 - x^3}"});
+	}
+
+function desmos_defined(d,id) {
+	var l = d.getExpressions();
+	var i;
+	for (i = 0; i < l.length; i++) {
+		if (l[i].id == id) {return(true);}
+		}
+	return(false);
+	}
+
+function rlcol(i) {
+	return("hsl("+(90+i*20)+" 100% 30%)");
+	}
+
+function adv_desmos2() {
+	d1.setExpression({id:"ab0_def", latex: "\\left(a_{0},b_{0}\\right)", color:rlcol(0)});
+	if (!desmos_defined(d1, "a0_def")) {d1.setExpression({id:"a0_def", latex: "a_{0} = 1"});} //don't overwrite user's already set value of a,b
+	if (!desmos_defined(d1, "b0_def")) {d1.setExpression({id:"b0_def", latex: "b_{0} = 1"});}
+	d1.setExpression({id:"a0l1_def", latex: "a_{0l1} = b_{0} \\cos\\left(a_{0}\\right)"});
+	d1.setExpression({id:"b0l1_def", latex: "b_{0l1} = b_{0} \\sin\\left(a_{0}\\right)"});
+	d1.setExpression({id:"ab0l1_def", latex: "\\left(a_{0l1}, b_{0l1}\\right)", label:"lowering", showLabel:true, color:rlcol(-1)});
+	}
+
+function adv_desmos3() {
+	d1.setExpression({id:"ab0_def", latex: "\\left(a_{0},b_{0}\\right)"});
+	if (!desmos_defined(d1, "a0_def")) {d1.setExpression({id:"a0_def", latex: "a_{0} = 1"});} //don't overwrite user's already set value of a,b
+	if (!desmos_defined(d1, "b0_def")) {d1.setExpression({id:"b0_def", latex: "b_{0} = 1"});}
+	d1.setExpression({id:"a0r1_def", latex: "a_{0r1} = \\arctan\\left(\\frac{b_{0}}{a_{0}}\\right)"});
+	d1.setExpression({id:"b0r1_def", latex: "b_{0r1} = \\sqrt{a_{0}^{2}+b_{0}^{2}}"});
+	d1.setExpression({id:"ab0r1_def", latex: "\\left(a_{0r1}, b_{0r1}\\right)", label:"raising", showLabel:true, color:rlcol(1)});
+	}
+
+function adv_desmos4() {
+	var rdepth = Number(document.getElementById("rn").value);
+	var ldepth = Number(document.getElementById("ln").value);
+	var numpts = Number(document.getElementById("basenum").value);
+
+	var i, k;
+	for (k = 0; k < numpts; k++) {
+		d1.setExpression({id:"ab"+k+"_def", latex: "\\left(a_{"+k+"},b_{"+k+"}\\right)"});
+		if (!desmos_defined(d1, "a"+k+"_def")) {d1.setExpression({id:"a"+k+"_def", latex: "a_{"+k+"} = 1"});} //don't overwrite user's already set value of a,b
+		if (!desmos_defined(d1, "b"+k+"_def")) {d1.setExpression({id:"b"+k+"_def", latex: "b_{"+k+"} = 1"});}
+		for (i = 1; i <= rdepth; i++) {
+			var sstr = "_{"+k+"}";
+			if (i > 1) {sstr = "_{"+k+"r"+(i-1)+"}";}
+			d1.setExpression({id:"a"+k+"r"+i+"_def", latex: "a_{"+k+"r"+i+"} = \\arctan\\left(\\frac{b"+sstr+"}{a"+sstr+"}\\right)", secret:true});
+			d1.setExpression({id:"b"+k+"r"+i+"_def", latex: "b_{"+k+"r"+i+"} = \\sqrt{a"+sstr+"^{2}+b"+sstr+"^{2}}", secret:true});
+			d1.setExpression({id:"ab"+k+"r"+i+"_def", latex: "\\left(a_{"+k+"r"+i+"}, b_{"+k+"r"+i+"}\\right)", color:rlcol(i), secret:true});
+			}
+		while (desmos_defined(d1, "ab"+k+"r"+i+"_def")) {
+			d1.removeExpression({id: "ab"+k+"r"+i+"_def"});
+			d1.removeExpression({id: "a"+k+"r"+i+"_def"});
+			d1.removeExpression({id: "b"+k+"r"+i+"_def"});
+			i++;
+			}
+
+		for (i = 1; i <= ldepth; i++) {
+			var sstr = "_{"+k+"}";
+			if (i > 1) {sstr = "_{"+k+"l"+(i-1)+"}";}
+			d1.setExpression({id:"a"+k+"l"+i+"_def", latex: "a_{"+k+"l"+i+"} = b"+sstr+" \\cos\\left(a"+sstr+"\\right)", secret:true});
+			d1.setExpression({id:"b"+k+"l"+i+"_def", latex: "b_{"+k+"l"+i+"} = b"+sstr+" \\sin\\left(a"+sstr+"\\right)", secret:true});
+			d1.setExpression({id:"ab"+k+"l"+i+"_def", latex: "\\left(a_{"+k+"l"+i+"}, b_{"+k+"l"+i+"}\\right)", color:rlcol(-i), secret:true});
+			}
+		while (desmos_defined(d1, "ab"+k+"l"+i+"_def")) {
+			d1.removeExpression({id: "ab"+k+"l"+i+"_def"});
+			d1.removeExpression({id: "a"+k+"l"+i+"_def"});
+			d1.removeExpression({id: "b"+k+"l"+i+"_def"});
+			i++;
+			}
+		}
+
+	while (desmos_defined(d1, "ab"+k+"_def")) {
+		d1.removeExpression({id:"ab"+k+"_def"});
+		d1.removeExpression({id:"a"+k+"_def"});
+		d1.removeExpression({id:"b"+k+"_def"});
+		i = 0;
+		while (desmos_defined(d1, "ab"+k+"r"+i+"_def")) {
+			d1.removeExpression({id: "ab"+k+"r"+i+"_def"});
+			d1.removeExpression({id: "a"+k+"r"+i+"_def"});
+			d1.removeExpression({id: "b"+k+"r"+i+"_def"});
+			i++;
+			}
+		i = 0;
+		while (desmos_defined(d1, "ab"+k+"l"+i+"_def")) {
+			d1.removeExpression({id: "ab"+k+"l"+i+"_def"});
+			d1.removeExpression({id: "a"+k+"l"+i+"_def"});
+			d1.removeExpression({id: "b"+k+"l"+i+"_def"});
+			i++;
+			}
+		k++;
+		}
+
+	var elt = document.getElementById("summationdiv");
+	elt.title = "\\text{badness}(a,b) = \\sum_{i = "+(-ldepth+2)+"}^{"+rdepth+"} (\\pi - \\text{angle}(\\text{raise}^{i-2}(a,b), \\text{raise}^{i-1}(a,b), \\text{raise}^{i}(a,b)))^2"
+	katex.render(elt.title,elt,{displayMode:true});
+	update1();
+	observeabl();
+	}
+
+function iter(l, rdepth, ldepth) {
+	var k = l.length;
+	var lup = JSON.parse(JSON.stringify(l));
+	var ldn = JSON.parse(JSON.stringify(l));
+	var i,j;
+	for (i = 0; i < rdepth*k; i++) {
+		var pup = raise(...lup[i]);
+		lup.push(pup);
+		}
+	for (i = 0; i < ldepth*k; i++) {
+		var pdn = lower(...ldn[i]);
+		ldn.push(pdn);
+		}
+
+	for (i = 1; i <= ldepth; i++) {
+		for (j = k-1; j >= 0; j--) {
+			lup.unshift(ldn[i*k+j]);
+			}
+		}
+
+	return(lup);
+	}
+
+function badness_array(l) {
+	var overlapbadness = 0;
+	var anglebadness = 0;
+	var spacingbadness = 0;
+	var distancebadness = 0;
+	var zagbadness = 0;
+//	var str = "";
+	for (i = 1; i < l.length; i++) {
+		var p0 = l[i-1];
+		var p1 = l[i];
+		if (p0[0] > p1[0]) {overlapbadness += (p0[0]-p1[0])**2}
+		distancebadness += dist(p0,p1)**2;
+		}
+	for (i = 2; i < l.length; i++) {
+		var p0 = l[i-2];
+		var p1 = l[i-1];
+		var p2 = l[i];
+		anglebadness += (Math.PI-ang(p0,p1,p2))**2;
+		spacingbadness += (dist(p0,p1)- dist(p1,p2))**2;
+//		str += "<br>" + fancyang(p0,p1,p2);
+		if (fancyang(p0,p1,p2) < 0) {
+			zagbadness += fancyang(p0,p1,p2)**2;
+			}
+		}
+//	document.getElementById("o2").innerHTML = str;
+	return({
+		overlap:overlapbadness,
+		angle:anglebadness,
+		spacing:spacingbadness,
+		distance:distancebadness,
+		zag:zagbadness});
+	}
+
+function csvl(iterl) {
+	var i;
+	var str = "x,y";
+	for (i = 0; i < iterl.length; i++) {
+		str += "\n"
+		str += iterl[i][0] + "," + iterl[i][1];
+		}
+	document.getElementById("csvo1").value = str;
+	return(str);
+	}
+
+//(((-140.25698390184439/ ((((x * 2.1559070133921083 + -3.1081817331119574) * 67.067703196273428) + -18.943955441239108)) + -0.0012853523156219403) * 1.6543190968231878) + -1.0573309112546019)
+//((2.3890611460518341 * Tan(x * 1.0255674541100892) * 0.49602086392704947) + -0.13232434941540833)
+//0.000341250176162 + 0.145711785089044 x + (4.54162779405 x^2)/(3.8503593446682 - 1.0000000000000 x^3)
+
+function download_csv1() {
+	var rn = Number(document.getElementById("rn").value);
+	var ln = Number(document.getElementById("ln").value);
+	var l = iter([g_ab], rn, ln);
+	var str = csvl(l);
+	var blob = new Blob([str], {type:"octet/stream"});
+	var a = document.createElement("a");
+	a.href = window.URL.createObjectURL(blob);
+	a.download = "cartesianpolar.csv";
+	a.click();
+	}
+
+var g_iterlist = [];
+
+function update1() {
+	var rn = Number(document.getElementById("rn").value);
+	var ln = Number(document.getElementById("ln").value);
+	var l = iter([g_ab], rn, ln);
+	g_iterlist = l;
+	var b = badness_array(l);
+	document.getElementById("badness1").innerHTML = "angle badness: " + b.angle;
+	csvl(l);
+	}
+
+function observeab() {
+	var k = d1.HelperExpression({latex:"[a_0,b_0]"});
+	k.observe("listValue",function() {
+		g_ab = k.listValue;
+		update1();
+		});
+	}
+
+function testfancyang() {
+	d1.setExpression({latex:"(a_1,b_1)"});
+	d1.setExpression({latex:"(a_2,b_2)"});
+	d1.setExpression({latex:"(a_3,b_3)"});
+	d1.setExpression({latex:"a_1 = 1"});
+	d1.setExpression({latex:"b_1 = 1"});
+	d1.setExpression({latex:"a_2 = 1"});
+	d1.setExpression({latex:"b_2 = 1"});
+	d1.setExpression({latex:"a_3 = 1"});
+	d1.setExpression({latex:"b_3 = 1"});
+	var k = d1.HelperExpression({latex:"[a_1,b_1,a_2,b_2,a_3,b_3]"});
+	k.observe("listValue", function() {
+		var l = k.listValue;
+		document.getElementById("o").innerHTML = fancyang([l[0],l[1]],[l[2],l[3]],[l[4],l[5]]);
+		});
+	}
+
+function explicitformulas(n,vara,varb) {
+	if (n == 0) {
+		return([vara,varb]);
+		}
+	if (n < 0) {
+		var forma = vara;
+		var formb = varb;
+		var newforma = "";
+		var newformb = "";
+		var i;
+		for (i = 0; i < -n; i++) {
+			newforma = formb + "*\\cos(" + forma + ")";
+			newformb = formb + "*\\sin(" + forma + ")";
+			forma = newforma;
+			formb = newformb;
+			}
+		return([forma,formb]);
+		}
+	if (n > 0) {
+		var forma = vara;
+		var formb = varb;
+		var newforma = "";
+		var newformb = "";
+		var i;
+		for (i = 0; i < n; i++) {
+			newforma = "\\arctan(\\frac{"+ formb + "}{" + forma + "})";
+			newformb = "\\sqrt{("+forma+")^2+("+formb+")^2}";
+			forma = newforma;
+			formb = newformb;
+			}
+		return([forma,formb]);
+		}
+	}
+
+function noverlap(e) {
+	if (e.target.innerHTML == "Show") {
+		e.target.innerHTML = "Hide";
+		var i;
+		for (i = -4; i <= 5; i++) {
+			var k = explicitformulas(i,"x","y");
+			var l = explicitformulas(i-1,"x","y");
+			d1.setExpression({id:"nov"+i, latex:k[0] + "<" + l[0], color:rlcol(4*i+10)});
+			}
+		}
+	else {
+		e.target.innerHTML = "Show";
+		var i;
+		for (i = -4; i <= 5; i++) {
+			d1.removeExpression({id:"nov"+i});
+			}
+		}
+	}
+
+var g_ab = [];
+
+function opt1_loop() {
+	if (document.getElementById("butt_opt1").innerHTML == "Stop") {
+		requestAnimationFrame(opt1_loop);
+		}
+	var k = Number(document.getElementById("opt1_step").value);
+	var oldbadness = badness_array(iter([g_ab],30,10)).angle;
+	var newab = [g_ab[0] + k*(Math.random()-.5), g_ab[1] + k*(Math.random()-.5)];
+	var newbadness = badness_array(iter([newab],30,10)).angle;
+	if (newbadness < oldbadness) {
+		g_ab = [newab[0],newab[1]];
+		d1.setExpression({id:"a0_def", latex: "a_{0} = " + newab[0]});
+		d1.setExpression({id:"b0_def", latex: "b_{0} = " + newab[1]});
+		};
+	}
+
+function butt_opt1(e) {
+	adv_desmos4();
+	if (e.target.innerHTML == "Start") {
+		e.target.innerHTML = "Stop";
+		opt1_loop();
+		}
+	else {
+		e.target.innerHTML = "Start";
+		}
+	}
+
+function reset_ab() {
+	g_ab = [1,1];
+	d1.setExpression({id:"a0_def", latex: "a_{0} = 1"});
+	d1.setExpression({id:"b0_def", latex: "b_{0} = 1"});
+	}
+
+var paramshelper = "nope";
+var paramslist = [];
+var flisthelper = "nope";
+var flist = [];
+var paramsmode = 0;
+var oldbadness1 = Infinity;
+var oldparams = "nope"; //stored as a string. gotta json.parse it.
+var oldbadness2 = Infinity;
+//var fliststep = 0.00157;
+//var flistlength = 1000;
+var fliststep = 0.000314;
+var flistlength = 5000;
+
+function fplugin() {
+	var l = d1.getExpressions();
+	var i;
+	var fstr = "";
+	for (i = 0; i < l.length; i++) {
+		if (l[i].id == "f") {
+			fstr = l[i].latex;
+			}
+		}
+	for (i = 0; i < paramslist.length; i++) {
+		fstr = fstr.replaceAll("p_{"+i+"}", paramslist[i]);
+		}
+	document.getElementById("regresstex").innerHTML = fstr;
+	document.getElementById("regresstex3").innerHTML = fstr;
+	}
+
+function dist2(p1,p2) {
+	return((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2);
+	}
+
+function flistcallback() {
+	if (paramsmode == 1) {
+		//g_iterlist;
+		var badness = 0;
+		var i;
+		for (i = 0; i < g_iterlist.length; i++) {
+			var ix = Math.round(g_iterlist[i][0] / fliststep);
+			if (ix < 0) {ix = 0}
+			if (ix >= flist.length) {ix = flist.length}
+			badness += (flist[ix] - g_iterlist[i][1])**2;
+			}
+		if (badness <= oldbadness1) {
+			fplugin();
+			document.getElementById("regress1o").innerHTML = badness;
+			oldbadness1 = badness;
+			wiggleparams(Number(document.getElementById("regress1step").value));
+			}
+		else {
+			if (oldparams != "nope") {paramslist = JSON.parse(oldparams);}
+			wiggleparams(Number(document.getElementById("regress1step").value));
+			}
+		}
+	if (paramsmode == 2) {
+		var badness = 0;
+		var i;
+		var j;
+		for (i = 0; i < flist.length; i++) {
+			var pt = [flist[i]*Math.cos(i*fliststep), flist[i]*Math.sin(i*fliststep)];
+			var mindist = Infinity;
+			for (j = 0; j < flist.length; j++) {
+				var d = dist2(pt, [i*fliststep,flist[i]]);
+				if (d < mindist) {mindist = d}
+				}
+			badness += mindist;
+			}
+		if (badness <= oldbadness2) {
+			fplugin();
+			document.getElementById("regress2o").innerHTML = badness;
+			oldbadness2 = badness;
+			wiggleparams(Number(document.getElementById("regress2step").value));
+			}
+		else {
+			if (oldparams != "nope") {paramslist = JSON.parse(oldparams);}
+			wiggleparams(Number(document.getElementById("regress2step").value));
+			}
+		}
+	if (paramsmode == 3) {
+		var badness = 0;
+		var i;
+		for (i = 0; i < g_iterlist2.length; i++) {
+			var ix = Math.round(g_iterlist2[i][0] / fliststep);
+			if (ix < 0) {ix = 0}
+			if (ix >= flist.length) {ix = flist.length}
+			badness += (flist[ix] - g_iterlist2[i][1])**2;
+			}
+		if (badness <= oldbadness3) {
+			fplugin();
+			document.getElementById("regress3o").innerHTML = badness;
+			oldbadness3 = badness;
+			wiggleparams(Number(document.getElementById("regress3step").value));
+			}
+		else {
+			if (oldparams != "nope") {paramslist = JSON.parse(oldparams);}
+			wiggleparams(Number(document.getElementById("regress3step").value));
+			}
+		}
+	}
+
+function createparams(k) {
+	var i;
+	var str = "[";
+	for (i = 0; i < k; i++) {
+		if (!desmos_defined(d1, "p"+i)) {d1.setExpression({id:"p"+i, latex:"p_{"+i+"}=1"});}
+		if (i > 0) {str += ","}
+		str += "p_{"+i+"}";
+		}
+	str += "]";
+	while (desmos_defined(d1, "p"+i)) {
+		d1.removeExpression({id: "p"+i});
+		i++;
+		}
+	paramshelper = d1.HelperExpression({latex:str});
+	paramshelper.observe("listValue", function() {
+		paramslist = paramshelper.listValue;
+		});
+	flisthelper = d1.HelperExpression({latex:"f("+fliststep+"*[0,...,"+flistlength+"])"});
+	flisthelper.observe("listValue", function() {
+		flist = flisthelper.listValue;
+		flistcallback();
+		});
+	}
+
+function wiggleparams(k) {
+	var i;
+	if (!k) {k = 0.01}
+	oldparams = JSON.stringify(paramslist);
+	for (i = 0; i < paramslist.length; i++) {
+		paramslist[i] += k * (Math.random()-0.5);
+		d1.setExpression({id:"p"+i, latex:"p_{"+i+"}="+paramslist[i]});
+		}
+	}
+
+function clearregress() {
+	document.getElementById("butt_regress1").innerHTML = "Start";
+	document.getElementById("butt_regress2").innerHTML = "Start";
+	document.getElementById("butt_regress3").innerHTML = "Start";
+	bestparams();
+	}
+
+function bestparams() {
+	var i;
+	paramslist = JSON.parse(oldparams);
+	for (i = 0; i < paramslist.length; i++) {
+		d1.setExpression({id:"p"+i, latex:"p_{"+i+"}="+paramslist[i]});
+		}
+	}
+
+function butt_regress1() {
+	var elt = document.getElementById("butt_regress1");
+	if (elt.innerHTML == "Start") {
+		elt.innerHTML = "Stop";
+		paramsmode = 1;
+		oldbadness1 = Infinity;
+		wiggleparams(Number(document.getElementById("regress1step").value));
+		}
+	else {
+		clearregress();
+		//elt.innerHTML = "Start";
+		paramsmode = 0;
+		}
+	}
+
+function butt_regress2() {
+	var elt = document.getElementById("butt_regress2");
+	if (elt.innerHTML == "Start") {
+		elt.innerHTML = "Stop";
+		paramsmode = 2;
+		oldbadness2 = Infinity;
+		wiggleparams(Number(document.getElementById("regress2step").value));
+		}
+	else {
+		clearregress();
+		//elt.innerHTML = "Start";
+		paramsmode = 0;
+		}
+	}
+
+function butt_regress3() {
+	var elt = document.getElementById("butt_regress3");
+	if (elt.innerHTML == "Start") {
+		elt.innerHTML = "Stop";
+		paramsmode = 3;
+		oldbadness3 = Infinity;
+		wiggleparams(Number(document.getElementById("regress3step").value));
+		}
+	else {
+		clearregress();
+		//elt.innerHTML = "Start";
+		paramsmode = 0;
+		}
+	}
+
+//TODO: starting one regression should *properly* stop the others
+
+
+function makerat1() {
+	var ndeg = Number(document.getElementById("rat1numdeg").value);
+	var ddeg = Number(document.getElementById("rat1dendeg").value);
+	var numparams = ndeg+ddeg+2;
+	if (ddeg == 0) {numparams = ndeg+ddeg+1}
+	if (document.getElementById("rat1chk").checked) {numparams--}
+	document.getElementById("numparams1").value = numparams;
+	createparams(numparams)
+	var i, j;
+	j = 0;
+	var nstr = "";
+	for (i = 0; i <= ndeg; i++) {
+		if (i == 0 && document.getElementById("rat1chk").checked) {continue;}
+		if (i == 1 && document.getElementById("rat1chk").checked) {nstr += "+"}
+		if (i > 1) {nstr += "+"}
+		nstr += "p_{"+j+"}";
+		j++;
+		if (i > 1) {nstr += "x^{"+i+"}"}
+		if (i == 1) {nstr += "x"}
+		}
+	var dstr = "";
+	for (i = 0; i <= ddeg; i++) {
+		if (i > 0) {dstr += "+"}
+		dstr += "p_{"+j+"}";
+		j++;
+		if (i > 1) {dstr += "x^{"+i+"}"}
+		if (i == 1) {dstr += "x"}
+		}
+	if (ddeg == 0) {
+		d1.setExpression({id:"f", latex:"f(x) = " + nstr});
+		}
+	else {
+		d1.setExpression({id:"f", latex:"f(x) = \\frac{"+nstr+"}{"+dstr+"}"});
+		}
+	}
+
+var g_abl = [];
+var opt2oldbadness = Infinity;
+
+function opt2_loop() {
+	if (document.getElementById("butt_opt2").innerHTML == "Stop") {
+		requestAnimationFrame(opt2_loop);
+		}
+	var k = Number(document.getElementById("opt2_step").value);
+	
+	var i;
+	var newabl = [];
+	for (i = 0; i < g_abl.length; i++) {
+		newabl.push([g_abl[i][0], g_abl[i][1]]);
+		}
+	var t = ribet(0, g_abl.length-1);
+	newabl[t] = [newabl[t][0] + k*(Math.random()-.5), newabl[t][1] + k*(Math.random()-.5)];
+	/*for (i = 0; i < g_abl.length; i++) {
+		newabl.push([g_abl[i][0] + k*(Math.random()-.5), g_abl[i][1] + k*(Math.random()-.5)]);
+		}*/
+
+	var nbad = badness_array(iter(newabl,30,10));
+	//var newbadness = nbad.angle + nbad.spacing;
+	var newbadness = nbad.distance;
+	document.getElementById("opt2o").innerHTML = "best:" + opt2oldbadness + "<br> current:" + newbadness;
+	if (newbadness < opt2oldbadness) {
+		opt2oldbadness = newbadness;
+		g_abl = JSON.parse(JSON.stringify(newabl));
+		for (i = 0; i < g_abl.length; i++) {
+			d1.setExpression({id:"a"+i+"_def", latex: "a_{"+i+"} = " + newabl[i][0]});
+			d1.setExpression({id:"b"+i+"_def", latex: "b_{"+i+"} = " + newabl[i][1]});
+			}
+		};
+	}
+
+function butt_opt2(e) {
+	if (e.target.innerHTML == "Start") {
+		e.target.innerHTML = "Stop";
+		opt2oldbadness = Infinity;
+		g_abl.sort(function(a,b) {return(a[0]-b[0])});
+		opt2_loop();
+		}
+	else {
+		e.target.innerHTML = "Start";
+		}
+	}
+
+function reset_ab2() {
+	var i;
+	for (i = 0; i < g_abl.length; i++) {
+		g_abl[i] = [1 + 0.1*i, 1+0.1*i];
+		d1.setExpression({id:"a"+i+"_def", latex: "a_{"+i+"} = " + (1+0.1*i)});
+		d1.setExpression({id:"b"+i+"_def", latex: "b_{"+i+"} = " + (1+0.1*i)});
+		}
+	}
+
+var ablobserver = "nope!";
+
+function observeabl() {
+	var k = Number(document.getElementById("basenum").value);
+	var str = "[";
+	var i;
+	for (i = 0; i < k; i++) {
+		if (i > 0) {str += ","}
+		str += "a_{"+i+"},";
+		str += "b_{"+i+"}";
+		}
+	str += "]";
+	ablobserver = d1.HelperExpression({latex:str});
+	ablobserver.observe("listValue",function() {
+		var k = Number(document.getElementById("basenum").value);
+		var j;
+		g_abl = [];
+		var l = ablobserver.listValue;
+		console.log(l);
+		for (j = 0; j < k; j++) {
+			g_abl.push([l[2*j], l[2*j+1]]);
+			}
+		update2();
+		});
+	}
+
+function csvl2(iterl) {
+	var i;
+	var str = "x,y";
+	for (i = 0; i < iterl.length; i++) {
+		str += "\n"
+		str += iterl[i][0] + "," + iterl[i][1];
+		}
+	document.getElementById("csvo2").value = str;
+	return(str);
+	}
+
+function download_csv2() {
+	var rn = Number(document.getElementById("rn").value);
+	var ln = Number(document.getElementById("ln").value);
+	var l = iter(g_abl, rn, ln);
+	var str = csvl2(l);
+	var blob = new Blob([str], {type:"octet/stream"});
+	var a = document.createElement("a");
+	a.href = window.URL.createObjectURL(blob);
+	a.download = "cartesianpolar.csv";
+	a.click();
+	}
+
+var g_iterlist2 = [];
+
+function update2() {
+	var rn = Number(document.getElementById("rn").value);
+	var ln = Number(document.getElementById("ln").value);
+	var l = iter(g_abl, rn, ln);
+	g_iterlist2 = l;
+	csvl2(l);
+	}
+
+function boot() {
+	bootkatex();
+	boot_desmos();
+	//adv_desmos4();
+	observeab();
+	//noverlap();
+	//explicitformulatest();
+	//testfancyang();
+	//createparams();
+	}
+
+//TODO: text "raising, lowering" doesn't disappear
+
+</script>
+</head>
+<body onload='boot();' style='font-size:large; font-family:sans-serif'>
+
+<div id='d1' style='width:50%; height:100%; box-sizing:border-box; position:fixed; top:0px; right:0px; background-color:white;'></div>
+
+<div style='width:50%; height:100%; box-sizing:border-box; position:fixed; top:0px; left:0px; overflow-y:auto;'>
+<div style='margin:10px'>
+<h1>Is There a Function <span class='k' title='f'>f</span> Whose Graph in Cartesian is the Same as its Graph in Polar?</h1>
+<h2>The Problem</h2>
+<p>Based on a <a href='https://math.stackexchange.com/questions/4190052/about-function-plots/4191435'>question</a> originally posted to math.stackexchange, I set out to find a function whose graphs in Cartesian and polar overlapped. Try it in the Desmos interactive to the right: (Note the restricted domain notation <span class='k' title="\left\{0\le x\le\frac{\pi}{2}\right\}">{0 <= x <= pi/2}</span>. You can read more about restricting the domain of Desmos plots <a href='https://help.desmos.com/hc/en-us/articles/4407885334285-Inequalities-and-Restrictions'>here</a>.)
+
+<div style='display:inline-block; height:100vh'></div>
+
+One close solution I found is <span class='k' title='(\tan(x))^{1.3}'>(tan(x))<sup>1.3</sup></span> <button onclick='adv_desmos1()'>Try it</button>.</p>
+
+<h2>Getting Started</h2>
+
+<p> Suppose we had some sort of function f whose graph G was the same in polar and Cartesian coordinates. Because our graph G is the graph of f in Cartesian coordinates:
+<div class='kl' title='(x = a, y = b) \text{ is on } G \iff b = f(a).'>(x = a, y = b) is on  G iff b = f(a).</div>
+Because our graph G is the graph of f in polar :
+<div class='kl' title='(\theta = a, r = b) \text{ is on } G \iff b = f(a).'>(&theta; = a, r = b) is on  G iff b = f(a).</div>
+So the following are equivalent:
+<div class='kl' title='(x = a, y = b) \text{ is on } G \iff (\theta = a, r = b) \text{ is on } G.'>(x = a, y = b) is on G iff (&theta; = a, r = b) is on  G.</div>
+And in fact, this is an exact characterization of the graph we're looking for. Any function graph that satisfies this equivalence is the same in polar and Cartesian.</p>
+<p>Translating the right-hand side of our characteristic equivalence to cartesian coordinates, we get:
+<div class='kl' title='(x = a, y = b) \text{ is on } G \iff (x = b\cos(a), y=b\sin(a)) \text{ is on } G.'>(x = a, y = b) is on G iff (x = b cos(a), y = b sin(a)) is on  G.</div>
+I'll call this point the <b>lowering</b> of (a,b), since it is always closer to the x-axis. <button onclick='adv_desmos2()'>Show in Desmos</button></p>
+<p> Assuming <span class='k' title='0 \leq a \leq \frac{\pi}{2}'>0 <= a <= pi/2</span> (I haven't been able to work out a solution that isn't restricted to this range), we can run this equivalence in reverse, replacing a in the above equation by <span class='k' title='\arctan\left(\frac{b}{a}\right)'>arctan(b/a)</span> and b by <span class='k' title='\sqrt{a^2+b^2}'>sqrt(a^2+b^2)</span>:
+<div class='kl' title='\left(x = \arctan\left(\frac{b}{a}\right), y = \sqrt{a^2 + b^2}\right) \text{ is on } G \iff (x = a, y=b) \text{ is on } G.'>(x = atan(b/a), y = sqrt(a^2+b^2)) is on G iff (x = a, y = b) is on  G.</div>
+I'll call the point on the right the <b>raising</b> of (a,b), since it is always higher. <button onclick='adv_desmos3()'>Show in Desmos</button></p>
+<p>But that's not all: given a point, since we know that its raising is on the graph, the raising of the raising is on the graph too!. Similarly, the lowering of the lowering is on the graph. (The raising of the lowering and the lowering of the raising are the original point). This gives us an infinite sequence of points on the graph going in both directions.</p>
+<fieldset style='display:inline-block'>
+<legend>Sequence of Raisings/Lowerings</legend>
+<button onclick='adv_desmos4()'>Show</button><br>
+Raising depth: <input type='number' min=0 step=1 value=30 id='rn' oninput='adv_desmos4()' style='width:3em'><br>
+Lowering depth: <input type='number' min=0 step=1 value=10 id='ln' oninput='adv_desmos4()' style='width:3em'>
+</fieldset>
+<p>Play around with these points to try to see any patterns you can find!</p>
+
+<h2>A Disappointing Solution</h2>
+<p>
+Note that the graph you get when iterating raising and lowering a point infinitely gives you a graph satisfying our condition: a point is on the graph iff its lowering is on the graph. If this graph is the graph of a function (no two points have the same x-coordinate), it's the graph of a function whose graph is the same in Cartesian and polar!
+</p>
+<p>
+This is a little bit disappointing: playing around with the points, it's clear that there's an ideal smooth curve, and we want that!
+</p>
+<h2>Minimizing Angles</h2>
+<p>A good start is to define some measure of "badness" and try to minimize it. We'd like to minimize the zig-zagging behavior of our graph, so let's try to minimize how far every consecutive triple is from being collinear. We'll square each term and sum it up to particularly penalize large values:
+<div class='kl' id='summationdiv' title="\text{badness}(a,b) = \sum_{i = -8}^{30} (\pi - \text{angle}(\text{raise}^{i-2}(a,b), \text{raise}^{i-1}(a,b), \text{raise}^{i}(a,b)))^2">badness(a,b) = sum from i = -8 to 30 of (pi - angle(raise^(i-2)(a,b), raise^(i-1)(a,b), raise^i(a,b)))^2</div>
+Shown below is the badness value for the currently selected (a,b):
+</p>
+<div id='badness1'></div>
+<p>
+We clearly can't get this measure to be 0, since the graph is going to curve, but we can minimize it. There are better ways of doing this, but a really simple way is to:
+<ol>
+<li> Add a random vector to (a,b).
+<li> If the badness of the resulting vector is less than the badness of our original (a,b), set (a,b) to this new value and start over.
+<li> If not, leave (a,b) unchanged and try again.
+</ol>
+<fieldset style='display:inline-block'>
+<legend>Optimizing (a,b)</legend>
+Press this button to start/stop an optimization process: <button id='butt_opt1' onclick='butt_opt1(event)'>Start</button><button onclick='reset_ab()'>Reset to (1,1)</button>
+<br>Reducing the step size will slow the optimization, but is better for fine-tuning the point:
+
+<br> Step Size: <input type='number' value=0.01 id='opt1_step'><button onclick='document.getElementById("opt1_step").value *= 0.1'>*0.1</button><button onclick='document.getElementById("opt1_step").value *= 10'>*10</button>
+</fieldset>
+
+</p>
+<p>If there's a nice formula for our nice curve, we should be able to find it with regression. You can find the data below, or <button onclick='download_csv1()'>download</button> it as .csv</p>
+<textarea id='csvo1'></textarea>
+
+<h2>Regression</h2>
+<p>You can also do some regression in this interactive directly: use the input widget below to create a number of parameters, which you can use in your definition of f.
+Press the "start" button to start randomly wiggling around these parameters. If the new values of the parameters improve how well f fits the data, the interactive will keep the changes. Note that due to the way the Desmos side of this interactive works, it will show the current guess for the parameters, not the best values of the parameters found so far. Stop the optimizer to show the best values of the parameters.
+As before, you can reduce the step size to fine-tune your solution.
+
+<fieldset style='display:inline-block; background-color:#BBCCEE'>
+<legend>Parameter Setup</legend>
+Number of Parameters: <input type='number' style='width:3em' min='0' step='1' value=0 id='numparams1' onchange='createparams(Number(event.target.value))'>
+<br>Built-in templates:
+<ul>
+<li><button onclick='makerat1()'>Rational Function</button> Numerator Degree:<input type='number' min=0 value=5 id='rat1numdeg' style='width:3em'> Denominator Degree:<input type='number' min=0 value=3 id='rat1dendeg' style='width:3em'> <input type='checkbox' id='rat1chk' checked> Pass through origin
+</ul>
+</fieldset>
+
+<fieldset style='display:inline-block'>
+<legend>Optimize Parameters to Fit Data Points</legend>
+<button onclick='butt_regress1()' id='butt_regress1'>Start</button>
+<br>
+Step Size: <input type='number' min=0 value=0.1 id='regress1step'><button onclick='document.getElementById("regress1step").value *= 0.1'>*0.1</button><button onclick='document.getElementById("regress1step").value *= 10'>*10</button>
+</fieldset>
+
+<br>Best Badness: <span id='regress1o'></span>
+<br>Best Solution: <span id='regresstex'></span>
+
+<h3>Digression: Direct Regression</h3>
+
+<p>
+We could also directly try to solve for a function that minimizes the difference between its Cartesian graph and its polar graph. The interactive below allows you to do this.
+</p>
+
+<fieldset style='display:inline-block'>
+<legend>Optimize Parameters Directly</legend>
+<button onclick='butt_regress2()' id='butt_regress2'>Start</button>
+<br>Step Size: <input type='number' min=0 value=0.1 id='regress2step'><button onclick='document.getElementById("regress2step").value *= 0.1'>*0.1</button><button onclick='document.getElementById("regress2step").value *= 10'>*10</button>
+</fieldset>
+<br>Best Badness: <span id='regress2o'></span>
+
+<h2>Refining our Solution</h2>
+<p>Going back to our point-based regression, it might be nice to have a set of starting points and consider all of their raisings and lowerings together to fill out the curve.
+The widget below will allow you to create copies of our base point and show their raisings and lowerings as well.
+</p>
+<fieldset style='display:inline-block; background-color:#BBCCEE'>
+<legend>Increase Number of Base Points</legend>
+Number of Base Points: <input type='number' min=1 value=1 id='basenum' oninput='adv_desmos4()' style='width:3em'>
+</fieldset>
+
+<p>
+Play around with these extra points. With enough points, it should become clear that there's a problem: there are additional smooth solutions to this question!
+In fact, as long as one creates a smooth curve with the extra points that connects up correctly and doesn't curve backwards in its iterates, the resulting graph will be a smooth solution!
+</p>
+
+<p>
+Let's look closer at the conditions on these arbitrary smooth curves. 
+First, all of our points need to be in a resonable range: their raisings must be to their right and their lowerings to their left. These give us the inequalities:
+<ul>
+<li> Raising of (x,y) is to the right of (x,y): &nbsp;&nbsp;&nbsp; <span class='k' title='\arctan\left(\frac{y}{x}\right) > x'>arctan(y/x) > x</span>
+<li> Lowering of (x,y) is to the left of (x,y): &nbsp;&nbsp;&nbsp; <span class='k' title='y \cos(x) > x'>y cos(x) > x</span>
+</ul>
+
+What's more, the successive raisings and lowerings of our point also need to satisfy our inequalities. E.g.: the raising of the raising of our point needs to be to the right of the raising of our point, etc., and the lowering of the lowering of our point needs to be to the left of the lowering of our point.
+</p>
+
+<p>
+We can plot the regions where some of these inequalities do not hold in Desmos: <button onclick='noverlap(event)'>Show</button>. The remaining region is where it is safe for our points to be. 
+</p>
+
+<p>
+Notice that the remaining region has some width to it, and it seems like our inequalities stop carving out the center of our region, so it's likely that adding more inequalities will not reduce the center of the safe zone. If our points are near the center of the region, the curve will be more smooth and towards the edge, the curve will be more wobbly.
+</p>
+
+<p>
+These aren't the only conditions on our smooth curve: there are also conditions on the slope that keep iterates of the function from sloping backwards. One such condition can be obtained as follows. The points (t,f(t)) trace out the curve from left to right and bottom to top. As such, their raisings must also trace out the curve from left to right and bottom to top.
+Those raisings are given by:
+</p>
+<div class='kl' title="\left(\arctan\left(\frac{f(t)}{t}\right), \sqrt{(f(t))^2 + t^2}\right)">(arctan(f(t)/t), sqrt(f(t)^2 + t^2))</div>
+<p>
+Requiring these points to go from left to right as t increases means that <span class='k' title='\arctan\left(\frac{f(t)}{t}\right)'>arctan(f(t)/t)</span> must be increasing in t. In other words, its derivative with respect to t must be positive:
+</p>
+<div class='kl' title="\frac{f'(t) \cdot t - f(t)}{t^2 (f(t))^2} > 0">(f'(t)*t-f(t))/(t^2 f(t)^2) > 0</div>
+<p>
+The denominator is always positive, so:
+</p>
+<div class='kl' title="f'(t) \cdot t - f(t) > 0">f'(t)*t - f(t) > 0 </div>
+<div class='kl' title="f'(t) \cdot t  > f(t)">f'(t)*t > f(t) </div>
+<div class='kl' title="f'(t) > \frac{f(t)}{t}">f'(t) > f(t)/t </div>
+<p>So having too small a slope can result in the raisings being out of order from left to right. See if you can replicate this phenomenon by moving the points around in the interactive.</p>
+
+<h2>The Smoothest Solution</h2>
+<p> It still would be nice to have a dataset for the ideal smooth solution to our problem (assuming that even makes sense) so we can do some regression on it. The interactive below will wiggle the base points around to try to minimize the total distance squared between points in the iteration.</p>
+
+<fieldset style='display:inline-block'>
+<legend>Optimizing Base Points</legend>
+Press this button to start/stop an optimization process: <button id='butt_opt2' onclick='butt_opt2(event)'>Start</button><button onclick='reset_ab2()'>Reset</button>
+<br>Reducing the step size will slow the optimization, but is better for fine-tuning the point:
+
+<br> Step Size: <input type='number' value=0.01 id='opt2_step'><button onclick='document.getElementById("opt2_step").value *= 0.1'>*0.1</button><button onclick='document.getElementById("opt2_step").value *= 10'>*10</button>
+</fieldset>
+
+<div id='opt2o'></div>
+
+<p>
+As before, you can find the data below or <button onclick='download_csv2()'>download</button> it as a .csv file to perform regression on the data in your favorite data analysis program.<br>
+</p>
+
+<textarea id='csvo2'></textarea><br>
+
+<p>
+Or, the widget below will allow you to wiggle parameters p<sub>i</sub> to try to fit f(x) to the data.
+</p>
+
+<fieldset style='display:inline-block'>
+<legend>Optimize Parameters to Fit Data Points</legend>
+<br>Step Size: <input type='number' min=0 value=0.1 id='regress3step'><button onclick='document.getElementById("regress3step").value *= 0.1'>*0.1</button><button onclick='document.getElementById("regress3step").value *= 10'>*10</button>
+<button onclick='butt_regress3()' id='butt_regress3'>Start</button>
+</fieldset>
+
+<br>Best Badness: <span id='regress3o'></span>
+<br>Best Solution: <span id='regresstex3'></span>
+
+<p>This was used to find the highly accurate (but still quite simple!) approximation: <span class="k" title="f\left(x\right)=0.1489x+\frac{4.5274x^{2}}{\left(\frac{\pi}{2}\right)^{3}-x^{3}}">f(x) = 0.1489x + x^2/((pi/2)^3 - x^3)</span> <button onclick='adv_desmos1p5()'>Try it</button>.</p>
+
+</div></div>
+</body>
+</html>

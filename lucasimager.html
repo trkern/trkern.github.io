@@ -234,7 +234,7 @@ var recorder;
 
 function morph() {
 	var stream = document.getElementById("canv").captureStream(15);
-	recorder = new MediaRecorder(stream);
+	recorder = new MediaRecorder(stream, {mimetype:document.getElementById("mimetype").value});
 	recorder.addEventListener("dataavailable",saverecording);
 	recorder.start();
 	var k = 0;
@@ -837,6 +837,7 @@ More detailed instructions can be found at the bottom of the page.
 
 <p id="debug"> </p>
 <p id="templates"> </p>
+<input id='mimetype' value='video/webm;codecs=vp9,opus'>
 <button id = "workbenchbutt" onclick="toggleworkbench()">Show Matrix Multiplication Workbench &#9660;</button> <button onclick="morph()"> Morph</button> <button onclick="mexplink()">Matrix Powers (New Page)</button><br>
 <div id="workbench">  </div>
 <table border = 0> <tr> <td>

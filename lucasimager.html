@@ -11,8 +11,8 @@ function ribet(mn,mx) {
 	}
 
 function tograph(x,mn,mx) {
-	var m = -500/(mn-mx);
-	var b = 500*mn/(mn-mx);
+	var m = -2000/(mn-mx);
+	var b = 2000*mn/(mn-mx);
 	return(m*x+b);
 	}
 
@@ -21,21 +21,21 @@ function tog(pt) {
 	var mxx = document.getElementById("plotmaxx").value;
 	var mny = document.getElementById("plotminy").value;
 	var mxy = document.getElementById("plotmaxy").value;
-	return([tograph(pt[0],mnx,mxx),500-tograph(pt[1],mny,mxy)]);
+	return([tograph(pt[0],mnx,mxx),2000-tograph(pt[1],mny,mxy)]);
 	}
 
 function arrowto(ctx,pt1,pt2,col) {
-	ctx.lineWidth=4;
+	ctx.lineWidth=16;
 	ctx.strokeStyle=col;
 	ctx.beginPath();
 	var lg = Math.sqrt((pt1[0]-pt2[0])*(pt1[0]-pt2[0]) + (pt1[1]-pt2[1])*(pt1[1]-pt2[1]));
-	var x = 5*(pt1[0]-pt2[0])/lg;
-	var y = 5*(pt1[1]-pt2[1])/lg;
+	var x = 20*(pt1[0]-pt2[0])/lg;
+	var y = 20*(pt1[1]-pt2[1])/lg;
 	ctx.moveTo(pt1[0],pt1[1]);
 	ctx.lineTo(pt2[0]+x,pt2[1]+y);
 	ctx.stroke();
 	ctx.fillStyle=col;
-	ctx.lineWidth=1;
+	ctx.lineWidth=4;
 	ctx.moveTo(pt2[0],pt2[1]);
 	ctx.lineTo(pt2[0]+2*x+y,pt2[1]+2*y-x);
 	ctx.lineTo(pt2[0]+2*x-y,pt2[1]+2*y+x);
@@ -51,23 +51,23 @@ function drawcanv(a,b,c,d) {
 	var ctx = document.getElementById("canv").getContext("2d");
 	var u = 10; //size of universe for purposes of transforming stuff.
 	var k;
-	ctx.lineWidth=1;
+	ctx.lineWidth=4;
 	ctx.beginPath();
 	ctx.fillStyle = "#FFFFFF";
-	ctx.fillRect(0,0,500,500);
+	ctx.fillRect(0,0,2000,2000);
 	ctx.beginPath();
 	if (document.getElementById("c2").checked) {
 		ctx.strokeStyle="gray";
 		for (k = Math.ceil(xmn); k < xmx; k++) {
 			ctx.beginPath();
 			ctx.moveTo(tograph(k,xmn,xmx),0);
-			ctx.lineTo(tograph(k,xmn,xmx),500);
+			ctx.lineTo(tograph(k,xmn,xmx),2000);
 			ctx.stroke();
 			}
 		for (k = Math.ceil(ymn); k < ymx; k++) {
 			ctx.beginPath();
-			ctx.moveTo(0,500-tograph(k,ymn,ymx));
-			ctx.lineTo(500,500-tograph(k,ymn,ymx));
+			ctx.moveTo(0,2000-tograph(k,ymn,ymx));
+			ctx.lineTo(2000,2000-tograph(k,ymn,ymx));
 			ctx.stroke();
 			}
 		ctx.strokeStyle = "black";
@@ -75,12 +75,12 @@ function drawcanv(a,b,c,d) {
 	if (document.getElementById("c1").checked) {
 		ctx.strokeStyle = "black";
 		ctx.beginPath();
-		ctx.moveTo(0,500-tograph(0,ymn,ymx));
-		ctx.lineTo(500,500-tograph(0,ymn,ymx));
+		ctx.moveTo(0,2000-tograph(0,ymn,ymx));
+		ctx.lineTo(2000,2000-tograph(0,ymn,ymx));
 		ctx.stroke();
 		ctx.beginPath();
 		ctx.moveTo(tograph(0,xmn,xmx),0);
-		ctx.lineTo(tograph(0,xmn,xmx),500);
+		ctx.lineTo(tograph(0,xmn,xmx),2000);
 		ctx.stroke();
 		}
 	if (document.getElementById("c3").checked) {
@@ -233,10 +233,10 @@ function mm() {
 var recorder;
 
 function morph() {
-	var stream = document.getElementById("canv").captureStream(15);
+	/*var stream = document.getElementById("canv").captureStream(15);
 	recorder = new MediaRecorder(stream, {mimetype:document.getElementById("mimetype").value});
 	recorder.addEventListener("dataavailable",saverecording);
-	recorder.start();
+	recorder.start();*/
 	var k = 0;
 	for (k = 0; k < timesout.length; k++) {
 		clearTimeout(timesout[k]);
@@ -248,7 +248,7 @@ function morph() {
 	for(i = 0; i < 1000; i++) {
 		timesout.push(setTimeout(mm,10*i+100));
 		}
-	timesout.push(setTimeout(sr,10*i+100));
+	//timesout.push(setTimeout(sr,10*i+100));
 	}
 
 function fancymm(m1,m2,ti,i) {
@@ -849,7 +849,7 @@ More detailed instructions can be found at the bottom of the page.
 <td> <div id="w3"> </div> </td>
 <td> Determinant: <span id="det"> </span> </td>
 </tr> </table>
-<canvas id="canv" width=500 height=500 style="border:1px solid #c3c3c3;"> </canvas>
+<canvas id="canv" width=2000 height=2000 style="border:1px solid #c3c3c3;"> </canvas>
 <table>
 <tr> <td> Min x: <input type="number" id="plotminx" oninput="Upd()" value = -5 style="width:3em"> </td>
 <td> Max x: <input type="number" id="plotmaxx" oninput="Upd()" value = 5 style="width:3em"> </td>

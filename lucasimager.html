@@ -233,10 +233,10 @@ function mm() {
 var recorder;
 
 function morph() {
-	/*var stream = document.getElementById("canv").captureStream(15);
+	var stream = document.getElementById("canv").captureStream(15);
 	recorder = new MediaRecorder(stream, {mimetype:document.getElementById("mimetype").value});
 	recorder.addEventListener("dataavailable",saverecording);
-	recorder.start();*/
+	recorder.start();
 	var k = 0;
 	for (k = 0; k < timesout.length; k++) {
 		clearTimeout(timesout[k]);
@@ -248,7 +248,7 @@ function morph() {
 	for(i = 0; i < 1000; i++) {
 		timesout.push(setTimeout(mm,10*i+100));
 		}
-	//timesout.push(setTimeout(sr,10*i+100));
+	timesout.push(setTimeout(sr,10*i+100));
 	}
 
 function fancymm(m1,m2,ti,i) {

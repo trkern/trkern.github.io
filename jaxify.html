@@ -1,0 +1,132 @@
+<!doctype HTML>
+<html>
+<head>
+<style>
+svg {
+	fill: 'blue';
+	}
+</style>
+<script src='tex-svg-full.js'></script>
+<script>
+
+function strokeify(x) {
+	//x.setAttribute("stroke", "green");
+	//x.setAttribute("stroke-width", "2%");
+	//x.setAttribute("filter", "url(#displacementFiltor)");
+	x.setAttribute("filter", "url(#filtor2)");
+	if (x.hasChildNodes()) {
+		for (const child of x.children) {
+			strokeify(child);
+			}
+		}
+	}
+
+function strokeify2(x) {
+	//x.setAttribute("stroke", "green");
+	//x.setAttribute("stroke-width", "2%");
+	x.setAttribute("filter", "url(#displacementFiltor)");
+	//x.setAttribute("filter", "url(#filtor2)");
+	if (x.hasChildNodes()) {
+		for (const child of x.children) {
+			strokeify2(child);
+			}
+		}
+	}
+
+function strokeify3(x, depth) {
+	
+	}
+
+function jax(str) {
+	var out = document.getElementById("out");
+	out.innerHTML = "";
+	var options = {};//MathJax.getMetricsFor(out);
+	options.display = true;
+	MathJax.tex2svgPromise(str, options).then(function (node) {
+		console.log(node);
+		console.log(node.childNodes[0].childNodes[0]);
+		var filt = document.createElement("filter");
+		filt.id = "blor";
+		//var blur = document.createElement("feGaussianBlur");
+		//blur.setAttribute("stdDeviation", "2000");
+		//blur.setAttribute("in", "SourceGraphic");
+		//filt.appendChild(blur);
+		//filt.innerHTML = "<feGaussianBlur in='SourceGraphic' stdDeviation='2000'/>";
+		filt.innerHTML = "<feTurbulence type='turbulence' baseFrequency='0.0005' numOctaves='2' result='turbulence'></feTurbulence><feDisplacementMap in2='turbulence' in='SourceGraphic' scale='5000' xChannelSelector='R' yChannelSelector='G'></feDisplacementMap>";
+		var ch = document.createElement("rect")
+		ch.setAttribute("width", "100%");
+		ch.setAttribute("height", "100%");
+		ch.setAttribute("filter", "url(#blor)");
+		ch.setAttribute("fill", "red");
+		node.childNodes[0].insertBefore(filt, node.childNodes[0].childNodes[0]);
+		node.childNodes[0].childNodes[2].setAttribute("filter","url(#blor)");
+		node.childNodes[0].childNodes[2].setAttribute("fill","blue");
+		node.childNodes[0].childNodes[2].appendChild(ch);
+		strokeify(node.childNodes[0].childNodes[2]);
+		out.appendChild(node);
+		});
+	MathJax.tex2svgPromise(str, options).then(function (node) {
+		console.log(node);
+		console.log(node.childNodes[0].childNodes[0]);
+		var filt = document.createElement("filter");
+		filt.id = "blor";
+		//var blur = document.createElement("feGaussianBlur");
+		//blur.setAttribute("stdDeviation", "2000");
+		//blur.setAttribute("in", "SourceGraphic");
+		//filt.appendChild(blur);
+		//filt.innerHTML = "<feGaussianBlur in='SourceGraphic' stdDeviation='2000'/>";
+		filt.innerHTML = "<feTurbulence type='turbulence' baseFrequency='0.0005' numOctaves='2' result='turbulence'></feTurbulence><feDisplacementMap in2='turbulence' in='SourceGraphic' scale='5000' xChannelSelector='R' yChannelSelector='G'></feDisplacementMap>";
+		var ch = document.createElement("rect")
+		ch.setAttribute("width", "100%");
+		ch.setAttribute("height", "100%");
+		ch.setAttribute("filter", "url(#blor)");
+		ch.setAttribute("fill", "red");
+		node.childNodes[0].insertBefore(filt, node.childNodes[0].childNodes[0]);
+		node.childNodes[0].childNodes[2].setAttribute("filter","url(#blor)");
+		node.childNodes[0].childNodes[2].setAttribute("fill","blue");
+		node.childNodes[0].childNodes[2].appendChild(ch);
+		strokeify2(node.childNodes[0].childNodes[2]);
+		out.appendChild(node);
+		});
+	}
+
+function go(k) {
+	k = Number(k);
+	document.getElementById("torb").setAttribute("scale",k);
+	//document.getElementById("lighten2").setAttribute("slope", (6000-k)/6000);
+	document.getElementById("lighten2").setAttribute("exponent", 5*(6000-k)/6000);
+	//document.getElementById("offf").setAttribute("dx",-k/3);
+	//document.getElementById("offf").setAttribute("dy",-k/3);
+	}
+
+var svgstr = "";
+
+function jaxify() {
+	var str = document.getElementById("in").value;
+	MathJax.tex2svgPromise(str,{display:true}).then(function (node) {
+		var t = node.childNodes[0].outerHTML;
+		document.getElementById("out").value = t;
+		document.getElementById("disp").innerHTML = t;
+		svgstr = t;
+		});
+	}
+
+function download() {
+	var blob = new Blob([svgstr], {type:"octet/stream"});
+	var a = document.createElement("a");
+	a.href = window.URL.createObjectURL(blob);
+	a.download = "image.svg";
+	a.click();
+	}
+
+</script>
+</head>
+<body>
+
+<textarea id='in'></textarea>
+<textarea id='out'></textarea>
+<button onclick='jaxify()'>Jaxify</button><button onclick='download()'>Download SVG</button>
+<div id='disp'></div>
+
+</body>
+</html>

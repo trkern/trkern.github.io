@@ -1,0 +1,249 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name=description content="3d Graphing Interactive">
+<title> 3d Grapher </title>
+<script src="three.js"></script>
+<script src="OrbitControls.js"></script>
+<script src="BufferGeometryUtils.js"></script>
+<script>
+
+var scene;// = new THREE.Scene();
+var camera;// = new THREE.OrthographicCamera(-1,1,1,-1,-200,200);
+var renderer;// = new THREE.WebGLRenderer({canvas:document.getElementById("gr"),antialias:true});
+var controls;// = new THREE.OrbitControls(camera, renderer.domElement);
+var view_updated = false;
+var triangle_material = new THREE.MeshNormalMaterial();
+//var arrow_material = new THREE.MeshBasicMaterial({color:0x000000,side:THREE.DoubleSide});
+var arrow_material = new THREE.MeshNormalMaterial({side:THREE.DoubleSide});
+
+var triangles = [];
+var arrows = [];
+
+var triangles_updated = false;
+var arrows_updated = false;
+
+function animate() {
+	requestAnimationFrame(animate);
+	if (triangles_updated) {
+		triangles_updated = false;
+		var triangles_geometry = THREE.BufferGeometryUtils.mergeBufferGeometries(triangles,false);
+		var triangle_mesh = new THREE.Mesh(triangles_geometry,triangle_material);
+		scene.add(triangle_mesh);
+		}
+	if (arrows_updated) {
+		arrows_updated = false;
+		var arrows_geometry = THREE.BufferGeometryUtils.mergeBufferGeometries(arrows,false);
+		var arrow_mesh = new THREE.Mesh(arrows_geometry,arrow_material);
+		scene.add(arrow_mesh);
+		}
+	if (view_updated) {
+		view_updated = false;
+		renderer.render(scene,camera);
+		}
+	}
+
+function list_to_vector(l) {
+	return(new THREE.Vector3(l[0],l[2],-l[1]));
+	}
+
+function add_triangle(lv1,lv2,lv3) {
+	var p1 = list_to_vector(lv1);
+	var p2 = list_to_vector(lv2);
+	var p3 = list_to_vector(lv3);
+	var f1 = new THREE.Face3(0,1,2);
+	var f2 = new THREE.Face3(0,2,1);
+	var geometry = new THREE.Geometry();
+	geometry.vertices.push(p1,p2,p3);
+	geometry.faces.push(f1,f2);
+	geometry.computeFaceNormals();
+	var buffer_geometry = new THREE.BufferGeometry();
+	buffer_geometry.fromGeometry(geometry);
+	triangles.push(buffer_geometry);
+	triangles_updated = true;
+	view_updated = true;
+	}
+
+function add_arrow(lv1,lv2,c) {
+	var p1 = list_to_vector(lv1);
+	var p2 = list_to_vector(lv2);
+	var ah = new THREE.ArrowHelper(p2.clone().sub(p1).normalize(),p1,p1.distanceTo(p2),c);
+	scene.add(ah);
+	}
+
+function perpvec(v) {
+	var rval = v.clone().cross(list_to_vector([0,0,1]));
+	if (rval.length() == 0) {return(list_to_vector([1,0,0]));}
+	return(rval.normalize());
+	}
+
+var sinehelper = function() {
+	var i,j;
+	var rval = [];
+	var tval;
+	for (i = 0; i <= 10; i++) {
+		tval = [];
+		for (j = 0; j <= i; j++) {
+			tval.push(Math.sin(j*2*Math.PI/i));
+			}
+		rval.push(tval);
+		}
+	return(rval);
+	}();
+
+var cosinehelper = function() {
+	var i,j;
+	var rval = [];
+	var tval;
+	for (i = 0; i <= 10; i++) {
+		tval = [];
+		for (j = 0; j <= i; j++) {
+			tval.push(Math.cos(j*2*Math.PI/i));
+			}
+		rval.push(tval);
+		}
+	return(rval);
+	}();
+
+function add_bulk_arrow(lv1,lv2) {
+	var p1 = list_to_vector(lv1);
+	var p2 = list_to_vector(lv2);
+	var vforward = p2.clone().sub(p1).normalize();
+	var vperp1 = perpvec(vforward);
+	var vperp2 = vforward.clone().cross(vperp1).normalize();
+	var vintersect = p2.clone().sub(vforward.clone().multiplyScalar(.3));
+	var geometry = new THREE.Geometry();
+	geometry.vertices.push(p2);
+	var s1 = 7; //number of sides of cone
+	var s2 = 3; //number of sides of cylinder
+	for (i = 0; i <= s1; i++) {
+		geometry.vertices.push(vintersect.clone().add(vperp1.clone().multiplyScalar(.05*sinehelper[s1][i])).add(vperp2.clone().multiplyScalar(.05*cosinehelper[s1][i])));
+		}
+	for (i = 0; i <= s2; i++) {
+		geometry.vertices.push(vintersect.clone().add(vperp1.clone().multiplyScalar(.01*sinehelper[s2][i])).add(vperp2.clone().multiplyScalar(.01*cosinehelper[s2][i])));
+		}
+	for (i = 0; i <= s2; i++) {
+		geometry.vertices.push(p1.clone().add(vperp1.clone().multiplyScalar(.01*sinehelper[s2][i])).add(vperp2.clone().multiplyScalar(.01*cosinehelper[s2][i])));
+		}
+	for (i = 0; i < s1; i++) {
+		geometry.faces.push(new THREE.Face3(i+1,0,i+2));
+		}
+	for (i = 0; i < s2; i++) {
+		geometry.faces.push(new THREE.Face3(i+2+s1,i+3+s1,i+3+s1+s2));
+		geometry.faces.push(new THREE.Face3(i+3+s1+s2,i+4+s1+s2,i+3+s1));
+		}
+	geometry.computeFaceNormals();
+	var buffer_geometry = new THREE.BufferGeometry();
+	buffer_geometry.fromGeometry(geometry);
+	arrows.push(buffer_geometry);
+	arrows_updated = true;
+	view_updated = true;
+	}
+
+function add_fancy_arrow(lv1,lv2,c) {
+	var material = new THREE.MeshLambertMaterial({color:new THREE.Color(c),side:THREE.DoubleSide});
+	var p1 = list_to_vector(lv1);
+	var p2 = list_to_vector(lv2);
+	var vforward = p2.clone().sub(p1).normalize();
+	var vperp1 = perpvec(vforward);
+	var vperp2 = vforward.clone().cross(vperp1).normalize();
+	var vintersect = p2.clone().sub(vforward.clone().multiplyScalar(.3));
+	var geometry = new THREE.Geometry();
+	geometry.vertices.push(p2);
+	var s1 = 7; //number of sides of cone
+	var s2 = 3; //number of sides of cylinder
+	for (i = 0; i <= s1; i++) {
+		geometry.vertices.push(vintersect.clone().add(vperp1.clone().multiplyScalar(.05*sinehelper[s1][i])).add(vperp2.clone().multiplyScalar(.05*cosinehelper[s1][i])));
+		}
+	for (i = 0; i <= s2; i++) {
+		geometry.vertices.push(vintersect.clone().add(vperp1.clone().multiplyScalar(.01*sinehelper[s2][i])).add(vperp2.clone().multiplyScalar(.01*cosinehelper[s2][i])));
+		}
+	for (i = 0; i <= s2; i++) {
+		geometry.vertices.push(p1.clone().add(vperp1.clone().multiplyScalar(.01*sinehelper[s2][i])).add(vperp2.clone().multiplyScalar(.01*cosinehelper[s2][i])));
+		}
+	geometry.vertices.push(vintersect);
+	geometry.vertices.push(p1);
+	var k = geometry.vertices.length-2;
+	for (i = 0; i < s1; i++) {
+		geometry.faces.push(new THREE.Face3(i+1,0,i+2));
+		geometry.faces.push(new THREE.Face3(i+1,k,i+2));
+		}
+	for (i = 0; i < s2; i++) {
+		geometry.faces.push(new THREE.Face3(i+2+s1,i+3+s1,i+3+s1+s2));
+		geometry.faces.push(new THREE.Face3(i+3+s1+s2,i+4+s1+s2,i+3+s1));
+		geometry.faces.push(new THREE.Face3(i+3+s1+s2,i+4+s1+s2,k+1));
+		}
+	geometry.computeFaceNormals();
+	var mesh = new THREE.Mesh(geometry,material);
+	scene.add(mesh);
+	view_updated = true;
+	}
+
+function boot() {
+	scene = new THREE.Scene();
+	camera = new THREE.OrthographicCamera(-1,1,1,-1,-200,200);
+	renderer = new THREE.WebGLRenderer({canvas:document.getElementById("gr"),antialias:true});
+	controls = new THREE.OrbitControls(camera, renderer.domElement);
+	scene.background = new THREE.Color("white");
+	camera.position.z = 50;
+	camera.position.x = 30;
+	camera.position.y = 20;
+	camera.lookAt(0,0,0);
+	controls.addEventListener("change", function(){view_updated=true;});
+	var dl;
+	var pts = [[0,1,0],[0,-1,0],[1,0,0],[-1,0,0],[0,0,1],[0,0,-1]];
+	for (i = 0; i < 3; i++) {
+		dl = new THREE.DirectionalLight(0xffffff,1);
+		dl.position.set(pts[i][0],pts[i][1],pts[i][2]);
+		scene.add(dl);
+		}
+	view_updated = true;
+	animate();
+	}
+
+function ff(x,y) {
+	return([x,y,Math.sin(x)]);
+	}
+
+function graph(f) {
+	var x,y;
+	for (x = -7.1; x < 7.1; x+=.1) {
+		for (y = -7.1; y < 7.1; y+=.1) {
+			add_triangle(f(x,y),f(x,y+.1),f(x+.1,y));
+			add_triangle(f(x+.1,y+.1),f(x,y+.1),f(x+.1,y));
+			}
+		}
+	add_arrow([0,0,0],[1,0,0],0xff0000);
+	add_arrow([0,0,0],[0,1,0],0x00ff00);
+	add_arrow([0,0,0],[0,0,1],0x0000ff);
+	view_updated = true;
+	}
+
+function P(x,y) {
+	return((x**2 - 3*y**2 - 1)**2);
+	}
+
+function K1(x,y) {
+	return(6*(x**2+2)**3 + 14*(x**2+2)*(y**2+2)**2 + 6*(x**2+2));
+	}
+
+function K2(x,y) {
+	return(14*(x**2+2)**2*(y**2+2) + 38*(y**2+2)**3 + 14*(y**2+2));
+	}
+
+function F(x,y) {
+	var r = 9*(P(x,y) + (Math.sin(Math.PI * x))**2 * (K1(x,y)**2) + (Math.sin(Math.PI*y))**2 * (K2(x,y) ** 2));
+	var l = Math.log10(r);
+	l = Math.max(l,-20);
+	l = Math.min(l,20);
+	if (isNaN(l)) {l = 0;}
+	return([x,y,l]);
+	}
+
+
+</script>
+</head>
+<body onload="boot(); graph(F)">
+<canvas id="gr" width=500 height=500 style="border:1px solid"></canvas>
+</body>

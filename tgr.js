@@ -92,7 +92,7 @@ var tgr_default_grapher_obj = {
 	color: "black",
 	linewidth: 1,
 	r:5,
-	incolor: "white",
+	incolor: "transparent",
 	vsquish:1,
 	hsquish:1,
 	}

@@ -173,13 +173,17 @@ function boot() {
 <tr> <td>
 <div id="gr2"></div>
 </td><td style='vertical-align:top;'>
-Enter a function: <br>
+Enter a function: (you can use variables a, b, and c as parameters, and adjust their values below) <br>
 <input type="text" id="carnivalfun" value="x^2" onchange="updatecarnivalfun()"></input><br>
+Parameters:<br>
 a:<input type="number" id="a" value=1 step=.1 oninput="updatecarnivalfun()"></input><br>
 b:<input type="number" id="b" value=1 step=.1 oninput="updatecarnivalfun()"></input><br>
 c:<input type="number" id="c" value=1 step=.1 oninput="updatecarnivalfun()"></input><br>
+Base Point:<br>
 x0: <input type="number" id="xo" value=1 step=.05 oninput="updxo();updatecarnivalfun()"></input><br>
-Resolution:<input type="number" id="res" value=500 onchange="updatecarnivalfun()"></input>
+Resolution (number of lines):<input type="number" id="res" value=500 onchange="updatecarnivalfun()"></input><br>
+Instructions: Adjust the input range below the graph to visualize narrowing the inputs to the function. If the range of possible values also narrows around a value, that's the limit!
+
 </td></tr>
 <tr> <td style='vertical-align:top;'>
 <canvas width=500 height=20 style="border:1px solid;" id="xbar" onmousedown="xbarmdown(event)" onmousemove="xbarmmove(event)"

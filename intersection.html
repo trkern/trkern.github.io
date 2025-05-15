@@ -72,12 +72,6 @@ function showqqip(a1,b1,c1,a2,b2,c2) {
 	document.getElementById("grwarn").innerHTML += "<blockquote class='caution'>NOTE: you may be able to determine the intersection point exactly or approximately just by looking at the graph. The goal of this interactive is to practice with solving equations using algebra so that when we encounter problems where you can't determine the intersection point exactly from the graph, you are prepared to solve those.</blockquote>";
 	}
 
-function checkans() {
-	var inp = document.getElementById("ans").value;
-	/*hey dummy, you need to have a flag set by the initial caller as to whether the final solution is a list of points or a list of x coordinates.*/
-	//g_ans should contain points since we don't know whether 
-	}
-
 function linearsolution(m1,b1,m2,b2) {
 	if (m1 == m2) {
 		if (b1 == b2) {
@@ -510,7 +504,7 @@ function make_line_circle_intersection_problem() {
 
 function showlcip(r,m,b) {
 	tgr_grapher("graphs",[
-		{type:"circle",x:0,y:0,r:r,color:"red",linewidth:3},
+		{type:"circle",x:0,y:0,r:r,color:"red",linewidth:3,incolor:"transparent"},
 		{type:"plot",fct:function(x){return(m*x+b);},color:"blue",linewidth:3},
 		]);
 	document.getElementById("grwarn").innerHTML += "<blockquote class='caution'>NOTE: you may be able to determine the intersection point exactly or approximately just by looking at the graph. The goal of this interactive is to practice with solving equations using algebra so that when we encounter problems where you can't determine the intersection point exactly from the graph, you are prepared to solve those.</blockquote>";
@@ -731,7 +725,6 @@ blockquote.problem {
 	border-left: 3px solid #225555;
 	}
 </style>
-<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap" rel="stylesheet"> 
 </head>
 <body>
 <div style='background-color:#DDDDDD'>

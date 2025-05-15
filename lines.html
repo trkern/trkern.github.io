@@ -34,11 +34,11 @@ function tex_si(m,b) {
 	}
 
 function tex_s(a,b,c) {
-	return(tex_number(a,false,true) + "x" + tex_number(b,true,true) + "y =" + c);
+	return(tex_number(a,false,true) + "x" + tex_number(b,true,true) + "y = " + c);
 	}
 
 function tex_ps(m,yn,xn) {
-	return("y" + tex_number(-yn,true,false) + "=" + tex_number(m,false, true) + "(x"+ tex_number(-xn,true,false) + ")");
+	return("y" + tex_number(-yn,true,false) + " = " + tex_number(m,false, true) + "(x"+ tex_number(-xn,true,false) + ")");
 	}
 
 function req(a,b) {//checks if a,b are equal (possibly strings representing rational numbers)
@@ -495,7 +495,7 @@ function make_int_si() {
 	var m2 = ribet(-10,10);
 	var b1 = ribet(-10,10);
 	var b2 = ribet(-10,10);
-	var str = "Find the intersection of the lines y=" + tex_si(m1,b1) + " and y=" + tex_si(m2,b2) + ".";
+	var str = "Find the intersection of the lines y = " + tex_si(m1,b1) + " and y = " + tex_si(m2,b2) + ".";
 	document.getElementById("problem").innerHTML = str;
 	g_questions = [{id:"int", label:"Intersection Point: ", type:"pt", answer:fpni(b2-b1,m1-m2,m1*b2-b1*m2,m1-m2)}];
 	make_problem();
@@ -507,10 +507,10 @@ function make_int_si_s() {
 	var b2 = ribet(-10,10);
 	var c2 = ribet(-10,10);
 	if (ribet(0,1)) {
-		var str = "Find the intersection of the lines y=" + tex_si(m1,b1) + " and " + tex_s(a2,b2,c2) + ".";
+		var str = "Find the intersection of the lines y = " + tex_si(m1,b1) + " and " + tex_s(a2,b2,c2) + ".";
 		}
 	else {
-		var str = "Find the intersection of the lines " + tex_s(a2,b2,c2) + " and y=" + tex_si(m1,b1) + ".";
+		var str = "Find the intersection of the lines " + tex_s(a2,b2,c2) + " and y = " + tex_si(m1,b1) + ".";
 		}
 	document.getElementById("problem").innerHTML = str;
 	g_questions = [{id:"int", label:"Intersection Point: ", type:"pt", answer:fpni(c2-b1*b2,a2+b2*m1,m1*c2+b1*a2,a2+b2*m1)}];

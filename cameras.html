@@ -1,0 +1,501 @@
+<!doctype HTML>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<title> Orthographic and Perspective Projections </title>
+<script src='tk3.js'></script>
+<script>
+
+function remap(imin,imax,omin,omax,t) {
+	return(omin + (t-imin) * (omax-omin)/(imax-imin));
+	}
+
+function draw_arrow(ctx,p0,p1) {
+	var dv = tk3_linear_combo(1, p1, -1, p0);
+	var lg = Math.sqrt(dv[0]*dv[0]+dv[1]*dv[1]);
+	var u_parallel = tk3_linear_combo(1/lg, dv);
+	var u_perp = [u_parallel[1],-u_parallel[0]];
+	var size = 10;
+	var arrow_left = tk3_linear_combo(1,p1,-size,u_parallel,size,u_perp);
+	var arrow_right = tk3_linear_combo(1,p1,-size,u_parallel,-size,u_perp);
+	ctx.beginPath();
+	ctx.moveTo(...p0);
+	ctx.lineTo(...p1);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(...arrow_left);
+	ctx.lineTo(...p1);
+	ctx.lineTo(...arrow_right);
+	ctx.stroke();
+	}
+
+function label_edge(ctx,p0,p1,offset,label,direction,refp) {
+	ctx.lineWidth = 1;
+	ctx.strokeStyle = "black";
+	var dv = tk3_linear_combo(1, p1, -1, p0);
+	var lg = Math.sqrt(dv[0]*dv[0]+dv[1]*dv[1]);
+	var u_parallel = tk3_linear_combo(1/lg, dv);
+	var u_perp = [u_parallel[1],-u_parallel[0]];
+	var size = 10;
+	if (direction == "left") {
+		if (u_perp[0] > 0) {u_perp = tk3_linear_combo(-1,u_perp);}
+		}
+	if (direction == "right") {
+		if (u_perp[0] < 0) {u_perp = tk3_linear_combo(-1,u_perp);}
+		}
+	if (direction == "up") {
+		if (u_perp[1] > 0) {u_perp = tk3_linear_combo(-1,u_perp);}
+		}
+	if (direction == "down") {
+		if (u_perp[1] < 0) {u_perp = tk3_linear_combo(-1,u_perp);}
+		}
+	if (direction == "awayfrom") {
+		var refpdelta = tk3_linear_combo(0.5,p0,0.5,p1,-1,refp);
+		if (refpdelta[0]*u_perp[0]+refpdelta[1]*u_perp[1] < 0) {u_perp = tk3_linear_combo(-1,u_perp);}
+		}
+	if (direction == "toward") {
+		var refpdelta = tk3_linear_combo(0.5,p0,0.5,p1,-1,refp);
+		if (refpdelta[0]*u_perp[0]+refpdelta[1]*u_perp[1] > 0) {u_perp = tk3_linear_combo(-1,u_perp);}
+		}
+
+	var e0 = tk3_linear_combo(1, p0, size+offset, u_perp);
+	var e1 = tk3_linear_combo(1, p1, size+offset, u_perp);
+	var a0 = tk3_linear_combo(1, p0, size/2 + offset, u_perp, 3, u_parallel);
+	var a1 = tk3_linear_combo(1, p1, size/2 + offset, u_perp, -3, u_parallel);
+	var an0 = tk3_linear_combo(1, p0, size*.75 + offset, u_perp, 3+size*.25, u_parallel);
+	var af0 = tk3_linear_combo(1, p0, size*.25 + offset, u_perp, 3+size*.25, u_parallel);
+	var an1 = tk3_linear_combo(1, p1, size*.75 + offset, u_perp, -3-size*.25, u_parallel);
+	var af1 = tk3_linear_combo(1, p1, size*.25 + offset, u_perp, -3-size*.25, u_parallel);
+	var c = tk3_linear_combo(.5, a0, .5, a1);
+
+	ctx.beginPath();
+	ctx.moveTo(...p0);
+	ctx.lineTo(...e0);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(...p1);
+	ctx.lineTo(...e1);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(...a0);
+	ctx.lineTo(...a1);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(...an0);
+	ctx.lineTo(...a0);
+	ctx.lineTo(...af0);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(...an1);
+	ctx.lineTo(...a1);
+	ctx.lineTo(...af1);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.fillStyle="white";
+	ctx.arc(...c, 10, 0, 2*Math.PI);
+	ctx.fill();
+	ctx.beginPath();
+	ctx.font = "20px serif";
+	ctx.textAlign = "center";
+	ctx.textBaseline = "middle";
+	ctx.fillStyle = "black";
+	ctx.fillText(label, ...c);
+	}
+
+function persp_process_vertex(v) {
+	var world_x = Number(document.getElementById("world_x").value);
+	var world_y = Number(document.getElementById("world_y").value);
+	var newv = tk3_mat_apply_list(tk3_mat4_rotx(world_x),tk3_mat4_roty(world_y),[...v,1]);
+	return([remap(-8,8,0,800,newv[0]),remap(-3,3,300,0,newv[1])]);
+	}
+
+function persp_draw_tri(ctx,col,phase,...l) {
+	ctx.fillStyle = "rgb("+col[0]+" "+col[1]+" "+col[2]+" / 50%)";
+	var angle_x = Number(document.getElementById("angle_x").value);
+	var angle_y = Number(document.getElementById("angle_y").value);
+	var angle_z = Number(document.getElementById("angle_z").value);
+	var transl_x = Number(document.getElementById("transl_x").value);
+	var transl_y = Number(document.getElementById("transl_y").value);
+	var transl_z = Number(document.getElementById("transl_z").value);
+	var vl = [];
+	var pl = [];
+	var vproj = [];
+	var pproj = [];
+	var vorigin = [0,0,0];
+	var porigin = persp_process_vertex(vorigin);
+	var i;
+	for (i = 0; i < l.length; i++) {
+		vl.push(tk3_mat_apply_list(tk3_mat4_trans(transl_x,transl_y,transl_z),tk3_mat4_rotz(angle_z),tk3_mat4_roty(angle_y),tk3_mat4_rotx(angle_x),[l[i][0],l[i][1],l[i][2],1]).slice(0,-1));
+		vl[vl.length-1][2] -= 3;
+		pl.push(persp_process_vertex(vl[i]));
+		vproj.push([vl[i][0]/(-vl[i][2]),vl[i][1]/(-vl[i][2]),-1]);
+		pproj.push(persp_process_vertex(vproj[i]));
+		}
+	ctx.beginPath();
+	ctx.moveTo(...pl[pl.length-1]);
+	for (i = 0; i < pl.length; i++) {
+		ctx.lineTo(...pl[i]);
+		}
+	if (phase == 1) {ctx.stroke();} else {ctx.fill()}///if(tk3_mat3_determinant([[...p0,1],[...p1,1],[...p2,1]]) > 0) {ctx.fill();}}
+	ctx.beginPath();
+	ctx.moveTo(...pproj[pproj.length-1]);
+	for (i = 0; i < pproj.length; i++) {
+		ctx.lineTo(...pproj[i]);
+		}
+	if (phase == 1) {ctx.stroke();} else {ctx.fill();}
+	ctx.strokeStyle = "gray";
+	ctx.setLineDash([1,2]);
+	for (i = 0; i < l.length; i++) {
+		if (vl[i][2] < -1) {
+			ctx.beginPath(); ctx.moveTo(...pl[i]); ctx.lineTo(...porigin); ctx.stroke();
+			}
+		else if (vl[i][2] > 0) {
+			ctx.beginPath(); ctx.moveTo(...pproj[i]); ctx.lineTo(...pl[i]); ctx.stroke();
+			}
+		else {
+			ctx.beginPath(); ctx.moveTo(...pproj[i]); ctx.lineTo(...porigin); ctx.stroke();
+			}
+		}
+	ctx.strokeStyle = "black";
+	ctx.setLineDash([]);
+	}
+
+function persp_draw() {
+	var angle_x = Number(document.getElementById("angle_x").value);
+	var angle_y = Number(document.getElementById("angle_y").value);
+	var angle_z = Number(document.getElementById("angle_z").value);
+	var transl_x = Number(document.getElementById("transl_x").value);
+	var transl_y = Number(document.getElementById("transl_y").value);
+	var transl_z = Number(document.getElementById("transl_z").value);
+	var ctx = document.getElementById("cp").getContext("2d");
+	ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
+	ctx.lineWidth = 2;
+	ctx.lineJoin = "round"
+	var k = Number(document.getElementById("in_v").value);
+	var v = [0,0,0];
+	if (document.getElementById("persp_shape").value == 0) {
+		var v0 = [0,0,1];
+		var v1 = [.471,.816,-.333];
+		var v2 = [.471,-.816,-.333];
+		var v3 = [-.943,0,-.333];
+		persp_draw_tri(ctx,[255,0,0],0,v0,v1,v2);
+		persp_draw_tri(ctx,[0,255,0],0,v0,v2,v3);
+		persp_draw_tri(ctx,[0,0,255],0,v0,v3,v1);
+		persp_draw_tri(ctx,[255,255,0],0,v1,v3,v2);
+		persp_draw_tri(ctx,[255,0,0],1,v0,v1,v2);
+		persp_draw_tri(ctx,[0,255,0],1,v0,v2,v3);
+		persp_draw_tri(ctx,[0,0,255],1,v0,v3,v1);
+		persp_draw_tri(ctx,[255,255,0],1,v1,v3,v2);
+		if (0 <= k && k <= 3) {
+			v = [v0,v1,v2,v3][k]
+			}
+		}
+	else if (document.getElementById("persp_shape").value == 1) {
+		var s = .5;
+		persp_draw_tri(ctx,[255,0,0],0,[-s,-s,-s],[-s,s,-s],[-s,s,s],[-s,-s,s]);
+		persp_draw_tri(ctx,[0,255,255],0,[s,-s,-s],[s,s,-s],[s,s,s],[s,-s,s]);
+		persp_draw_tri(ctx,[0,255,0],0,[-s,-s,-s],[s,-s,-s],[s,-s,s],[-s,-s,s]);
+		persp_draw_tri(ctx,[255,0,255],0,[-s,s,-s],[s,s,-s],[s,s,s],[-s,s,s]);
+		persp_draw_tri(ctx,[0,0,255],0,[-s,-s,-s],[s,-s,-s],[s,s,-s],[-s,s,-s]);
+		persp_draw_tri(ctx,[255,255,0],0,[-s,-s,s],[s,-s,s],[s,s,s],[-s,s,s]);
+		persp_draw_tri(ctx,[255,0,0],1,[-s,-s,-s],[-s,s,-s],[-s,s,s],[-s,-s,s]);
+		persp_draw_tri(ctx,[0,255,255],1,[s,-s,-s],[s,s,-s],[s,s,s],[s,-s,s]);
+		persp_draw_tri(ctx,[0,255,0],1,[-s,-s,-s],[s,-s,-s],[s,-s,s],[-s,-s,s]);
+		persp_draw_tri(ctx,[255,0,255],1,[-s,s,-s],[s,s,-s],[s,s,s],[-s,s,s]);
+		persp_draw_tri(ctx,[0,0,255],1,[-s,-s,-s],[s,-s,-s],[s,s,-s],[-s,s,-s]);
+		persp_draw_tri(ctx,[255,255,0],1,[-s,-s,s],[s,-s,s],[s,s,s],[-s,s,s]);
+		if (0 <= k && k <= 7) {
+			v = [[-s,-s,-s],[-s,-s,s],[-s,s,-s],[-s,s,s],[s,-s,-s],[s,-s,s],[s,s,-s],[s,s,s]][k];
+			}
+		}
+
+	if (document.getElementById("chk_pp_draw").checked) {
+		ctx.lineWidth = 2;
+		var sq0 = persp_process_vertex([1,1,-1]);
+		var sq1 = persp_process_vertex([-1,1,-1]);
+		var sq2 = persp_process_vertex([-1,-1,-1]);
+		var sq3 = persp_process_vertex([1,-1,-1]);
+		ctx.beginPath();
+		ctx.moveTo(...sq0);
+		ctx.lineTo(...sq1);
+		ctx.lineTo(...sq2);
+		ctx.lineTo(...sq3);
+		ctx.lineTo(...sq0);
+		ctx.stroke();
+		}
+
+	v = tk3_mat_apply_list(tk3_mat4_trans(transl_x,transl_y,transl_z),tk3_mat4_rotz(angle_z),tk3_mat4_roty(angle_y),tk3_mat4_rotx(angle_x),[v[0],v[1],v[2],1]).slice(0,-1);
+	v[2] -= 3;
+	var p = persp_process_vertex(v);
+	var porig = persp_process_vertex([0,0,0]);
+	var py = persp_process_vertex([v[0],0,v[2]]);
+	var px = persp_process_vertex([0,v[1],v[2]]);
+	var pz = persp_process_vertex([0,0,v[2]]);
+	var psqp = persp_process_vertex([v[0]/(-v[2]),v[1]/(-v[2]),-1]);
+	var psqa = persp_process_vertex([v[0]/(-v[2]),0,-1]);
+	var psqb = persp_process_vertex([0,0,-1]);
+	if (document.getElementById("chk_tri").checked) {
+		ctx.lineWidth = 4;
+		ctx.beginPath();
+		ctx.moveTo(...porig);
+		ctx.lineTo(...pz);
+		ctx.lineTo(...py);
+		ctx.lineTo(...p);
+		ctx.lineTo(...porig);
+		ctx.stroke();
+		if (document.getElementById("chk_y_label").checked) {
+			label_edge(ctx,py,p,100,"y","awayfrom",persp_process_vertex([0,0,0]));
+			label_edge(ctx,psqp,psqa,100,"y'","toward",persp_process_vertex([0,0,0]));
+			}
+		if (document.getElementById("chk_x_label").checked) {
+			label_edge(ctx,pz,py,100,"x","awayfrom",persp_process_vertex([0,0,0]));
+			label_edge(ctx,psqa,psqb,100,"x'","toward",persp_process_vertex([0,0,0]));
+			}
+		if (document.getElementById("chk_z_label").checked) {
+			label_edge(ctx,pz,porig,100,"z", "up");
+			label_edge(ctx,psqb,porig,100,"z'", "down");
+			}
+		if (document.getElementById("chk_z_draw").checked) {
+			ctx.lineWidth = 6;
+			ctx.beginPath();
+			ctx.strokeStyle = "#33BBEE";
+			ctx.moveTo(...pz);
+			ctx.lineTo(...porig);
+			ctx.moveTo(...psqb);
+			ctx.lineTo(...porig);
+			ctx.stroke();
+			}
+		if (document.getElementById("chk_y_draw").checked) {
+			ctx.lineWidth = 6;
+			ctx.beginPath();
+			ctx.strokeStyle = "#EE7733";
+			ctx.moveTo(...py);
+			ctx.lineTo(...p);
+			ctx.moveTo(...psqp);
+			ctx.lineTo(...psqa);
+			ctx.stroke();
+			}
+		if (document.getElementById("chk_x_draw").checked) {
+			ctx.lineWidth = 6;
+			ctx.beginPath();
+			ctx.strokeStyle = "#0077BB";
+			ctx.moveTo(...pz);
+			ctx.lineTo(...py);
+			ctx.moveTo(...psqa);
+			ctx.lineTo(...psqb);
+			ctx.stroke();
+			}
+
+		}
+
+	if (document.getElementById("chk_vec").checked) {
+		var k = Number(document.getElementById("vec_scale_n").value);
+		var pscale = persp_process_vertex(tk3_linear_combo(k, v));
+		ctx.lineWidth = 6;
+		ctx.strokeStyle = "#EE3377";
+		draw_arrow(ctx, porig, pscale);
+		}
+
+	var pxaxis = persp_process_vertex([1,0,0]);
+	var pyaxis = persp_process_vertex([0,1,0]);
+	var pzaxis = persp_process_vertex([0,0,1]);
+
+	if (document.getElementById("chk_axes_draw").checked) {
+		ctx.lineWidth = 4;
+		ctx.strokeStyle = "#FF0000";
+		draw_arrow(ctx, porig, pxaxis);
+		ctx.strokeStyle = "#00FF00";
+		draw_arrow(ctx, porig, pyaxis);
+		ctx.strokeStyle = "#0000FF";
+		draw_arrow(ctx, porig, pzaxis);
+		}
+	if (document.getElementById("chk_axes_label").checked) {
+		ctx.fillStyle = "black";
+		ctx.font = "20px sans";
+		ctx.textAlign = "center";
+		ctx.textBaseline = "bottom";
+		ctx.fillText("X", ...pxaxis);
+		ctx.fillText("Y", ...pyaxis);
+		ctx.fillText("Z", ...pzaxis);
+		}
+
+	}
+
+function persp_mousedown(e) {
+	e.target.setPointerCapture(e.pointerId);
+	}
+
+function persp_mousemove(e) {
+	if (e.buttons != 1) {return;}
+	var x = Math.PI*e.movementY/400;
+	var y = Math.PI*e.movementX/400;
+	document.getElementById("world_x").value = Math.max(-1.56,Math.min(1.56,Number(document.getElementById("world_x").value) + x));
+	document.getElementById("world_y").value = Number(document.getElementById("world_y").value) + y;
+	persp_draw();
+	}
+
+function ortho_process_vertex(v) {
+	var world_x = Number(document.getElementById("world_x").value);
+	var world_y = Number(document.getElementById("world_y").value);
+	var newv = tk3_mat_apply_list(tk3_mat4_rotx(world_x),tk3_mat4_roty(world_y),[...v,1]);
+	return([remap(-4,4,0,400,newv[0]),remap(-4,4,400,0,newv[1])]);
+	}
+
+function ortho_draw_tri(ctx,col,phase,...l) {
+	ctx.fillStyle = "rgb("+col[0]+" "+col[1]+" "+col[2]+" / 50%)";
+	var angle_x = Number(document.getElementById("angle_x").value);
+	var angle_y = Number(document.getElementById("angle_y").value);
+	var angle_z = Number(document.getElementById("angle_z").value);
+	var vl = [];
+	var pl = [];
+	var vproj = [];
+	var pproj = [];
+	var i;
+	for (i = 0; i < l.length; i++) {
+		vl.push(tk3_mat_apply_list(tk3_mat4_rotz(angle_z),tk3_mat4_roty(angle_y),tk3_mat4_rotx(angle_x),[...l[i],1]).slice(0,-1));
+		pl.push(ortho_process_vertex(vl[i]));
+		vproj.push([vl[i][0],vl[i][1],3]);
+		pproj.push(ortho_process_vertex(vproj[i]));
+		}
+	ctx.beginPath();
+	ctx.moveTo(...pl[pl.length-1]);
+	for (i = 0; i < pl.length; i++) {
+		ctx.lineTo(...pl[i]);
+		}
+	if (phase == 1) {ctx.stroke();} else {ctx.fill()}///if(tk3_mat3_determinant([[...p0,1],[...p1,1],[...p2,1]]) > 0) {ctx.fill();}}
+	ctx.beginPath();
+	ctx.moveTo(...pproj[pproj.length-1]);
+	for (i = 0; i < pproj.length; i++) {
+		ctx.lineTo(...pproj[i]);
+		}
+	if (phase == 1) {ctx.stroke();} else {ctx.fill();}
+	ctx.strokeStyle = "gray";
+	ctx.setLineDash([1,2]);
+	for (i = 0; i < l.length; i++) {
+		ctx.beginPath(); ctx.moveTo(...pl[i]); ctx.lineTo(...pproj[i]); ctx.stroke();
+		}
+	ctx.strokeStyle = "black";
+	ctx.setLineDash([]);
+	}
+
+function ortho_draw() {
+	var ctx = document.getElementById("co").getContext("2d");
+	ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
+	if (document.getElementById("ortho_shape").value == 0) {
+		var v0 = [0,0,1];
+		var v1 = [.471,.816,-.333];
+		var v2 = [.471,-.816,-.333];
+		var v3 = [-.943,0,-.333];
+		ortho_draw_tri(ctx,[255,0,0],0,v0,v1,v2);
+		ortho_draw_tri(ctx,[0,255,0],0,v0,v2,v3);
+		ortho_draw_tri(ctx,[0,0,255],0,v0,v3,v1);
+		ortho_draw_tri(ctx,[255,255,0],0,v1,v3,v2);
+		ortho_draw_tri(ctx,[255,0,0],1,v0,v1,v2);
+		ortho_draw_tri(ctx,[0,255,0],1,v0,v2,v3);
+		ortho_draw_tri(ctx,[0,0,255],1,v0,v3,v1);
+		ortho_draw_tri(ctx,[255,255,0],1,v1,v3,v2);
+		}
+	else if (document.getElementById("ortho_shape").value == 1) {
+		var s = .57;
+		ortho_draw_tri(ctx,[255,0,0],0,[-s,-s,-s],[-s,s,-s],[-s,s,s],[-s,-s,s]);
+		ortho_draw_tri(ctx,[0,255,255],0,[s,-s,-s],[s,s,-s],[s,s,s],[s,-s,s]);
+		ortho_draw_tri(ctx,[0,255,0],0,[-s,-s,-s],[s,-s,-s],[s,-s,s],[-s,-s,s]);
+		ortho_draw_tri(ctx,[255,0,255],0,[-s,s,-s],[s,s,-s],[s,s,s],[-s,s,s]);
+		ortho_draw_tri(ctx,[0,0,255],0,[-s,-s,-s],[s,-s,-s],[s,s,-s],[-s,s,-s]);
+		ortho_draw_tri(ctx,[255,255,0],0,[-s,-s,s],[s,-s,s],[s,s,s],[-s,s,s]);
+		ortho_draw_tri(ctx,[255,0,0],1,[-s,-s,-s],[-s,s,-s],[-s,s,s],[-s,-s,s]);
+		ortho_draw_tri(ctx,[0,255,255],1,[s,-s,-s],[s,s,-s],[s,s,s],[s,-s,s]);
+		ortho_draw_tri(ctx,[0,255,0],1,[-s,-s,-s],[s,-s,-s],[s,-s,s],[-s,-s,s]);
+		ortho_draw_tri(ctx,[255,0,255],1,[-s,s,-s],[s,s,-s],[s,s,s],[-s,s,s]);
+		ortho_draw_tri(ctx,[0,0,255],1,[-s,-s,-s],[s,-s,-s],[s,s,-s],[-s,s,-s]);
+		ortho_draw_tri(ctx,[255,255,0],1,[-s,-s,s],[s,-s,s],[s,s,s],[-s,s,s]);
+		}
+	var sq0 = ortho_process_vertex([1,1,3]);
+	var sq1 = ortho_process_vertex([-1,1,3]);
+	var sq2 = ortho_process_vertex([-1,-1,3]);
+	var sq3 = ortho_process_vertex([1,-1,3]);
+	ctx.beginPath();
+	ctx.moveTo(...sq0);
+	ctx.lineTo(...sq1);
+	ctx.lineTo(...sq2);
+	ctx.lineTo(...sq3);
+	ctx.lineTo(...sq0);
+	ctx.stroke();
+	}
+
+function ortho_mousedown(e) {
+	e.target.setPointerCapture(e.pointerId);
+	}
+
+function ortho_mousemove(e) {
+	if (e.buttons != 1) {return;}
+	var x = Math.PI*e.movementY/400;
+	var y = Math.PI*e.movementX/400;
+	document.getElementById("world_x").value = Math.max(-1.56,Math.min(1.56,Number(document.getElementById("world_x").value) + x));
+	document.getElementById("world_y").value = Number(document.getElementById("world_y").value) + y;
+	ortho_draw();
+	}
+
+</script>
+</head>
+<body onload='persp_draw(); ortho_draw()'>
+
+<h2>Orthographic Projection</h2>
+
+In video games, we need to take a three dimensional scene and project it into two dimensions so it can be displayed on the screen. There are two main options for this:</p><table border=1><tr><td><b>Perspective Projection:</b> Objects further from the camera are rendered proportionally smaller than objects closer to the camera. This is how objects appear in reality when observed with the human eye, and so is more often used in 3D rendering. We will explore perspective projection further below.</td><td><svg width='100' height='100' style='border:1px solid'><polygon points='0,20 100,20 100,0 0,0' fill='skyblue'/><polygon points='0,20 100,20 100,100 0,100' fill='yellowgreen'/><polygon points='20,100 50,20 80,100' fill='black'/><polygon points='48,101 50,20 52,101' fill='none' stroke='yellow'/><line x1='57.5' y1='35' x2='57.5' y2='24.5' stroke='saddlebrown'/><ellipse cx='57.5' cy='20.75' rx='1.875' ry='3.75' fill='darkgreen' stroke='black'/><line x1='60' y1='40' x2='60' y2='26' stroke='saddlebrown'/><ellipse cx='60' cy='21' rx='2.5' ry='5' fill='darkgreen' stroke='black'/><line x1='65' y1='50' x2='65' y2='29' stroke='saddlebrown'/><ellipse cx='65' cy='21.5' rx='3.75' ry='7.5' fill='darkgreen' stroke='black'/><line x1='80' y1='80' x2='80' y2='38' stroke='saddlebrown'/><ellipse cx='80' cy='23' rx='7.5' ry='15' fill='darkgreen' stroke='black'/></svg></td></tr><tr><td><b>Orthographic Projection:</b> Distance from the camera does not affect rendered size. Orthographic projections keep parallel lines parallel and faithfully represent distances. This makes them ideal for technical drawings. Orthographic projections and similar are also used in video games where 3D objects are only intended to be viewed from a small number of directions and so are stored as pre-drawn (e.g. pixel art) 2D images. With orthographic projection, these 2D images look correct regardless of how near or far the object they represent is from the camera, and so they don't need to be awkwardly stretched or shrunk. Notice when drawing the cube below, opposite faces are exactly the same size, despite one being further from the plane than the other.</td><td><svg width='100' height='100' style='border:1px solid'><polygon points='0,0 100,0 100,100, 0,100' fill='yellowgreen'/><polygon points='0,40 0,0 100,100 60,100' fill='black'/><line x1='0' y1='21.33' x2='78.67' y2='100' stroke='yellow'/><line x1='0' y1='18.67' x2='81.33' y2='100' stroke='yellow'/><line x1='90' y1='80' x2='90' y2='50' stroke='saddlebrown'/><ellipse cx='90' cy='39.3' rx='5.35' ry='10.7' fill='darkgreen' stroke='black'/><line x1='70' y1='60' x2='70' y2='30' stroke='saddlebrown'/><ellipse cx='70' cy='19.3' rx='5.35' ry='10.7' fill='darkgreen' stroke='black'/><line x1='50' y1='40' x2='50' y2='10' stroke='saddlebrown'/><ellipse cx='50' cy='-.7' rx='5.35' ry='10.7' fill='darkgreen' stroke='black'/><line x1='30' y1='20' x2='30' y2='-10' stroke='saddlebrown'/></svg></td></tr></table>
+
+<p>Orthographic projection is also incredibly simple to implement, provided we're projecting along one of the axes: just ignore that coordinate! For instance, we can project along the z-axis by just taking the x- and y- coordinates of our points and ignoring the z-coordinate.</p>
+
+<canvas id='co' width=400 height=400 style='border:1px solid; display:inline-block; vertical-align:top' onpointerdown='ortho_mousedown(event)' onpointermove='ortho_mousemove(event)'></canvas><span style='display:inline-block;margin-left:3px'>
+Rotate the shape with the controls below:
+<br>angle_x: <input type='range' min=0 max=6.28 step=0.01 id='angle_x' oninput='ortho_draw()'>
+<br>angle_y: <input type='range' min=0 max=6.28 step=0.01 id='angle_y' oninput='ortho_draw()'>
+<br>angle_z: <input type='range' min=0 max=6.28 step=0.01 id='angle_z' oninput='ortho_draw()'>
+<br>Click and drag to rotate scene or use controls below:
+<br>world_x: <input type='range' min=-1.57 max=1.57 value=.4 step=0.01 id='world_x' oninput='ortho_draw()'>
+<br>world_y: <input type='range' min=0 max=6.28 value=4 step=0.01 id='world_y' oninput='ortho_draw()'>
+<br>Shape: <select id='ortho_shape' oninput='ortho_draw()'><option value=0>Tetrahedron</option><option value=1>Cube</option></select></span>
+<br>
+
+<h2>Perspective Projection</h2>
+
+<p>When we think of 3D computer graphics, we often don't think of orthographic projection; we think of perspective projection, which simulates looking at a scene through an eyeball or camera, some device where the rays of light are all focused through a single point. To produce this sort of visual, we need to divide the x and y coordinates of our points by their distance from the camera (assuming this is the z-direction).</p><h3>Intution Behind the Perspective Divide</h3><p>It's worth taking a moment to understand why we need to do this division. The rough intuition is this: imagine a scene with two trees in it, both exactly the same height, but one closer to the camera, and one farther away. The farther away tree will be drawn smaller (a smaller difference in on-the-page y-coordinates between the top and bottom) corresponding to a larger z distance from the camera.</p><p>We can get a more exact intuition by drawing out our scene and the rays of light that hit the camera, as in the interactive below. The point in the center of the canvas where the dotted lines converge is the <dfn>camera</dfn> and the square in front of it is called the <dfn>picture plane</dfn>. Each point on the 3D object being rendered could just as easily be drawn where its ray of light intersects the picture plane and it wouldn't look any different to the camera: the angles where each light-ray comes into the camera would be the same. And so we find ourselves interested in calculating, for each point P in our 3D scenes, where the line between P and our camera intersects the picture plane. This may seem like a gross calculation, but it's actually not so bad if we make use of similar triangles. Once you've oriented yourself to the scene below, check the "Show triangle" box and click the "Side View" button to see the similar triangles. Here,<ul><li>y is the difference in y-coordinates of the point on the actual 3D object and the camera.<li>z is the difference in z-coordinates of the point on the actual 3D object and the camera.</ul>Note that the 3D object itself might have ideas about what coordinate system it wants to use to describing its points, usually in terms of its own center to make rotations easy to calculate. But here, y and z are given relative to the camera.<ul><li>y' is the y-coordinate where the light-ray from our point intersects the picture plane.<li>z' is the distance from the camera to the picture plane.</ul>We can now use similar triangles to calculate y' in terms of the other values.</p>
+
+<h3>The Perspective Divide with Vectors</h3>
+
+<p>We can get a clearer intuition if we use vector notation and set the camera to be located at the origin. Check the "Show vector" box (you can uncheck the "Show triangle" box) to draw the vector from the origin to the chosen vertex. </p><p>By playing around with the scale factor, convince yourself that the point on the picture plane corresponding to our vertex is a scaling of our original vector.</p><p>We also know that points on the picture plane have a z coordinate of -1. Check "Show" and "Label" under "Axes" to show the coordinate axes. Since we are using a right-handed coordinate system with y cooresponding to up on the canvas and x corresponding to right on the canvas, z has to be out of the page, toward the area behind the camera. As such, the picture plane will have a negative z coordinate, and we may as well choose that coordinate to be -1 for simplicity.</p><p>So, we're looking for a rescaled version of the vector (x,y,z) whose z coordinate is -1. What do we need to multiply all the components of (x,y,z) by to make the z coordinate be -1?</p>
+
+<canvas id='cp' width=800 height=300 style='border:1px solid; display:inline-block; vertical-align:top' onpointerdown='persp_mousedown(event)' onpointermove='persp_mousemove(event)'></canvas><span style='display:inline-block;margin-left:3px'>
+Picture Plane: <input type='checkbox' checked id='chk_pp_draw' onchange='persp_draw()'> Draw
+<br>Axes: <input type='checkbox' id='chk_axes_draw' onchange='persp_draw()'> Draw <input type='checkbox' id='chk_axes_label' onchange='persp_draw()'> Label
+<br>Rotate the shape with the controls below:
+<br>angle_x: <input type='range' min=0 max=6.28 step=0.01 id='angle_x' oninput='persp_draw()'>
+<br>angle_y: <input type='range' min=0 max=6.28 step=0.01 id='angle_y' oninput='persp_draw()'>
+<br>angle_z: <input type='range' min=0 max=6.28 step=0.01 id='angle_z' oninput='persp_draw()'>
+<br>transl_x: <input type='range' min=-2 max=2 step=0.01 id='transl_x' oninput='persp_draw()'>
+<br>transl_y: <input type='range' min=-2 max=2 step=0.01 id='transl_y' oninput='persp_draw()'>
+<br>transl_z: <input type='range' min=-10 max=10 step=0.01 id='transl_z' oninput='persp_draw()'>
+<br>Click and drag to rotate scene or use controls below:
+<br>world_x: <input type='range' min=-1.57 max=1.57 value=.4 step=0.01 id='world_x' oninput='persp_draw()'>
+<br>world_y: <input type='range' min=0 max=6.28 value=1 step=0.01 id='world_y' oninput='persp_draw()'>
+<br>Shape: <select id='persp_shape' oninput='persp_draw()'><option value=0>Tetrahedron</option><option value=1>Cube</option></select>
+<br>
+<fieldset>
+<legend>For vertex <input type='number' value=1 id='in_v' oninput='persp_draw()' style='width:2em'>:</legend>
+<fieldset>
+<legend><input type='checkbox' id='chk_tri' onchange='persp_draw()'> Show triangle </legend>
+x: <input type='checkbox' id='chk_x_label' onchange='persp_draw()'> Label <input type='checkbox' checked id='chk_x_draw' onchange='persp_draw()'> Highlight <button onclick='document.getElementById("world_x").value=.5*Math.PI; document.getElementById("world_y").value=1.5*Math.PI; persp_draw();'>Top View</button>
+<br>y: <input type='checkbox' checked id='chk_y_label' onchange='persp_draw()'> Label <input type='checkbox' checked id='chk_y_draw' onchange='persp_draw()'> Highlight <button onclick='document.getElementById("world_x").value=0; document.getElementById("world_y").value=1.5*Math.PI; persp_draw();'>Side View</button>
+<br>z: <input type='checkbox' checked id='chk_z_label' onchange='persp_draw()'> Label <input type='checkbox' checked id='chk_z_draw' onchange='persp_draw()'> Highlight
+</fieldset>
+<fieldset>
+<legend><input type='checkbox' id='chk_vec' onchange='persp_draw()'> Show vector</legend>
+Scale factor: <input type='number' id='vec_scale_n' style='width:3em' step=0.01 value=1 oninput='document.getElementById("vec_scale_r").value = Number(event.target.value); persp_draw()'>
+<input type='range' id='vec_scale_r' value=1 min=0 max=1.5 step=0.01 oninput='document.getElementById("vec_scale_n").value = Number(event.target.value); persp_draw()'>
+</fieldset>
+</fieldset>
+</span>
+<br>
+</body>
+</html>

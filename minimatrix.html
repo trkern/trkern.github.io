@@ -1,0 +1,271 @@
+<!doctype HTML>
+<html>
+<head>
+<script>
+//max: [417,371]
+//min: [-363,-309]
+var cat_outline = [[-341, 289], [-333, 297], [-321, 307], [-315, 315], [-307, 325], [-311, 341], [-319, 371], [-273, 355], [-273, 371], [-255, 363], [-241, 353], [-231, 339], [-227, 333], [-209, 327], [-197, 313], [-185, 301], [-171, 289], [-157, 267], [-147, 251], [-129, 231], [-115, 209], [-99, 199], [-75, 191], [-51, 181], [-39, 179], [-25, 173], [-3, 167], [17, 159], [37, 147], [53, 139], [67, 129], [81, 117], [89, 105], [99, 91], [109, 79], [119, 61], [131, 45], [137, 21], [139, -1], [137, -31], [135, -63], [133, -89], [125, -115], [119, -139], [119, -155], [135, -163], [149, -163], [171, -161], [187, -159], [203, -155], [223, -155], [247, -157], [267, -161], [291, -175], [307, -183], [323, -193], [333, -207], [345, -223], [355, -237], [367, -247], [385, -261], [395, -269], [407, -255], [417, -263], [413, -279], [401, -301], [389, -309], [371, -307], [353, -297], [341, -273], [331, -253], [315, -227], [299, -211], [289, -203], [263, -195], [221, -187], [161, -199], [131, -211], [103, -217], [59, -235], [29, -245], [-5, -245], [-33, -251], [-53, -247], [-125, -239], [-167, -245], [-241, -247], [-249, -233], [-247, -215], [-219, -207], [-217, -67], [-217, -59], [-225, -37], [-239, -7], [-255, 19], [-271, 41], [-281, 69], [-281, 87], [-279, 115], [-275, 139], [-281, 161], [-287, 181], [-317, 183], [-329, 179], [-351, 203], [-363, 229], [-343, 267], [-341, 289]];
+//traced from https://commons.wikimedia.org/wiki/File:Bengal_Cat.jpg
+
+function remap(imin,imax,omin,omax,t) {
+	return(omin + (t-imin) * (omax-omin)/(imax-imin));
+	}
+
+function draw_arrow(ctx,x0,y0,x1,y1) {
+	var lg = Math.sqrt((x0-x1)*(x0-x1)+(y0-y1)*(y0-y1));
+	if (lg == 0) {
+		y1 = y1-9;
+		lg = Math.sqrt((x0-x1)*(x0-x1)+(y0-y1)*(y0-y1));
+		}
+	var lx = x1 - (10/lg)*(x1-x0) + (5/lg)*(y1-y0);
+	var ly = y1 - (10/lg)*(y1-y0) - (5/lg)*(x1-x0);
+	var rx = x1 - (10/lg)*(x1-x0) - (5/lg)*(y1-y0);
+	var ry = y1 - (10/lg)*(y1-y0) + (5/lg)*(x1-x0);
+	var cx = x1 - (5/lg)*(x1-x0);
+	var cy = y1 - (5/lg)*(y1-y0);
+	ctx.beginPath();
+	ctx.moveTo(x0,y0);
+	ctx.lineTo(cx,cy);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(x1,y1);
+	ctx.lineTo(lx,ly);
+	ctx.lineTo(rx,ry);
+	ctx.lineTo(x1,y1);
+	ctx.fill();
+	}
+
+var mvis_dragged = -1;
+
+function mvis_angle(e) {
+	var th = Number(e.target.value);
+	document.getElementById("mvis_m00").value = Math.cos(th);
+	document.getElementById("mvis_m10").value = Math.sin(th);
+	document.getElementById("mvis_m01").value = -Math.sin(th);
+	document.getElementById("mvis_m11").value = Math.cos(th);
+	mvis_draw();
+	}
+
+function mvis_draw() {
+	var ctx = document.getElementById("mvis_canv").getContext("2d");
+	ctx.lineWidth = 2;
+	var w = ctx.canvas.width;
+	var h = ctx.canvas.height;
+	ctx.fillStyle = "white";
+	ctx.fillRect(0,0,w,h);
+	var m00 = Number(document.getElementById("mvis_m00").value);
+	var m01 = Number(document.getElementById("mvis_m01").value);
+	var m10 = Number(document.getElementById("mvis_m10").value);
+	var m11 = Number(document.getElementById("mvis_m11").value);
+	var v0 = Number(document.getElementById("mvis_v0").value);
+	var v1 = Number(document.getElementById("mvis_v1").value);
+	var i;
+	ctx.lineWidth = 1;
+	if (document.getElementById("mvis_chk_oldgrid").checked) {
+		for (i = -5; i <= 5; i++) {
+			if (i == 0) {continue;}
+			else {ctx.strokeStyle = "rgba(221,221,221,1)"}	
+			ctx.beginPath();
+			ctx.moveTo(remap(-5,5,0,w,i),remap(-5,5,h,0,-5));
+			ctx.lineTo(remap(-5,5,0,w,i),remap(-5,5,h,0,5));
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.moveTo(remap(-5,5,0,w,-5),remap(-5,5,h,0,i));
+			ctx.lineTo(remap(-5,5,0,w,5),remap(-5,5,h,0,i));
+			ctx.stroke();	
+			}
+		ctx.strokeStyle = "rgba(0,0,0,1)";
+		ctx.beginPath();
+		ctx.moveTo(remap(-5,5,0,w,0),remap(-5,5,h,0,-5));
+		ctx.lineTo(remap(-5,5,0,w,0),remap(-5,5,h,0,5));
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.moveTo(remap(-5,5,0,w,-5),remap(-5,5,h,0,0));
+		ctx.lineTo(remap(-5,5,0,w,5),remap(-5,5,h,0,0));
+		ctx.stroke();	
+		}
+	if (document.getElementById("mvis_chk_newgrid").checked) {
+		for (i = -100; i <= 100; i++) {
+			ctx.strokeStyle = "rgb(136,34,85)"
+			if (i == 0) {ctx.lineWidth=2}
+			else {ctx.lineWidth=1}
+			ctx.beginPath();
+			//draw a line from T((i,-100)) to T((i,100))
+			ctx.moveTo(remap(-5,5,0,w,i*m00-100*m01), remap(-5,5,h,0,i*m10-100*m11));
+			ctx.lineTo(remap(-5,5,0,w,i*m00+100*m01), remap(-5,5,h,0,i*m10+100*m11));
+			ctx.stroke();
+			}
+		for (i = -100; i <= 100; i++) {
+			ctx.strokeStyle = "rgb(17,119,51)"
+			if (i == 0) {ctx.lineWidth=2}
+			else {ctx.lineWidth=1}
+			ctx.beginPath();
+			//draw a line from T((-100,i)) to T((100,i))
+			ctx.moveTo(remap(-5,5,0,w,-100*m00+i*m01), remap(-5,5,h,0,-100*m10+i*m11));
+			ctx.lineTo(remap(-5,5,0,w,100*m00+i*m01), remap(-5,5,h,0,100*m10+i*m11));
+			ctx.stroke();
+			}
+		}
+
+	ctx.lineWidth=4;
+	ctx.fillStyle="black";
+	ctx.strokeStyle = "rgb(17,119,51)";
+	draw_arrow(ctx,w/2,h/2,remap(-5,5,0,w,m00),remap(-5,5,h,0,m10));
+	ctx.strokeStyle = "rgb(136,34,85)";
+	draw_arrow(ctx,w/2,h/2,remap(-5,5,0,w,m01),remap(-5,5,h,0,m11));
+
+	var y0 = m00*v0 + m01*v1;
+	var y1 = m10*v0 + m11*v1;
+
+	if (document.getElementById("mvis_chk_arbvec").checked) {
+		document.getElementById("mvis_vecshow").style.display = "";
+		document.getElementById("mvis_vt0").innerHTML = y0.toFixed(2);
+		document.getElementById("mvis_vt1").innerHTML = y1.toFixed(2);
+		ctx.strokeStyle = "rgb(221,204,119)";
+		draw_arrow(ctx,w/2,h/2,remap(-5,5,0,w,y0),remap(-5,5,h,0,y1));
+		}
+	else {
+		document.getElementById("mvis_vecshow").style.display = "none";
+		}
+	if (document.getElementById("mvis_chk_arbsum").checked) {
+		document.getElementById("mvis_vecsumshow").style.display = "";
+		document.getElementById("mvis_vecsumshow_a").innerHTML = v0.toFixed(2);
+		document.getElementById("mvis_vecsumshow_b").innerHTML = v1.toFixed(2);
+		document.getElementById("mvis_vs00").innerHTML = m00.toFixed(2);
+		document.getElementById("mvis_vs01").innerHTML = m01.toFixed(2);
+		document.getElementById("mvis_vs10").innerHTML = m10.toFixed(2);
+		document.getElementById("mvis_vs11").innerHTML = m11.toFixed(2);
+		ctx.strokeStyle = "rgb(153,153,51)";
+		draw_arrow(ctx,w/2,h/2,remap(-5,5,0,w,m00*v0),remap(-5,5,h,0,m10*v0));
+		ctx.strokeStyle = "rgb(204,102,119)";
+		draw_arrow(ctx,remap(-5,5,0,w,m00*v0),remap(-5,5,h,0,m10*v0),remap(-5,5,0,w,y0),remap(-5,5,h,0,y1));
+		}
+	else {
+		document.getElementById("mvis_vecsumshow").style.display = "none";
+		}
+
+	if (document.getElementById("mvis_chk_cat").checked) {
+		ctx.strokeStyle = "black";
+		ctx.fillStyle = "orange";
+		ctx.lineWidth = 2;
+		ctx.beginPath();
+		for (i = 0; i < cat_outline.length; i++) {
+			var x = remap(-400,350,0,1,cat_outline[i][0]);
+			var y = remap(-280,350,0,1,cat_outline[i][1]);
+			var tx = m00*x + m01*y;
+			var ty = m10*x + m11*y;
+			ctx.lineTo(remap(-5,5,0,w,tx),remap(-5,5,h,0,ty));
+			}
+		ctx.fill();
+		ctx.stroke();
+		}
+
+	}
+
+function mvis_canv_down(e) {
+	var w = e.target.width;
+	var h = e.target.height;
+	var x = remap(0,w,-5,5,e.offsetX);
+	var y = remap(h,0,-5,5,e.offsetY);
+	var m00 = Number(document.getElementById("mvis_m00").value);
+	var m01 = Number(document.getElementById("mvis_m01").value);
+	var m10 = Number(document.getElementById("mvis_m10").value);
+	var m11 = Number(document.getElementById("mvis_m11").value);
+	var lg0 = Math.sqrt(m00*m00+m10*m10);
+	var lg1 = Math.sqrt(m01*m01+m11*m11);
+	m00 = m00 - .2*m00/lg0;
+	m10 = m10 - .2*m10/lg0;
+	m01 = m01 - .2*m01/lg1;
+	m11 = m11 - .2*m11/lg1;
+	[m00/lg0, m10/lg0]
+	if ((x-m00)*(x-m00)+(y-m10)*(y-m10) < .1) {
+		mvis_dragged = 0;
+		}
+	else if ((x-m01)*(x-m01)+(y-m11)*(y-m11) < .1) {
+		mvis_dragged = 1;
+		}
+	else {return;}
+	e.target.setPointerCapture(e.pointerId);
+	}
+
+function mvis_canv_move(e) {
+	var w = e.target.width;
+	var h = e.target.height;
+	var x = remap(0,w,-5,5,e.offsetX);
+	var y = remap(h,0,-5,5,e.offsetY);
+	if (mvis_dragged == 0) {
+		document.getElementById("mvis_m00").value = Math.max(-5,Math.min(5,x)).toFixed(2);
+		document.getElementById("mvis_m10").value = Math.max(-5,Math.min(5,y)).toFixed(2);
+		mvis_draw();
+		}
+	if (mvis_dragged == 1) {
+		document.getElementById("mvis_m01").value = Math.max(-5,Math.min(5,x)).toFixed(2);
+		document.getElementById("mvis_m11").value = Math.max(-5,Math.min(5,y)).toFixed(2);
+		mvis_draw();
+		}
+	}
+
+function mvis_canv_up(e) {
+	mvis_dragged = -1;
+	}
+
+</script>
+</head>
+<body onload='mvis_draw()'>
+<table style='display:inline-block; vertical-align:middle;'><tr>
+<td rowspan=2 style='border-top:1px solid;border-left:1px solid; border-bottom:1px solid'></td>
+<td><input type='number' style='width:3em' id='mvis_m00' oninput='mvis_draw()' value=1 step=0.05></td>
+<td><input type='number' style='width:3em' id='mvis_m01' oninput='mvis_draw()' value=0 step=0.05></td>
+<td rowspan=2 style='border-top:1px solid;border-right:1px solid; border-bottom:1px solid'></td>
+</tr><tr>
+<td><input type='number' style='width:3em' id='mvis_m10' oninput='mvis_draw()' value=0 step=0.05></td>
+<td><input type='number' style='width:3em' id='mvis_m11' oninput='mvis_draw()' value=1 step=0.05></td>
+</tr></table> <span id='mvis_vecshow'>&sdot;
+<table style='display:inline-block; vertical-align:middle'><tr>
+<td rowspan=2 style='border-top:1px solid;border-left:1px solid; border-bottom:1px solid'></td>
+<td><input type='number' style='width:3em' id='mvis_v0' oninput='mvis_draw()' value=2 step=0.05></td>
+<td rowspan=2 style='border-top:1px solid;border-right:1px solid; border-bottom:1px solid'></td>
+</tr><tr>
+<td><input type='number' style='width:3em' id='mvis_v1' oninput='mvis_draw()' value=0 step=0.05></td>
+</tr></table> = <span id='mvis_vecsumshow'>
+<span style='border:2px solid rgb(152,153,51);display:inline-table'>
+<span id='mvis_vecsumshow_a'></span>
+<span style='border:2px solid rgb(17,119,51);display:inline-table'>
+<table style='display:inline-block; vertical-align:middle'><tr>
+<td rowspan=2 style='border-top:1px solid;border-left:1px solid; border-bottom:1px solid'></td>
+<td><span id='mvis_vs00'></span></td>
+<td rowspan=2 style='border-top:1px solid;border-right:1px solid; border-bottom:1px solid'></td>
+</tr><tr>
+<td><span id='mvis_vs10'></span></td>
+</tr></table></span></span> +
+<span style='border:2px solid rgb(204,102,119);display:inline-table'>
+<span id='mvis_vecsumshow_b'></span>
+<span style='border:2px solid rgb(136,34,85);display:inline-table'>
+<table style='display:inline-block; vertical-align:middle'><tr>
+<td rowspan=2 style='border-top:1px solid;border-left:1px solid; border-bottom:1px solid'></td>
+<td><span id='mvis_vs01'></span></td>
+<td rowspan=2 style='border-top:1px solid;border-right:1px solid; border-bottom:1px solid'></td>
+</tr><tr>
+<td><span id='mvis_vs11'></span></td>
+</tr></table></span></span> =
+</span>
+<span style='border:2px solid rgb(221,204,119);display:inline-table'>
+<table style='display:inline-block; vertical-align:middle'><tr>
+<td rowspan=2 style='border-top:1px solid;border-left:1px solid; border-bottom:1px solid'></td>
+<td><span id='mvis_vt0'></span></td>
+<td rowspan=2 style='border-top:1px solid;border-right:1px solid; border-bottom:1px solid'></td>
+</tr><tr>
+<td><span id='mvis_vt1'></span></td>
+</tr></table></span></span>
+<br>
+<canvas id='mvis_canv' width=400 height=400 style='border:1px solid; display:inline-block; vertical-align:top' onpointerdown='mvis_canv_down(event)' onpointermove='mvis_canv_move(event)' onpointerup='mvis_canv_up(event)'></canvas><span style='display:inline-block'>
+<input type='checkbox' id='mvis_chk_newgrid' checked onchange='mvis_draw()'> Show transformed grid
+<br><input type='checkbox' id='mvis_chk_oldgrid' checked onchange='mvis_draw()'> Show original grid
+<br><input type='checkbox' id='mvis_chk_arbvec' onchange='mvis_draw()'> Show transformed arbitrary vector
+<br><input type='checkbox' id='mvis_chk_arbsum' onchange='mvis_draw()'> Show transformed arbitrary vector summands
+<br><input type='checkbox' id='mvis_chk_cat' onchange='mvis_draw()'> Show transformed unit cat
+<br>Use rotation matrix of angle <input type='number' id='mvis_angle' value=0 step=0.05 oninput='mvis_angle(event)' style='width:3.5em'><br>Note: you can drag the arrowheads of the vectors to change the columns of the matrix
+</span>
+
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!doctype HTML>
+<html>
+<head>
+<script src='tk3.js'></script>
+<script>
+
+function remap(imin,imax,omin,omax,t) {
+	return(omin + (t-imin) * (omax-omin)/(imax-imin));
+	}
+
+function ortho_process_vertex(v) {
+	var world_x = Number(document.getElementById("world_x").value);
+	var world_y = Number(document.getElementById("world_y").value);
+	var newv = tk3_mat_apply_list(tk3_mat4_rotx(world_x),tk3_mat4_roty(world_y),[...v,1]);
+	return([remap(-4,4,0,400,newv[0]),remap(-4,4,400,0,newv[1])]);
+	}
+
+function ortho_draw_tri(ctx,col,phase,...l) {
+	ctx.fillStyle = "rgb("+col[0]+" "+col[1]+" "+col[2]+" / 50%)";
+	var angle_x = Number(document.getElementById("angle_x").value);
+	var angle_y = Number(document.getElementById("angle_y").value);
+	var angle_z = Number(document.getElementById("angle_z").value);
+	var vl = [];
+	var pl = [];
+	var vproj = [];
+	var pproj = [];
+	var i;
+	for (i = 0; i < l.length; i++) {
+		vl.push(tk3_mat_apply_list(tk3_mat4_rotz(angle_z),tk3_mat4_roty(angle_y),tk3_mat4_rotx(angle_x),[...l[i],1]).slice(0,-1));
+		pl.push(ortho_process_vertex(vl[i]));
+		vproj.push([vl[i][0],vl[i][1],3]);
+		pproj.push(ortho_process_vertex(vproj[i]));
+		}
+	ctx.beginPath();
+	ctx.moveTo(...pl[pl.length-1]);
+	for (i = 0; i < pl.length; i++) {
+		ctx.lineTo(...pl[i]);
+		}
+	if (phase == 1) {ctx.stroke();} else {ctx.fill()}///if(tk3_mat3_determinant([[...p0,1],[...p1,1],[...p2,1]]) > 0) {ctx.fill();}}
+	ctx.beginPath();
+	ctx.moveTo(...pproj[pproj.length-1]);
+	for (i = 0; i < pproj.length; i++) {
+		ctx.lineTo(...pproj[i]);
+		}
+	if (phase == 1) {ctx.stroke();} else {ctx.fill();}
+	ctx.strokeStyle = "gray";
+	ctx.setLineDash([1,2]);
+	for (i = 0; i < l.length; i++) {
+		ctx.beginPath(); ctx.moveTo(...pl[i]); ctx.lineTo(...pproj[i]); ctx.stroke();
+		}
+	ctx.strokeStyle = "black";
+	ctx.setLineDash([]);
+	}
+
+function ortho_draw() {
+	var ctx = document.getElementById("c").getContext("2d");
+	ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
+	if (document.getElementById("ortho_shape").value == 0) {
+		var v0 = [0,0,1];
+		var v1 = [.471,.816,-.333];
+		var v2 = [.471,-.816,-.333];
+		var v3 = [-.943,0,-.333];
+		ortho_draw_tri(ctx,[255,0,0],0,v0,v1,v2);
+		ortho_draw_tri(ctx,[0,255,0],0,v0,v2,v3);
+		ortho_draw_tri(ctx,[0,0,255],0,v0,v3,v1);
+		ortho_draw_tri(ctx,[255,255,0],0,v1,v3,v2);
+		ortho_draw_tri(ctx,[255,0,0],1,v0,v1,v2);
+		ortho_draw_tri(ctx,[0,255,0],1,v0,v2,v3);
+		ortho_draw_tri(ctx,[0,0,255],1,v0,v3,v1);
+		ortho_draw_tri(ctx,[255,255,0],1,v1,v3,v2);
+		}
+	else if (document.getElementById("ortho_shape").value == 1) {
+		var s = .57;
+		ortho_draw_tri(ctx,[255,0,0],0,[-s,-s,-s],[-s,s,-s],[-s,s,s],[-s,-s,s]);
+		ortho_draw_tri(ctx,[0,255,255],0,[s,-s,-s],[s,s,-s],[s,s,s],[s,-s,s]);
+		ortho_draw_tri(ctx,[0,255,0],0,[-s,-s,-s],[s,-s,-s],[s,-s,s],[-s,-s,s]);
+		ortho_draw_tri(ctx,[255,0,255],0,[-s,s,-s],[s,s,-s],[s,s,s],[-s,s,s]);
+		ortho_draw_tri(ctx,[0,0,255],0,[-s,-s,-s],[s,-s,-s],[s,s,-s],[-s,s,-s]);
+		ortho_draw_tri(ctx,[255,255,0],0,[-s,-s,s],[s,-s,s],[s,s,s],[-s,s,s]);
+		ortho_draw_tri(ctx,[255,0,0],1,[-s,-s,-s],[-s,s,-s],[-s,s,s],[-s,-s,s]);
+		ortho_draw_tri(ctx,[0,255,255],1,[s,-s,-s],[s,s,-s],[s,s,s],[s,-s,s]);
+		ortho_draw_tri(ctx,[0,255,0],1,[-s,-s,-s],[s,-s,-s],[s,-s,s],[-s,-s,s]);
+		ortho_draw_tri(ctx,[255,0,255],1,[-s,s,-s],[s,s,-s],[s,s,s],[-s,s,s]);
+		ortho_draw_tri(ctx,[0,0,255],1,[-s,-s,-s],[s,-s,-s],[s,s,-s],[-s,s,-s]);
+		ortho_draw_tri(ctx,[255,255,0],1,[-s,-s,s],[s,-s,s],[s,s,s],[-s,s,s]);
+		}
+	var sq0 = ortho_process_vertex([1,1,3]);
+	var sq1 = ortho_process_vertex([-1,1,3]);
+	var sq2 = ortho_process_vertex([-1,-1,3]);
+	var sq3 = ortho_process_vertex([1,-1,3]);
+	ctx.beginPath();
+	ctx.moveTo(...sq0);
+	ctx.lineTo(...sq1);
+	ctx.lineTo(...sq2);
+	ctx.lineTo(...sq3);
+	ctx.lineTo(...sq0);
+	ctx.stroke();
+	}
+
+function ortho_mousedown(e) {
+	e.target.setPointerCapture(e.pointerId);
+	}
+
+function ortho_mousemove(e) {
+	if (e.buttons != 1) {return;}
+	var x = Math.PI*e.movementY/400;
+	var y = Math.PI*e.movementX/400;
+	document.getElementById("world_x").value = Math.max(-1.56,Math.min(1.56,Number(document.getElementById("world_x").value) + x));
+	document.getElementById("world_y").value = Number(document.getElementById("world_y").value) + y;
+	ortho_draw();
+	}
+
+function c(y1,y2) {
+	console.log("cy",(1-(y1+y2)/2),"rx",(y2-y1)/4,"ry",(y2-y1)/2);
+	}
+
+</script>
+</head>
+<body onload='ortho_draw()'>
+
+<canvas id='c' width=400 height=400 style='border:1px solid; display:inline-block; vertical-align:top' onpointerdown='ortho_mousedown(event)' onpointermove='ortho_mousemove(event)'></canvas><span style='display:inline-block;margin-left:3px'>
+Rotate the shape with the controls below:
+<br>angle_x: <input type='range' min=0 max=6.28 step=0.01 id='angle_x' oninput='ortho_draw()'>
+<br>angle_y: <input type='range' min=0 max=6.28 step=0.01 id='angle_y' oninput='ortho_draw()'>
+<br>angle_z: <input type='range' min=0 max=6.28 step=0.01 id='angle_z' oninput='ortho_draw()'>
+<br>Click and drag to rotate scene or use controls below:
+<br>world_x: <input type='range' min=-1.57 max=1.57 value=.4 step=0.01 id='world_x' oninput='ortho_draw()'>
+<br>world_y: <input type='range' min=0 max=6.28 value=4 step=0.01 id='world_y' oninput='ortho_draw()'>
+<br>Shape: <select id='ortho_shape' oninput='ortho_draw()'><option value=0>Tetrahedron</option><option value=1>Cube</option></select></span>
+<br>
+
+</body>
+
+</html>

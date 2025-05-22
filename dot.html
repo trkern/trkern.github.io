@@ -1,0 +1,444 @@
+<!doctype HTML>
+<html>
+<head>
+<script>
+
+var dot_p0 = [1,0];
+var dot_p1 = [2,1];
+var dot_dragged = -1;
+
+function remap(imin,imax,omin,omax,t) {
+	return(omin + (t-imin) * (omax-omin)/(imax-imin));
+	}
+
+function tk3_linear_combo(...l) { //assumes: l is of the form a,v,a,v,a,v, all vs the same length, at least one pair
+	var rval = [];
+	var i,j;
+	for (i = 0; i < l[1].length; i++) {
+		rval.push(0);
+		}
+	for (i = 0; i < l.length; i += 2) {
+		for (j = 0; j < rval.length; j++) {
+			rval[j] += l[i]*l[i+1][j];
+			}
+		}
+	return(rval);
+	}
+
+function draw_arrow(ctx,x0,y0,x1,y1) {
+	var lg = Math.sqrt((x0-x1)*(x0-x1)+(y0-y1)*(y0-y1));
+	if (lg == 0) {
+		y1 = y1-9;
+		lg = Math.sqrt((x0-x1)*(x0-x1)+(y0-y1)*(y0-y1));
+		}
+	var lx = x1 - (10/lg)*(x1-x0) + (5/lg)*(y1-y0);
+	var ly = y1 - (10/lg)*(y1-y0) - (5/lg)*(x1-x0);
+	var rx = x1 - (10/lg)*(x1-x0) - (5/lg)*(y1-y0);
+	var ry = y1 - (10/lg)*(y1-y0) + (5/lg)*(x1-x0);
+	var cx = x1 - (5/lg)*(x1-x0);
+	var cy = y1 - (5/lg)*(y1-y0);
+	ctx.beginPath();
+	ctx.moveTo(x0,y0);
+	ctx.lineTo(cx,cy);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(x1,y1);
+	ctx.lineTo(lx,ly);
+	ctx.lineTo(rx,ry);
+	ctx.lineTo(x1,y1);
+	ctx.fill();
+	}
+
+function label_edge(ctx,p0,p1,offset,label,direction,refp) {
+	ctx.lineWidth = 1;
+	ctx.strokeStyle = "black";
+	var dv = tk3_linear_combo(1, p1, -1, p0);
+	var lg = Math.sqrt(dv[0]*dv[0]+dv[1]*dv[1]);
+	var u_parallel = tk3_linear_combo(1/lg, dv);
+	var u_perp = [u_parallel[1],-u_parallel[0]];
+	var size = 10;
+	if (direction == "left") {
+		if (u_perp[0] > 0) {u_perp = tk3_linear_combo(-1,u_perp);}
+		}
+	if (direction == "right") {
+		if (u_perp[0] < 0) {u_perp = tk3_linear_combo(-1,u_perp);}
+		}
+	if (direction == "up") {
+		if (u_perp[1] > 0) {u_perp = tk3_linear_combo(-1,u_perp);}
+		}
+	if (direction == "down") {
+		if (u_perp[1] < 0) {u_perp = tk3_linear_combo(-1,u_perp);}
+		}
+	if (direction == "awayfrom") {
+		var refpdelta = tk3_linear_combo(0.5,p0,0.5,p1,-1,refp);
+		if (refpdelta[0]*u_perp[0]+refpdelta[1]*u_perp[1] < 0) {u_perp = tk3_linear_combo(-1,u_perp);}
+		}
+	if (direction == "toward") {
+		var refpdelta = tk3_linear_combo(0.5,p0,0.5,p1,-1,refp);
+		if (refpdelta[0]*u_perp[0]+refpdelta[1]*u_perp[1] > 0) {u_perp = tk3_linear_combo(-1,u_perp);}
+		}
+
+	var e0 = tk3_linear_combo(1, p0, size+offset, u_perp);
+	var e1 = tk3_linear_combo(1, p1, size+offset, u_perp);
+	var a0 = tk3_linear_combo(1, p0, size/2 + offset, u_perp, 3, u_parallel);
+	var a1 = tk3_linear_combo(1, p1, size/2 + offset, u_perp, -3, u_parallel);
+	var an0 = tk3_linear_combo(1, p0, size*.75 + offset, u_perp, 3+size*.25, u_parallel);
+	var af0 = tk3_linear_combo(1, p0, size*.25 + offset, u_perp, 3+size*.25, u_parallel);
+	var an1 = tk3_linear_combo(1, p1, size*.75 + offset, u_perp, -3-size*.25, u_parallel);
+	var af1 = tk3_linear_combo(1, p1, size*.25 + offset, u_perp, -3-size*.25, u_parallel);
+	var c = tk3_linear_combo(.5, a0, .5, a1);
+
+	ctx.beginPath();
+	ctx.moveTo(...p0);
+	ctx.lineTo(...e0);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(...p1);
+	ctx.lineTo(...e1);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(...a0);
+	ctx.lineTo(...a1);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(...an0);
+	ctx.lineTo(...a0);
+	ctx.lineTo(...af0);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(...an1);
+	ctx.lineTo(...a1);
+	ctx.lineTo(...af1);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.fillStyle="white";
+	ctx.arc(...c, 10, 0, 2*Math.PI);
+	ctx.fill();
+	ctx.beginPath();
+	ctx.font = "20px serif";
+	ctx.textAlign = "center";
+	ctx.textBaseline = "middle";
+	ctx.fillStyle = "black";
+	ctx.fillText(label, ...c);
+	}
+
+function draw_dot() {
+	var ctx = document.getElementById("canv_dot").getContext("2d");
+	var w = document.getElementById("canv_dot").width;
+	var h = document.getElementById("canv_dot").height;
+	ctx.fillStyle = "white";
+	ctx.fillRect(0,0,ctx.canvas.width,ctx.canvas.height);
+	var canvx0 = remap(-2.5,2.5,0,w,dot_p0[0]);
+	var canvy0 = remap(-2.5,2.5,h,0,dot_p0[1]);
+	var canvx1 = remap(-2.5,2.5,0,w,dot_p1[0]);
+	var canvy1 = remap(-2.5,2.5,h,0,dot_p1[1]);
+	ctx.lineJoin = "round";
+
+	if (document.getElementById("dot_chk_grid").checked) {
+		for (i = -2; i <= 2; i++) {
+			if (i == 0) {
+				ctx.strokeStyle = "black";
+				ctx.lineWidth = 2;
+				}
+			else {
+				ctx.strokeStyle = "gray";
+				ctx.lineWidth = 1;
+				}
+			ctx.beginPath();
+			ctx.moveTo(0,remap(-2.5,2.5,h,0,i));
+			ctx.lineTo(w,remap(-2.5,2.5,h,0,i));
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.moveTo(remap(-2.5,2.5,0,w,i),0);
+			ctx.lineTo(remap(-2.5,2.5,0,w,i),h);
+			ctx.stroke();
+			}
+		}
+
+
+	if (document.getElementById("dot_chk_circ").checked) {
+
+		ctx.lineWidth = 2;
+		ctx.strokeStyle = "black";
+		ctx.beginPath();
+		ctx.arc(w/2,h/2,w/5,0,2*Math.PI);
+		ctx.stroke();
+
+		var i;
+		ctx.fillStyle = "black";
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+		ctx.strokeStyle = "white";
+		ctx.lineWidth = 4;
+		ctx.font = "20px sans-serif";
+		var ang = Math.atan2(dot_p0[1],dot_p0[0]);
+		for (i = 0; i < 8; i++) {
+			var a = Math.PI*i/4;
+			var str = (Math.cos(a)*Math.sqrt(dot_p0[0]*dot_p0[0]+dot_p0[1]*dot_p0[1])).toFixed(2);
+			if (str == "-0.00") {str = "0.00"}
+			var lbx = Math.cos(a+ang);
+			var lby = Math.sin(a+ang);
+			ctx.strokeText(str,remap(-2.5,2.5,0,w,lbx),remap(-2.5,2.5,h,0,lby));
+			ctx.fillText(str,remap(-2.5,2.5,0,w,lbx),remap(-2.5,2.5,h,0,lby));
+			}
+		}
+
+	ctx.lineWidth = 2;
+	ctx.strokeStyle = "blue";
+	ctx.fillStyle = "black";
+	draw_arrow(ctx,w/2,h/2,canvx0,canvy0);
+	ctx.strokeStyle = "red";
+	draw_arrow(ctx,w/2,h/2,canvx1,canvy1);
+
+	if (document.getElementById("dot_chk_dotted").checked) {
+		var k = Number(document.getElementById("dot_dotted").value);
+		if (dot_p0[0] != 0) {
+			var dotty1x = (k-3*dot_p0[1])/dot_p0[0];
+			var dotty1y = 3;
+			var dotty2x = (k+3*dot_p0[1])/dot_p0[0];
+			var dotty2y = -3;
+			}
+		else if (dot_p0[1] != 0) {
+			var dotty1x = 3;
+			var dotty1y = -k/dot_p0[1];
+			var dotty2x = -3;
+			var dotty2y = -k/dot_p0[1];
+			}
+		else {
+			var dotty1x = 0;
+			var dotty1y = 0;
+			var dotty2x = 0;
+			var dotty2y = 0;
+			}
+
+		ctx.strokeStyle = "black";
+		ctx.setLineDash([2,3]);
+		ctx.beginPath();
+		ctx.moveTo(remap(-2.5,2.5,0,w,dotty1x),remap(-2.5,2.5,h,0,dotty1y));
+		ctx.lineTo(remap(-2.5,2.5,0,w,dotty2x),remap(-2.5,2.5,h,0,dotty2y));
+		ctx.stroke();
+		ctx.setLineDash([]);
+		}
+
+	if (document.getElementById("dot_chk_isolines").checked) {
+		var k;
+		ctx.fillStyle = "black";
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+		ctx.font = "20px sans-serif";
+		for (k = -16; k <= 16; k++) {
+			if (dot_p0[0] != 0) {
+				var dotty1x = (k-3*dot_p0[1])/dot_p0[0];
+				var dotty1y = 3;
+				var dotty2x = (k+3*dot_p0[1])/dot_p0[0];
+				var dotty2y = -3;
+				}
+			else if (dot_p0[1] != 0) {
+				var dotty1x = 3;
+				var dotty1y = -k/dot_p0[1];
+				var dotty2x = -3;
+				var dotty2y = -k/dot_p0[1];
+				}
+			else {
+				var dotty1x = 0;
+				var dotty1y = 0;
+				var dotty2x = 0;
+				var dotty2y = 0;
+				}
+
+			ctx.strokeStyle = "black";
+			ctx.lineWidth=2;
+			ctx.setLineDash([2,3]);
+			ctx.beginPath();
+			ctx.moveTo(remap(-2.5,2.5,0,w,dotty1x),remap(-2.5,2.5,h,0,dotty1y));
+			ctx.lineTo(remap(-2.5,2.5,0,w,dotty2x),remap(-2.5,2.5,h,0,dotty2y));
+			ctx.stroke();
+			ctx.setLineDash([]);
+			ctx.strokeStyle="white";
+			ctx.lineWidth=4;
+			var blg = dot_p0[0]*dot_p0[0]+dot_p0[1]*dot_p0[1];
+			ctx.strokeText(k, remap(-2.5,2.5,0,w,k*dot_p0[0]/blg), remap(-2.5,2.5,h,0,k*dot_p0[1]/blg));
+			ctx.fillText(k, remap(-2.5,2.5,0,w,k*dot_p0[0]/blg), remap(-2.5,2.5,h,0,k*dot_p0[1]/blg));
+			}
+		}
+
+	if (document.getElementById("dot_chk_proj").checked) {
+		ctx.lineWidth = 2;
+		ctx.strokeStyle = "brown";
+		var projc = (dot_p0[0]*dot_p1[0]+dot_p0[1]*dot_p1[1])/(dot_p0[0]*dot_p0[0]+dot_p0[1]*dot_p0[1]);
+		var projx = projc * dot_p0[0];
+		var projy = projc * dot_p0[1];
+		draw_arrow(ctx, w/2, h/2, remap(-2.5,2.5,0,w,projx), remap(-2.5,2.5,h,0,projy));
+		ctx.beginPath();
+		ctx.moveTo(remap(-2.5,2.5,0,w,dot_p1[0]), remap(-2.5,2.5,h,0,dot_p1[1]));
+		ctx.lineTo(remap(-2.5,2.5,0,w,projx), remap(-2.5,2.5,h,0,projy));
+		ctx.strokeStyle = "gray";
+		ctx.setLineDash([1,1]);
+		ctx.stroke();
+		ctx.setLineDash([]);
+		}
+
+	if (document.getElementById("dot_chk_lb").checked) {
+		ctx.fillStyle = "red";
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+		ctx.strokeStyle = "white";
+		ctx.lineWidth = 4;
+		ctx.font = "20px sans-serif";
+		var lg1 = Math.sqrt((canvx1-w/2)*(canvx1-w/2) + (canvy1-h/2)*(canvy1-h/2));
+		var cx1 = canvx1 - (5/lg1)*(canvx1-w/2);
+		var cy1 = canvy1 - (5/lg1)*(canvy1-h/2);
+		ctx.strokeText("A", cx1, cy1+20);
+		ctx.fillText("A", cx1, cy1+20);
+		ctx.fillStyle = "blue";
+		var lg0 = Math.sqrt((canvx0-w/2)*(canvx0-w/2) + (canvy0-h/2)*(canvy0-h/2));
+		var cx0 = canvx0 - (5/lg0)*(canvx0-w/2);
+		var cy0 = canvy0 - (5/lg0)*(canvy0-h/2);
+		ctx.strokeText("B", cx0, cy0+20);
+		ctx.fillText("B", cx0, cy0+20);
+		}
+
+	dot_p0[0] = Number(dot_p0[0].toFixed(2));
+	dot_p0[1] = Number(dot_p0[1].toFixed(2));
+	dot_p1[0] = Number(dot_p1[0].toFixed(2));
+	dot_p1[1] = Number(dot_p1[1].toFixed(2));
+
+	var dotval = (dot_p0[0]*dot_p1[0]+dot_p0[1]*dot_p1[1]).toFixed(3);
+
+	var strx = 20;
+	var stry = 20;
+
+	ctx.fillStyle = "red";
+	ctx.textAlign = "center";
+	ctx.textBaseline = "middle";
+	ctx.strokeStyle = "white";
+	ctx.lineWidth = 4;
+	ctx.font = "20px sans-serif";
+	ctx.fillText("A", strx, stry);
+	ctx.fillStyle = "black";
+	ctx.fillText("\u22C5", strx+10, stry);
+	ctx.fillStyle = "blue";
+	ctx.fillText("B", strx+20, stry);
+	ctx.textAlign = "left";
+	ctx.fillStyle = "black";
+	ctx.fillText("= " + dotval, strx+30,stry);
+
+	document.getElementById("dot_out").innerHTML = dotval;
+
+	var sax = "<span style='background-color:#FFCCCC;color:black'>"+dot_p1[0].toFixed(2)+"</span>";
+	var say = "<span style='background-color:#663333;color:white'>"+dot_p1[1].toFixed(2)+"</span>";
+	var sbx = "<span style='background-color:#BBCCEE;color:black'>"+dot_p0[0].toFixed(2)+"</span>";
+	var sby = "<span style='background-color:#222255;color:white'>"+dot_p0[1].toFixed(2)+"</span>";
+
+	var str = "("+sax+", "+say+") &sdot; ("+sbx + ", "+sby+")"
+	str += " we need to take (" + sax + " * " + sbx + ") + (" + say + " * " + sby + ") = " + dotval;
+
+	document.getElementById("dot_example").innerHTML = str;
+	
+	}
+
+function canv_dot_down(e) {
+	var w = e.target.width;
+	var h = e.target.height;
+	var x = remap(0,w,-2.5,2.5,e.offsetX);
+	var y = remap(h,0,-2.5,2.5,e.offsetY);
+	if ((x-dot_p0[0])*(x-dot_p0[0])+(y-dot_p0[1])*(y-dot_p0[1]) < .02) {
+		dot_dragged = 0;
+		}
+	else if ((x-dot_p1[0])*(x-dot_p1[0])+(y-dot_p1[1])*(y-dot_p1[1]) < .02) {
+		dot_dragged = 1;
+		}
+	else {return;}
+	e.target.setPointerCapture(e.pointerId);
+	}
+
+function canv_dot_move(e) {
+	var w = e.target.width;
+	var h = e.target.height;
+	var x = remap(0,w,-2.5,2.5,e.offsetX);
+	var y = remap(h,0,-2.5,2.5,e.offsetY);
+	if (dot_dragged == 0) {
+		dot_p0[0] = Math.max(-2.5,Math.min(2.5,x));
+		dot_p0[1] = Math.max(-2.5,Math.min(2.5,y));
+		var lg = Math.sqrt(dot_p0[0]*dot_p0[0]+dot_p0[1]*dot_p0[1]);
+		if (document.getElementById("dot_sel_snap").value == 0) {
+			dot_p0[0] /= lg;
+			dot_p0[1] /= lg;
+			}
+		if (document.getElementById("dot_sel_snap").value == 1) {
+			if (Math.abs(lg) < 0.1) {
+				dot_p0[0] = 0;
+				dot_p0[1] = 0;
+				}
+			if (Math.abs(lg - 1) < 0.2) {
+				dot_p0[0] /= lg;
+				dot_p0[1] /= lg;
+				}
+			if (Math.abs(lg - 2) < 0.2) {
+				dot_p0[0] /= (0.5*lg);
+				dot_p0[1] /= (0.5*lg);
+				}
+			}
+		document.getElementById("dot_bx").value = dot_p0[0].toFixed(2);
+		document.getElementById("dot_by").value = dot_p0[1].toFixed(2);
+		draw_dot();
+		}
+	else if (dot_dragged == 1) {
+		dot_p1[0] = Math.max(-2.5,Math.min(2.5,x));
+		dot_p1[1] = Math.max(-2.5,Math.min(2.5,y));
+		document.getElementById("dot_ax").value = dot_p1[0].toFixed(2);
+		document.getElementById("dot_ay").value = dot_p1[1].toFixed(2);
+		draw_dot();
+		}
+	}
+
+function canv_dot_up(e) {
+	dot_dragged = -1;
+	}
+
+</script>
+</head>
+<body onload='draw_dot()'>
+<h2>Dot Products</h2>
+
+<p>
+The vector dot product takes in two vectors and returns a number telling us how much the vectors are pointing in the same direction:
+<ul>
+<li> If they are pointing in the exact same direction, the dot product is the product of their lengths
+<li> If they are perpendicular, the dot product is zero
+<li> If they are pointing in the exact opposite direction, the dot product is negative the product of their lengths
+<li> In general, the dot product of two vectors A and B is |A||B|cos(&theta;) where &theta; is the angle between them.
+</ul>
+</p>
+<p>
+Additionally, the dot product of two vectors is very easy to calculate. We just take corresponding components of our vectors and multiply them together. Multiply the x coordinates together, multiply the y coordinates together (and if there are any, multiply the z coordinates together) and then add up the results. So, for instance, to calculate <span id='dot_example'></span>.
+</p>
+
+<p>
+This makes the dot product a very valuable tool for:
+<ul>
+<li> Measuring the length of vectors: A &sdot; A = |A|<sup>2</sup>.
+<li> Measuring the angle between vectors: cos(&theta;) = (A &sdot; B)/(|A||B|).
+<li> Measuring how much one vector is pointing in the direction of another: the length of the projection of A onto B is A cos(&theta;) = (A &sdot; B)/|B|. This is most useful if B already has length 1, as in the interactive below if you select "Length of B (while dragging): Fix to 1".
+</ul>
+</p>
+
+<h3>Using the interactive</h3>
+<ul>
+<li>Enter numbers or drag the arrowheads around to change A and B and see how their dot product changes
+</ul>
+
+<canvas id='canv_dot' width=600 height=600 style='border:1px solid;display:inline-block;vertical-align:top' onpointerdown='canv_dot_down(event)' onpointermove='canv_dot_move(event)' onpointerup='canv_dot_up(event)'></canvas><span style='display:inline-block'>
+<span style='color:red'>A</span> = (<input type='number' style='width:3.5em' id='dot_ax' value=2 step=0.01 oninput='dot_p1[0]=Number(this.value);draw_dot()'>, <input type='number' style='width:3.5em' id='dot_ay' value=1 step=0.01 oninput='dot_p1[1]=Number(this.value);draw_dot()'>)
+<br><span style='color:blue'>B</span> = (<input type='number' style='width:3.5em' id='dot_bx' value=1 step=0.01 oninput='dot_p0[0]=Number(this.value);draw_dot()'>, <input type='number' style='width:3.5em' id='dot_by' value=0 step=0.01 oninput='dot_p0[1]=Number(this.value);draw_dot()'>)
+<br><span style='color:red'>A</span>&sdot;<span style='color:blue'>B</span> = <span id='dot_out' style='font-size:500%'></span>
+<br>Length of <span style='color:blue'>B</span> (while dragging): <select id='dot_sel_snap'><option value=0>Fix to 1</option><option value=1>Snap to Integer</option><option value=2>Neither</option></select>
+<br><input type='checkbox' id='dot_chk_dotted' onchange='draw_dot()'>Show points p where p&sdot;<span style='color:blue'>B</span> = <input type='number' style='width:3em' value=1 step=0.1 id='dot_dotted' oninput='draw_dot()'> (dotted line)
+<br><input type='checkbox' id='dot_chk_isolines' onchange='draw_dot()'>Show many such lines
+<br><input type='checkbox' id='dot_chk_circ' onchange='draw_dot()'>Show values of p&sdot;<span style='color:blue'>B</span> for p on the unit circle
+<br><input type='checkbox' id='dot_chk_proj' onchange='draw_dot()'>Show <span style='color:brown'>projection</span> of <span style='color:red'>A</span> onto <span style='color:blue'>B</span>.
+<br><input type='checkbox' id='dot_chk_lb' onchange='draw_dot()' checked> Label vectors
+<br><input type='checkbox' id='dot_chk_grid' onchange='draw_dot()'> Draw grid
+</span>
+</body>
+</html>

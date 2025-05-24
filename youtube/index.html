@@ -116,7 +116,7 @@ var extra_data = {
 1733941133:{mdrp:1}, //Counter Machines
 1728264630:{s:1}, //Turing Degrees: The Structure of Relative Computability
 1726794199:{}, //Gravity Inside a Hollow Sphere
-1726457830:{t:1}, //Goals-Based Teaching and Assessment
+1726457830:{s:1, t:1}, //Goals-Based Teaching and Assessment
 1723871189:{}, //Transition Matrices #SoMEpi
 1723417403:{mdrp:1}, //Some Lucas Sequences
 1722106311:{}, //The Philosophy of Food-Tongue
@@ -250,7 +250,9 @@ function array_entry_to_string(ent) {
 	str += "</button>";
 	//str += "<br>" + decode_duration(ent);
 	//str += "<br>" + decode_upload_date(ent);
-	str += "</td><td style='position:relative'><h3 style='margin:0px'>" + ent.title + "</h3>"
+	str += "</td><td style='position:relative'><h3 style='margin:0px'>" + ent.title + " ";
+	str += "<a href='https://www.youtube.com/watch?v=" + ent.id + "' title='Watch on Youtube' style='text-decoration:none'>&#9205;</a>";
+	str += "</h3>";
 	str += "<span style='right:0px; top:0px; position:absolute; width:10em'>" + decode_upload_date(ent) + "</span>";
 	str += "</td></tr>";
 	str += "<tr><td><div class='desc' style='height:100px;' tabindex=0>" + string_to_html(ent.description) + "</div></td></tr>";

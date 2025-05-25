@@ -44,7 +44,32 @@ h1, h2, h3 { font-family: "qu", serif;
 
 <h2>Goals</h2>
 
-I began developing online interactives in the fall of 2017 to teach myself javascript and supplement the classes I was teaching at SUNY Oswego. I've mainly been using these as a platform for experimentation: many of my interactives represent me experimenting with a particular library, coding technique or teaching technique, but my hope is that they can be educational as well. I have gotten some positive feedback on these interactives from my students, but have yet to conduct studies of their effectiveness.
+I began developing online interactives in the fall of 2017 to teach myself javascript and supplement the classes I was teaching at SUNY Oswego. I've used these interactives:
+<ul>
+<li> As in-class activities with accompanying worksheets
+<li> During lectures
+<li> As supplemental materials
+<li> To produce videos
+<li> And to experiment with the medium as a teaching tool
+</ul>
+I've also produced interactives for my colleagues to use for their classes.
+
+<h2>Higlights</h2>
+
+<ul>
+<li> <a href="velocity.html"> Velocity</a>: For a while I was very interested in making interactive worksheets, with answer boxes users could type answers into which then get equivalence-checked with math.js or KAS.js. This worksheet was made to walk students through the process of working out the formula for the derivative on their own. It also contains an interactive inside of it that lets users 'drive a car', generating their own position-time and velocity-time graphs so they can see how these are related. I used this inner interactive in my Calc 1 lectures, but haven't yet experimented with these worksheets as an in-class activities.
+<li> <a href="acceleration.html"> Acceleration and Riemann Sums</a>: Another interactive worksheet, this time focused on walking students through the intuition behind Riemann sums and calculating them on their own. I really believe that students will remember concepts better if they figure them out on their own, and that most Calc 1 students can be guided through a series of steps to figure out many of the key ideas of Calc 1 on their own, but this can take more time and teacher guidance than is available.
+<li> <a href="decimal.html"> Reasoning About Approximation</a>: An experiment with the interactive explainer, but without the answer boxes. An understanding of real numbers and how to work with approximations is really helpful for the Calc 1 student, but this topic is often skipped over.
+<li> <a href="lion.html"> An Interactive Simulation of the Mathematical Theory of Big Game Hunting</a>: A silly interactive, but I hope this makes a fairly abstract concept in math highly accessible.
+<li> <a href="deriv.html"> Symbolic Differentiation</a>: One of the mathematical concepts I most want to communicate is the step-by-step formal calculation (see below). This interactive was one of my earlier attempts at such, and I hope can be really helpful for students who have trouble with multi-step derivative problems.
+<li> <a href="t.html"> Transforming Functions</a>: One of my earliest interactives explicitly designed to be used as an in-class activity. This topic really demands an interactive approach: letting students transform a function and see how the graph changes. I also experimented with softening the feedback of the guessing game: instead of telling students they got the problem right or wrong, I just showed the target graph and the student's guess on the same plane, so they can judge for themselves if they got the problem right.
+<li> <a href="quadraticformula.html"> The Quadratic Formula</a>: Another interactive worksheet with automatically generated examples and practice problems. Really pushed the limits of what I could do with math.js, kas.js, and katex.js, and challenged me to identify and handle all cases of simplifying answers from the quadratic formula.
+<li> <a href="graphtable.html"> Functions, Graphs, and Tables</a>: A nice practice problem generator for using formulas for functions, reading graphs and tables, and function compositions that evaluate to numbers.
+<li> <a href="intersection.html"> Intersections Between Lines and Conics</a>: Practice problem generator for linear and quadratic equation review for College Algebra. Here I pushed myself to create an interconnected system of step-by-step walkthroughs that passed to each other when one type of problem reduced to another type of problem.
+<li> <a href="lineartransform.html"> Linear Transformations</a>: Visualizer for 2x2 matrix transformations. I added to this interactive as I taught linear algebra, adding in new visualization tools for new topics as they came up. 
+<li> <a href="https://trkern.itch.io/fractran"> FRACTRAN</a>: A programming puzzle game meant to teach everything one needs to know to program in FRACTRAN, an esoteric programming language by John Conway. Yet again, by walking students through just the right problems in just the right order, it's often possible to get them to figure out big ideas on their own, in which case these ideas will stick with them longer.
+<li> <a href="efg.html"> Ehrenfeucht-Fraïssé Game on Finite Graphs</a>: My introduction to Model Theory was through EF-Games: they're excellently accessible and yet also a powerful tool for reasoning about the expressivity of first-order logic.
+</ul>
 
 <h2>Highlights of the Interactive Medium</h2>
 
@@ -55,9 +80,53 @@ One of the best uses of the interactive medium is providing the user with a task
 <ul>
 <li> <a href = "completethesquare.html"> Completing The Square</a>: Users have to come up with the completing-the-square form of a quadratic, and hopefully develop an algorithm in the process.
 <li> <a href = "lion.html"> An Interactive Simulation of the Mathematical Theory of Big Game Hunting</a>: Short interactive to encourage users to discover binary search on their own.
-<li> <a href = "functiontransform2.html"> Function Transforms</a>: This interactive about function transformations includes a guessing game at the bottom that requires users to really understand what to pay attention to in graph recognition.
+<li> <a href = "t.html"> Function Transforms</a>: This interactive about function transformations includes a guessing game at the bottom that requires users to really understand what to pay attention to in graph recognition.
 <li> <a href = "efg.html"> Ehrenfeucht-Fraïssé Game on Finite Graphs</a>: Discovering winning strategies in this game is equivalent to exploring the expressivity of the first order logic of graphs. These sorts of games originally got me into Model Theory (a branch of logic).
 <li> <a href = "rosenstein.html">Ehrenfeucht-Fraïssé Games on Läuchli-Leonard Linear Orderings</a> Same on infinite linear orderings. Includes an infinite linear ordering visualizer.
+</ul>
+
+<h3>Teaching Programming</h3>
+<p>The best way to learn how to program is to write programs. Inspired by programming games like Zachtronics' TIS-100 and the Lean proof assistant tutorial "the Natural Number Game", I've developed some interactives that provide users with a series of programming problems to guide them through the process of learning a programming language</p>
+
+<h4>Examples:</h4>
+<ul>
+<li> <a href = "https://trkern.itch.io/polynomials"> Polynomials: Enterprise Edition</a> Diophantine equations are Turing complete. This was my first attempt at a programming-puzzle style game, meant to guide users through some of the basic constructions involved in the proof. Unfortunately, the full proof is far too complicated to make a good programming puzzle game. This was a game jam entry, which was described by another entrant as "... the most horrifying abomination to ever grace the earth.  A++ excellent idea."
+<li> <a href = "https://trkern.itch.io/fractran"> FRACTRAN</a> is another esoteric Turing complete programming language, but one that is much easier to prove is Turing complete. This interactive guides users through all they need to understand the proof that FRACTRAN is Turing complete.
+</ul>
+
+<h3>Visual Exploration</h3>
+Throughout mathematics, being able to visualize the same thing in different ways is a vital skill. Digital interactives can allow users to modify an input and see how visually that changes the output.
+
+<h4>Examples:</h4>
+<ul>
+<li> <a href = "t.html"> Function Transforms</a>: The main part of this interactive allows users to see what changes to a graph formula does.
+<li> <a href = "lineartransform.html"> Linear Transformations</a>: I developed this interactive to use in my linear algebra lectures, showing how various matrices transform space.
+<li> <a href = "tree.html"> Parse Trees</a>: Uses my own AST to html routine to allow the user to explore ASTs for algebra.
+<li> <a href = "sampling.html"> Sample Means</a>: Visualize taking lots of samples from a population
+<li> <a href = "velocity.html"> Velocity</a>: A "virtual worksheet" with a widget in the middle allowing one to take a virtual car trip and visualize the resulting position-time and velocity-time graphs. Ultimately the worksheet is meant to lead users to come up with the derivative formula on their own.
+<li> <a href = "shuffle.html"> Shuffling Cards</a>: Originally meant to explore chaos, mostly just turned into a fun visualizer exercise.
+</ul>
+
+<h3>Supplementing Lectures</h3>
+<p>One of the major uses of my interactives that I hadn't anticipated was as visuals during my lectures.</p>
+
+<h4>Examples:</h4>
+<ul>
+<li> <a href="pitable.html"> Plugging-in-really-close-values Simulator</a>: I start my Calc 1 class with this demonstration of approximations to pi-squared to strengthen my students' intuition for real numbers, and foreshadow limits.
+<li> <a href = "velocity.html"> Velocity</a>: When introducing derivatives, I use the interactive on this page to show what features of a position-time graph correspond to physically.
+<li> <a href="lineartransform.html"> Linear Transformations</a>: I developed this interactive alongside my linear algebra lectures, adding new features every time I wanted to visualize something new in my lecture.
+<li> 
+</ul>
+
+<h3>Graphics for Worksheets</h3>
+<p>Another surprising application was using the interactives I had created to generate diagrams for worksheets and quizzes.</p>
+
+<h4>Examples:</h4>
+<ul>
+<li> <a href="pw.html"> Piecewise Functions</a>: Particularly useful for creating graphs for left-hand and right-hand limits in Calc 1.
+<li> <a href="interval.html"> Interval Notation</a>: Useful for creating interval notation diagrams
+<li> <a href="quadraticformula.html"> The Quadratic Formula</a>: As part of this interactive, I built a function that creates sensible walkthroughs for simplifying the results of the quadratic formula. This has made it very easy to publish answers to these sorts of questions.
+<li> <a href="readinggraphs.html"> Reading Graphs</a> Creates good problems for finding domains and ranges given a graph.
 </ul>
 
 <h3>Formalist Propaganda</h3>
@@ -71,33 +140,21 @@ My hope is to spread this philosophy by creating a "Computation Assistant". Simi
 My ultimate goal is to produce something which is accessible to College Algebra students but useful for professional mathematicians. I recall having to preform page-long computations in physics classes, with a small error in one line leading to hours of minus-sign following and error hunting, and software that only allows valid computational steps could be very helpful for this.
 </p>
 <ul>
-<li> <a href = "epeedemo.html"> Electronic Polynomial Educational Experience</a>: This demo is suitable for students at an abstract algebra level, exploring the joys of having to manually apply associativity.
-</ul>
-
-<h3>Visual Exploration</h3>
-Throughout mathematics, being able to visualize the same thing in different ways is a vital skill. Digital interactives can allow users to modify an input and see how visually that changes the output.
-
-<h4>Examples:</h4>
-<ul>
-<li> <a href = "functiontransform2.html"> Function Transforms</a>: The main part of this interactive allows users to see what changes to a graph formula does.
-<li> <a href = "lineartransform.html"> Linear Transformations</a>: I developed this interactive to use in my linear algebra lectures, showing how various matrices transform space.
-<li> <a href = "tree.html"> Parse Trees</a>: Uses my own AST to html routine to allow the user to explore ASTs for algebra.
-<li> <a href = "sampling.html"> Sample Means</a>: Visualize taking lots of samples from a population
-<li> <a href = "velocity.html"> Velocity</a>: A "virtual worksheet" with a widget in the middle allowing one to take a virtual car trip and visualize the resulting position-time and velocity-time graphs. Ultimately the worksheet is meant to lead users to come up with the derivative formula on their own.
-<li> <a href = "shuffle.html"> Shuffling Cards</a>: Originally meant to explore chaos, mostly just turned into a fun visualizer exercise.
+<li> <a href = "epeedemo.html"> Electronic Polynomial Educational Experience</a>: This demo is suitable for students at an abstract algebra level, exploring the joys of having to manually apply associativity. Students at the College Algebra level freely apply n-ary associativity and commutativity rules, so ideally I would want an interactive that makes applying those rules seamless.
+<li> You can see a later rough draft of this <a href='quataxiom.html'>interactive</a> in action on Youtube: <a href="https://www.youtube.com/watch?v=74qE3FqB7UA">What Rules do we Need to Work With Quaternions?</a>
+<li> <a href="associativity.html"> Associativity and Commutativity</a>: You can also play around with this newer system here, where it's all associativity and commutativity.
 </ul>
 
 <h3>Other Experiments</h3>
 <ul>
 <li> <a href = "decimal.html"> Reasoning about Approximation</a>: A guided exploration of the relationship between decimal approximations and interval arithmetic.
 <li> <a href = "trigsum.html"> Trig Sum Formulas</a>: An "interactive without words": Prove the trig sum formula on a diagram with adjustable angles.
-<li> <a href = "https://trkern.itch.io/polynomials"> Polynomials: Enterprise Edition</a> Diophantine equations are Turing complete, so they can be used for a programming video game, similar to Zachtronics' TIS-100 or EXAPUNKS. Game Jam Entry described by another entrant as "... the most horrifying abomination to ever grace the earth.  A++ excellent idea."
 <li> <a href = "whatis.html"> What is Math?</a>: When we present the solution to a math problem, we usually only present one solution path. In this interactive I try visualizing several solution paths at once.
 </ul>
 
 <h2>Development</h2>
 
-All my pages are written by hand in notepad, with html, css, and javascript all contained in one single file. I have made use of a few libraries, but my hope is to eventually replace them with my own. I have already developed my own graph drawing library (tgr.js) and hope to implement a basic computer algebra system this summer.
+All my pages are written by hand in notepad, with html, css, and javascript all contained in one single file. I have made use of a few libraries, but my hope is to eventually replace them with my own. I have already developed my own graph drawing library (tgr.js) and have implemented some basic symbolic algebra tools, such as parsing, displaying, and manipulating formulas (tkas.js), and am currently working on a 3D graphics library.
 
 <ul>
 <li><a href="https://khan.github.io/KaTeX/">KaTeX</a> (<a href="https://github.com/Khan/KaTeX/blob/master/LICENSE.txt">MIT License</a>)
@@ -106,8 +163,9 @@ All my pages are written by hand in notepad, with html, css, and javascript all 
 <li><a href="https://github.com/Khan/KAS">KAS.js</a> (<a href="https://github.com/Khan/KAS/blob/master/LICENSE.txt">MIT License</a>), which depends on <a href="https://underscorejs.org/">underscore.js</a> (<a href="https://github.com/jashkenas/underscore/blob/master/LICENSE">MIT License</a>).
 <li><a href="https://sagecell.sagemath.org/">Sage Math Cell</a> (<a href="https://github.com/sagemath/sagecell/blob/master/LICENSE.txt">Modified BSD license</a>). Information about calling SageMathCell servers directly can be found <a href="http://analyticphysics.com/Coding%20Methods/Accessing%20SageMath%20as%20a%20Web%20Service.htm">here</a> (replace http:// with https:// to avoid a CORS error).
 <li><a href="http://fperucic.github.io/treant-js/">treant.js</a> (<a href="https://github.com/fperucic/treant-js/blob/master/LICENSE">MIT License</a>) which in turn uses <a href="https://dmitrybaranovskiy.github.io/raphael/">raphael</a> (<a href="https://dmitrybaranovskiy.github.io/raphael/license.html"</a>MIT License</a>)
+<li><a href="http://mathquill.com/">MathQuill.js</a> (<a href="http://mozilla.org/MPL/2.0/">Mozilla Public License, v. 2.0</a>), uses <a href='https://jquery.com/'>jQuery</a> (<a href="https://jquery.com/license/">MIT license</a>)
 </ul>
-Color Palettes are from <a href="https://personal.sron.nl/~pault/">Paul Tol's Notes</a>
+Color Palettes are from <a href="https://sronpersonalpages.nl/~pault/">Paul Tol's Notes</a>
 
 
 </body>

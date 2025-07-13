@@ -1,0 +1,177 @@
+<!doctype html>
+<head>
+<script src='tgr.js'></script>
+<script>
+
+function recip_interval(a,b) {
+	if (a < 0 && b > 0) {
+		return([[-Infinity,1/a],[1/b,Infinity]]);
+		}
+	else {
+		return([[1/b,1/a]]);
+		}
+	}
+
+function sin_interval(a,b) {
+	if (a-b > 2*Math.PI) {return([[-1,1]]);}
+	}
+
+function s1ox_interval(a,b) {
+	if (a > b) {return(s1ox_interval(b,a))}
+	if (a <= 0 && b >= 0) {
+		return([[-1,1]]);
+		}
+	var ar = 1/a;
+	var br = 1/b;
+	//at this point, a <= b, so br <= ar
+	if (br-ar > 2*Math.PI) {
+		return([[-1,1]]);
+		}
+
+	var min = Math.min(Math.sin(ar), Math.sin(br));
+	var max = Math.max(Math.sin(ar), Math.sin(br));
+
+	var aa = Math.floor(ar/(2*Math.PI)-1/4);
+	var bb = Math.ceil(br/(2*Math.PI)-1/4);
+	if (aa >= bb) {max = 1}
+
+	aa = Math.floor(ar/(2*Math.PI)-3/4);
+	bb = Math.ceil(br/(2*Math.PI)-3/4);
+	if (aa >= bb) {min = -1}
+
+	//if there's a number of the form pi/2 + 2pik between ar and br, the max is 1. Otherwise, it's the max of sin(ar) and sin(br)
+	//if there's a number of the form k between ar/2pi-1/4 and br/2pi-1/4, the max is 1. Otherwise, it's the max of sin(ar) and sin(br)
+
+	//if there's a number of the form 3pi/2 + 2pik between ar and br, the min is -1. Otherwise, it's the min of sin(ar) and sin(br)
+	//if there's a number of the form k between ar/2pi-3/4 and br/2pi-3/4, the min is -1. Otherwise, it's the min of sin(ar) and sin(br)
+
+	return([[min,max]]);
+
+	}
+
+function remap(imin,imax,omin,omax,t) {
+	return(omin + (t-imin) * (omax-omin)/(imax-imin));
+	}
+
+function draw() {
+	var ctx = document.getElementById("tgr_canv_gr").getContext("2d");
+	var w = ctx.canvas.width;
+	var h = ctx.canvas.height;
+	var data = ctx.getImageData(0,0,w,h);
+	var pd = tgr_graph_array.gr.plotdata;
+	var x, i, y;
+	for (x = 0; x < w; x++) {
+		var xmin = remap(0,pd.width,pd.xmin,pd.xmax,x-.5);
+		var xmax = remap(0,pd.width,pd.xmin,pd.xmax,x+.5);
+		var interval_list = s1ox_interval(xmin,xmax);
+		for (i = 0; i < interval_list.length; i++) {
+			var lmin = interval_list[i][0];
+			var lmax = interval_list[i][1];
+			var ymin = Math.ceil(remap(pd.ymin,pd.ymax,pd.height,0,lmin));
+			var ymax = Math.floor(remap(pd.ymin,pd.ymax,pd.height,0,lmax));
+			ymin = Math.max(ymin,0);
+			ymax = Math.min(ymax,pd.height);
+			for (y = ymin; y >= ymax; y--) {
+				var k = y * w * 4 + x * 4;
+				data.data[k] = 0;
+				data.data[k+1] = 0;
+				data.data[k+2] = 255;
+				data.data[k+3] = 255;
+				}
+			}
+		}
+	ctx.putImageData(data,0,0);
+	}
+
+function draw2() {
+	var ctx = document.getElementById("tgr_canv_gr").getContext("2d", {willReadFrequently: true});
+	var w = ctx.canvas.width;
+	var h = ctx.canvas.height;
+	var data = ctx.getImageData(0,0,w,h);
+	var pd = tgr_graph_array.gr.plotdata;
+
+	var x, i, y, j;
+
+	var dx = 10;
+	var dy = 10;
+
+	var a = [];
+	for (x = 0; x < dx * w; x++) {
+		a.push([]);
+		for (y = 0; y < dy * h; y++) {
+			a[x].push(0);
+			}
+		}
+
+	for (x = 0; x < dx*w; x++) {
+		var xmin = remap(0,dx*w,pd.xmin,pd.xmax,x-.5);
+		var xmax = remap(0,dx*w,pd.xmin,pd.xmax,x+.5);
+		var interval_list = s1ox_interval(xmin,xmax);
+		for (i = 0; i < interval_list.length; i++) {
+			var lmin = interval_list[i][0];
+			var lmax = interval_list[i][1];
+			var ymin = Math.ceil(remap(pd.ymin,pd.ymax,dy*h,0,lmin));
+			var ymax = Math.floor(remap(pd.ymin,pd.ymax,dy*h,0,lmax));
+			ymin = Math.max(ymin,0);
+			ymax = Math.min(ymax,dy*h);
+			for (y = ymin; y >= ymax; y--) {
+				a[x][y] = 1;
+				}
+			}
+		}
+
+	for (x = 0; x < w; x++) {
+		for (y = 0; y < h; y++) {
+			var sum = 0;
+			for (i = 0; i < dx; i++) {
+				for (j = 0; j < dy; j++) {
+					sum += a[dx*x+i][dy*y+j];
+					}
+				}
+			var k = y*w*4+x*4;
+			sum = Math.min(dx*dy,sum*5);
+			data.data[k+0] = remap(0, dx*dy, data.data[k+0],   0, sum);
+			data.data[k+1] = remap(0, dx*dy, data.data[k+1],   0, sum);
+			data.data[k+2] = remap(0, dx*dy, data.data[k+2], 255, sum);
+			data.data[k+3] = remap(0, dx*dy, data.data[k+3], 255, sum);
+			}
+		}
+
+
+/*	for (x = 0; x < w; x++) {
+		var xmin = remap(0,pd.width,pd.xmin,pd.xmax,x-.5);
+		var xmax = remap(0,pd.width,pd.xmin,pd.xmax,x+.5);
+		var interval_list = s1ox_interval(xmin,xmax);
+		for (i = 0; i < interval_list.length; i++) {
+			var lmin = interval_list[i][0];
+			var lmax = interval_list[i][1];
+			var ymin = Math.ceil(remap(pd.ymin,pd.ymax,pd.height,0,lmin));
+			var ymax = Math.floor(remap(pd.ymin,pd.ymax,pd.height,0,lmax));
+			ymin = Math.max(ymin,0);
+			ymax = Math.min(ymax,pd.height);
+			for (y = ymin; y >= ymax; y--) {
+				var k = y * w * 4 + x * 4;
+				data.data[k] = 0;
+				data.data[k+1] = 0;
+				data.data[k+2] = 255;
+				data.data[k+3] = 255;
+				}
+			}
+		}*/
+	ctx.putImageData(data,0,0);
+	}
+
+function boot() {
+	tgr_grapher("gr", [], {xmin:-.9, xmax: 1.7, ymin:-1.3, ymax:1.3, on_redraw:draw2});
+	tgr_grapher("gr2", [{type:"plot", fct:function(x) {return(Math.sin(1/x))}, color:"rgb(0,0,255)"}], {xmin:-.9, xmax: 1.7, ymin:-1.3, ymax:1.3});
+	}
+
+</script>
+</head>
+<body onload='boot()'>
+
+<div id='gr'></div>
+<div id='gr2'></div>
+
+</body>
+</html>

@@ -46,6 +46,7 @@ grapher_obj.type //string one of the following:
 	//"rectangle" (newer rectangle, supports both incolor and edge color)
 	//"bool" (for plotting equalities, inequalities. is not smart)
 	//"rangemagic" (draws lines to the right of a graph. has: .fct, .skips (list of points of discontinuity), .xmin, .xmax, .color)
+	//"domainmagic" (draws lines below a graph. has .fct, .xmin, .xmax, .color)
 grapher_obj.fct //function being plotted (as a javascript function)
 grapher_obj.hints //some hints for the plot.
 	//A hint is: [ptx,pty,lc,rc]
@@ -633,7 +634,7 @@ function tgr_plot(grapher_obj, ctx, pd) {
 		ctx.fillStyle=grapher_obj.incolor;
 		ctx.fill();
 		}
-	if (grapher_obj.type == "dot" || graper_obj.type == "dotlabel") {
+	if (grapher_obj.type == "dot" || grapher_obj.type == "dotlabel") {
 		var pointx,pointy;
 		pointx = tgr_plug(grapher_obj.x,pd);
 		pointy = tgr_plug(grapher_obj.y,pd);
@@ -838,11 +839,13 @@ function tgr_plot(grapher_obj, ctx, pd) {
 			}
 		var xmax, xmin;
 		if (grapher_obj.xmax !== undefined) {
-			xmax = Math.min(pd.xmax,tgr_plug(grapher_obj.xmax,pd));
+			//xmax = Math.min(pd.xmax,tgr_plug(grapher_obj.xmax,pd));
+			xmax = tgr_plug(grapher_obj.xmax,pd);
 			}
 		else {xmax = pd.xmax;}
 		if (grapher_obj.xmin !== undefined) {
-			xmin = Math.max(pd.xmin,tgr_plug(grapher_obj.xmin,pd));
+			//xmin = Math.max(pd.xmin,tgr_plug(grapher_obj.xmin,pd));
+			xmin = tgr_plug(grapher_obj.xmin,pd);
 			}
 		else {xmin = pd.xmin;}
 		var f = grapher_obj.fct;
@@ -867,11 +870,36 @@ function tgr_plot(grapher_obj, ctx, pd) {
 			for (j = Math.round(minimum_y); j <= Math.round(maximum_y); j++) {
 				if (rangel[j]) {continue;}
 				rangel[j] = 1;
-				//console.log(canv1[0], j, pd.width, 1);
 				ctx.fillRect(canv1[0], j, pd.width, 1);
 				}
 			}
-		console.log(rangel);
+		//console.log(rangel);
+		}
+	if (grapher_obj.type == "domainmagic") {
+		//"domainmagic" (draws lines below a graph. has .fct, .xmin, .xmax, .color)
+		var xmax, xmin;
+		if (grapher_obj.xmax !== undefined) {
+			xmax = Math.min(pd.xmax,tgr_plug(grapher_obj.xmax,pd));
+			//xmax = tgr_plug(grapher_obj.xmax,pd);
+			}
+		else {xmax = pd.xmax;}
+		if (grapher_obj.xmin !== undefined) {
+			xmin = Math.max(pd.xmin,tgr_plug(grapher_obj.xmin,pd));
+			//xmin = tgr_plug(grapher_obj.xmin,pd);
+			}
+		else {xmin = pd.xmin;}
+		var f = grapher_obj.fct;
+
+		ctx.beginPath();
+		ctx.fillStyle = grapher_obj.color;
+		ctx.moveTo(...tgr_tocanv([xmin,-Infinity],pd));
+		for (i = 0; i < pd.numpts; i++) {
+			var x = xmin + i * (xmax-xmin)/pd.numpts;
+			var pt = tgr_tocanv([x,f(x)], pd);
+			ctx.lineTo(...pt);
+			}
+		ctx.lineTo(...tgr_tocanv([xmax,-Infinity],pd));
+		ctx.fill();
 		}
 	if ("blend" in grapher_obj) {
 		ctx.globalCompositeOperation = "source-over";

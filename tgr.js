@@ -555,7 +555,7 @@ function tgr_plot(grapher_obj, ctx, pd) {
 		lx2 = tgr_plug(grapher_obj.x2,pd);
 		ly2 = tgr_plug(grapher_obj.y2,pd);
 		var l = grapher_obj.label ?? "";
-		tgr_labeldistance(ctx,tgr_tocanv([lx1,ly1],pd),tgr_tocanv([lx2,ly2],pd),l);
+		tgr_labeldistance(ctx,tgr_tocanv([lx1,ly1],pd),tgr_tocanv([lx2,ly2],pd),l,grapher_obj);
 		}
 	if (grapher_obj.type == "labeledge") {
 		var lx1, lx2, ly1, ly2;
@@ -564,7 +564,7 @@ function tgr_plot(grapher_obj, ctx, pd) {
 		lx2 = tgr_plug(grapher_obj.x2,pd);
 		ly2 = tgr_plug(grapher_obj.y2,pd);
 		var l = grapher_obj.label ?? "";
-		tgr_labeledge(ctx,tgr_tocanv([lx1,ly1],pd),tgr_tocanv([lx2,ly2],pd),l);
+		tgr_labeledge(ctx,tgr_tocanv([lx1,ly1],pd),tgr_tocanv([lx2,ly2],pd),l,grapher_obj);
 		}
 	if (grapher_obj.type == "rect") {
 		var xmax, xmin;
@@ -910,7 +910,7 @@ function tgr_rect(ctx, x1,y1,x2,y2) {
 	ctx.fillRect(x1,y1,x2-x1,y2-y1);
 	}
 
-function tgr_labeldistance(ctx,pt1,pt2,l) {
+function tgr_labeldistance(ctx,pt1,pt2,l,grapher_obj) {
 	var lg = tgr_dist(pt1,pt2);
 	if (lg < 1) {return;}
 	var x = 5*(pt1[0]-pt2[0])/lg;
@@ -948,9 +948,26 @@ function tgr_labeldistance(ctx,pt1,pt2,l) {
 	ctx.fillStyle = "black";
 	ctx.textAlign = "center";
 	ctx.textBaseline = "middle";
-	ctx.strokeStyle="white";
-	ctx.lineWidth = 7;
-	ctx.strokeText(l,.5*pt1[0]+.5*pt2[0]-2*y,.5*pt1[1]+.5*pt2[1]+2*x);
+	if (!("textBack" in grapher_obj) || grapher_obj.textBack == "outline") {
+		ctx.strokeStyle="white";
+		ctx.lineWidth = 7;
+		ctx.strokeText(l,.5*pt1[0]+.5*pt2[0]-2*y,.5*pt1[1]+.5*pt2[1]+2*x);
+		}
+	else if (grapher_obj.textBack == "rectangle") {
+		ctx.fillStyle = "white";
+		var k = ctx.measureText(l);
+		var cx = .5*pt1[0]+.5*pt2[0]-2*y;
+		var cy = .5*pt1[1]+.5*pt2[1]+2*x;
+		var xmin = cx - k.actualBoundingBoxLeft;
+		var xmax = cx + k.actualBoundingBoxRight;
+		var ymin = cy - k.actualBoundingBoxAscent;
+		var ymax = cy + k.actualBoundingBoxDescent;
+		ctx.beginPath();
+		var m = 4;
+		ctx.rect(xmin-m,ymin-m,(xmax-xmin)+2*m,(ymax-ymin)+2*m);
+		ctx.fill();
+		ctx.fillStyle = "black";
+		}
 	ctx.fillText(l,.5*pt1[0]+.5*pt2[0]-2*y,.5*pt1[1]+.5*pt2[1]+2*x);
 	}
 

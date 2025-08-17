@@ -930,7 +930,7 @@ function tgr_plot(grapher_obj, ctx, pd) {
 		ctx.fillStyle = grapher_obj.color;
 		var canv_xmin = tgr_tocanv([xmin,0],pd)[0];
 		var canv_xmax = tgr_tocanv([xmax,0],pd)[0];
-		for (i = canv_xmin; i <= canv_xmax; i++) {
+		for (i = Math.round(canv_xmin); i <= Math.round(canv_xmax); i++) {
 			if ("dots" in grapher_obj) {
 				for (var k = 0; k < grapher_obj.dots.length; k++) {
 					var pt = tgr_tocanv(grapher_obj.dots[k],pd);

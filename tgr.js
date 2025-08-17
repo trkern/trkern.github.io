@@ -860,7 +860,24 @@ function tgr_plot(grapher_obj, ctx, pd) {
 		var dx = (xmax-xmin)/pd.numpts;
 		var x = 0;
 		var j;
+
 		ctx.fillStyle = grapher_obj.color;
+
+		if ("dots" in grapher_obj) {
+			for (j = 0; j < grapher_obj.dots.length; j++) {
+				if (xmin <= grapher_obj.dots[j][0] && grapher_obj.dots[j][0] <= xmax) {
+					var k = tgr_tocanv(grapher_obj.dots[j], pd);
+					if (!rangel[k[1]]) {
+						//ctx.fillRect(k[0], k[1]-dot_y_radius, pd.width-k[0], dot_y_radius*2);
+						for (var z = k[1]-dot_y_radius; z <= k[1]+dot_y_radius; z++) {
+							ctx.fillRect(k[0], z-.5, pd.width-k[0], 1);
+							rangel[z] = 1;
+							}
+						}
+					}
+				}
+			}
+	
 		for (i = 0; i < pd.numpts; i++) {
 			var x1 = xmin + i*(xmax-xmin)/pd.numpts;
 			var x2 = xmin + (i+1)*(xmax-xmin)/pd.numpts;
@@ -878,17 +895,6 @@ function tgr_plot(grapher_obj, ctx, pd) {
 						holeys.push(grapher_obj.holes[j][1]);
 						}
 					}
-				}
-			if ("dots" in grapher_obj) {
-				for (j = 0; j < grapher_obj.dots.length; j++) {
-					if (x1 <= grapher_obj.dots[j][0] && grapher_obj.dots[j][0] <= x2) {
-						var k = tgr_tocanv(grapher_obj.dots[j], pd);
-						if (!rangel[k[1]]) {
-							rangel[k[1]] = 1;
-							ctx.fillRect(k[0], k[1]-dot_y_radius, pd.width-k[0], dot_y_radius*2);
-							}
-						}
-					}			
 				}
 			var canv1 = tgr_tocanv([x1,f(x1)],pd);
 			var canv2 = tgr_tocanv([x2,f(x2)],pd);

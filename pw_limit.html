@@ -695,7 +695,7 @@ function loaduri() {
 	else if (m == 2) {
 		document.getElementById("interval_center").value = Number(l[1]);
 		document.getElementById("interval_radius").value = Number(l[2]);
-		document.getElementById("chk_draw_center").checked = l[3];
+		document.getElementById("chk_draw_center").checked = (l[3]=="1");
 		document.getElementById("interval_color_down").value = "#"+l[4];
 		document.getElementById("interval_opacity_down").value = l[5];
 		document.getElementById("interval_color_right").value = "#"+l[6];
@@ -706,7 +706,7 @@ function loaduri() {
 	else if (m == 3) {
 		document.getElementById("interval_min").value = Number(l[1]);
 		document.getElementById("interval_max").value = Number(l[2]);
-		document.getElementById("chk_draw_center").checked = l[3];
+		document.getElementById("chk_draw_center").checked = (l[3]=="1");
 		document.getElementById("interval_color_down").value = "#"+l[4];
 		document.getElementById("interval_opacity_down").value = l[5];
 		document.getElementById("interval_color_right").value = "#"+l[6];

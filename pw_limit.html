@@ -64,6 +64,7 @@ function makerow(i) {
 	//str += " value='"+pieces[i].fun+"'";
 	//str += " oninput='changefun("+i+")'></td>";
 	var str = "<td><span id='mq"+i+"'></span></td>";
+	str += "<td width='10'></td>";
 	if (pieces[i].style != 10) {str += "<td id='if"+i+"'>If</td>";}
 	else {str += "<td id='if"+i+"'></td>";}
 	str += "<td><input type='number' value='"+pieces[i].lbound+"' style='width:3em";
@@ -103,7 +104,7 @@ function fixbracket() { //not thrilled about this either
 function makeinputs() {
 	var n = Number(document.getElementById("n").value);
 	var i;
-	var str = "<table border=0 class='inps'><tr><td rowspan="+n+" style='vertical-align:middle'>f(x) =</td>";
+	var str = "<table border=0 class='inps'><tr><td rowspan="+n+" style='vertical-align:middle'>f(x)&nbsp;=</td>";
 	str += "<td id='brackettd' rowspan="+n+">";
 	str += "<svg id='bracketsvg' style='width:1em;height:"+(n*1.56)+"em;display:block' viewbox='0 0 47 166' preserveAspectRatio='none'>"; //works, but I'm not happy with hardcoded height
 	str += "<path d='M 26.8,25.8 C 26.8,11.2 31.0,2.2 46.6,0.4 L 46.2,0 C 23.6,0.4 17.4,7.2 17.4,29 L 17.4,59.2 C 17.4,72.6 16.0,79 1.4,82.6 L 1.4,83 C 15.8,86.6 17.4,93 17.4,106.2 L 17.4,138.4 C 17.4,159.4 25.2,165.4 46.2,166 L 46.6,165.601 C 30.6,163.201 26.8,155.201 26.8,140 L 26.8,107.8 C 26.8,94.2 25.0,86.4 10.0,83 L 10.0,82.6 C 25.2,79 26.8,70.6 26.8,57 L 26.8,25.8 z'>";
@@ -255,7 +256,7 @@ function makekx(pl,n) {
 	return(katex.renderToString(kx));
 	}
 
-function maketgr(pl,n,gg) {
+function maketgr(pl,n,skips,gg) {
 	var lw = 4;
 	if (gg) {
 		lw = 6;
@@ -270,7 +271,7 @@ function maketgr(pl,n,gg) {
 		s = pl[i].style;
 		f = kasfct(pl[i].fun);
 		if (s != 0) {
-			tobj = {type:"plot", fct:f, color:pl[i].color, linewidth:lw};
+			tobj = {type:"plot", fct:f, color:pl[i].color, linewidth:lw, skips:skips};
 			if("linewidth" in pl[i]) {
 				tobj.linewidth = pl[i].linewidth;
 				}
@@ -387,6 +388,16 @@ function percent_to_hex(i) {
 	return("00");
 	}
 
+function parse_comma_list(str) {
+	var l = str.split(",");
+	var rval = [];
+	for (var i = 0; i < l.length; i++) {
+		var s = l[i].trim();
+		if (!isNaN(parseFloat(s))) {rval.push(parseFloat(s))}
+		}
+	return(rval);
+	}
+
 function upd() {
 	fixbracket();	
 
@@ -396,8 +407,10 @@ function upd() {
 
 	var draw_interval = false;
 
+	var skips = parse_comma_list(document.getElementById("disc_hints").value);
+
 	if (document.getElementById("chk_showgg").checked) {
-		l = l.concat(maketgr(ggt,ggt.length,true));
+		l = l.concat(maketgr(ggt,ggt.length,[],true));
 		}
 
 	document.getElementById("interval_point_div").style = "display:none";
@@ -447,13 +460,13 @@ function upd() {
 			var max = Math.min(Number(document.getElementById("interval_max").value), upperbound(pieces[i]));
 			if (min < max) {
 				l.push({type:"domainmagic", fct:kasfct(pieces[i].fun), xmin:min, xmax:max, color:domain_color, holes:holes, dots:dots, radius:hole_radius});
-				l.push({type:"rangemagic", fct:kasfct(pieces[i].fun), xmin:min, xmax:max, color:range_color, holes:holes, dots:dots, radius:hole_radius, hole_search_radius:hole_search_radius});
+				l.push({type:"rangemagic", fct:kasfct(pieces[i].fun), xmin:min, xmax:max, color:range_color, holes:holes, dots:dots, radius:hole_radius, hole_search_radius:hole_search_radius, skips:skips});
 				}
 			}
 		}
 
 	if (document.getElementById("chk_showgraph").checked) {
-		l = l.concat(maketgr(pieces,n));
+		l = l.concat(maketgr(pieces,n,skips));
 		}
 
 	if (document.getElementById("sel_interval").value == "point") {
@@ -689,30 +702,31 @@ function loaduri() {
 
 	var m = l[0];
 	document.getElementById("sel_interval").value = ["none", "point", "center", "ends"][m];
+	document.getElementById("disc_hints").value = l[1];
 	if (m == 1) {
-		document.getElementById("interval_point").value = Number(l[1]);
+		document.getElementById("interval_point").value = Number(l[2]);
 		}
 	else if (m == 2) {
-		document.getElementById("interval_center").value = Number(l[1]);
-		document.getElementById("interval_radius").value = Number(l[2]);
-		document.getElementById("chk_draw_center").checked = (l[3]=="1");
-		document.getElementById("interval_color_down").value = "#"+l[4];
-		document.getElementById("interval_opacity_down").value = l[5];
-		document.getElementById("interval_color_right").value = "#"+l[6];
-		document.getElementById("interval_opacity_right").value = l[7];
-		document.getElementById("interval_draw_radius").value = l[8];
-		document.getElementById("interval_search_radius").value = l[9];
+		document.getElementById("interval_center").value = Number(l[2]);
+		document.getElementById("interval_radius").value = Number(l[3]);
+		document.getElementById("chk_draw_center").checked = (l[4]=="1");
+		document.getElementById("interval_color_down").value = "#"+l[5];
+		document.getElementById("interval_opacity_down").value = l[6];
+		document.getElementById("interval_color_right").value = "#"+l[7];
+		document.getElementById("interval_opacity_right").value = l[8];
+		document.getElementById("interval_draw_radius").value = l[9];
+		document.getElementById("interval_search_radius").value = l[10];
 		}
 	else if (m == 3) {
-		document.getElementById("interval_min").value = Number(l[1]);
-		document.getElementById("interval_max").value = Number(l[2]);
-		document.getElementById("chk_draw_center").checked = (l[3]=="1");
-		document.getElementById("interval_color_down").value = "#"+l[4];
-		document.getElementById("interval_opacity_down").value = l[5];
-		document.getElementById("interval_color_right").value = "#"+l[6];
-		document.getElementById("interval_opacity_right").value = l[7];
-		document.getElementById("interval_draw_radius").value = l[8];
-		document.getElementById("interval_search_radius").value = l[9];
+		document.getElementById("interval_min").value = Number(l[2]);
+		document.getElementById("interval_max").value = Number(l[3]);
+		document.getElementById("chk_draw_center").checked = (l[4]=="1");
+		document.getElementById("interval_color_down").value = "#"+l[5];
+		document.getElementById("interval_opacity_down").value = l[6];
+		document.getElementById("interval_color_right").value = "#"+l[7];
+		document.getElementById("interval_opacity_right").value = l[8];
+		document.getElementById("interval_draw_radius").value = l[9];
+		document.getElementById("interval_search_radius").value = l[10];
 		}
 
 	str = k[1];
@@ -724,6 +738,7 @@ function loaduri() {
 function makepermalink() {
 	var base = document.URL.split("?")[0];
 	var settings = ["none","point","center","ends"].indexOf(document.getElementById("sel_interval").value);
+	settings += "_" + (parse_comma_list(document.getElementById("disc_hints").value)).toString();
 	if (settings == 1) {
 		settings += "_" + document.getElementById("interval_point").value;
 		}
@@ -975,9 +990,14 @@ var ex_face = [
 	{fun:"\\left(\\frac{x}{2}\\right)^2-2.5",lbound:-2,ubound:2,style:6,color:"#000000"}
 	];
 
+//var ex_hyp = [
+//	{fun:"\\frac{1}{x}",lbound:0,ubound:-0.01,style:2,color:"#000000"},
+//	{fun:"\\frac{1}{x}",lbound:0.01,ubound:0,style:8,color:"#000000"},
+//	];
+
 var ex_hyp = [
-	{fun:"\\frac{1}{x}",lbound:0,ubound:-0.01,style:2,color:"#000000"},
-	{fun:"\\frac{1}{x}",lbound:0.01,ubound:0,style:8,color:"#000000"},
+	{fun:"\\frac{1}{x}",lbound:0,ubound:0,style:10,color:"#000000"},
+	"0",
 	];
 
 var ex_point1 = [
@@ -995,11 +1015,13 @@ var ex_jump = [
 	]
 
 var ex_osc = [
-	{fun:"\\sin\\left(\\frac{1}{x}\\right)", lbound:0, ubound:0, style:10,color:"#000000"}
+	{fun:"\\sin\\left(\\frac{1}{x}\\right)", lbound:0, ubound:0, style:10,color:"#000000"},
+	"0"
 	]
 
 var ex_infosc = [
-	{fun:"\\frac{1}{x}\\sin\\left(\\frac{1}{x}\\right)", lbound:0, ubound:0, style:10, color:"#000000"}
+	{fun:"\\frac{1}{x}\\sin\\left(\\frac{1}{x}\\right)", lbound:0, ubound:0, style:10, color:"#000000"},
+	"0"
 	]
 
 var ex_default = [
@@ -1012,18 +1034,25 @@ function turn_funs_on() {
 
 function loadex(ex) {
 	g_changefuns_on = false;
+	document.getElementById("disc_hints").value = "";
 	var i;
 	var j;
 	var tobj;
+	var l = ex.length;
 	pieces = [];
 	for (i = 0; i < ex.length; i++) {
+		if (typeof(ex[i]) == "string") {
+			l--;
+			document.getElementById("disc_hints").value = ex[i];
+			continue;
+			}
 		tobj = {};
 		for (j in ex[i]) {
 			tobj[j] = ex[i][j];
 			}
 		pieces.push(tobj);
 		}
-	document.getElementById("n").value = ex.length;
+	document.getElementById("n").value = l;
 	makeinputs();
 	requestAnimationFrame(turn_funs_on);
 	}
@@ -1110,6 +1139,12 @@ Number of Pieces: <input type="number" id="n" style="width:3em" oninput="makeinp
 <input type="checkbox" id="chk_pluginx" onchange="upd()"> Show Visualizer <input type='color' id='plugincolor' value='#66CCEE' oninput='upd()'>
 <br>x:<input type="number" style="width:3.5em" id="pluginx" oninput="upd()" step=.02>
 &nbsp; &nbsp; &nbsp; <span id="pluginx_out"></span>
+</fieldset>
+
+
+<fieldset>
+<legend>Discontinuity Hints</legend>
+Please list any points of discontinuity caused by denominators being equal to zero: <input id='disc_hints' oninput='upd()'>
 </fieldset>
 
 <fieldset>

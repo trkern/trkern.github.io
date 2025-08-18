@@ -53,6 +53,7 @@ grapher_obj.hints //some hints for the plot.
 		//lc=connect to the left? (NOT IMPLEMENTED)
 		//rc=connect to the right? (NOT IMPLEMENTED)
 	//hints must be ordered from left to right
+grapher_obj.skips //for "rangemagic", "plot" (list of points of discontinuity)
 grapher_obj.tmin //for parametric plots, may be a function of plotdata
 grapher_obj.tmax //for parametric plots, may be a function of plotdata
 grapher_obj.dt //for parametric plots
@@ -474,6 +475,14 @@ function tgr_plot(grapher_obj, ctx, pd) {
 			if (grapher_obj.nojump && tgr_detect_jump(tgr_tocanv([x1,f(x1)],pd),tgr_tocanv([x2,f(x2)],pd),pd)) {
 				ctx.stroke();
 				ctx.beginPath();
+				}
+			if ("skips" in grapher_obj) {
+				for (var k = 0; k < grapher_obj.skips.length; k++) {
+					if (x1 <= grapher_obj.skips[k] && grapher_obj.skips[k] <= x2) {
+						ctx.stroke();
+						ctx.beginPath();
+						}
+					}
 				}
 			ctx.lineTo(...tgr_tocanv([x2,f(x2)],pd));
 			ctx.stroke();
@@ -900,6 +909,10 @@ function tgr_plot(grapher_obj, ctx, pd) {
 			var canv2 = tgr_tocanv([x2,f(x2)],pd);
 			var minimum_y = Math.min(canv1[1], canv2[1]);
 			var maximum_y = Math.max(canv1[1], canv2[1]);
+			if (minimum_y < 0) {minimum_y = 0;}
+			if (minimum_y > pd.height) {continue;}
+			if (maximum_y > pd.height) {maximum_y = pd.height;}
+			if (maximum_y < 0) {continue;}
 			for (j = Math.ceil(minimum_y); j <= Math.floor(maximum_y); j++) {
 				var currentyup = tgr_fromcanv([0,j-y_radius],pd)[1];
 				var currentydown = tgr_fromcanv([0,j+y_radius],pd)[1];

@@ -1024,6 +1024,22 @@ var ex_infosc = [
 	"0"
 	]
 
+var ex_32 = [
+	{fun:"32x", lbound:0, ubound:1/32, style:7, color:"#000000"}
+	]
+var i;
+for (i = 1; i < 32; i++) {
+	ex_32.push({fun:"32x-"+i, lbound: i/32, ubound: (i+1)/32, style:6, color:"#000000"});
+	}
+
+var ex_16 = [
+	{fun:"16x", lbound:0, ubound:1/16, style:7, color:"#000000"}
+	]
+var i;
+for (i = 1; i < 16; i++) {
+	ex_16.push({fun:"16x-"+i, lbound: i/16, ubound: (i+1)/16, style:6, color:"#000000"});
+	}
+
 var ex_default = [
 	{fun:"x^2", lbound:0, ubound:0, style:10, color:"#000000"}
 	]

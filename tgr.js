@@ -887,9 +887,11 @@ function tgr_plot(grapher_obj, ctx, pd) {
 				}
 			}
 	
-		for (i = 0; i < pd.numpts; i++) {
-			var x1 = xmin + i*(xmax-xmin)/pd.numpts;
-			var x2 = xmin + (i+1)*(xmax-xmin)/pd.numpts;
+		var pixelwidth = tgr_tocanv([xmax,0],pd)[0] - tgr_tocanv([xmin,0],pd)[0]
+
+		for (i = 0; i < pixelwidth; i++) {
+			var x1 = xmin + i*(xmax-xmin)/pixelwidth;
+			var x2 = xmin + (i+1)*(xmax-xmin)/pixelwidth;
 			var skipout = 0;
 			if ("skips" in grapher_obj) {
 				for (j = 0; j < grapher_obj.skips.length; j++) {

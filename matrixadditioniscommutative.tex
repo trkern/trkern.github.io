@@ -1,0 +1,18 @@
+\documentclass{amsart}
+
+\begin{document}
+
+\textbf{Claim:} Let $A,B,C$ be $n \times n$ Matrices. Then $A+B=B+A$.\\
+
+\textbf{Proof:} In order to show that these two matrix expressions are equal, we need to show that $(A+B)_{ij} = (B+A)_{ij}$ for any indices $1 \leq i,j \leq n$.
+\renewcommand{\arraystretch}{2}
+\[\begin{array}{rl@{\qquad}l}
+&(A+B)_{ij}\\
+=&A_{ij}+B_{ij} & \text{Definition of Matrix Addition}\\
+=&B_{ij}+A_{ij} & \text{Commutativity of Addition for Real Numbers}\\
+=&(B+A)_{ij} & \text{Definition of Matrix Addition (Reverse)}
+\end{array}\]
+
+Thus showing that $(A+B)_{ij}=(B+A)_{ij}$ as desired.
+
+\end{document}

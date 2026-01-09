@@ -16,15 +16,18 @@ plotdata //Structure containing data for how the graph should look
 	width
 	height
 	on_redraw
+	on_window_change
 	numpts
 	showaxes
 	showgrid
-	dragging
+	dragging //for keeping track of if we are dragging the window
 	labelaxes //numbers on both axes
 	trigxaxis
 	ctarg //target div for controls
 	labelpoints
 	no_y
+	static //can't zoom, etc.
+	no_control
 
 grapher_obj.type //string one of the following:
 	//"none" - does nothing, not sure why you'd need this
@@ -39,6 +42,7 @@ grapher_obj.type //string one of the following:
 	//"vf" (vector field, still working on)
 	//"vec"
 	//"label"
+	//"labeledge"
 	//"vline" (vertical line)
 	//"hline" (horizontal line)
 	//"polyg" (polygon)
@@ -1109,6 +1113,10 @@ function tgr_arrowhead(ctx,pt1,pt2) {
 
 function tgr_grapher(id, grapher_objs, plotdata) {
 	plotdata = plotdata || {};
+	if (("xmin" in plotdata) && !("oxmin" in plotdata)) {plotdata.oxmin = plotdata.xmin};
+	if (("xmax" in plotdata) && !("oxmax" in plotdata)) {plotdata.oxmax = plotdata.xmax};
+	if (("ymin" in plotdata) && !("oymin" in plotdata)) {plotdata.oymin = plotdata.ymin};
+	if (("ymax" in plotdata) && !("oymax" in plotdata)) {plotdata.oymax = plotdata.ymax};
 	plotdata = Object.assign({},tgr_default_plotdata,plotdata);
 	var targ = id;
 	if ("ctarg" in plotdata) {
@@ -1116,7 +1124,12 @@ function tgr_grapher(id, grapher_objs, plotdata) {
 		}
 	var ts = tgr_string(id, grapher_objs, plotdata);
 	document.getElementById(id).innerHTML = ts[0];
-	document.getElementById(targ).innerHTML += ts[1];
+	if (("no_control" in plotdata) && plotdata.no_control) {
+		document.getElementById(targ).innerHTML += "<span style='display:none'>"+ts[1]+"</span>";
+		}
+	else {
+		document.getElementById(targ).innerHTML += ts[1];
+		}
 	tgr_graph_array[id] = {grapher_objs:{}, plotdata:{}};
 	var i;
 	tgr_graph_array[id].grapher_objs = [];
@@ -1130,6 +1143,10 @@ function tgr_grapher(id, grapher_objs, plotdata) {
 function tgr_grapher_string(id, grapher_objs, plotdata) { //doesn't support ctarg, obviously.
 	var blanksvg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3Crect width='100%25' height='100%25' fill='white' /%3E%3C/svg%3E";
 	plotdata = plotdata || {};
+	if (("xmin" in plotdata) && !("oxmin" in plotdata)) {plotdata.oxmin = plotdata.xmin};
+	if (("xmax" in plotdata) && !("oxmax" in plotdata)) {plotdata.oxmax = plotdata.xmax};
+	if (("ymin" in plotdata) && !("oymin" in plotdata)) {plotdata.oymin = plotdata.ymin};
+	if (("ymax" in plotdata) && !("oymax" in plotdata)) {plotdata.oymax = plotdata.ymax};
 	plotdata = Object.assign({},tgr_default_plotdata,plotdata);
 	var ts = tgr_string(id, grapher_objs, plotdata);
 	tgr_graph_array[id] = {grapher_objs:{}, plotdata:{}};
@@ -1139,6 +1156,7 @@ function tgr_grapher_string(id, grapher_objs, plotdata) { //doesn't support ctar
 		tgr_graph_array[id].grapher_objs[i] = Object.assign({},tgr_default_grapher_obj,grapher_objs[i]);
 		}
 	tgr_graph_array[id].plotdata = Object.assign({},plotdata);
+	if (plotdata.no_control) {ts[1] = ""}
 	var str = "<span id='"+id+"'>"+ts[0] + ts[1]+"</span>";
 	//setTimeout(function(){tgr_draw_graph(id);},10);
 	str += "<img src=\""+blanksvg+"\" onload='tgr_draw_graph(\""+id+"\")'>";
@@ -1179,9 +1197,11 @@ function tgr_update_plotdata(id,pd) { //pd may be partial
 		}
 	tgr_update_bound_boxes(id);
 	tgr_draw_graph(id);
+	if ("on_window_change" in pd) {pd.on_window_change(pd)}
 	}
 
 function tgr_update_bound_boxes(id) {
+	if (tgr_graph_array[id].plotdata.no_control) {return;}
 	document.getElementById("tgr_plotminx_"+id).value = tgr_graph_array[id].plotdata.xmin;
 	document.getElementById("tgr_plotmaxx_"+id).value = tgr_graph_array[id].plotdata.xmax;
 	document.getElementById("tgr_plotminy_"+id).value = tgr_graph_array[id].plotdata.ymin;
@@ -1189,6 +1209,7 @@ function tgr_update_bound_boxes(id) {
 	}
 
 function tgr_evt(id,e) {
+	if (tgr_graph_array[id].plotdata.static) {return;}
 	tgr_graph_array[id].plotdata.xmin = Number(document.getElementById("tgr_plotminx_"+id).value);
 	tgr_graph_array[id].plotdata.xmax = Number(document.getElementById("tgr_plotmaxx_"+id).value);
 	if (!tgr_graph_array[id].plotdata.no_y) {
@@ -1196,9 +1217,11 @@ function tgr_evt(id,e) {
 		tgr_graph_array[id].plotdata.ymax = Number(document.getElementById("tgr_plotmaxy_"+id).value);
 		}
 	tgr_draw_graph(id);
+	if ("on_window_change" in pd) {pd.on_window_change(pd)}
 	}
 
 function tgr_wheel(id,e) {
+	if (tgr_graph_array[id].plotdata.static) {return;}
 	var m = 1;
 	e.preventDefault();
 	if (e.deltaY > 0) {m=1.25;}
@@ -1221,16 +1244,19 @@ function tgr_wheel(id,e) {
 	tgr_graph_array[id].plotdata = pd;
 	tgr_update_bound_boxes(id);
 	tgr_draw_graph(id);
+	if ("on_window_change" in pd) {pd.on_window_change(pd)}
 	}
 
 function tgr_mdown(id,e) {
-	var rect=e.target.getBoundingClientRect();
-	var eX = e.clientX-rect.x;
-	var eY = e.clientY-rect.y;
+	//var rect=e.target.getBoundingClientRect();
+	//var eX = e.clientX-rect.x;
+	//var eY = e.clientY-rect.y;
 	tgr_graph_array[id].plotdata.dragging = true;
+	e.target.setPointerCapture(e.pointerId);
 	}
 
 function tgr_mmove(id,e) {
+	if (tgr_graph_array[id].plotdata.static) {return;}
 	if (tgr_graph_array[id].plotdata.dragging) {
 		var pd = tgr_graph_array[id].plotdata;
 		var delt = tgr_delta_fromcanv([e.movementX,e.movementY],pd);
@@ -1242,6 +1268,7 @@ function tgr_mmove(id,e) {
 			}
 		tgr_update_bound_boxes(id);
 		tgr_draw_graph(id);
+		if ("on_window_change" in pd) {pd.on_window_change(pd)}
 		}
 	//console.log(tgr_graph_array[id].plotdata);
 	//console.log(tgr_fromcanv([eX,eY],tgr_graph_array[id].plotdata));
@@ -1252,6 +1279,7 @@ function tgr_mup(id,e) {
 	}
 
 function tgr_zoom(st,id) {
+	if (pd.static) {return;}
 	var pd = tgr_graph_array[id].plotdata;
 	if (st == "in" || st == "inH") {
 		var oxmin = pd.xmin;
@@ -1283,6 +1311,7 @@ function tgr_zoom(st,id) {
 		}
 	tgr_update_bound_boxes(id);
 	tgr_draw_graph(id);
+	if ("on_window_change" in pd) {pd.on_window_change(pd)}
 	}
 
 function tgr_reset(id) {
@@ -1293,6 +1322,7 @@ function tgr_reset(id) {
 	pd.ymax = pd.oymax;
 	tgr_update_bound_boxes(id);
 	tgr_draw_graph(id);
+	if ("on_window_change" in pd) {pd.on_window_change(pd)}
 	}
 
 function tgr_zoom_string(inq,h,v) {
@@ -1344,7 +1374,7 @@ function tgr_string(id, grapher_objs, plotdata) {
 	var cstr = "";
 	var gstr = "";
 	cstr = "<canvas id='tgr_canv_"+id+"' width="+plotdata.width+" height="+plotdata.height+" style='border:1px solid'";
-	cstr += " onwheel='tgr_wheel("+'"'+id+'"'+",event)' onmousedown='tgr_mdown("+'"'+id+'"'+",event)' onmousemove='tgr_mmove("+'"'+id+'"'+",event)' onmouseup='tgr_mup("+'"'+id+'"'+",event)' onmouseleave='tgr_mup("+'"'+id+'"'+",event)'></canvas>";
+	cstr += " onwheel='tgr_wheel("+'"'+id+'"'+",event)' onpointerdown='tgr_mdown("+'"'+id+'"'+",event)' onpointermove='tgr_mmove("+'"'+id+'"'+",event)' onpointerup='tgr_mup("+'"'+id+'"'+",event)''></canvas>";
 	gstr += "<table> <tr> <td>";
 	gstr += "Min x: <input type='number' id='tgr_plotminx_"+id+"' oninput='tgr_evt("+'"'+id+'"'+",event)' value="+plotdata.xmin+" style='width:4em'>";
 	gstr += "</td><td>"

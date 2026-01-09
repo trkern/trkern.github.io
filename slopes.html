@@ -1,0 +1,600 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<link rel="image_src" href="icon.png">
+<script src='tgr.js'></script>
+<script src='underscore-min.js'></script>
+<script src='kas.js'></script>
+<script src='katex.min.js'></script>
+<title> Looking at Slopes </title>
+<script>
+
+function ribet(mn,mx) {
+	return(Math.floor(Math.random()*(mx-mn+1))+mn);
+	}
+
+function bootkatex() {
+	var l = document.getElementsByClassName("k");
+	var k = l.length;
+	var i;
+	for (i = 0; i < k; i++) {
+		katex.render(l[i].title,l[i],{});
+		}
+	}
+
+function kasfct(str) {
+	try{
+		if (str == "") {return(function(x){return(NaN);});}
+		if (!isNaN(str)) {
+			return(function(x){return(str)});
+			}
+		var c = KAS.parse(str).expr.compile();
+		rval = function(x) {return(c({x:x}))};
+		return(rval);
+		}
+	catch(e) {
+		return(function(x){return(NaN);});
+		}
+	}
+
+function inp_zoom_preview() {
+	try {
+		var str = document.getElementById("inp_zoom_fun").value;
+		var tex = KAS.parse(str).expr.tex();
+		document.getElementById("zoom_preview").innerHTML = katex.renderToString(tex);
+		}
+	catch(e) {
+		document.getElementById("zoom_preview").innerHTML = "";
+		}
+	}
+
+function graph_zoom() {
+	var str = document.getElementById("inp_zoom_fun").value;
+	var k = kasfct(str);
+	var gobjs = [
+		{type:"plot", fct: k, linewidth:3}
+		];
+	tgr_update_grapher_objs("gr_zoom", gobjs);
+	}
+
+function tablcheck() {
+	var i;
+	for (i = 0; i < 5; i++) {
+		var x = document.getElementById("tabl"+i+"_x").value;
+		var y = document.getElementById("tabl"+i+"_y").value;
+		var m = document.getElementById("tabl"+i+"_m").value;
+		if (x != "" && (!isNaN(x))) {
+			document.getElementById("tabll"+i+"_x").innerHTML = x;
+			if (y == "" || isNaN(y)) {
+				document.getElementById("tabl"+i+"_y").className = "";
+				document.getElementById("tabll"+i+"_y").innerHTML = "";
+				}
+			else if (Math.abs(Number(y)-Number(x)*Number(x)) < .01) {
+				document.getElementById("tabl"+i+"_y").className = "good";
+				document.getElementById("tabll"+i+"_y").innerHTML = y;
+				}
+			else {
+				document.getElementById("tabl"+i+"_y").className = "bad";
+				document.getElementById("tabll"+i+"_y").innerHTML = "";
+				}
+			if (m == "" || isNaN(m)) {
+				document.getElementById("tabl"+i+"_m").className = "";
+				document.getElementById("tabll"+i+"_m").innerHTML = "";
+				}
+			else if (Math.abs(Number(m)-2*Number(x)) < .1) {
+				document.getElementById("tabl"+i+"_m").className = "good";
+				document.getElementById("tabll"+i+"_m").innerHTML = m;
+				}
+			else {
+				document.getElementById("tabl"+i+"_m").className = "bad";
+				document.getElementById("tabll"+i+"_m").innerHTML = "";
+				}
+			}
+		}
+	}
+
+function tabllgo() {
+	var gobjs = [{type:"plot", fct:function(x){return(x*x)}, linewidth:3, color:"green"}];
+	for (var i = 0; i < 5; i++) {
+		var f = kasfct(document.getElementById("tabll"+i+"_f").value)
+		gobjs.push({type:"plot", fct:f, linewidth:3, color:"blue"});
+		}
+	tgr_update_grapher_objs("gr_tabll", gobjs);
+	}	
+
+function seesaw(k) {
+	document.getElementById("seesaw_r").value = k;
+	document.getElementById("seesaw_n").value = k;
+	var gobjs = [{type:"plot", fct:function(x) {return(k*x);}, linewidth:3}];
+	tgr_update_grapher_objs("gr_seesaw", gobjs)
+	}
+
+
+
+function random_perm(n) {
+	var i;
+	var l = [];
+	var rval = [];
+	for (i = 0; i < n; i++) {
+		l.push(i);
+		}
+	for (i = 0; i < n; i++) {
+		var j = ribet(0,l.length-1);
+		rval.push(l[j]);
+		l.splice(j,1);
+		}
+	return(rval);
+	}
+
+function tabl_bump(e,i) {
+	console.log(e,i);
+	console.log(e.target.value % 2);
+	console.log(document.getElementById("tabl_possibleslope"+i).value);
+	if ((e.target.value % 2) == 1) {
+		document.getElementById("tabl_possibleslope"+i).value = e.target.value;
+		document.getElementById("tabl_possibleslope"+i).className = e.target.className;
+		}
+	if ((e.target.value % 2) == 0 && (document.getElementById("tabl_possibleslope"+i).classname != "good")) {
+		document.getElementById("tabl_possibleslope"+i).value = -1;
+		document.getElementById("tabl_possibleslope"+i).className = ""; 
+		}
+	}
+
+function boot_tabl_slope() {
+	var str = '<table border=1><tr><td>Graph</td><td>Behavior</td><td>Slope is</td><td>Possible Slope</td><td>Which is True?</td><td>Which is True?</td></tr>'
+	var behaviors = ['Decreasing', 'Decreasing', 'Decreasing', 'Constant', 'Increasing', 'Increasing', 'Increasing'];
+	var slopeis = ['Smaller than -1', '-1', 'Between -1 and 0', '0', 'Between 0 and 1', '1', 'Larger than 1'];
+	var slopes = [ribet(-7,-3), -1, ribet(-30,-20)/100, 0, ribet(20,30)/100, 1, ribet(3,7)];
+	var perm = random_perm(7);
+	var lowb1 = ribet(0,9).toString();
+	var dec = ribet(1,9).toString();
+	var lowb = ribet(0,8);
+	var upb = ribet(lowb+1,9);
+	for (var i = 0; i < 7; i++) {
+		let sl = slopes[perm[i]];
+		let b = ribet(-1,1);
+		str += "<tr>";
+		str += "<td>" + tgr_grapher_string("gr_tabl_slope"+i, [{type:"plot", fct:function(x){return(x*sl+b)}, linewidth:3}], {no_control:true, width:50, height:50, static:true, showgrid:false,showaxes:false,labelaxes:false}) + "</td>"
+
+		str += "<td><select id='tabl_behavior"+i+"' oninput='if(this.value==0) {this.className = \"\"; return}; this.className=(this.value=="
+		str += [1,1,1,2,3,3,3][perm[i]];
+		str += ")?\"good\":\"bad\"'><option value=0></option><option value=1>Decreasing</option><option value=2>Constant</option><option value=3>Increasing</option></select><span></span></td>"
+
+		str += "<td><select id='tabl_slopeis"+i+"' oninput='if(this.value==-1) {this.className = \"\"; return}; this.className=(this.value=="
+		str += [0,1,2,3,4,5,6][perm[i]];
+		str += ")?\"good\":\"bad\"; tabl_bump(event,"+i+")'><option value=-1></option><option value=0>Smaller than -1</option><option value=1>-1</option><option value=2>Between -1 and 0</option><option value=3>0</option><option value=4>Between 0 and 1</option><option value=5>1</option><option value=6>Larger than 1</option></select><span></span></td>"
+
+		str += "<td><select id='tabl_possibleslope"+i+"' oninput='if(this.value==-1) {this.className = \"\"; return}; this.className=(this.value=="
+		str += perm[i];
+		str += ")?\"good\":\"bad\"'><option value=-1></option>"
+		for (var j = 0; j < 7; j++) {
+			str += "<option value="+j+">" + slopes[j] + "</option>";
+			}
+		str += "</select><span></span></td>";
+
+		str += "<td><select id='tabl_fact1"+i+"' oninput='if(this.value==0) {this.className = \"\"; return}; this.className=(this.value=="
+		str += [3,3,3,2,1,1,1][perm[i]];
+		str += ")?\"good\":\"bad\"'>"//<option value=0></option>"
+
+		str += "<option value=0></option>";
+		str += "<option value=1> f("+lowb1+") < f("+lowb1+"."+dec+")</option>";
+		str += "<option value=2> f("+lowb1+") = f("+lowb1+"."+dec+")</option>";
+		str += "<option value=3> f("+lowb1+") > f("+lowb1+"."+dec+")</option>";
+		str += "</select><span></span></td>";
+
+		str += "<td><select id='tabl_fact2"+i+"' oninput='if(this.value==0) {this.className = \"\"; return}; this.className=(this.value=="
+		str += [1,1,1,2,3,3,3][perm[i]];
+		str += ")?\"good\":\"bad\"'>"//<option value=0></option>"
+		str += "<option value=0></option>";
+		str += "<option value=1> f("+upb+") < f("+lowb+")</option>";
+		str += "<option value=2> f("+upb+") = f("+lowb+")</option>";
+		str += "<option value=3> f("+upb+") > f("+lowb+")</option>";
+		str += "</select><span></span></td>";
+
+		str += "</tr>";
+		}
+
+	document.getElementById("tabl_slope").innerHTML = str;
+	}
+
+function mirror_go(e) {
+	if (e) {var k = Number(e.target.value);}
+	else {var k=0;}
+
+	document.getElementById("mirror_range").value = k;
+	document.getElementById("mirror_n").value = k;
+
+	var gobjs = [{type:"plot", fct:function(x){return(x*x)}, linewidth:3}]
+
+	let m = 2*k;
+	let n = k*k;
+	let o = k;
+
+	gobjs.push({type:"plot", fct:function(x){return(m*(x-o)+n)}, linewidth:2, color:"blue"});
+
+	gobjs.push({type:"polyl", vlist:[[k,Infinity],[k,k*k],[0,1/4]]});
+
+	gobjs.push({type:"dot", x:0, y:1/4, color:"black", r:7});
+	gobjs.push({type:"dot", x:0, y:1/4, color:"yellow", r:5});
+
+	tgr_update_grapher_objs("gr_mirror", gobjs);
+	
+	}
+
+function approxtabl(n,e,acc) {
+	if (typeof(acc) == "undefined") {acc = .011}
+	if (e.target.value == "" || isNaN(e.target.value)) {
+		e.target.className = "";
+		return;
+		}
+	var k = Number(e.target.value);
+	if (Math.abs(k-n) <= acc) {
+		e.target.className = "good"
+		}
+	else {
+		e.target.className = "bad";
+		}
+	}
+
+var vel_x = 0;
+var vel_down = false;
+
+function vel_f(x) {
+	return(-(x-2)*(x-2)+4);
+	}
+
+function draw_vel() {
+	var showtang = document.getElementById("chk_show_tang").checked;
+
+	var pd = tgr_graph_array["gr_vel"].plotdata;
+	var widget_canvas_x = tgr_tocanv([vel_x,0],pd)[0];
+	var ctx_bottom = document.getElementById("vel_bottom").getContext("2d");
+	ctx_bottom.clearRect(0,0,ctx_bottom.canvas.width,ctx_bottom.canvas.height);
+
+	ctx_bottom.lineWidth = 2;
+	ctx_bottom.strokeStyle = "red";
+	ctx_bottom.beginPath();
+	ctx_bottom.moveTo(widget_canvas_x,0);
+	ctx_bottom.lineTo(widget_canvas_x,ctx_bottom.canvas.height);
+	ctx_bottom.stroke();
+
+	let tang_x = Number(document.getElementById("vel_tang_n").value);
+	var tang_f = function(x) {
+		var m = -2*(tang_x-2);
+		var n = vel_f(tang_x);
+		var o = tang_x;
+		return(m*(x-o)+n);
+		}
+
+	var gobjs = [
+		{type:"plot", fct:vel_f, linewidth:2, color:"green"},
+		{type:"polyl", vlist:[[vel_x,-Infinity],[vel_x,vel_f(vel_x)]], linewidth:2, color:"red"},
+		{type:"polyl", vlist:[[vel_x, vel_f(vel_x)],[Infinity,vel_f(vel_x)]], linewidth:2, color:"green"},
+		];
+
+	if (showtang) {
+		gobjs.push({type:"polyl", vlist:[[vel_x,-Infinity],[vel_x,tang_f(vel_x)]], linewidth:2, color:"red"});
+		gobjs.push({type:"plot", fct:tang_f, linewidth:2, color:"blue"});
+		gobjs.push({type:"polyl", vlist:[[vel_x, tang_f(vel_x)],[Infinity,tang_f(vel_x)]], linewidth:2, color:"blue"});
+		}
+
+	tgr_update_grapher_objs("gr_vel", gobjs);
+
+	var blue_height = tgr_tocanv([0,tang_f(vel_x)],pd)[1];
+	var green_height = tgr_tocanv([0,vel_f(vel_x)],pd)[1];
+
+	var ctx_right = document.getElementById("vel_right").getContext("2d");
+	ctx_right.clearRect(0,0,ctx_right.canvas.width,ctx_right.canvas.height);
+
+	var midx = ctx_right.canvas.width/2;
+	
+	if (showtang) {
+		ctx_right.beginPath();
+		ctx_right.arc(midx,blue_height,5,0,2*Math.PI);
+		ctx_right.fillStyle="blue";
+		ctx_right.fill();
+		ctx_right.strokeStyle="black";
+		ctx_right.lineWidth=2;
+		ctx_right.stroke();
+		}
+
+	ctx_right.beginPath();
+	ctx_right.arc(midx,green_height,5,0,2*Math.PI);
+	ctx_right.fillStyle="green";
+	ctx_right.fill();
+	ctx_right.strokeStyle="black";
+	ctx_right.lineWidth=2;
+	ctx_right.stroke();
+	}
+
+function vel_mm(e) {
+	var pd = tgr_graph_array["gr_vel"].plotdata;
+	var widget_canvas_x = tgr_tocanv([vel_x,0],pd)[0];
+	if (vel_down || (Math.abs(widget_canvas_x - e.offsetX) < 8)) {
+		e.target.style.cursor = "col-resize";
+		}
+	else {
+		e.target.style.cursor = "auto";
+		}
+	var event_graph_x = tgr_fromcanv([e.offsetX,0],pd)[0];
+	if (vel_down && e.buttons == 1) {
+		vel_x = event_graph_x;
+		draw_vel();
+		}
+	}
+
+function vel_md(e) {
+	var pd = tgr_graph_array["gr_vel"].plotdata;
+	var widget_canvas_x = tgr_tocanv([vel_x,0],pd)[0];
+	if (Math.abs(widget_canvas_x - e.offsetX) < 8) {
+		vel_down = true;
+		e.target.setPointerCapture(e.pointerId);
+		}
+	}
+
+function vel_mu(e) {
+	vel_down = false;
+	}
+
+var velstopgo = false;
+
+var velsteppytime = "nope"
+
+function vel_steppy(time) {
+	if (!velstopgo) {return;}
+	var pd = tgr_graph_array["gr_vel"].plotdata;
+	requestAnimationFrame(vel_steppy);
+	if (vel_down) {velsteppytime = "nope"; return;}
+	var maxx = document.getElementById("vel_bottom").width;
+	if (isNaN(velsteppytime)) {velsteppytime = time; return;}
+	var deltat = time-velsteppytime;
+	velsteppytime = time;
+	var widget_canvas_x = tgr_tocanv([vel_x,0],pd)[0];
+	widget_canvas_x = (widget_canvas_x + deltat/30) % maxx;
+	vel_x = tgr_fromcanv([widget_canvas_x,0],pd)[0];
+	draw_vel();
+	}
+
+function vel_stopgo(e) {
+	if (!velstopgo) { //paused
+		e.target.innerHTML = "&#x23F8;";
+		velstopgo = true;
+		vel_steppy();
+		}
+	else { //playing
+		e.target.innerHTML = "&#x23F5;";
+		velstopgo = false;
+		velsteppytime = "nope";
+		}
+	}
+
+function boot() {
+	tgr_grapher("gr_parb1", [
+		{type:"plot", fct: function(x) {return(x*x);}, color:"red", linewidth:4, xmax:-.5},
+		{type:"plot", fct: function(x) {return(x*x);}, color:"green", linewidth:4, xmin:-.5, xmax:.5},
+		{type:"plot", fct: function(x) {return(x*x);}, color:"blue", linewidth:4, xmin:.5}
+		], {width:270, height:270});
+
+	tgr_grapher("gr_parb2", [{type:"plot", fct:function(x){return(x*x)}, linewidth:3}]);
+
+	tgr_grapher("gr_seesaw", [], {dragging:false, width:300, height:300});
+
+	tgr_grapher("gr_tabll", [{type:"plot", fct:function(x){return(x*x)}, linewidth:3, color:"green"}]);
+
+	tgr_grapher("gr_approx", [{type:"plot", fct:Math.sqrt, linewidth:3, color:"green"}, {type:"plot", fct:function(x){return(.25*(x-4)+2)}, linewidth:2, color:"blue"}], {xmin:-.5, xmax:5.5, ymin:-1.5, ymax:4.5});
+
+	tgr_grapher("gr_mirror", [], {width:300, height:300, xmin:-2.5, xmax:2.5, ymin:-.5, ymax:4.5, no_control:true, static:true});
+	mirror_go();
+
+	seesaw(1);
+	
+	tgr_grapher("gr_zoom", []);
+	inp_zoom_preview();
+	boot_tabl_slope();
+
+	tgr_grapher("gr_vel", [], {width:400, height:400, ctarg:'gr_vel_controls', xmin:-2.5, ymin:-2.5, xmax:6.5, ymax:6.5, on_window_change:draw_vel});
+	draw_vel();
+
+	bootkatex();
+
+	}
+
+</script>
+<style>
+input[type="number"]{
+	width:3em;
+	}
+input[type="range"]{
+	vertical-align:middle;
+	}
+h2 {
+	margin-top:5em;
+	}
+.bad {
+	background-color:#FFCCCC;
+	}
+.bad+span:after {
+	content:"X";
+	}
+.good {
+	background-color:#BBCCEE;
+	}
+.good+span:after {
+	content:"\2713";
+	}
+.graphbox {
+	border: .5rem outset #225522;
+	border-radius:10px;
+	display:inline-block;
+	}
+.instruction {
+	background-color:#BBCCEE;
+	}
+.hi {
+	background-color:#CCDDAA;
+	}
+</style>
+<link rel="stylesheet" href="katex.min.css">
+</head>
+
+
+<body onload='boot()' style='font-size:large; font-family:sans-serif'>
+<h1> Looking at Slopes </h1>
+
+<h2 style='margin-top:auto'> Welcome to Calculus! </h2>
+
+<span class='instruction'>Instructions are highlighted in blue like this.</span>
+
+<p>One of our first concerns in calculus is determining the slopes of graphs. In algebra, you've calculated the slopes of lines, a special type of graph where the slope is the same everywhere. But we can also talk about how steep other graphs are.</p>
+
+<p>Take a look at the graph of f(x) = x<sup>2</sup> below:
+<div class='graphbox'><div id='gr_parb1'></div></div>
+<ul>
+<li> For <b style='color:red'>negative</b> values of x (to the left of the graph), it's sloped <b style='color:red'>downwards</b>. The more negative x is, the steeper the slope.
+<li> The graph "levels off" at x = 0. For values of x <b style='color:green'>close to 0</b>, the graph is close to <b style='color:green'>horizontal</b>.
+<li> For <b style='color:blue'>positive</b> values of x (to the right of the graph), it's sloped <b style='color:blue'>upwards</b>. The larger x is, the steeper the slope.
+</ul>
+
+<p>In this interactive, I'll show you how to make formal sense of this notion, and we'll explore various reasons why people are interested in the slopes of graphs.</p>
+
+<h2>How do we Measure Slopes?</h2>
+
+<p>The slope of a line tells us about what angle it's at, but slopes aren't measured in degrees or radians. If we're going to be able to make sense of slopes, we need to be able to convert back and forth between numbers and what those slopes look like. You've learned previously how to calculate a slope by finding two points on your line <span class='k' title='(x_1,y_1)'></span> and <span class='k' title='(x_2,y_2)'></span> and calculating the rise/run = <span class='k' title='\frac{y_2-y_1}{x_2-x_1}'></span>. But you don't need to calculate an exact slope to get a general sense of what's going on with a function.</p> <ul><li><span class='instruction'>Fill out the table below.</span> You may find it helpful to use the provided interactive: choose a slope and it will draw a line with that slope.</ul>
+
+<div class='graphbox' style='display:inline-block'>
+Slope: <input type='range' min=-6 max=6 step=.1 id='seesaw_r' oninput='seesaw(this.value)' value=1><input type='number' step=.1 id='seesaw_n' oninput='seesaw(this.value)' value=1>
+<div id='gr_seesaw'></div>
+</div>
+
+<div id='tabl_slope'></div>
+
+<h2>Zooming In</h2>
+
+<p>If you've played around with a graphing calculator, you may have noticed that when you <b>zoom in</b> on a graph, it tends to wind up <b>looking like a line</b>. Use the graphing calculator below to graph a function and zoom in on the graph.</p>
+
+<ul>
+<li> <b>Type</b> a formula into the <b>text box</b> and click the <b>graph</b> button
+<li> You'll see a <b>preview</b> of the formula you typed in to the right of the graph button
+<li> <b>Zoom in</b> with the <b>mouse wheel</b> or the <b>buttons</b> below the graph.
+<ul>
+<li> <span class='instruction'>Try a few examples: how often does the graph wind up looking like a line?</span>
+<li> Can you come up with a graph where you can zoom in as much as you want and it doesn't look like a line?
+</ul>
+</ul>
+
+
+<div class='graphbox'>
+<input type='text' value='x^2+sin(x)' id='inp_zoom_fun' oninput='inp_zoom_preview()'><button onclick='graph_zoom()'>Graph</button> <span id='zoom_preview'></span>
+<div id='gr_zoom'></div></div>
+
+<p>In algebra, you learned how to determine the y value of a point on a graph given an x value. The question we're interested in calculus is:
+<span class='hi'>Given a point on a graph, what is the slope of the line we get when we zoom in?</span></p>
+<p>
+This is what we mean by the <b>slope of a graph</b> at a particular point. Just like with lines, this slope can tell us if a function is increasing or decreasing and how fast.
+</p>
+
+
+
+<h2> A Pattern in the Slopes </h2>
+
+<ul><li><span class='instruction'>Look at the graph y = x^2 below and <b>fill out</b> the table below for any 5 different points on the graph:</span> (hint: stick to small, integer values of x). Remember that the <b>slope</b> of the graph is the slope of the line you get when you <b>zoom in</b>.
+<li> Can you identify a pattern?</ul>
+
+<div class='graphbox'><div id='gr_parb2'></div></div>
+
+<table border=1><tr><td>x</td><td>y</td><td>slope</td></tr>
+<tr><td><input type='number' id='tabl0_x' oninput='tablcheck()'></td><td><input type='number' id='tabl0_y' oninput='tablcheck()'><span id='tabl0_ych'></span></td><td><input type='number' id='tabl0_m' oninput='tablcheck()'><span id='tabl0_mch'></span></td></tr>
+<tr><td><input type='number' id='tabl1_x' oninput='tablcheck()'></td><td><input type='number' id='tabl1_y' oninput='tablcheck()'><span id='tabl1_ych'></span></td><td><input type='number' id='tabl1_m' oninput='tablcheck()'><span id='tabl1_mch'></span></td></tr>
+<tr><td><input type='number' id='tabl2_x' oninput='tablcheck()'></td><td><input type='number' id='tabl2_y' oninput='tablcheck()'><span id='tabl2_ych'></span></td><td><input type='number' id='tabl2_m' oninput='tablcheck()'><span id='tabl2_mch'></span></td></tr>
+<tr><td><input type='number' id='tabl3_x' oninput='tablcheck()'></td><td><input type='number' id='tabl3_y' oninput='tablcheck()'><span id='tabl3_ych'></span></td><td><input type='number' id='tabl3_m' oninput='tablcheck()'><span id='tabl3_mch'></span></td></tr>
+<tr><td><input type='number' id='tabl4_x' oninput='tablcheck()'></td><td><input type='number' id='tabl4_y' oninput='tablcheck()'><span id='tabl4_ych'></span></td><td><input type='number' id='tabl4_m' oninput='tablcheck()'><span id='tabl4_mch'></span></td></tr>
+</table>
+&#10004; = correct, X = incorrect
+
+<ul>
+<li>Can you identify a pattern?
+</ul>
+
+<p>
+We'll learn why this pattern holds later on in calculus. If you're interested, try constructing a similar table for the following functions to see if you can figure out their patterns:
+<ul><li>2x^2 <li>x^3 hint: try (x^3)/3 <li>(x^4)/4 <li>ln(x) hint: try x=1,2,3,4<li>sin(x) hint: try x=0, pi/2, pi, 3pi/2, etc<li>e^x </ul>
+</p>
+
+<h2>Linear Approximations</h2>
+
+<p>It's often handy to be able to work out the equation for the line you get when you zoom in: it gives us a line that <b>closely resembles</b> our graph when we <b>zoom in</b> really close, and lines are much easier to work with than some complicated curve.</p>
+
+<p><span class='instruction'>Based on the values you entered above, work out the formula for each of the lines you saw.</span> As you enter these formulas, this interactive will graph them.</p>
+
+<p>(hint: the formula for a line with slope m passing through the point (p,q) is y = m(x-p)+q)</p>
+
+<div class='graphbox'><div id='gr_tabll'></div></div>
+
+<table border=1><tr><td>x</td><td>y</td><td>slope</td><td>equation of the line</td></tr>
+<tr><td><span id='tabll0_x'></span></td><td><span id='tabll0_y'></span></td><td><span id='tabll0_m'></span></td><td>y=<input id='tabll0_f' type='text' oninput='tabllgo()'></td></tr>
+<tr><td><span id='tabll1_x'></span></td><td><span id='tabll1_y'></span></td><td><span id='tabll1_m'></span></td><td>y=<input id='tabll1_f' type='text' oninput='tabllgo()'></td></tr>
+<tr><td><span id='tabll2_x'></span></td><td><span id='tabll2_y'></span></td><td><span id='tabll2_m'></span></td><td>y=<input id='tabll2_f' type='text' oninput='tabllgo()'></td></tr>
+<tr><td><span id='tabll3_x'></span></td><td><span id='tabll3_y'></span></td><td><span id='tabll3_m'></span></td><td>y=<input id='tabll3_f' type='text' oninput='tabllgo()'></td></tr>
+<tr><td><span id='tabll4_x'></span></td><td><span id='tabll4_y'></span></td><td><span id='tabll4_m'></span></td><td>y=<input id='tabll4_f' type='text' oninput='tabllgo()'></td></tr>
+</table>
+
+<p>How are the lines and original graph related to each other? <span class='instruction'>Be sure to zoom in and out on the graph to get an intuition for how these graphs are related.</span></p>
+
+<p>Because these lines usually just touch the graph at a point, they're also called <b>tangent lines</b>.</p>
+
+
+<h2>Applications of Linear Approximations</h2>
+
+Linear approximations are useful in lots of areas of math:
+<h3>Reasoning about Curved Surfaces:</h3> 
+<p>We understand how flat (linear) mirrors work, and can use a bunch of linear approximations to approximate a curved mirror.</p>
+<div class='graphbox'><input type='range' min=-2 max=2 step=0.01 oninput='mirror_go(event)' id='mirror_range' value=0><input type='number' step=.01 oninput='mirror_go(event)' id='mirror_n'>
+<div id='gr_mirror'></div>
+<div style='width:300px;text-wrap:wrap'> A parabolic mirror takes parallel rays of light and focuses them in on a point.</div>
+</div>
+
+<h3>Calculating Numerical Approximations:</h3> 
+<ul>
+<li>Shown below is the graph of f(x) = sqrt(x) and the linear approximation to it at x = 4 (call this graph y = L(x)).
+<li><span class='instruction'>Compare the y values of the linear approximation and the y values on the graph at x = 3, x = 5, and x = 4.1.</span> 
+<li>How close does the linear approximation come to the actual square root of these values?</ul>
+<div class='graphbox'>
+<div id='gr_approx'></div></div>
+
+<table border=1><tr><td>x</td><td>L(x)</td><td>sqrt(x)</td></tr>
+<tr><td>3</td><td><input type='number' oninput='approxtabl(1.75,event)' style='width:4em'><span></span></td><td><input type='number' oninput='approxtabl(Math.sqrt(3),event)' style='width:4em'><span></span></td></tr>
+<tr><td>5</td><td><input type='number' oninput='approxtabl(2.25,event)' style='width:4em'><span></span></td><td><input type='number' oninput='approxtabl(Math.sqrt(5),event)' style='width:4em'><span></span></td></tr>
+<tr><td>4.1</td><td><input type='number' oninput='approxtabl(2.025,event,.0004)' style='width:4em'><span></span></td><td><input type='number' oninput='approxtabl(Math.sqrt(4.1),event,.0004)' style='width:4em'><span></span></td></tr>
+</table>
+
+<h3>Calculating Velocity:</h3>
+<p>
+A linear function y = mt + b (t for time instead of x for position) corresponds to an object moving at constant velocity m. For objects that don't move at constant velocity, the tangent line corresponds to an object that matches position and speed around a particular instant (think of an action movie where two cars match position and speed so someone can jump from one to the other).
+</p>
+<ul>
+<li>Shown below is the graph of height versus time of a ball thrown up into the air. 
+<li><span class='instruction'>Click the play button to the bottom left of the graph or move the red bar under the graph to watch the animation.</span>
+<li><span class='instruction'>Check the "Show Tangent Line" checkbox above the graph.</span> This graph is for a ball moving at constant velocity.
+<li><span class='instruction'>Watch the animation again.</span> Notice that the balls match velocity at the instant they pass each other.
+</ul>
+
+<div class='graphbox'>
+<input type='checkbox' id='chk_show_tang' oninput='draw_vel()'> Show Tangent Line at x = 
+<input type='number' step=0.1 value=1 id='vel_tang_n' oninput='document.getElementById("vel_tang_r").value = event.target.value; draw_vel()'>
+<input type='range' min=0 max=6 step=0.1 id='vel_tang_r' value=1 oninput='document.getElementById("vel_tang_n").value = event.target.value; draw_vel()'>
+
+<div style='width:420px; height:420px; position: relative; margin-right:2px'>
+<div id='gr_vel' style='position:absolute; top:0px; left:0px'></div>
+<canvas width=20 height=400 id='vel_right' style='border:1px solid; position:absolute; top:0px; left:400px;'></canvas>
+<canvas width=400 height=20 id='vel_bottom' style='border:1px solid; position:absolute; top:400px; left:0px;' onpointermove='vel_mm(event)' onpointerdown='vel_md(event)' onpointerup='vel_mu(event)'></canvas>
+<button style='position:absolute; padding:0px; top:400px; left:400px; width:22px; height:22px;' onclick='vel_stopgo(event)'>&#x23F5;</button>
+</div>
+
+<div id='gr_vel_controls'></div>
+</div>
+
+
+</body>
+</html>

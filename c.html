@@ -128,7 +128,7 @@ function butt(c) {
 		numb = "";
 		readynumb = "";
 		readyop = "none";
-		document.getElementById("out1").innerHTML = "";
+		document.getElementById("out1").innerHTML = "&ZeroWidthSpace;";
 		out1read = "";
 		}
 	if (c == "S") {
@@ -142,11 +142,12 @@ function butt(c) {
 	if (c == "=") {
 		fire();
 		readyop = "none";
-		document.getElementById("out1").innerHTML = "";
+		document.getElementById("out1").innerHTML = "&ZeroWidthSpace;";
 		out1read = ""
 		}
 
 	document.getElementById("out2").innerHTML = addcommas(numb);
+	if (addcommas(numb) == "") {document.getElementById("out2").innerHTML = "&ZeroWidthSpace;"}
 	fixscale("out2");
 	fixscale("out1");
 	fixscale("outl");
@@ -188,7 +189,7 @@ span, td, tr {
 <table style='width:100%; height:100%; position:absolute; top:0; bottom:0; left:0; right:0; margin:0; padding:0; table-layout:fixed'>
 <tr><td colspan=4 style='background-color:#BBBBBB; height:10vh;overflow:hidden' onclick='speakl()'>&ZeroWidthSpace;<span id='outl' style='font-size:10vh; height:10vh'></span></td></tr>
 <tr><td colspan=4 style='height:10vh;overflow:hidden' onclick='speak1()'>&ZeroWidthSpace;<span id='out1' style='font-size:10vh'></span></td></tr>
-<tr><td colspan=4 style='height:10vh;overflow:hidden;background-color:#CCDDAA' onclick='speak2()'>&ZeroWidthSpace;<span id='out2' style='font-size:10vh'></span></td></tr>
+<tr><td colspan=4 style='height:10vh;overflow:hidden;background-color:#CCDDAA' onclick='speak2()'>&ZeroWidthSpace;<span id='out2' style='font-size:10vh;display:inline-block;height:10vh'>&ZeroWidthSpace;</span></td></tr>
 <tr><td><button id='b_S' onclick='butt("S")' style='background-color:#44AA99'>+1</button></td><td><button id='b_P' onclick='butt("P")' style='background-color:#999933'>-1</button></td><td><button id='b_read' onclick='butt("read")' style='display:none; background-color:#117733'>read</button></td><td><button id='b_clear' onclick='butt("clear")' style='background-color:#BBBBBB'>C</button></td></tr>
 <tr><td><button id='b7' onclick='butt(7)' style='background-color:#DDDDDD'>7</button></td><td><button id='b8' onclick='butt(8)' style='background-color:#DDDDDD'>8</button></td><td><button id='b9' onclick='butt(9)' style='background-color:#DDDDDD'>9</button></td><td><button id='b_add' onclick='butt("+")' style='background-color:#99DDFF'>+</button></td></tr>
 <tr><td><button id='b4' onclick='butt(4)' style='background-color:#DDDDDD'>4</button></td><td><button id='b5' onclick='butt(5)' style='background-color:#DDDDDD'>5</button></td><td><button id='b6' onclick='butt(6)' style='background-color:#DDDDDD'>6</button></td><td><button id='b_sub' onclick='butt("-")' style='background-color:#EEDD88'>-</button></td></tr>

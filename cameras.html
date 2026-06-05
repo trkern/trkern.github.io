@@ -104,17 +104,17 @@ function label_edge(ctx,p0,p1,offset,label,direction,refp) {
 	}
 
 function persp_process_vertex(v) {
-	var world_x = Number(document.getElementById("world_x").value);
-	var world_y = Number(document.getElementById("world_y").value);
+	var world_x = Number(document.getElementById("pworld_x").value);
+	var world_y = Number(document.getElementById("pworld_y").value);
 	var newv = tk3_mat_apply_list(tk3_mat4_rotx(world_x),tk3_mat4_roty(world_y),[...v,1]);
 	return([remap(-8,8,0,800,newv[0]),remap(-3,3,300,0,newv[1])]);
 	}
 
 function persp_draw_tri(ctx,col,phase,...l) {
 	ctx.fillStyle = "rgb("+col[0]+" "+col[1]+" "+col[2]+" / 50%)";
-	var angle_x = Number(document.getElementById("angle_x").value);
-	var angle_y = Number(document.getElementById("angle_y").value);
-	var angle_z = Number(document.getElementById("angle_z").value);
+	var angle_x = Number(document.getElementById("pangle_x").value);
+	var angle_y = Number(document.getElementById("pangle_y").value);
+	var angle_z = Number(document.getElementById("pangle_z").value);
 	var transl_x = Number(document.getElementById("transl_x").value);
 	var transl_y = Number(document.getElementById("transl_y").value);
 	var transl_z = Number(document.getElementById("transl_z").value);
@@ -162,9 +162,9 @@ function persp_draw_tri(ctx,col,phase,...l) {
 	}
 
 function persp_draw() {
-	var angle_x = Number(document.getElementById("angle_x").value);
-	var angle_y = Number(document.getElementById("angle_y").value);
-	var angle_z = Number(document.getElementById("angle_z").value);
+	var angle_x = Number(document.getElementById("pangle_x").value);
+	var angle_y = Number(document.getElementById("pangle_y").value);
+	var angle_z = Number(document.getElementById("pangle_z").value);
 	var transl_x = Number(document.getElementById("transl_x").value);
 	var transl_y = Number(document.getElementById("transl_y").value);
 	var transl_z = Number(document.getElementById("transl_z").value);
@@ -330,23 +330,23 @@ function persp_mousemove(e) {
 	if (e.buttons != 1) {return;}
 	var x = Math.PI*e.movementY/400;
 	var y = Math.PI*e.movementX/400;
-	document.getElementById("world_x").value = Math.max(-1.56,Math.min(1.56,Number(document.getElementById("world_x").value) + x));
-	document.getElementById("world_y").value = Number(document.getElementById("world_y").value) + y;
+	document.getElementById("pworld_x").value = Math.max(-1.56,Math.min(1.56,Number(document.getElementById("pworld_x").value) + x));
+	document.getElementById("pworld_y").value = Number(document.getElementById("pworld_y").value) + y;
 	persp_draw();
 	}
 
 function ortho_process_vertex(v) {
-	var world_x = Number(document.getElementById("world_x").value);
-	var world_y = Number(document.getElementById("world_y").value);
+	var world_x = Number(document.getElementById("oworld_x").value);
+	var world_y = Number(document.getElementById("oworld_y").value);
 	var newv = tk3_mat_apply_list(tk3_mat4_rotx(world_x),tk3_mat4_roty(world_y),[...v,1]);
 	return([remap(-4,4,0,400,newv[0]),remap(-4,4,400,0,newv[1])]);
 	}
 
 function ortho_draw_tri(ctx,col,phase,...l) {
 	ctx.fillStyle = "rgb("+col[0]+" "+col[1]+" "+col[2]+" / 50%)";
-	var angle_x = Number(document.getElementById("angle_x").value);
-	var angle_y = Number(document.getElementById("angle_y").value);
-	var angle_z = Number(document.getElementById("angle_z").value);
+	var angle_x = Number(document.getElementById("oangle_x").value);
+	var angle_y = Number(document.getElementById("oangle_y").value);
+	var angle_z = Number(document.getElementById("oangle_z").value);
 	var vl = [];
 	var pl = [];
 	var vproj = [];
@@ -432,8 +432,8 @@ function ortho_mousemove(e) {
 	if (e.buttons != 1) {return;}
 	var x = Math.PI*e.movementY/400;
 	var y = Math.PI*e.movementX/400;
-	document.getElementById("world_x").value = Math.max(-1.56,Math.min(1.56,Number(document.getElementById("world_x").value) + x));
-	document.getElementById("world_y").value = Number(document.getElementById("world_y").value) + y;
+	document.getElementById("oworld_x").value = Math.max(-1.56,Math.min(1.56,Number(document.getElementById("oworld_x").value) + x));
+	document.getElementById("oworld_y").value = Number(document.getElementById("oworld_y").value) + y;
 	ortho_draw();
 	}
 
@@ -449,12 +449,12 @@ In video games, we need to take a three dimensional scene and project it into tw
 
 <canvas id='co' width=400 height=400 style='border:1px solid; display:inline-block; vertical-align:top' onpointerdown='ortho_mousedown(event)' onpointermove='ortho_mousemove(event)'></canvas><span style='display:inline-block;margin-left:3px'>
 Rotate the shape with the controls below:
-<br>angle_x: <input type='range' min=0 max=6.28 step=0.01 id='angle_x' oninput='ortho_draw()'>
-<br>angle_y: <input type='range' min=0 max=6.28 step=0.01 id='angle_y' oninput='ortho_draw()'>
-<br>angle_z: <input type='range' min=0 max=6.28 step=0.01 id='angle_z' oninput='ortho_draw()'>
+<br>angle_x: <input type='range' min=0 max=6.28 step=0.01 id='oangle_x' oninput='ortho_draw()'>
+<br>angle_y: <input type='range' min=0 max=6.28 step=0.01 id='oangle_y' oninput='ortho_draw()'>
+<br>angle_z: <input type='range' min=0 max=6.28 step=0.01 id='oangle_z' oninput='ortho_draw()'>
 <br>Click and drag to rotate scene or use controls below:
-<br>world_x: <input type='range' min=-1.57 max=1.57 value=.4 step=0.01 id='world_x' oninput='ortho_draw()'>
-<br>world_y: <input type='range' min=0 max=6.28 value=4 step=0.01 id='world_y' oninput='ortho_draw()'>
+<br>world_x: <input type='range' min=-1.57 max=1.57 value=.4 step=0.01 id='oworld_x' oninput='ortho_draw()'>
+<br>world_y: <input type='range' min=0 max=6.28 value=4 step=0.01 id='oworld_y' oninput='ortho_draw()'>
 <br>Shape: <select id='ortho_shape' oninput='ortho_draw()'><option value=0>Tetrahedron</option><option value=1>Cube</option></select></span>
 <br>
 
@@ -470,23 +470,23 @@ Rotate the shape with the controls below:
 Picture Plane: <input type='checkbox' checked id='chk_pp_draw' onchange='persp_draw()'> Draw
 <br>Axes: <input type='checkbox' id='chk_axes_draw' onchange='persp_draw()'> Draw <input type='checkbox' id='chk_axes_label' onchange='persp_draw()'> Label
 <br>Rotate the shape with the controls below:
-<br>angle_x: <input type='range' min=0 max=6.28 step=0.01 id='angle_x' oninput='persp_draw()'>
-<br>angle_y: <input type='range' min=0 max=6.28 step=0.01 id='angle_y' oninput='persp_draw()'>
-<br>angle_z: <input type='range' min=0 max=6.28 step=0.01 id='angle_z' oninput='persp_draw()'>
+<br>angle_x: <input type='range' min=0 max=6.28 step=0.01 id='pangle_x' oninput='persp_draw()'>
+<br>angle_y: <input type='range' min=0 max=6.28 step=0.01 id='pangle_y' oninput='persp_draw()'>
+<br>angle_z: <input type='range' min=0 max=6.28 step=0.01 id='pangle_z' oninput='persp_draw()'>
 <br>transl_x: <input type='range' min=-2 max=2 step=0.01 id='transl_x' oninput='persp_draw()'>
 <br>transl_y: <input type='range' min=-2 max=2 step=0.01 id='transl_y' oninput='persp_draw()'>
 <br>transl_z: <input type='range' min=-10 max=10 step=0.01 id='transl_z' oninput='persp_draw()'>
 <br>Click and drag to rotate scene or use controls below:
-<br>world_x: <input type='range' min=-1.57 max=1.57 value=.4 step=0.01 id='world_x' oninput='persp_draw()'>
-<br>world_y: <input type='range' min=0 max=6.28 value=1 step=0.01 id='world_y' oninput='persp_draw()'>
+<br>world_x: <input type='range' min=-1.57 max=1.57 value=.4 step=0.01 id='pworld_x' oninput='persp_draw()'>
+<br>world_y: <input type='range' min=0 max=6.28 value=1 step=0.01 id='pworld_y' oninput='persp_draw()'>
 <br>Shape: <select id='persp_shape' oninput='persp_draw()'><option value=0>Tetrahedron</option><option value=1>Cube</option></select>
 <br>
 <fieldset>
 <legend>For vertex <input type='number' value=1 id='in_v' oninput='persp_draw()' style='width:2em'>:</legend>
 <fieldset>
 <legend><input type='checkbox' id='chk_tri' onchange='persp_draw()'> Show triangle </legend>
-x: <input type='checkbox' id='chk_x_label' onchange='persp_draw()'> Label <input type='checkbox' checked id='chk_x_draw' onchange='persp_draw()'> Highlight <button onclick='document.getElementById("world_x").value=.5*Math.PI; document.getElementById("world_y").value=1.5*Math.PI; persp_draw();'>Top View</button>
-<br>y: <input type='checkbox' checked id='chk_y_label' onchange='persp_draw()'> Label <input type='checkbox' checked id='chk_y_draw' onchange='persp_draw()'> Highlight <button onclick='document.getElementById("world_x").value=0; document.getElementById("world_y").value=1.5*Math.PI; persp_draw();'>Side View</button>
+x: <input type='checkbox' id='chk_x_label' onchange='persp_draw()'> Label <input type='checkbox' checked id='chk_x_draw' onchange='persp_draw()'> Highlight <button onclick='document.getElementById("pworld_x").value=.5*Math.PI; document.getElementById("pworld_y").value=1.5*Math.PI; persp_draw();'>Top View</button>
+<br>y: <input type='checkbox' checked id='chk_y_label' onchange='persp_draw()'> Label <input type='checkbox' checked id='chk_y_draw' onchange='persp_draw()'> Highlight <button onclick='document.getElementById("pworld_x").value=0; document.getElementById("pworld_y").value=1.5*Math.PI; persp_draw();'>Side View</button>
 <br>z: <input type='checkbox' checked id='chk_z_label' onchange='persp_draw()'> Label <input type='checkbox' checked id='chk_z_draw' onchange='persp_draw()'> Highlight
 </fieldset>
 <fieldset>

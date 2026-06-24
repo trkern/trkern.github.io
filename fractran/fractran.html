@@ -12,1904 +12,1942 @@
 <title> Fractran </title>
 <script>
 
-var MQ = MathQuill.getInterface(2);
+// Mathematical Functions
 
-var cursor_str = "<span style='border-left: 1px solid black; margin-left:-1px;padding:0'>&#8203;</span>";
+	var MQ = MathQuill.getInterface(2);
 
-var prime_list = [2]; //DO NOT ACCESS DIRECTLY, use nth_prime
+	var cursor_str = "<span class='cursor'>&#8203;</span>";
 
-function nth_prime(n) {
-	while (!(n in prime_list)) {
-		var k = prime_list[prime_list.length-1] + 1;
-		var new_prime_found = false;
-		a: while (!new_prime_found) {
-			var i;
-			for (i = 0; prime_list[i] <= Math.sqrt(k); i++) {
-				if (k % prime_list[i] == 0) {k++; continue a;}
-				}
-			new_prime_found = true;
-			prime_list.push(k);
-			}
-		}
-	return(prime_list[n]);
-	}
+	var prime_list = [2, 3]; //DO NOT ACCESS DIRECTLY, use nth_prime
 
-function prime_factor(n) {
-	if ((!Number.isInteger(n))||(n<=0)) {return([]);}
-	var rval = [];
-	var handled = 1;
-	var unhandled = n;
-	var i, k, j, p;
-	for (i = 0; handled != n; i++) {
-		p = nth_prime(i);
-		j = 1;
-		k = 0;
-		while (unhandled % (j*p) == 0) {
-			k++;
-			j *= p;
-			}
-		rval.push(k);
-		unhandled /= j;
-		if (!Number.isInteger(unhandled)) {return([]);}
-		handled *= j;
-		}
-	return(rval);
-	}
-
-function multiply_pls(l1,l2) {
-	var i;
-	var rval = [];
-	for (i = 0; i < Math.max(l1.length, l2.length); i++) {
-		var a = 0;
-		if (i in l1) {a = l1[i];}
-		var b = 0;
-		if (i in l2) {b = l2[i];}
-		rval.push(a+b);
-		}
-	return(rval);
-	}
-
-function ldtest(i,j) {
-	return(list_divisible(prime_factor(i), prime_factor(j)));
-	}
-
-function list_divisible(l1,l2) {
-	var i;
-	for (i = 0; i < Math.max(l1.length, l2.length); i++) {
-		var a = 0;
-		if (i in l1) {a = l1[i];}
-		var b = 0;
-		if (i in l2) {b = l2[i];}
-		if (a > b) {return(false);}
-		}
-	return(true);
-	}
-
-function mapmany(f,n) {//returns[f(0),...,f(n-1)]
-	var rval = [];
-	var i;
-	for (i = 0; i < n; i++) {
-		rval.push([f(i)]);
-		}
-	return(rval);
-	}
-
-//var light_colors = ["#EEDD88", "#77AADD", "#EE8866", "#FFAABB", "#99DDFF", "#44BB99", "#BBCC33", "#AAAA00", "#DDDDDD"]; //from https://personal.sron.nl/~pault/
-var light_colors = ["#EEDD88", "#DDDDDD", "#BBCC33", "#AAAA00", "#FFAABB", "#99DDFF", "#44BB99"]; //from https://personal.sron.nl/~pault/
-function hi_color(n) {
-	return(light_colors[n%(light_colors.length)]);
-	}
-//var passcolor = "#33BBEE";
-//var failcolor = "#EE7733";
-var passcolor = "#77AADD";
-var failcolor = "#EE8866";
-var passstr = "<span style='background-color:"+passcolor+"'>Passed!</span>";
-var failstr = "<span style='background-color:"+failcolor+"'>Failed!</span>";
-
-function html_label_arrow(txt) {
-	return("<span style='position:relative'><span style='position:absolute;top:.4em;left:-.2em;right:0; text-align:center;font-size:60%'>"+txt+"</span>&#8594;</span>");
-	}
-
-function number_to_letter(n) {
-	if (n < 26) {return(String.fromCharCode(65+n));}
-	if (n < 52) {return(String.fromCharCode(97-26+n));}
-	return(n);
-	}
-
-function color_letter(i) {
-	return("<span style='background-color:"+hi_color(i)+"'>"+number_to_letter(i)+"</span>");
-	}
-
-function arrowtron(i) {
-	return("&nbsp;"+html_label_arrow(color_letter(i))+"&nbsp;");
-	}
-
-function printlist(l) {
-	if (!(Array.isArray(l))) {return(l);}
-	var i;
-	var rval = "["
-	for (i = 0; i < l.length; i++) {
-		if (i > 0) {rval += ","}
-		rval += printlist(l[i]);
-		}
-	rval += "]";
-	return(rval);
-	}
-
-function input_expand(e) {
-	var str = e.value;
-	if (str == "" && e.placeholder) {str = e.placeholder;}
-	var l = str.length;
-	if (l < 1) {l = 1;}
-	e.size = l;
-	}
-
-function insert_into_string(str,c,p) {
-	return(str.slice(0,p) + c + str.slice(p));
-	}
-
-function remove_from_string(str,p) {
-	var rval = "";
-	var i;
-	for (i = 0; i < str.length; i++) {
-		if (i != p) {rval += str[i]};
-		}
-	return(rval);
-	}
-
-function remove_from_array(l,p) {
-	var rval = [];
-	var i;
-	for (i = 0; i < l.length; i++) {
-		if (i != p) {rval.push(l[i])};
-		}
-	return(rval);
-	}
-
-function pl_to_int(l) {
-	var i;
-	var rval = 1;
-	for (i = 0; i < l.length; i++) {
-		if (l[i] == "") {
-			}
-		else {
-			rval *= Math.pow(nth_prime(i),l[i]);
-			}
-		}
-	return(rval);
-	}
-
-function rawpl_to_int(l) {
-	var i;
-	var rval = 1;
-	for (i = 0; i < l.length; i++) {
-		rval *= Math.pow(l[i][0],l[i][1]);
-		}
-	return(rval);
-	}
-
-function fl_max_power(l) {
-	var rval = 0;
-	var i;
-	for (i = 0; i < l.length; i++) {
-		rval = Math.max(rval, l[i][0].length, l[i][1].length);
-		}
-	return(rval);
-	}
-
-function rawpl_to_html(l, opts) {
-	var default_options = {
-		dot_after_exponents: true,
-		zero_exponents: "hide", //can be "hide", "dim", "show"
-		one_exponents: "hide", //can be "hide", "dim", "show"
-		actually_numbers: false,
-		}
-	opts = Object.assign({},default_options,opts);
-
-	if (opts.actually_numbers) { return("<code>"+pl_to_int(rawpl_to_pl(l))+"</code>");}
-
-	var i;
-	var rval = "";
-	var needs_dot = false;
-	var expstr;
-	
-	var isempty = true;
-	for (i = 0; i < l.length; i++) {
-		if (l[i][1] != 0) {isempty = false;}
-		}
-	if (isempty) {return("<code>1<sup></sup></code>");}
-
-	for (i = 0; i < l.length; i++) {
-		expstr = l[i][1];
-		var old_needs_dot = needs_dot;
-		if (l[i][1] == 0) {
-			if (opts.zero_exponents == "hide") {
-				//rval += "<sup></sup>";
-				continue;
-				}
-			else if (opts.zero_exponents == "dim") {
-				needs_dot = true;
-				expstr = "<span style='color:gray'>" + expstr + "</span>";
-				}
-			else if (opts.zero_exponents == "show") {
-				needs_dot = true;
+	function nth_prime(n) {
+		while (!(n in prime_list)) {
+			var k = prime_list[prime_list.length-1] + 2;
+			var new_prime_found = false;
+			a: while (!new_prime_found) {
+				var i;
+				for (i = 0; prime_list[i] <= Math.sqrt(k); i++) {
+					if (k % prime_list[i] == 0) {k++; continue a;}
+					}
+				new_prime_found = true;
+				prime_list.push(k);
 				}
 			}
-		else if (l[i][1] == 1) {
-			if (opts.one_exponents == "hide") {
-				needs_dot=true;
-				expstr = "";
+		return(prime_list[n]);
+		}
+
+	function prime_factor(n) {
+		if ((!Number.isInteger(n))||(n<=0)) {return([]);}
+		var rval = [];
+		var handled = 1;
+		var unhandled = n;
+		var i, k, j, p;
+		for (i = 0; handled != n; i++) {
+			p = nth_prime(i);
+			j = 1;
+			k = 0;
+			while (unhandled % (j*p) == 0) {
+				k++;
+				j *= p;
 				}
-			else if (opts.one_exponents == "dim") {
-				needs_dot = true;
-				expstr = "<span style='color:gray'>" + expstr + "</span>";
+			rval.push(k);
+			unhandled /= j;
+			if (!Number.isInteger(unhandled)) {return([]);}
+			handled *= j;
+			}
+		return(rval);
+		}
+
+	function multiply_pls(l1,l2) {
+		var i;
+		var rval = [];
+		for (i = 0; i < Math.max(l1.length, l2.length); i++) {
+			var a = 0;
+			if (i in l1) {a = l1[i];}
+			var b = 0;
+			if (i in l2) {b = l2[i];}
+			rval.push(a+b);
+			}
+		return(rval);
+		}
+
+	function ldtest(i,j) {
+		return(list_divisible(prime_factor(i), prime_factor(j)));
+		}
+
+	function list_divisible(l1,l2) {
+		var i;
+		for (i = 0; i < Math.max(l1.length, l2.length); i++) {
+			var a = 0;
+			if (i in l1) {a = l1[i];}
+			var b = 0;
+			if (i in l2) {b = l2[i];}
+			if (a > b) {return(false);}
+			}
+		return(true);
+		}
+
+	function mapmany(f,n) {//returns[f(0),...,f(n-1)]
+		var rval = [];
+		var i;
+		for (i = 0; i < n; i++) {
+			rval.push([f(i)]);
+			}
+		return(rval);
+		}
+
+	//var light_colors = ["#EEDD88", "#77AADD", "#EE8866", "#FFAABB", "#99DDFF", "#44BB99", "#BBCC33", "#AAAA00", "#DDDDDD"]; //from https://personal.sron.nl/~pault/
+	var light_colors = ["#EEDD88", "#DDDDDD", "#BBCC33", "#AAAA00", "#FFAABB", "#99DDFF", "#44BB99"]; //from https://personal.sron.nl/~pault/
+	function hi_color(n) {
+		return(light_colors[n%(light_colors.length)]);
+		}
+	var passcolor = '#EE7733'
+	var passstr = "<span class='pass'>Passed!</span>";
+	var failstr = "<span class='fail'>Failed!</span>";
+
+	function html_label_arrow(txt) {
+		return(`<span class='label-arrow'><span>${txt}</span>&#8594;</span>`);
+		}
+
+	function number_to_letter(n) {
+		if (n < 26) {return(String.fromCharCode(65+n));}
+		if (n < 52) {return(String.fromCharCode(97-26+n));}
+		return(n);
+		}
+
+	function color_letter(i) {
+		return("<span style='background-color:"+hi_color(i)+"'>"+number_to_letter(i)+"</span>");
+		}
+
+	function arrowtron(i) {
+		return("&nbsp;"+html_label_arrow(color_letter(i))+"&nbsp;");
+		}
+
+	function printlist(l) {
+		if (!(Array.isArray(l))) {return(l);}
+		var i;
+		var rval = "["
+		for (i = 0; i < l.length; i++) {
+			if (i > 0) {rval += ","}
+			rval += printlist(l[i]);
+			}
+		rval += "]";
+		return(rval);
+		}
+
+	function input_expand(e) {
+		var str = e.value;
+		if (str == "" && e.placeholder) {str = e.placeholder;}
+		var l = str.length;
+		if (l < 1) {l = 1;}
+		e.size = l;
+		}
+
+	function insert_into_string(str,c,p) {
+		return(str.slice(0,p) + c + str.slice(p));
+		}
+
+	function remove_from_string(str,p) {
+		var rval = "";
+		var i;
+		for (i = 0; i < str.length; i++) {
+			if (i != p) {rval += str[i]};
+			}
+		return(rval);
+		}
+
+	function remove_from_array(l,p) {
+		var rval = [];
+		var i;
+		for (i = 0; i < l.length; i++) {
+			if (i != p) {rval.push(l[i])};
+			}
+		return(rval);
+		}
+
+	function pl_to_int(l) {
+		var i;
+		var rval = 1;
+		for (i = 0; i < l.length; i++) {
+			if (l[i] == "") {
 				}
-			else if (opts.one_exponents == "show") {
-				needs_dot = true;
+			else {
+				rval *= Math.pow(nth_prime(i),l[i]);
 				}
 			}
-		else {
-			needs_dot = opts.dot_after_exponents;
+		return(rval);
+		}
+
+	function rawpl_to_int(l) {
+		var i;
+		var rval = 1;
+		for (i = 0; i < l.length; i++) {
+			rval *= Math.pow(l[i][0],l[i][1]);
 			}
-		if (old_needs_dot) {rval += "&sdot;"}
-		rval += "" + l[i][0] + "<sup>" + expstr + "</sup>";
+		return(rval);
 		}
-	return("<code>" + rval + "</code>");
-	}
 
-function fracstrings(s1,s2) {
-	var rval = "<table style='display:inline-block;vertical-align:middle; border-spacing:0px'><tr><td style='height:1.5em;text-align:center; padding:0px; border-bottom:solid 2px; font-size:80%'>" + s1 + "</td></tr><tr><td style='height:1.5em;text-align:center;font-size:80%'>" + s2 + "</td></tr></table>";
-	return(rval);
-	}
-
-function rawplfrac_to_html(l1,l2,opts) {
-	return(fracstrings(rawpl_to_html(l1,opts),rawpl_to_html(l2,opts)));
-	}
-
-function rawfl_to_html(l, opts) {
-	var i;
-	var rval = "";
-	for (i = 0; i < l.length; i++) {
-		if (i > 0) {rval += ",<span style='width:1em'>&nbsp;</span>";}
-		rval += rawplfrac_to_html(l[i][0],l[i][1], opts);
-		}
-	return(rval);
-	}
-
-
-function apply_f_to_l(l,f) { //attempt to apply fraction(in list form) to list, return "nope" if failure
-	var i;
-	var rval = [];
-	for (i = 0; i < l.length; i++) {
-		rval.push(l[i]);
-		}
-	for (i = 0; i < f[1].length; i++) {
-		if (f[1][i] > 0 && (!(i in l))) {return("nope");}
-		if (f[1][i] > l[i]) {return("nope");}
-		rval[i] -= f[1][i];
-		}
-	for (i = 0; i < f[0].length; i++) {
-		if (!(i in l)) {rval.push(0);}
-		rval[i] += f[0][i];
-		}
-	return(rval);
-	}
-
-function testing_apply_f_to_l(wl,wn,wd) {
-	var l = prime_factor(wl);
-	var f = [prime_factor(wn),prime_factor(wd)];
-	var r = apply_f_to_l(l,f);
-	if (r != "nope") {
-		r = pl_to_int(r);
-		}
-	return(r);
-	}
-
-function apply_fl_to_l_and_which(l, fl) { //attempt to apply fractionlist (each in list form) to list, return "nope" if failure, return pair [fi(l), i]
-	var i;
-	var t;
-	for (i = 0; i < fl.length; i++) {
-		var t = apply_f_to_l(l, fl[i]);
-		if (t != "nope") {
-			return([t,i]);
+	function fl_max_power(l) {
+		var rval = 0;
+		var i;
+		for (i = 0; i < l.length; i++) {
+			rval = Math.max(rval, l[i][0].length, l[i][1].length);
 			}
+		return(rval);
 		}
-	return("nope");
-	}
 
-function apply_fl_to_l(l, fl) { //attempt to apply fractionlist (each in list form) to list, return "nope" if failure
-	var i;
-	var t;
-	for (i = 0; i < fl.length; i++) {
-		var t = apply_f_to_l(l, fl[i]);
-		if (t != "nope") {
-			return(t);
+	function rawpl_to_html(l, opts) {
+		var default_options = {
+			dot_after_exponents: true,
+			zero_exponents: "hide", //can be "hide", "dim", "show"
+			one_exponents: "hide", //can be "hide", "dim", "show"
+			actually_numbers: false,
 			}
-		}
-	return("nope");
-	}
+		opts = Object.assign({},default_options,opts);
 
-function iterated_apply_fl_to_l(l, fl) { //apply fl to l repeatedly until it can't. return "loop" if loops
-	var action_list = [pl_to_int(l)];
-	var curl = l;
-	var b = true;
-	while (b) {
-		curl = apply_fl_to_l(curl, fl);
-		if (curl == "nope") {b = false;}
-		else if (action_list.indexOf(pl_to_int(curl)) != -1) {return("loop")}
-		else {action_list.push(pl_to_int(curl));}
-		}
-	return(action_list[action_list.length-1]);
-	}
+		if (opts.actually_numbers) { return("<code>"+pl_to_int(rawpl_to_pl(l))+"</code>");}
 
-function iapp(n) {
-	var l = prime_factor(n);
-	var k = iterated_apply_fl_to_l(l, g_fracl);
-	return(k);
-	}
+		var i;
+		var rval = "";
+		var needs_dot = false;
+		var expstr;
+		
+		var isempty = true;
+		for (i = 0; i < l.length; i++) {
+			if (l[i][1] != 0) {isempty = false;}
+			}
+		if (isempty) {return("<code>1<sup></sup></code>");}
 
-function str_to_rawpl(str) { //converts a string 2^3*4^6*5 etc into a power list (with unsorted, nonprime bases),
-	var l = str.split("*");
-	var i;
-	var rval = [];
-	for (i = 0; i < l.length; i++) {
-		var k = l[i].split("^");
-		if (k.length == 1) {
-			var b = Number(k[0]);
-			//if (!Number.isInteger(b) || b <= 0) {console.log("parse failed at ", l[i]);}
-			rval.push([b,1]);
-			}
-		if (k.length == 2) {
-			var b = Number(k[0]);
-			//if (!Number.isInteger(b) || b <= 0) {console.log("parse failed at ", l[i]);}
-			var e = Number(k[1]);
-			//if (!Number.isInteger(e)) {console.log("parse failed at ", l[i]);}
-			rval.push([b,e]);
-			}
-		}
-	return(rval);
-	}
-
-function str_to_rawfl(str) {
-	var l = str.split(/\s|,/);
-	var i;
-	var rval = [];
-	for (i = 0; i < l.length; i++) {
-		if (l[i] == "") {continue;}
-		var k = l[i].split("/");
-		if (k.length == 1) {
-			rval.push([str_to_rawpl(k[0]), []]);
-			}
-		if (k.length == 2) {
-			rval.push([str_to_rawpl(k[0]), str_to_rawpl(k[1])]);
-			}
-		}
-	return(rval);
-	}
-
-function str_looks_like_a_rawpl(str) {
-	var l = str.split("*");
-	var i;
-	for (i = 0; i < l.length; i++) {
-		var k = l[i].split("^");
-		if (k.length == 1) {
-			var b = Number(k[0]);
-			if (!Number.isInteger(b) || b <= 0) {return(false);}
-			}
-		else if (k.length == 2) {
-			var b = Number(k[0]);
-			if (!Number.isInteger(b) || b <= 0) {return(false);}
-			var e = Number(k[1]);
-			if (!Number.isInteger(e)) {return(false);}
-			}
-		else {return(false);}
-		}
-	return(true);
-	}
-
-function str_looks_like_a_rawfl(str) {
-	var l = str.split(/\s|,/);
-	var i;
-	for (i = 0; i < l.length; i++) {
-		if (l[i] == "") {continue;}
-		var k = l[i].split("/");
-		if (k.length == 1) {
-			if (!str_looks_like_a_rawpl(k[0])) {return(false);}
-			}
-		else if (k.length == 2) {
-			if (!str_looks_like_a_rawpl(k[0])) {return(false);}
-			if (!str_looks_like_a_rawpl(k[1])) {return(false);}
-			}
-		else {
-			return(false);
-			}
-		}
-	return(true);
-	}
-
-function rawpl_to_str(l) {
-	var i;
-	var str = "";
-	var needs_dot = false;
-	for (i = 0; i < l.length; i++) {
-		if (l[i][1] == 0) {continue;}
-		else if (l[i][1] == 1) {
-			if (needs_dot) {str += "*";}
-			str += l[i][0]; 
-			needs_dot = true;
-			}
-		else {
-			if (needs_dot) {str += "*";}
-			str += l[i][0] + "^" + l[i][1]; 
-			needs_dot = true;}
-		}
-	if (str == "") {str = "1";}
-	return(str);
-	}
-
-function rawfl_to_str(l) {
-	var i;
-	var str = "";
-	for (i = 0; i < l.length; i++) {
-		if (i > 0) {str += ", ";}
-		str += rawpl_to_str(l[i][0]) + "/" + rawpl_to_str(l[i][1]);
-		}
-	return(str);
-	}
-
-function tk_override_mq_paste(str) {
-	if (str_looks_like_a_rawfl(str)) {
-		return(rawfl_to_latex(str_to_rawfl(str)));
-		}
-	return(str);
-	}
-
-function rawpl_to_latex(l) {
-	var i;
-	var str = "";
-	var needs_dot = false;
-	for (i = 0; i < l.length; i++) {
-		if (l[i][1] == 0) {continue;}
-		else if (l[i][1] == 1) {
-			if (needs_dot) {str += "\\cdot";}
-			str += l[i][0]; 
-			needs_dot = true;
-			}
-		else {
-			if (needs_dot) {str += "\\cdot";}
-			str += l[i][0] + "^{" + l[i][1] + "}"; 
-			needs_dot = true;
-			}
-		}
-	if (str == "") {str = "1";}
-	return(str);
-	}
-
-function rawfl_to_latex(l) {
-	var i;
-	var str = "";
-	for (i = 0; i < l.length; i++) {
-		if (i > 0) {str += ", ";}
-		str += "\\frac{"+rawpl_to_latex(l[i][0])+"}{"+rawpl_to_latex(l[i][1])+"}";
-		}
-	return(str);
-	}
-
-function rawpl_to_pl(l) {
-	var i;
-	var factoredbases = [];
-	var maxl = 0;
-	for (i = 0; i < l.length; i++) {
-		var t = prime_factor(l[i][0]);
-		factoredbases.push(t);
-		maxl = Math.max(t.length, maxl);
-		}
-	var rval = [];
-	for (i = 0; i < maxl; i++) {
-		rval.push(0);
-		}
-	for (i = 0; i < l.length; i++) {
-		for (j = 0; j < factoredbases[i].length; j++) {
-			rval[j] += factoredbases[i][j] * l[i][1];
-			}
-		}
-	return(rval);
-	}
-
-function rawfl_to_fl(l) {
-	var i;
-	var rval = [];
-	var frontfracs = [];
-	var maxprimen = 0;
-	for (i = 0; i < l.length; i++) {
-		maxprimen = Math.max(rawpl_to_pl(l[i][0]).length, rawpl_to_pl(l[i][1]).length, maxprimen);
-		}
-	for (i = 0; i < l.length; i++) {
-		var t_num = rawpl_to_pl(l[i][0]);
-		var t_den = rawpl_to_pl(l[i][1]);
-		var j;
-		if (! document.getElementById("chk_no_cancel").checked) {
-			for (j = 0; j < Math.min(t_num.length,t_den.length); j++) {
-				if (t_num[j] > 0 && t_den[j] > 0) {
-					var t = Math.min(t_num[j],t_den[j]);
-					t_num[j] -= t;
-					t_den[j] -= t;
+		for (i = 0; i < l.length; i++) {
+			expstr = l[i][1];
+			var old_needs_dot = needs_dot;
+			if (l[i][1] == 0) {
+				if (opts.zero_exponents == "hide") {
+					//rval += "<sup></sup>";
+					continue;
+					}
+				else if (opts.zero_exponents == "dim") {
+					needs_dot = true;
+					expstr = "<span style='color:gray'>" + expstr + "</span>";
+					}
+				else if (opts.zero_exponents == "show") {
+					needs_dot = true;
 					}
 				}
-			}
-		else {
-			var needscancel = false;
-			for (j = 0; j < Math.min(t_num.length, t_den.length); j++) {
-				if (t_num[j] > 0 && t_den[j] > 0) {needscancel = true;}
+			else if (l[i][1] == 1) {
+				if (opts.one_exponents == "hide") {
+					needs_dot=true;
+					expstr = "";
+					}
+				else if (opts.one_exponents == "dim") {
+					needs_dot = true;
+					expstr = "<span style='color:gray'>" + expstr + "</span>";
+					}
+				else if (opts.one_exponents == "show") {
+					needs_dot = true;
+					}
 				}
-			if (needscancel) {
-				var newprime = rawpl_to_pl([[nth_prime(maxprimen),1]]);
-				frontfracs.push([t_num,newprime]);
-				t_num = newprime;
-				maxprimen++;
+			else {
+				needs_dot = opts.dot_after_exponents;
+				}
+			if (old_needs_dot) {rval += "&sdot;"}
+			rval += "" + l[i][0] + "<sup>" + expstr + "</sup>";
+			}
+		return("<code>" + rval + "</code>");
+		}
+
+	function fracstrings(s1,s2) {
+		return `<table style='display:inline-block;vertical-align:middle; border-spacing:0px'><tr><td style='height:1.5em;text-align:center; padding:0px; border-bottom:solid 2px; font-size:80%'>${s1}</td></tr><tr><td style='height:1.5em;text-align:center;font-size:80%'>${s2}</td></tr></table>`;
+		}
+
+	function rawplfrac_to_html(l1,l2,opts) {
+		return(fracstrings(rawpl_to_html(l1,opts),rawpl_to_html(l2,opts)));
+		}
+
+	function rawfl_to_html(l, opts) {
+		var i;
+		var rval = "";
+		for (i = 0; i < l.length; i++) {
+			if (i > 0) {rval += ",<span style='width:1em'>&nbsp;</span>";}
+			rval += rawplfrac_to_html(l[i][0],l[i][1], opts);
+			}
+		return(rval);
+		}
+
+
+	function apply_f_to_l(l,f) { //attempt to apply fraction(in list form) to list, return "nope" if failure
+		var i;
+		var rval = [];
+		for (i = 0; i < l.length; i++) {
+			rval.push(l[i]);
+			}
+		for (i = 0; i < f[1].length; i++) {
+			if (f[1][i] > 0 && (!(i in l))) {return("nope");}
+			if (f[1][i] > l[i]) {return("nope");}
+			rval[i] -= f[1][i];
+			}
+		for (i = 0; i < f[0].length; i++) {
+			if (!(i in l)) {rval.push(0);}
+			rval[i] += f[0][i];
+			}
+		return(rval);
+		}
+
+	function testing_apply_f_to_l(wl,wn,wd) {
+		var l = prime_factor(wl);
+		var f = [prime_factor(wn),prime_factor(wd)];
+		var r = apply_f_to_l(l,f);
+		if (r != "nope") {
+			r = pl_to_int(r);
+			}
+		return(r);
+		}
+
+	function apply_fl_to_l_and_which(l, fl) { //attempt to apply fractionlist (each in list form) to list, return "nope" if failure, return pair [fi(l), i]
+		var i;
+		var t;
+		for (i = 0; i < fl.length; i++) {
+			var t = apply_f_to_l(l, fl[i]);
+			if (t != "nope") {
+				return([t,i]);
 				}
 			}
-		rval.push([t_num,t_den]);
+		return("nope");
 		}
-	return(frontfracs.concat(rval));
-	}
 
-function pl_to_rawpl(l, extra_powers) {
-	var i;
-	var rval = [];
-	for (i = 0; i < l.length; i++) {
-		rval.push([nth_prime(i),l[i]]);
+	function apply_fl_to_l(l, fl) { //attempt to apply fractionlist (each in list form) to list, return "nope" if failure
+		var i;
+		var t;
+		for (i = 0; i < fl.length; i++) {
+			var t = apply_f_to_l(l, fl[i]);
+			if (t != "nope") {
+				return(t);
+				}
+			}
+		return("nope");
 		}
-	if (extra_powers) {
-		for (i = l.length; i < extra_powers; i++)  {
-			rval.push([nth_prime(i),0]);
+
+	function iterated_apply_fl_to_l(l, fl) { //apply fl to l repeatedly until it can't. return "loop" if loops
+		var action_list = [pl_to_int(l)];
+		var curl = l;
+		var b = true;
+		while (b) {
+			curl = apply_fl_to_l(curl, fl);
+			if (curl == "nope") {b = false;}
+			else if (action_list.indexOf(pl_to_int(curl)) != -1) {return("loop")}
+			else {action_list.push(pl_to_int(curl));}
+			}
+		return(action_list[action_list.length-1]);
+		}
+
+	function iapp(n) {
+		var l = prime_factor(n);
+		var k = iterated_apply_fl_to_l(l, g_fracl);
+		return(k);
+		}
+
+	function str_to_rawpl(str) { //converts a string 2^3*4^6*5 etc into a power list (with unsorted, nonprime bases),
+		var l = str.split("*");
+		var i;
+		var rval = [];
+		for (i = 0; i < l.length; i++) {
+			var k = l[i].split("^");
+			if (k.length == 1) {
+				var b = Number(k[0]);
+				//if (!Number.isInteger(b) || b <= 0) {console.log("parse failed at ", l[i]);}
+				rval.push([b,1]);
+				}
+			if (k.length == 2) {
+				var b = Number(k[0]);
+				//if (!Number.isInteger(b) || b <= 0) {console.log("parse failed at ", l[i]);}
+				var e = Number(k[1]);
+				//if (!Number.isInteger(e)) {console.log("parse failed at ", l[i]);}
+				rval.push([b,e]);
+				}
+			}
+		return(rval);
+		}
+
+	function str_to_rawfl(str) {
+		var l = str.split(/\s|,/);
+		var i;
+		var rval = [];
+		for (i = 0; i < l.length; i++) {
+			if (l[i] == "") {continue;}
+			var k = l[i].split("/");
+			if (k.length == 1) {
+				rval.push([str_to_rawpl(k[0]), []]);
+				}
+			if (k.length == 2) {
+				rval.push([str_to_rawpl(k[0]), str_to_rawpl(k[1])]);
+				}
+			}
+		return(rval);
+		}
+
+	function str_looks_like_a_rawpl(str) {
+		var l = str.split("*");
+		var i;
+		for (i = 0; i < l.length; i++) {
+			var k = l[i].split("^");
+			if (k.length == 1) {
+				var b = Number(k[0]);
+				if (!Number.isInteger(b) || b <= 0) {return(false);}
+				}
+			else if (k.length == 2) {
+				var b = Number(k[0]);
+				if (!Number.isInteger(b) || b <= 0) {return(false);}
+				var e = Number(k[1]);
+				if (!Number.isInteger(e)) {return(false);}
+				}
+			else {return(false);}
+			}
+		return(true);
+		}
+
+	function str_looks_like_a_rawfl(str) {
+		var l = str.split(/\s|,/);
+		var i;
+		for (i = 0; i < l.length; i++) {
+			if (l[i] == "") {continue;}
+			var k = l[i].split("/");
+			if (k.length == 1) {
+				if (!str_looks_like_a_rawpl(k[0])) {return(false);}
+				}
+			else if (k.length == 2) {
+				if (!str_looks_like_a_rawpl(k[0])) {return(false);}
+				if (!str_looks_like_a_rawpl(k[1])) {return(false);}
+				}
+			else {
+				return(false);
+				}
+			}
+		return(true);
+		}
+
+	function rawpl_to_str(l) {
+		var i;
+		var str = "";
+		var needs_dot = false;
+		for (i = 0; i < l.length; i++) {
+			if (l[i][1] == 0) {continue;}
+			else if (l[i][1] == 1) {
+				if (needs_dot) {str += "*";}
+				str += l[i][0]; 
+				needs_dot = true;
+				}
+			else {
+				if (needs_dot) {str += "*";}
+				str += l[i][0] + "^" + l[i][1]; 
+				needs_dot = true;}
+			}
+		if (str == "") {str = "1";}
+		return(str);
+		}
+
+	function rawfl_to_str(l) {
+		var i;
+		var str = "";
+		for (i = 0; i < l.length; i++) {
+			if (i > 0) {str += ", ";}
+			str += rawpl_to_str(l[i][0]) + "/" + rawpl_to_str(l[i][1]);
+			}
+		return(str);
+		}
+
+	function tk_override_mq_paste(str) {
+		if (str_looks_like_a_rawfl(str)) {
+			return(rawfl_to_latex(str_to_rawfl(str)));
+			}
+		return(str);
+		}
+
+	function rawpl_to_latex(l) {
+		var i;
+		var str = "";
+		var needs_dot = false;
+		for (i = 0; i < l.length; i++) {
+			if (l[i][1] == 0) {continue;}
+			else if (l[i][1] == 1) {
+				if (needs_dot) {str += "\\cdot";}
+				str += l[i][0]; 
+				needs_dot = true;
+				}
+			else {
+				if (needs_dot) {str += "\\cdot";}
+				str += l[i][0] + "^{" + l[i][1] + "}"; 
+				needs_dot = true;
+				}
+			}
+		if (str == "") {str = "1";}
+		return(str);
+		}
+
+	function rawfl_to_latex(l) {
+		var i;
+		var str = "";
+		for (i = 0; i < l.length; i++) {
+			if (i > 0) {str += ", ";}
+			str += "\\frac{"+rawpl_to_latex(l[i][0])+"}{"+rawpl_to_latex(l[i][1])+"}";
+			}
+		return(str);
+		}
+
+	function rawpl_to_pl(l) {
+		var i;
+		var factoredbases = [];
+		var maxl = 0;
+		for (i = 0; i < l.length; i++) {
+			var t = prime_factor(l[i][0]);
+			factoredbases.push(t);
+			maxl = Math.max(t.length, maxl);
+			}
+		var rval = [];
+		for (i = 0; i < maxl; i++) {
+			rval.push(0);
+			}
+		for (i = 0; i < l.length; i++) {
+			for (j = 0; j < factoredbases[i].length; j++) {
+				rval[j] += factoredbases[i][j] * l[i][1];
+				}
+			}
+		return(rval);
+		}
+
+	function rawfl_to_fl(l) {
+		var i;
+		var rval = [];
+		var frontfracs = [];
+		var maxprimen = 0;
+		for (i = 0; i < l.length; i++) {
+			maxprimen = Math.max(rawpl_to_pl(l[i][0]).length, rawpl_to_pl(l[i][1]).length, maxprimen);
+			}
+		for (i = 0; i < l.length; i++) {
+			var t_num = rawpl_to_pl(l[i][0]);
+			var t_den = rawpl_to_pl(l[i][1]);
+			var j;
+			if (! document.getElementById("chk_no_cancel").checked) {
+				for (j = 0; j < Math.min(t_num.length,t_den.length); j++) {
+					if (t_num[j] > 0 && t_den[j] > 0) {
+						var t = Math.min(t_num[j],t_den[j]);
+						t_num[j] -= t;
+						t_den[j] -= t;
+						}
+					}
+				}
+			else {
+				var needscancel = false;
+				for (j = 0; j < Math.min(t_num.length, t_den.length); j++) {
+					if (t_num[j] > 0 && t_den[j] > 0) {needscancel = true;}
+					}
+				if (needscancel) {
+					var newprime = rawpl_to_pl([[nth_prime(maxprimen),1]]);
+					frontfracs.push([t_num,newprime]);
+					t_num = newprime;
+					maxprimen++;
+					}
+				}
+			rval.push([t_num,t_den]);
+			}
+		return(frontfracs.concat(rval));
+		}
+
+	function pl_to_rawpl(l, extra_powers) {
+		var i;
+		var rval = [];
+		for (i = 0; i < l.length; i++) {
+			rval.push([nth_prime(i),l[i]]);
+			}
+		if (extra_powers) {
+			for (i = l.length; i < extra_powers; i++)  {
+				rval.push([nth_prime(i),0]);
+				}
+			}
+		return(rval);
+		}
+
+	function fl_to_rawfl(l, extra_powers) {
+		var i;
+		var rval = [];
+		for (i = 0; i < l.length; i++) {
+			var t_num = pl_to_rawpl(l[i][0], extra_powers);
+			var t_den = pl_to_rawpl(l[i][1], extra_powers);
+			rval.push([t_num,t_den]);
+			}
+		return(rval);
+		}
+
+	function tkas_to_rawpls(L) { //returns pair (numerator, denominator)
+		if (L.op == "NUM") {
+			return([[[L.c,1]],[]]);
+			}
+		if (L.op == "POW") {
+			return([[[L.subs[0].c,L.subs[1].c]],[]]);
+			}
+		if (L.op == "MUL") {
+			var i;
+			var r = [];
+			for (i = 0; i < L.subs.length; i++) {
+				if (L.subs[i].op == "NUM") {
+					r.push([L.subs[i].c,1]);
+					}
+				if (L.subs[i].op == "POW") {
+					r.push([L.subs[i].subs[0].c,L.subs[i].subs[1].c]);
+					}
+				}
+			return([r,[]]);
+			}
+		if (L.op == "DIV") {
+			var t1 = tkas_to_rawpls(L.subs[0])[0];
+			var t2 = tkas_to_rawpls(L.subs[1])[0];
+			return([t1,t2]);
+			}
+		console.log("FAILURE:", L);
+		throw new Error("FAILURE");
+		}
+
+	function gcd(a,b) {
+		a = Math.abs(a);
+		b = Math.abs(b);
+		while(true) {
+			if (b == 0) {return(a);}
+			a = a % b;
+			if (a == 0) {return(b);}
+			b = b % a;
 			}
 		}
-	return(rval);
-	}
 
-function fl_to_rawfl(l, extra_powers) {
-	var i;
-	var rval = [];
-	for (i = 0; i < l.length; i++) {
-		var t_num = pl_to_rawpl(l[i][0], extra_powers);
-		var t_den = pl_to_rawpl(l[i][1], extra_powers);
-		rval.push([t_num,t_den]);
+	function add_number_fracs(f1,f2) {
+		console.log(f1[1],f2[1]);
+		var t = gcd(f1[1],f2[1]);
+		var newden = (f1[1]*f2[1])/t;
+		var newnum = (f1[0]*f2[1]+f1[1]*f2[0])/t;
+		return([newnum,newden]);
 		}
-	return(rval);
-	}
 
-function tkas_to_rawpls(L) { //returns pair (numerator, denominator)
-	if (L.op == "NUM") {
-		return([[[L.c,1]],[]]);
+	function fancy_tkas_to_rawpls(L) {
+		if (L.op == "NUM") {
+			return([[[L.c,1]],[]]);
+			}
+		if (L.op == "ADD") {
+			var i;
+			var curfrac = [0,1];
+			for (i = 0; i < L.subs.length; i++) {
+				var recur = fancy_tkas_to_rawpls(L.subs[i]);
+				var num = pl_to_int(rawpl_to_pl(recur[0]));
+				var den = pl_to_int(rawpl_to_pl(recur[1]));
+				curfrac = add_number_fracs(curfrac,[num,den]);
+				}
+			return([pl_to_rawpl(prime_factor(curfrac[0])),pl_to_rawpl(prime_factor(curfrac[1]))]);
+			}
+		if (L.op == "MUL") {
+			var i;
+			var curnum = [];
+			var curden = [];
+			for (i = 0; i < L.subs.length; i++) {
+				var recur = fancy_tkas_to_rawpls(L.subs[i]);
+				curnum = curnum.concat(recur[0]);
+				curden = curden.concat(recur[1]);
+				}
+			return([curnum,curden]);
+			}
+		if (L.op == "NEG") {
+			var recur = fancy_tkas_to_rawpls(L.subs[0]);
+			var newnum = [[-1,1],...recur[0]];
+			return([newnum,recur[1]]);
+			}
+		if (L.op == "DIV") {
+			var recur0 = fancy_tkas_to_rawpls(L.subs[0]);
+			var recur1 = fancy_tkas_to_rawpls(L.subs[1]);
+			return([recur0[0].concat(recur1[1]),recur0[1].concat(recur1[0])]);
+			}
+		if (L.op == "POW") {
+			var recurb = fancy_tkas_to_rawpls(L.subs[0]);
+			var recure = fancy_tkas_to_rawpls(L.subs[1]);
+			var exp = rawpl_to_int(recure[0])/rawpl_to_int(recure[1]);
+			var newnum = [];
+			var newden = [];
+			var i;
+			for (i = 0; i < recurb[0].length; i++) {
+				newnum.push([recurb[0][i][0],Math.round(recurb[0][i][1]*Math.abs(exp))]); //look, if you want fractional exponents, this isn't the place for them.
+				}
+			for (i = 0; i < recurb[1].length; i++) {
+				newden.push([recurb[1][i][0],Math.round(recurb[1][i][1]*Math.abs(exp))]);
+				}
+			if (exp < 0) {
+				return([newden,newnum]);
+				}
+			else {
+				return([newnum,newden]);
+				}
+			}
+		return(tkas_to_rawpls(L));
+		};
+
+// HTML Functions
+
+	var g_rawfl = [];
+	var g_fracl = [];
+
+	function do_flist_out() {
+		if (g_fracl.length == 0) {
+			document.getElementById("flist_out").innerHTML = "";
+			return;	
+			}
+		var str = "<table border=1 style='background-color:white; text-align:center'>";
+		str += "<tr><td></td>";
+		var i;
+		var g_fracl_rawfl = fl_to_rawfl(g_fracl);
+		for (i = 0; i < g_fracl.length; i++) {
+			str += "<td style='text-align:center;background-color:"+hi_color(i)+"'>" + number_to_letter(i) + "</td>";
+			}
+		str += "</tr><tr><td>As Entered:</td>";
+		for (i = 0; i < g_fracl.length - g_rawfl.length; i++) {
+			str += "<td></td>";
+			}
+		for (i = 0; i < g_rawfl.length; i++) {
+			str += "<td>" + rawplfrac_to_html(...g_rawfl[i]) + "</td>";
+			}
+		str += "</tr><tr><td>Raw Numbers:</td>";
+		for (i = 0; i < g_fracl.length; i++) {
+			str += "<td>" + rawplfrac_to_html(...g_fracl_rawfl[i], {actually_numbers:true}) + "</td>";
+			}
+	/*	str += "</tr><tr><td>Factored Form:</td>";
+		for (i = 0; i < g_fracl.length; i++) {
+			str += "<td>" + rawplfrac_to_html(...g_fracl_rawfl[i]) + "</td>";
+			}*/
+		str += "</tr></table>";
+		str += "Factored Form: <kbd>" + rawfl_to_str(g_fracl_rawfl) + "</kbd>";
+		document.getElementById("flist_out").innerHTML = str;
 		}
-	if (L.op == "POW") {
-		return([[[L.subs[0].c,L.subs[1].c]],[]]);
+
+	function do_chk_no_cancel() {
+		do_input();
 		}
-	if (L.op == "MUL") {
+
+	function do_input() { //specific functions (do_text_in, do_mq_in) drop off data in g_rawfl, then call do_input to display the result, do other changes on changing the fraction list, update g_fracl
+
+		reset_runtable();
+
+		g_fracl = rawfl_to_fl(g_rawfl);
+
+		do_flist_out();
+
+		local_data.levels[g_current_level].program = g_rawfl;
+		store_local_data();
+
+		}
+
+	function do_text_in() {
+		var elt = document.getElementById("text_in");
+		elt.style.height = 0;
+		elt.style.height = "max("+elt.scrollHeight + "px, 1.5em)";
+		var str = document.getElementById("text_in").value;
+		g_rawfl = str_to_rawfl(str);
+		do_input();
+		}
+
+	function do_tmq_in(m) {
+		var str = m.latex().replace(/{/g,"(").replace(/}/g,")");
+		str = str.replace(/\\\s/,"");
+		str = str.replace(/\\cdot/g,"*");
+		str = str.replace(/\\left/g,"");
+		str = str.replace(/\\right/g,"");
+		var l = str.split(",");
 		var i;
 		var r = [];
-		for (i = 0; i < L.subs.length; i++) {
-			if (L.subs[i].op == "NUM") {
-				r.push([L.subs[i].c,1]);
+		for (i = 0; i < l.length; i++) {
+			if (l[i] == "") {continue;}
+			try{
+				var L = tkas_parse(l[i]);
+				r.push(fancy_tkas_to_rawpls(L));
 				}
-			if (L.subs[i].op == "POW") {
-				r.push([L.subs[i].subs[0].c,L.subs[i].subs[1].c]);
+			catch (e) {}
+			}
+		g_rawfl = r;
+		do_input();
+		}
+
+	function do_mq_in(m) {
+		if (document.getElementById("sel_inp").value == "tmq") {do_tmq_in(m); return;}
+		var str = m.latex().replace(/{/g,"(").replace(/}/g,")");
+		str = str.replace(/\\frac/g,",\\frac").replace(/\\\s/,",");
+		str = str.replace(/\\cdot/g,"*");
+		var l = str.split(",");
+		var i;
+		var r = [];
+		for (i = 0; i < l.length; i++) {
+			if (l[i] == "") {continue;}
+			try{
+				var L = tkas_parse(l[i]);
+				r.push(tkas_to_rawpls(L));
 				}
+			catch (e) {}
 			}
-		return([r,[]]);
+		g_rawfl = r;
+		do_input();
 		}
-	if (L.op == "DIV") {
-		var t1 = tkas_to_rawpls(L.subs[0])[0];
-		var t2 = tkas_to_rawpls(L.subs[1])[0];
-		return([t1,t2]);
-		}
-	console.log("FAILURE:", L);
-	throw new Error("FAILURE");
-	}
 
-function gcd(a,b) {
-	a = Math.abs(a);
-	b = Math.abs(b);
-	while(true) {
-		if (b == 0) {return(a);}
-		a = a % b;
-		if (a == 0) {return(b);}
-		b = b % a;
+	function do_sel_inp() {
+		var k = document.getElementById("sel_inp").value;
+		document.getElementById("text_in_area").style.display = "none";
+		document.getElementById("mq_in_area").style.display = "none";
+		if (k == "text") {
+			document.getElementById("text_in_area").style.display = "";
+			}
+		if (k == "tmq") {
+			document.getElementById("mq_in_area").style.display = "";
+			}
 		}
-	}
 
-function add_number_fracs(f1,f2) {
-	console.log(f1[1],f2[1]);
-	var t = gcd(f1[1],f2[1]);
-	var newden = (f1[1]*f2[1])/t;
-	var newnum = (f1[0]*f2[1]+f1[1]*f2[0])/t;
-	return([newnum,newden]);
-	}
-
-function fancy_tkas_to_rawpls(L) {
-	if (L.op == "NUM") {
-		return([[[L.c,1]],[]]);
-		}
-	if (L.op == "ADD") {
+	function tablerow(l,fl) {
+		var display_fractions = false; //show fractions in each row or maybe just leave them to top?
 		var i;
-		var curfrac = [0,1];
-		for (i = 0; i < L.subs.length; i++) {
-			var recur = fancy_tkas_to_rawpls(L.subs[i]);
-			var num = pl_to_int(rawpl_to_pl(recur[0]));
-			var den = pl_to_int(rawpl_to_pl(recur[1]));
-			curfrac = add_number_fracs(curfrac,[num,den]);
-			}
-		return([pl_to_rawpl(prime_factor(curfrac[0])),pl_to_rawpl(prime_factor(curfrac[1]))]);
-		}
-	if (L.op == "MUL") {
-		var i;
-		var curnum = [];
-		var curden = [];
-		for (i = 0; i < L.subs.length; i++) {
-			var recur = fancy_tkas_to_rawpls(L.subs[i]);
-			curnum = curnum.concat(recur[0]);
-			curden = curden.concat(recur[1]);
-			}
-		return([curnum,curden]);
-		}
-	if (L.op == "NEG") {
-		var recur = fancy_tkas_to_rawpls(L.subs[0]);
-		var newnum = [[-1,1],...recur[0]];
-		return([newnum,recur[1]]);
-		}
-	if (L.op == "DIV") {
-		var recur0 = fancy_tkas_to_rawpls(L.subs[0]);
-		var recur1 = fancy_tkas_to_rawpls(L.subs[1]);
-		return([recur0[0].concat(recur1[1]),recur0[1].concat(recur1[0])]);
-		}
-	if (L.op == "POW") {
-		var recurb = fancy_tkas_to_rawpls(L.subs[0]);
-		var recure = fancy_tkas_to_rawpls(L.subs[1]);
-		var exp = rawpl_to_int(recure[0])/rawpl_to_int(recure[1]);
-		var newnum = [];
-		var newden = [];
-		var i;
-		for (i = 0; i < recurb[0].length; i++) {
-			newnum.push([recurb[0][i][0],Math.round(recurb[0][i][1]*Math.abs(exp))]); //look, if you want fractional exponents, this isn't the place for them.
-			}
-		for (i = 0; i < recurb[1].length; i++) {
-			newden.push([recurb[1][i][0],Math.round(recurb[1][i][1]*Math.abs(exp))]);
-			}
-		if (exp < 0) {
-			return([newden,newnum]);
-			}
-		else {
-			return([newnum,newden]);
-			}
-		}
-	return(tkas_to_rawpls(L));
-	};
+		var rawfl = fl_to_rawfl(fl);
+		var k = apply_fl_to_l_and_which(l, fl); //k[0] is the new number, k[1] is which fraction got multiplied, or maybe k is just "nope"
 
-
-var g_rawfl = [];
-var g_fracl = [];
-
-function do_flist_out() {
-	if (g_fracl.length == 0) {
-		document.getElementById("flist_out").innerHTML = "";
-		return;	
-		}
-	var str = "<table border=1 style='background-color:white; text-align:center'>";
-	str += "<tr><td></td>";
-	var i;
-	var g_fracl_rawfl = fl_to_rawfl(g_fracl);
-	for (i = 0; i < g_fracl.length; i++) {
-		str += "<td style='text-align:center;background-color:"+hi_color(i)+"'>" + number_to_letter(i) + "</td>";
-		}
-	str += "</tr><tr><td>As Entered:</td>";
-	for (i = 0; i < g_fracl.length - g_rawfl.length; i++) {
-		str += "<td></td>";
-		}
-	for (i = 0; i < g_rawfl.length; i++) {
-		str += "<td>" + rawplfrac_to_html(...g_rawfl[i]) + "</td>";
-		}
-	str += "</tr><tr><td>Raw Numbers:</td>";
-	for (i = 0; i < g_fracl.length; i++) {
-		str += "<td>" + rawplfrac_to_html(...g_fracl_rawfl[i], {actually_numbers:true}) + "</td>";
-		}
-/*	str += "</tr><tr><td>Factored Form:</td>";
-	for (i = 0; i < g_fracl.length; i++) {
-		str += "<td>" + rawplfrac_to_html(...g_fracl_rawfl[i]) + "</td>";
-		}*/
-	str += "</tr></table>";
-	str += "Factored Form: <kbd>" + rawfl_to_str(g_fracl_rawfl) + "</kbd>";
-	document.getElementById("flist_out").innerHTML = str;
-	}
-
-function do_chk_no_cancel() {
-	do_input();
-	}
-
-function do_input() { //specific functions (do_text_in, do_mq_in) drop off data in g_rawfl, then call do_input to display the result, do other changes on changing the fraction list, update g_fracl
-
-	reset_runtable();
-
-	g_fracl = rawfl_to_fl(g_rawfl);
-
-	do_flist_out();
-
-	local_data.levels[g_current_level].program = g_rawfl;
-	store_local_data();
-
-	}
-
-function do_text_in() {
-	var elt = document.getElementById("text_in");
-	elt.style.height = 0;
-	elt.style.height = "max("+elt.scrollHeight + "px, 1.5em)";
-	var str = document.getElementById("text_in").value;
-	g_rawfl = str_to_rawfl(str);
-	do_input();
-	}
-
-function do_tmq_in(m) {
-	var str = m.latex().replace(/{/g,"(").replace(/}/g,")");
-	str = str.replace(/\\\s/,"");
-	str = str.replace(/\\cdot/g,"*");
-	str = str.replace(/\\left/g,"");
-	str = str.replace(/\\right/g,"");
-	var l = str.split(",");
-	var i;
-	var r = [];
-	for (i = 0; i < l.length; i++) {
-		if (l[i] == "") {continue;}
-		try{
-			var L = tkas_parse(l[i]);
-			r.push(fancy_tkas_to_rawpls(L));
-			}
-		catch (e) {}
-		}
-	g_rawfl = r;
-	do_input();
-	}
-
-function do_mq_in(m) {
-	if (document.getElementById("sel_inp").value == "tmq") {do_tmq_in(m); return;}
-	var str = m.latex().replace(/{/g,"(").replace(/}/g,")");
-	str = str.replace(/\\frac/g,",\\frac").replace(/\\\s/,",");
-	str = str.replace(/\\cdot/g,"*");
-	var l = str.split(",");
-	var i;
-	var r = [];
-	for (i = 0; i < l.length; i++) {
-		if (l[i] == "") {continue;}
-		try{
-			var L = tkas_parse(l[i]);
-			r.push(tkas_to_rawpls(L));
-			}
-		catch (e) {}
-		}
-	g_rawfl = r;
-	do_input();
-	}
-
-function do_sel_inp() {
-	var k = document.getElementById("sel_inp").value;
-	document.getElementById("text_in_area").style.display = "none";
-	document.getElementById("mq_in_area").style.display = "none";
-	if (k == "text") {
-		document.getElementById("text_in_area").style.display = "";
-		}
-	if (k == "tmq") {
-		document.getElementById("mq_in_area").style.display = "";
-		}
-	}
-
-function tablerow(l,fl) {
-	var display_fractions = false; //show fractions in each row or maybe just leave them to top?
-	var i;
-	var rawfl = fl_to_rawfl(fl);
-	var k = apply_fl_to_l_and_which(l, fl); //k[0] is the new number, k[1] is which fraction got multiplied, or maybe k is just "nope"
-
-	var str = "<tr><td>";
-	str += pl_to_int(l);
-	str += "</td><td>";
-	str += rawpl_to_html(pl_to_rawpl(l));
-	str += "</td>";
-
-	for (i = 0; i < fl.length; i++) {
-		if (i == k[1]) {
-			str += "<td style='background-color:"+hi_color(i)+"'>";
-			}
-		else {
-			str += "<td>";
-			}
-		if (display_fractions) {
-			str += rawplfrac_to_html(rawfl[i][0],rawfl[i][1]);
-			}
-		str += "</td>";
-		}
-
-	str += "<td>";
-	if (k == "nope") {
-		str += "Done!";
-		}
-	else {
-		str += pl_to_int(k[0]);
+		var str = "<tr><td>";
+		str += pl_to_int(l);
 		str += "</td><td>";
-		str += rawpl_to_html(pl_to_rawpl(k[0]));
-		}
-	str += "</td>";
+		str += rawpl_to_html(pl_to_rawpl(l));
+		str += "</td>";
 
-	str += "</tr>";
-
-	return(str);
-	}
-
-function generate_table_html(nh, fl) { //meant to be fed in g_number_history and g_fracl. note there are no assumptions on nh: you could make a table of what happens if you input 1 to n. outputs an HTML string
-	var str = "<table border=1 style='background-color:white'>";
-	var top_fractions = true; //show fractions at the top
-	var i, j;
-	var rawfl = fl_to_rawfl(fl);
-
-	if (top_fractions) {
-		str += "<tr><td></td><td></td>";
 		for (i = 0; i < fl.length; i++) {
-			str += "<td>";
-			str += rawplfrac_to_html(rawfl[i][0],rawfl[i][1]);
+			if (i == k[1]) {
+				str += "<td style='background-color:"+hi_color(i)+"'>";
+				}
+			else {
+				str += "<td>";
+				}
+			if (display_fractions) {
+				str += rawplfrac_to_html(rawfl[i][0],rawfl[i][1]);
+				}
 			str += "</td>";
 			}
-		str += "<td></td><td></td></tr>";
+
+		str += "<td>";
+		if (k == "nope") {
+			str += "Done!";
+			}
+		else {
+			str += pl_to_int(k[0]);
+			str += "</td><td>";
+			str += rawpl_to_html(pl_to_rawpl(k[0]));
+			}
+		str += "</td>";
+
+		str += "</tr>";
+
+		return(str);
 		}
 
-	for (i = 0; i < nh.length; i++) {
-		str += tablerow(nh[i], fl);
+	function generate_table_html(nh, fl) { //meant to be fed in g_number_history and g_fracl. note there are no assumptions on nh: you could make a table of what happens if you input 1 to n. outputs an HTML string
+		var str = "<table border=1 style='background-color:white'>";
+		var top_fractions = true; //show fractions at the top
+		var i, j;
+		var rawfl = fl_to_rawfl(fl);
+
+		if (top_fractions) {
+			str += "<tr><td></td><td></td>";
+			for (i = 0; i < fl.length; i++) {
+				str += "<td>";
+				str += rawplfrac_to_html(rawfl[i][0],rawfl[i][1]);
+				str += "</td>";
+				}
+			str += "<td></td><td></td></tr>";
+			}
+
+		for (i = 0; i < nh.length; i++) {
+			str += tablerow(nh[i], fl);
+			}
+
+		str += "</table>";
+		return(str);
 		}
 
-	str += "</table>";
-	return(str);
-	}
+	var g_number_history = []; //history. list of pls of the numbers
 
-var g_number_history = []; //history. list of pls of the numbers
-
-function reset_runtable() {
-	g_number_history = [];
-	document.getElementById("runtable").innerHTML = "";
-	document.getElementById("animation").innerHTML = "";
-	}
-
-function butt_once() { //might make this fancier later
-	if (g_number_history.length == 0) {
-		//var k = Number(document.getElementById("number_in").value);
-		//var l = prime_factor(k);
-		var l = rawpl_to_pl(str_to_rawpl(document.getElementById("number_in").value));
-		g_number_history.push(l);
+	function reset_runtable() {
+		g_number_history = [];
+		document.getElementById("runtable").innerHTML = "";
+		document.getElementById("animation").innerHTML = "";
 		}
 
-	var last_pl = g_number_history[g_number_history.length-1];
-	var next_pl = apply_fl_to_l(last_pl, g_fracl)
-	if (next_pl != "nope") {
-		g_number_history.push(next_pl);
-		}
-
-	var str = generate_table_html(g_number_history, g_fracl);
-
-	document.getElementById("runtable").innerHTML = str;
-	}
-
-function butt_many() {
-	var i;
-	for (i = 0; i < 1000; i++) {
+	function butt_once() { //might make this fancier later
 		if (g_number_history.length == 0) {
+			//var k = Number(document.getElementById("number_in").value);
+			//var l = prime_factor(k);
 			var l = rawpl_to_pl(str_to_rawpl(document.getElementById("number_in").value));
 			g_number_history.push(l);
 			}
+
 		var last_pl = g_number_history[g_number_history.length-1];
 		var next_pl = apply_fl_to_l(last_pl, g_fracl)
-		if (next_pl == "nope") { break; }
-		g_number_history.push(next_pl);
-		}
-
-	var str = generate_table_html(g_number_history, g_fracl);
-
-	document.getElementById("runtable").innerHTML = str;
-	if ("testing_ground_level" in levels[g_current_level]) {
-		local_data.levels[g_current_level].completed = true;
-		store_local_data();
-		}
-	}
-
-function do_animate(f) {
-	var f = Number(document.getElementById("animation_framecount").value);
-	var frames_per_move = 20;
-	var moves = Math.floor(f/frames_per_move);
-	var remainder = f-(moves*frames_per_move);
-	
-	var cell_width_in_em = 2;
-
-	var str = "<div style='position:relative; background-color:white'>";
-	var i;
-	var rawfl = fl_to_rawfl(g_fracl);
-	str += "<span style='display:inline-block; width:"+cell_width_in_em+"em'></span>";
-	for (i = 0; i < g_fracl.length; i++) {
-		str += "<span style='display:inline-block; text-align:center; width:"+cell_width_in_em+"em'>";
-		str += "<span style='display:inline-block; background-color:"+hi_color(i)+"'>";
-		str += rawplfrac_to_html(rawfl[i][0],rawfl[i][1],{actually_numbers:true});
-		str += "</span></span>";
-		}
-
-	var moves_into_round = 0;
-	var rounds = 0;
-	var are_we_at_end_of_row = false;
-	var are_we_nearly_at_end_of_row = false;
-
-	if (g_number_history.length == 0) {butt_once();}
-	for (i = 0; i < moves;) {
-		if (!(rounds in g_number_history)) {
-			butt_once();
+		if (next_pl != "nope") {
+			g_number_history.push(next_pl);
 			}
-		var k = apply_fl_to_l_and_which(g_number_history[rounds], g_fracl);
-		if (k != "nope") {
-			if (i + k[1] + 1 < moves) {
-				i += (k[1]+2);
-				rounds++;
+
+		var str = generate_table_html(g_number_history, g_fracl);
+
+		document.getElementById("runtable").innerHTML = str;
+		}
+
+	function butt_many() {
+		var i;
+		for (i = 0; i < 1000; i++) {
+			if (g_number_history.length == 0) {
+				var l = rawpl_to_pl(str_to_rawpl(document.getElementById("number_in").value));
+				g_number_history.push(l);
 				}
-			else {
-				moves_into_round = moves - i;
-				if (moves_into_round == k[1]) {are_we_nearly_at_end_of_row = true;}
-				if (moves_into_round == k[1]+1) {are_we_at_end_of_row = true;}
-				break;
+			var last_pl = g_number_history[g_number_history.length-1];
+			var next_pl = apply_fl_to_l(last_pl, g_fracl)
+			if (next_pl == "nope") { break; }
+			g_number_history.push(next_pl);
+			}
+
+		var str = generate_table_html(g_number_history, g_fracl);
+
+		document.getElementById("runtable").innerHTML = str;
+		if ("testing_ground_level" in levels[g_current_level]) {
+			local_data.levels[g_current_level].completed = true;
+			store_local_data();
+			}
+		}
+
+	function do_animate(f) {
+		var f = Number(document.getElementById("animation_framecount").value);
+		var frames_per_move = 20;
+		var moves = Math.floor(f/frames_per_move);
+		var remainder = f-(moves*frames_per_move);
+		
+		var cell_width_in_em = 2;
+
+		var str = "<div style='position:relative; background-color:white'>";
+		var i;
+		var rawfl = fl_to_rawfl(g_fracl);
+		str += "<span style='display:inline-block; width:"+cell_width_in_em+"em'></span>";
+		for (i = 0; i < g_fracl.length; i++) {
+			str += "<span style='display:inline-block; text-align:center; width:"+cell_width_in_em+"em'>";
+			str += "<span style='display:inline-block; background-color:"+hi_color(i)+"'>";
+			str += rawplfrac_to_html(rawfl[i][0],rawfl[i][1],{actually_numbers:true});
+			str += "</span></span>";
+			}
+
+		var moves_into_round = 0;
+		var rounds = 0;
+		var are_we_at_end_of_row = false;
+		var are_we_nearly_at_end_of_row = false;
+
+		if (g_number_history.length == 0) {butt_once();}
+		for (i = 0; i < moves;) {
+			if (!(rounds in g_number_history)) {
+				butt_once();
 				}
-			}
-		else {break;}
-		}
-
-	var dist = cell_width_in_em*(moves_into_round + remainder/frames_per_move);
-	if (are_we_at_end_of_row) {dist = cell_width_in_em*(moves_into_round);}
-	dist += 0.5*cell_width_in_em;
-
-	if (!(rounds in g_number_history)) {butt_once();}
-
-	var currentnumber = pl_to_int(g_number_history[rounds]);
-
-	str += "<div style='position:absolute; top:1em; left:" + dist + "em; border:1px solid black;background-color:white; transform: translateX(-50%)'>";
-	str += currentnumber;
-	str += "</div>";
-
-
-	var divl = 0;
-	if (are_we_at_end_of_row) {divl = g_fracl[moves_into_round-1][1];}
-	else {divl = g_fracl[moves_into_round][1];}
-
-/*	if (are_we_at_end_of_row) {str += currentnumber + " is divisible by " + pl_to_int(g_fracl[moves_into_round-1][1]) + ". Multiplying fraction!";}
-	else if (are_we_nearly_at_end_of_row) {str += currentnumber + " is divisible by " + pl_to_int(g_fracl[moves_into_round][1]) + ". Multiplying fraction!";}
-	else {str += currentnumber + " is not divisible by " + pl_to_int(g_fracl[moves_into_round][1]) + ".";}*/
-	if (list_divisible(divl, g_number_history[rounds])) {
-		str += currentnumber + " is divisible by " + pl_to_int(divl) + ". Multiplying fraction!";
-		}
-	else {
-		str += currentnumber + " is not divisible by " + pl_to_int(divl) + ".";
-		}
-
-	str += "</div>";
-
-	document.getElementById("animation").innerHTML = str;
-	}
-
-
-var g_ani_flag = false;
-
-function butt_ani_go() {
-	var n = Number(document.getElementById("animation_framecount").value);
-	document.getElementById("animation_framecount").value = n+1;
-	do_animate();
-	if (g_ani_flag) {
-		requestAnimationFrame(butt_ani_go);
-		}
-	}
-
-function butt_ani_pp() {
-	if (g_ani_flag) {
-		g_ani_flag = false;
-		document.getElementById("ani_pp").innerHTML = "Play";
-		}
-	else {
-		g_ani_flag = true;
-		requestAnimationFrame(butt_ani_go);
-		document.getElementById("ani_pp").innerHTML = "Pause";
-		}
-	}
-
-function load_program(str) {
-	document.getElementById("text_in").value = str;
-	do_text_in();
-	}
-
-var g_current_level = 0;
-
-function butt_hint1() {
-	document.getElementById("hint1").innerHTML = levels[g_current_level].hint;
-	}
-
-function butt_hint2() {
-	document.getElementById("hint2").innerHTML = levels[g_current_level].solution_idea;
-	}
-
-function butt_hint3() {
-	var str = levels[g_current_level].solution;
-	document.getElementById("text_in").value = str;
-	MQ(document.getElementById("mq_in")).latex(rawfl_to_latex(str_to_rawfl(str)));
-	do_text_in();
-	}
-
-function load_level(i) {
-	var str = "";
-	if ("guide" in levels[i]) {
-		str += levels[i].guide;
-		};
-	str += "<h3>Level Goal:</h3>";
-	str += "<table border=1 style='background-color:white'><tr><td>";
-	str += levels[i].desc;
-	str += "</td></tr></table>";
-	if ("hint" in levels[i]) {str += "<button onclick='butt_hint1()'>Hint</button>";}
-	if ("solution_idea" in levels[i]) {str += "<button onclick='butt_hint2()'>Solution Idea</button>";}
-	if ("solution" in levels[i]) {str += "<button onclick='butt_hint3()'>Show Solution</button>";}
-	str += "<div id='hint1'></div>";
-	str += "<div id='hint2'></div>";
-	g_current_level = i;
-	document.getElementById("level_text").innerHTML = str;
-	document.getElementById("check_out").innerHTML = "";
-
-	var loaded_rawfl = local_data.levels[g_current_level].program;
-	document.getElementById("text_in").value = rawfl_to_str(loaded_rawfl);
-	MQ(document.getElementById("mq_in")).latex(rawfl_to_latex(loaded_rawfl));
-	do_text_in();
-	load_comments();
-	}
-
-function next_level() {
-	if (g_current_level < levels.length-1) {
-		load_level(g_current_level+1);
-		}
-	}
-
-function test_level(i) {
-	g_check_out_string = "";
-	var str = "";
-	var k = levels[i].test();
-	if (k) {
-		str = "All tests " + passstr;
-		str += " <button onclick='next_level()'>Next Level</button>";
-		str += "<br><table border=1>" + g_check_out_string + "</table>";
-		local_data.levels[i].completed = true;
-		store_local_data();
-		}
-	else {
-		str = "Some tests " + failstr + "<br><table border=1>" + g_check_out_string + "</table>";
-		}
-	str = "<h2>Test Results:</h2><div class='zone'><table border=1 style='background-color:white'><tr><td>" + str + "</td></tr></table></div>";
-	document.getElementById("check_out").innerHTML = str;
-	document.getElementById("check_out").scrollIntoView();
-	}
-
-function compare_pls(pl1,pl2) {
-	var i;
-	for (i = 0; i < Math.max(pl1.length,pl2.length); i++) {
-		if ((i in pl1) && (i in pl2) && (pl1[i] != pl2[i])) {return(false);}
-		if (!(i in pl1) && (i in pl2) && (pl2[i] != 0)) {return(false);}
-		if ((i in pl1) && !(i in pl2) && (pl1[i] != 0)) {return(false);}
-		}
-	return(true);
-	}
-
-var g_check_out_string = "";
-
-function checkotron(in_pl,out_pl,hard_steps = -1) { //checks to see if in_pl creates out_pl, returns boolean, updates g_check_out_string
-	var str = "<tr><td>" + rawpl_to_html(pl_to_rawpl(in_pl)) + "</td>";
-	var runstr = "";
-	var statusstr = "";
-	var max_iterations = 1000;
-	var visited_numbers = {};
-	var current_pl = in_pl;
-	visited_numbers[pl_to_int(current_pl)] = true;
-	var rval = false;
-	var i;
-	runstr += rawpl_to_html(pl_to_rawpl(current_pl));
-	for (i = 0; i < max_iterations; i++) {
-		var t = apply_fl_to_l_and_which(current_pl,g_fracl);
-		if (t == "nope" || i == hard_steps) {
-			if (compare_pls(out_pl,current_pl)) {
-				rval = true;
-				statusstr = passstr + " Expected: " + rawpl_to_html(pl_to_rawpl(out_pl));
-				}
-			else {
-				statusstr = failstr + " Got: " + rawpl_to_html(pl_to_rawpl(current_pl)) + " Expected: " + rawpl_to_html(pl_to_rawpl(out_pl));
-				}
-			break;
-			}
-		next_pl = t[0];
-		var next_pl_html_string = rawpl_to_html(pl_to_rawpl(next_pl));
-		if (pl_to_int(next_pl) in visited_numbers) {
-			runstr += arrowtron(t[1]) + next_pl_html_string;
-			statusstr = "Loop!";
-			break;
-			}
-		runstr += arrowtron(t[1]) + next_pl_html_string;
-		current_pl = next_pl;
-		}
-	str += "<td>" + statusstr + "</td>";
-	str += "<td>" + runstr + "</td>";
-	str += "</tr>";
-	g_check_out_string += str;
-	return(rval);
-	}
-
-function do_chk_show_instructions() {
-	if (document.getElementById("chk_show_instructions").checked) {
-		document.getElementById("text_instructions").style.display = "";
-		document.getElementById("mq_instructions").style.display = "";
-		}
-	else {
-		document.getElementById("text_instructions").style.display = "none";
-		document.getElementById("mq_instructions").style.display = "none";
-		}
-	}
-
-function do_chk_comments() {
-	if (document.getElementById("chk_comments").checked) {
-		document.getElementById("comment_zone").style.display = "";
-		}
-	else {
-		document.getElementById("comment_zone").style.display = "none";
-		}
-	}
-
-function do_comment_key(i, e) {
-	console.log(e.key);
-	if (e.key == "Enter") {
-		if (i == local_data.levels[g_current_level].notes.length-1) {
-			add_comment();
-			}
-		else {
-			document.getElementById("comment_box"+(i+1)).focus();
-			}
-		}
-	if (e.key == "ArrowDown") {
-		if (i < local_data.levels[g_current_level].notes.length-1) {
-			document.getElementById("comment_box"+(i+1)).focus();
-			}
-		}
-	if (e.key == "ArrowUp") {
-		if (i > 0) {
-			document.getElementById("comment_box"+(i-1)).focus();
-			}
-		}
-	if (e.key == "Backspace") {
-		if (i > 0 && i == local_data.levels[g_current_level].notes.length-1 && local_data.levels[g_current_level].notes[i] == "") {
-			local_data.levels[g_current_level].notes.pop();
-			load_comments();
-			requestAnimationFrame(function() {
-				document.getElementById("comment_box"+(i-1)).focus();
-				});
-			}
-		}
-	}
-
-function do_comments(i,v) {
-	local_data.levels[g_current_level].notes[i] = v;
-	store_local_data();
-	}
-
-function add_comment() {
-	local_data.levels[g_current_level].notes.push("");
-	load_comments();
-	requestAnimationFrame(function() {
-		var i = local_data.levels[g_current_level].notes.length-1;
-		document.getElementById("comment_box"+i).focus();
-		})
-	}
-
-function remove_comment() {
-	local_data.levels[g_current_level].notes.pop();
-	load_comments();
-	}
-
-function load_comments() {
-	var l = local_data.levels[g_current_level].notes;
-	var i;
-	var str = "<ol>";
-	for (i = 0; i < l.length; i++) {
-		var n = "";
-		if (i in l) {n = l[i];}
-		var lg = n.length;
-		if (lg < 1) {lg = 1;}
-		str += "<li style='font-family:monospace' value='"+nth_prime(i)+"'><input id='comment_box"+i+"' size="+lg+" value='"+n+"' oninput='do_comments("+i+", event.target.value); input_expand(event.target)' onkeydown='do_comment_key("+i+", event)'>";
-		}
-	str += "<li style='font-family:monospace' value='"+nth_prime(i)+"'> <button onclick='add_comment()'>+</button>";
-	str += "<button onclick='remove_comment()'>-</button>";
-	str += "</ol>";
-	document.getElementById("comment_zone").innerHTML = str;
-	}
-
-function call_this_on_changing_local_data() { //changes visual components reflecting local data
-	update_level_select();
-	if (local_data.no_cancel_unlocked) {
-		document.getElementById("chk_no_cancel_container").style.display = "";
-		}
-	else {
-		document.getElementById("chk_no_cancel_container").style.display = "none";
-		document.getElementById("chk_no_cancel").checked = false;	
-		}
-	if (local_data.comments_unlocked) {
-		document.getElementById("chk_comments_container").style.display = "";
-		}
-	else {
-		document.getElementById("chk_comments_container").style.display = "none";
-		document.getElementById("chk_comments").checked = false;
-		}
-	}
-
-function reset_local_data() {
-	localStorage.clear();
-	var local_level_data = [];
-	var i;
-	for (i = 0; i < levels.length; i++) {
-		var prg = [];
-		if ("preprogram" in levels[i]) {prg = levels[i].preprogram;}
-		var n = ["","","","",""];
-		if ("notes" in levels[i]) {n = levels[i].notes;}
-		local_level_data.push({
-			completed: false,
-			program: prg,
-			notes: n
-			});
-		}
-	local_data.levels = local_level_data;
-	local_data.no_cancel_unlocked = false;
-	local_data.comments_unlocked = true;
-	store_local_data();
-	}
-
-function boot_local_data() {
-	if (!localStorage.getItem("trkern_fractran_local_data")) {
-		reset_local_data();
-		}
-	else {
-		try{var lld_string = localStorage.getItem("trkern_fractran_local_data");
-		local_data = JSON.parse(lld_string);
-		call_this_on_changing_local_data();}
-		catch(e) {
-			reset_local_data();
-			}
-		}
-	}
-
-function store_local_data() {
-	localStorage.setItem("trkern_fractran_local_data", JSON.stringify(local_data));
-	call_this_on_changing_local_data();
-	}
-
-function update_level_select() {
-	var k = document.getElementById("sel_lev");
-	if (k) {
-		k = k.value;
-		}
-	var i;
-	var str = "<select id='sel_lev' onchange='load_level(event.target.value)'>";
-	for (i = 0; i < levels.length; i++) {
-		if (i == k) {
-			str += "<option value="+i+" selected>";
-			}
-		else {
-			str += "<option value="+i+" >";
-			}
-		if (local_data.levels[i].completed) {
-			str += "+";
-			}
-		else {
-			str += "-";
-			}
-		str += i+": "+levels[i].name+"</option>";
-		}
-	str += "</select>";
-	document.getElementById("level_sel").innerHTML = str;
-	update_level_select_butts();
-	}
-
-function butt_level(k) {
-	load_level(k);
-	}
-
-function update_level_select_butts() {
-	var k = g_current_level;
-	var str = "<table border=1 style='background-color:white'><tr><td>";
-	var i;
-	for (i = 0; i < levels.length; i++) {
-		var bcolor = "#DDDDDD";
-		var color = "black";
-		var gem = "-";
-		if (local_data.levels[i].completed) {bcolor = passcolor; color = "black"; gem="+"}
-		if (i == k) {bcolor = "#225522"; color = "white";}
-		str += "<button style='padding: 2px; margin:3px; background-color:"+bcolor+"; border-color:"+bcolor+"; color:"+color+";' onclick='butt_level("+i+")'>";
-		str += "<span style='display:inline-block; width:1em; margin:0px;'>"+gem+"</span>";
-		str += i + ". ";
-		str += levels[i].name;
-		str += "</button>";
-		}
-	str += "</td></tr></table>";
-	str += "<button onclick='reset_local_data()'>Reset Progress</button>";
-	document.getElementById("level_select_butts").innerHTML = str;
-	document.getElementById("current_level_name").innerHTML = k + ". " + levels[k].name;
-	}
-
-function boot() {
-	MQ.MathField(document.getElementById("mq_in"), {
-		handlers: {
-			edit: do_mq_in,
-			},
-		charsThatBreakOutOfSupSub: '+-=<>*/'
-		});
-	boot_local_data();
-	do_sel_inp();
-	do_chk_comments();
-	load_level(0);
-	do_chk_show_instructions()
-	}
-
-var levels = [];
-/*levels.push({
-	testing_ground_level: true,
-	preprogram: str_to_rawfl("17/91 78/85 19/51 23/38 29/33 77/29 95/23 77/19 1/17 11/13 13/11 15/2 1/7 55/1"),
-	name: "Welcome to Fractran!",
-	guide: "<p>Welcome to <span class='fractran'>FRACTRAN</span>! <span class='fractran'>FRACTRAN</span> is a Turing-complete programming language created by John Conway. This interactive will guide you through some basic programming practice in <span class='fractran'>FRACTRAN</span> until you are an EXPERT <span class='fractran'>FRACTRAN</span> PROGRAMMER!</p><p>A program in <span class='fractran'>FRACTRAN</span> is a list of fractions.</p> Execution:<ul><li> The program takes in a number as an input and stores it in the STATE VARIABLE<li> At each step of execution, the STATE VARIABLE number gets multiplied by the first fraction in your program that leaves the number as an integer.<li> This process repeats: the new STATE VARIABLE is multiplied by the FIRST fraction in your program that leaves the number as an integer.<li> If no fraction is available, the program HALTS and outputs the current STATE VARIABLE.</ul>",
-	desc: "Each level will ask you to create a program to perform a certain task. This level has been pre-programmed with the PRIMEGAME program: <kbd>17/91, 78/85, 19/51, 23/38, 29/33, 77/29, 95/23, 77/19, 1/17, 11/13, 13/11, 15/2, 1/7, 55/1</kbd><ol><li>Scroll down to the 'Testing Ground'<li>Enter the number <kbd>2</kbd><li>Press the 'Advance 1000 Steps' button a few times.<li>A little + will appear in the level select to indicate that you've completed this level.</ol>",
-	hint: "Read the directions carefully!",
-	solution: "",
-	solution_idea: "Press the 'Advance 1000 Steps' button under 'Testing Ground'",
-	test: function() {
-		alert("Normally, you should use this button to complete a level. However, the goal of this level is to get you to use the TESTING GROUND below. Please press the 'Advance 1000 Steps' button to complete this level.");
-		return(false);
-		}
-	});*/
-
-levels.push({
-	name: "Introduction",
-	guide: "<p>Welcome to <span class='fractran'>FRACTRAN</span>! <span class='fractran'>FRACTRAN</span> is a Turing-complete programming language created by John Conway. This interactive will guide you through some basic programming practice in <span class='fractran'>FRACTRAN</span> until you are an EXPERT <span class='fractran'>FRACTRAN</span> PROGRAMMER!</p><p>A program in <span class='fractran'>FRACTRAN</span> is a list of fractions.</p>Execution:<ul><li> The program takes in a number as an input and stores it in the STATE VARIABLE<li> At each step of execution, the STATE VARIABLE number gets multiplied by the first fraction in your program that leaves the number as an integer.<li> This process repeats: the new STATE VARIABLE is multiplied by the FIRST fraction in your program that leaves the number as an integer.<li> If no fraction is available, the program HALTS and outputs the current STATE VARIABLE.</ul>",
-	desc: "Create a program that maps <code>2</code> to <code>3</code>. That is, when you input <code>2</code>, it outputs <code>3</code>. It can do anything you want on other inputs. Press the 'Test Solution' button to submit your answer.",
-	hint: "These first few levels are really simple to get you adjusted. One valid solution has only one fraction in it.",
-	solution: "3/2",
-	solution_idea: "What fraction, when multiplied by 2, gives you 3?",
-	test: function() {
-		return(checkotron([1],[0,1]));
-		}
-	});
-
-levels.push({
-	name: "Multiple Fractions",
-	guide: "<p>REMEMBER: your program can consist of multiple fractions! At each step, the number gets multiplied by the first fraction that keeps it a whole number, and ignores the rest.</p>",
-	desc: "Create a program that maps <code>2</code> to <code>3</code> and <code>5</code> to <code>7</code>.",
-	hint: "Sometimes fractions won't interact with each other.",
-	solution: "3/2, 7/5",
-	solution_idea: "Find two fractions to do these two tasks (mapping 2 to 3 and 5 to 7) separately.",
-	test: function() {
-		var rval = true;
-		if (!checkotron([1],[0,1])) {rval = false;}
-		if (!checkotron([0,0,1],[0,0,0,1])) {rval = false;}
-		return(rval);
-		}
-	});
-
-levels.push({
-	name: "Order Matters",
-	guide: "<p>REMEMBER: the order of fractions in your program matters! At each step, the number gets multiplied by the FIRST fraction that keeps it a whole number, and ignores the rest. In other words, the order of fractions is not the order to carry the instructions out, but an order of PRIORITY.</p>",
-	desc: "Create a program that maps <code>2</code> to <code>5</code>, <code>3</code> to <code>7</code>, and <code>6</code> to <code>11</code>.",
-	hint: "Each desired mapping will correspond to a separate fraction. Play around with the order you enter them in.",
-	solution: "11/6, 5/2, 7/3",
-	solution_idea: "The 11/6 must go first, since otherwise when you input a 6, it will get caught by the denominators 2 or 3.",
-	test: function() {
-		var rval = true;
-		if (!checkotron([1],[0,0,1])) {rval = false;}
-		if (!checkotron([0,1],[0,0,0,1])) {rval = false;}
-		if (!checkotron([1,1],[0,0,0,0,1])) {rval = false;}
-		return(rval);
-		}
-	});
-
-levels.push({
-	name: "Introduction Again",
-	guide: "<p>This process of multiplying the current number by the first fraction happens repeatedly until there is no fraction in the list that can be multiplied by the current number to get an integer.</p>",
-	desc: "Create a program that maps <code>2<sup>n</sup></code> to <code>3<sup>n</sup></code>.",
-	hint: "This level is still really simple. There's no need to try to calculate n.",
-	solution: "3/2",
-	solution_idea: "A fraction will keep replacing the denominator by the numerator until it can't or a higher priority fraction can be applied.",
-	test: function() {
-		var rval = true;
-		for (var i = 0; i < 10; i++) {
-			if (!checkotron([i],[0,i])) {rval = false;}
-			}
-		return(rval);
-		}
-	});
-
-levels.push({
-	name: "Multiple Fractions Again",
-	guide: "<p>This process of multiplying the current number by the first fraction happens repeatedly until there is no fraction in the list that can be multiplied by the current number to get an integer.</p>",
-	desc: "Create a program that maps <code>2<sup>n</sup></code> to <code>3<sup>n</sup></code> and <code>5<sup>n</sup></code> to <code>7<sup>n</sup></code>.",
-	hint: "This is the same problem as before.",
-	solution: "3/2, 7/5",
-	solution_idea: "Fractions are usually independent of each other, unless there are common factors.",
-	test: function() {
-		var rval = true;
-		for (var i = 0; i < 7; i++) {
-			if (!checkotron([i],[0,i])) {rval = false;}
-			}
-		for (var i = 0; i < 7; i++) {
-			if (!checkotron([0,0,i],[0,0,0,i])) {rval = false;}
-			}
-		return(rval);
-		}
-	});
-
-levels.push({
-	name: "Deleting Data",
-	guide: "<p>Looking at numbers in terms of their prime factorizations is essential to understanding a <span class='fractran'>FRACTRAN</span> program.</p>",
-	desc: "Create a program that maps <code>2<sup>n</sup>&sdot;3<sup>m</sup></code> to <code>2<sup>n</sup></code>.",
-	hint: "How could you turn 2^n*3 into 2^n?",
-	solution: "1/3",
-	solution_idea: "Usually, fractions replace the denominator with the numerator. However, if the numerator is 1, the fraction simply deletes the denominator.",
-	test: function() {
-		var rval = true;
-		for (var i = 0; i < 6; i++) {
-			for (var j = 0; j < 6; j++) {
-				if (!checkotron([i,j],[i])) {rval = false;}
-				}
-			}
-		return(rval);
-		}
-	});
-
-levels.push({
-	name: "Copying Data",
-	desc: "Create a program that turns <code>2<sup>n</sup></code> into <code>3<sup>n</sup>&sdot;5<sup>n</sup></code>.",
-	hint: "This level is still simple! There is a 1 fraction solution.",
-	solution: "15/2",
-	solution_idea: "Remember your exponent rules: a^n * b^n = (ab)^n.",
-	test: function() {
-		var rval = true;
-		for (var i = 0; i < 10; i++) {
-			if (!checkotron([i],[0,i,i])) {rval = false;}
-			}
-		return(rval);
-		}
-	});
-
-levels.push({
-	name: "Addition",
-	desc: "Create a program that turns <code>2<sup>n</sup>&sdot;3<sup>m</sup></code> into <code>5<sup>n+m</sup></code>.",
-	hint: "It may help to think of each fraction as a path for draining exponent from one prime to another.",
-	solution: "5/2, 5/3",
-	solution_idea: "Turn the 2s into 5s and the 3s into 5s.",
-	test: function() {
-		var rval = true;
-		for (var i = 0; i < 7; i++) {
-			for (var j = 0; j < 7; j++) {
-				if (!checkotron([i,j],[0,0,i+j])) {rval = false;}
-				}
-			}
-		return(rval);
-		}
-	});
-
-levels.push({
-	name: "Doubling",
-	desc: "Create a program that turns <code>2<sup>n</sup></code> to <code>3<sup>2n</sup></code>.",
-	hint: "Look back at the 'Copying Data' level.",
-	solution: "9/2",
-	solution_idea: "Remember your exponent rules: a^(2n) = (a^2)^n.",
-	test: function() {
-		var rval = true;
-		for (var i = 0; i < 10; i++) {
-			if (!checkotron([i],[0,2*i])) {rval = false;}
-			}
-		return(rval);
-		}
-	});
-
-levels.push({
-	name: "Intermediate Registers",
-	desc: "Create a program that turns <code>2<sup>n</sup></code> to <code>3<sup>2n</sup></code>, but none of the numerators in your program can have <code>3</code> to a power larger than <code>1</code>.",
-	hint: "Start with your solution to 'Copying Data'.",
-	solution: "15/2, 3/5",
-	solution_idea: "Copy the 2s into 3s and 5s simultaneously, then turn the 5s into 3s.",
-	test: function() {
-		var rval = true;
-		for (var i = 0; i < g_fracl.length; i++) {
-			if (g_fracl[i][0][1] >= 2) {
-				g_check_out_string += failstr + " Fraction contains numerator divisible by 9.";
-				rval = false;
-				}
-			}
-		for (var i = 0; i < 10; i++) {
-			if (!checkotron([i],[0,2*i])) {rval = false;}
-			}
-		return(rval);
-		}
-	});
-
-levels.push({
-	name: "Subtraction",
-	desc: "Create a program that turns <code>2<sup>n</sup>&sdot;3<sup>m</sup></code> (for <code>n < m</code>) into <code>3<sup>m-n</sup></code>.",
-	hint: "There is a single fraction solution to this puzzle.",
-	solution: "1/6",
-	test: function() {
-		var rval = true;
-		for (var i = 0; i < 7; i++) {
-			for (var j = i+1; j < 7; j++) {
-				if (!checkotron([i,j],[0,j-i])) {rval = false;}
-				}
-			}
-		return(rval);
-		}
-	});
-
-levels.push({
-	name: "Absolute Subtraction",
-	desc: "Create a program that turns <code>2<sup>n</sup>&sdot;3<sup>m</sup></code> into <code>5<sup>|m-n|</sup></code>.",
-	hint: "Start with your solution to the 'Subtraction' level.",
-	solution: "1/6, 5/3, 5/2",
-	solution_idea: "First, remove 2s and 3s until one pile is empty. Then move the remaining pile to 5s.",
-	test: function() {
-		var rval = true;
-		for (var i = 0; i < 7; i++) {
-			for (var j = 0; j < 7; j++) {
-				if (!checkotron([i,j],[0,0,Math.abs(j-i)])) {rval = false;}
-				}
-			}
-		return(rval);
-		}
-	});
-
-levels.push({
-	name: "Remainders",
-	desc: "Create a program that turns <code>2<sup>k</sup></code> into <code>1</code> if <code>k</code> is even and <code>3</code> if <code>k</code> is odd.",
-	hint: "You can remove multiple values at once if your denominator has multiple factors.",
-	solution: "1/4, 3/2",
-	solution_idea: "We first remove 2s in pairs. If there is a leftover 2, we turn it into a 3.",
-	test: function() {
-		var rval = true;
-		for (var i = 0; i < 5; i++) {
-			if (!checkotron([2*i],[])) {rval = false;}
-			if (!checkotron([2*i+1],[0,1])) {rval = false;}
-			}
-		return(rval);
-		}
-	});
-
-levels.push({
-	name: "Control",
-	guide: "<p>We've seen the primes' exponents acting as registers to temporarily store data, but they can just as easily serve as booleans (<code>0</code> or <code>1</code>) to control the flow of our programs, executing different code depending on which of a list of primes is present.</p>",
-	desc: "Create a program that turns <code>2<sup>n</sup>&sdot;11</code> into <code>2<sup>n+1</sup></code> and <code>2<sup>n</sup>&sdot;17</code> into <code>2<sup>n-1</sup></code>.",
-	hint: "If there is a factor of 11 in the denominator of a fraction, it will only catch numbers that have a factor of 11.",
-	solution: "2/11, 1/17*2",
-	solution_idea: "You can view fractions as having two parts multiplied together: one part which performs an operation multiplied by a part that looks for the control primes.",
-	test: function() {
-		var rval = true;
-		for (var i = 0; i < 7; i++) {
-			if (!checkotron([i,0,0,0,1],[i+1])) {rval = false;}
-			}
-		for (var i = 1; i < 7; i++) {
-			if (!checkotron([i,0,0,0,0,0,1],[i-1])) {rval = false;}
-			}
-		return(rval);
-		}
-	});
-
-levels.push({
-	name: "Control 2",
-	guide: "<p>Control is a bit tricky in <span class='fractran'>FRACTRAN</span>. When a program reads a control prime present in the current number, it consumes it, and one cannot put it back directly without creating fractions that cancel (losing their utility). Try the next level for a hint.</p>",
-	desc: "Create a program that turns <code>2<sup>n</sup>&sdot;11</code> into <code>3<sup>n</sup>&sdot;11</code> and <code>2<sup>n</sup>17&sdot;</code> into <code>5<sup>n</sup>&sdot;17</code>",
-	hint: "As usual, move exponents from one prime to another one unit at a time.",
-	solution: "3*13/11*2, 11/13, 5*19/17*2, 17/19",
-	solution_idea: "Every step, the control prime must change. To simulate the control prime not changing, you need to add a secondary control prime for each original control prime. Then, when that secondary control prime is active, do nothing but change back to the original control prime.",
-	test: function() {
-		var rval = true;
-		for (var i = 0; i < 7; i++) {
-			if (!checkotron([i,0,0,0,1],[0,i,0,0,1])) {rval = false;}
-			}
-		for (var i = 0; i < 7; i++) {
-			if (!checkotron([i,0,0,0,0,0,1],[0,0,i,0,0,0,1])) {rval = false;}
-			}
-		return(rval);
-		}
-	});
-
-levels.push({
-	name: "Control 2 Hint",
-	desc: "Create a program that turns <code>2<sup>n</sup>&sdot;11</code> into <code>2<sup>n+1</sup>&sdot;13</code> and <code>2<sup>n</sup>&sdot;17</code> into <code>2<sup>n-1</sup>&sdot;19</code>",
-	hint: "Look back at your solution to 'Control'.",
-	solution_idea: "You can view fractions as having two parts multiplied together: one part which performs an operation multiplied by a part that looks for and operates on the control primes.",
-	solution: "2*13/11, 19/2*17",
-	test: function() {
-		var rval = true;
-		for (var i = 0; i < 7; i++) {
-			if (!checkotron([i,0,0,0,1],[i+1,0,0,0,0,1])) {rval = false;}
-			}
-		for (var i = 1; i < 7; i++) {
-			if (!checkotron([i,0,0,0,0,0,1],[i-1,0,0,0,0,0,0,1])) {rval = false;}
-			}
-		return(rval);
-		}
-	});
-
-levels.push({
-	name: "Remainders 2",
-	guide: "<p>Having a control prime present in the input opens up some additional possibilities.</p>",
-	desc: "Create a program that turns <code>2<sup>n</sup>11</code> into <code>5</code> if <code>n</code> is even and <code>3</code> if <code>n</code> is odd.",
-	hint: "Start from your solution to 'Remainders'.",
-	solution: "1/4, 3/22, 5/11",
-	solution_idea: "If your program contains a fraction with denominator 1, it will run forever. So if the program state ever gets to 1, you can't escape. Having an extra prime present can prevent that.",
-	test: function() {
-		var rval = true;
-		for (var i = 0; i < 7; i++) {
-			if (!checkotron([2*i,0,0,0,1],[0,0,1])) {rval = false;}
-			if (!checkotron([2*i+1,0,0,0,1],[0,1])) {rval = false;}
-			}
-		return(rval);
-		}
-	});
-
-levels.push({
-	name: "Unlocking nocancel",
-	guide: "<p>Constantly having to swap back and forth between control primes is a real nuisance. If only fractions didn't cancel, since this <span class='fractran'>FRACTRAN</span> interpreter first checks divisibility by the denominator before multiplying by the numerator, you could write programs much more simply! For instance, the program "+rawfl_to_html(str_to_rawfl("3*11/2*11, 5*17/2*17"))+ " would be a shorter solution to 'Control 2'. Complete this stage to unlock nocancel mode.</p>",
-	desc: "Create a program that, when run for two steps on a number, is the same as running the un-canceled program " + rawfl_to_html(str_to_rawfl("2^3*5^4*11/2^4*5^3*11")) + " i.e. " + rawfl_to_html(str_to_rawfl("55000/22000")) + " for one step. That is, if the number is divisible by <code>22000</code>, in two steps it divides by <code>22000</code> and multiplies by <code>55000</code> and otherwise does nothing.",
-	hint: "Don't worry about the specific composition of the fractions.",
-	solution: "55000/13, 13/22000",
-	solution_idea: "We add a new prime, that when present, indicates that we're halfway through the process of dividing by 22000 and then multiplying by 55000. Since this prime is new, it cannot cancel with 22000 or 55000.",
-	test: function() {
-		var rval = true;
-		for (var i = 2; i <= 5; i++) {
-			for (var j = 2; j <= 5; j++) {
-				for (var k = 0; k <= 2; k++) {
-					var t = [i,0,j,0,k];
-					if (i >= 4 && j >= 3 && k >= 1) {
-						t = [i-1,0,j+1,0,k];
-						}
-					if (!checkotron([i,0,j,0,k], t, 2)) {rval = false;}
+			var k = apply_fl_to_l_and_which(g_number_history[rounds], g_fracl);
+			if (k != "nope") {
+				if (i + k[1] + 1 < moves) {
+					i += (k[1]+2);
+					rounds++;
+					}
+				else {
+					moves_into_round = moves - i;
+					if (moves_into_round == k[1]) {are_we_nearly_at_end_of_row = true;}
+					if (moves_into_round == k[1]+1) {are_we_at_end_of_row = true;}
+					break;
 					}
 				}
+			else {break;}
 			}
-		if (rval) {
-			local_data.no_cancel_unlocked = true;
+
+		var dist = cell_width_in_em*(moves_into_round + remainder/frames_per_move);
+		if (are_we_at_end_of_row) {dist = cell_width_in_em*(moves_into_round);}
+		dist += 0.5*cell_width_in_em;
+
+		if (!(rounds in g_number_history)) {butt_once();}
+
+		var currentnumber = pl_to_int(g_number_history[rounds]);
+
+		str += "<div style='position:absolute; top:1em; left:" + dist + "em; border:1px solid black;background-color:white; transform: translateX(-50%)'>";
+		str += currentnumber;
+		str += "</div>";
+
+
+		var divl = 0;
+		if (are_we_at_end_of_row) {divl = g_fracl[moves_into_round-1][1];}
+		else {divl = g_fracl[moves_into_round][1];}
+
+	/*	if (are_we_at_end_of_row) {str += currentnumber + " is divisible by " + pl_to_int(g_fracl[moves_into_round-1][1]) + ". Multiplying fraction!";}
+		else if (are_we_nearly_at_end_of_row) {str += currentnumber + " is divisible by " + pl_to_int(g_fracl[moves_into_round][1]) + ". Multiplying fraction!";}
+		else {str += currentnumber + " is not divisible by " + pl_to_int(g_fracl[moves_into_round][1]) + ".";}*/
+		if (list_divisible(divl, g_number_history[rounds])) {
+			str += currentnumber + " is divisible by " + pl_to_int(divl) + ". Multiplying fraction!";
 			}
+		else {
+			str += currentnumber + " is not divisible by " + pl_to_int(divl) + ".";
+			}
+
+		str += "</div>";
+
+		document.getElementById("animation").innerHTML = str;
+		}
+
+// Game Functions
+
+	var g_ani_flag = false;
+
+	function butt_ani_go() {
+		var n = Number(document.getElementById("animation_framecount").value);
+		document.getElementById("animation_framecount").value = n+1;
+		do_animate();
+		if (g_ani_flag) {
+			requestAnimationFrame(butt_ani_go);
+			}
+		}
+
+	function butt_ani_pp() {
+		if (g_ani_flag) {
+			g_ani_flag = false;
+			document.getElementById("ani_pp").innerHTML = "Play";
+			}
+		else {
+			g_ani_flag = true;
+			requestAnimationFrame(butt_ani_go);
+			document.getElementById("ani_pp").innerHTML = "Pause";
+			}
+		}
+
+	function load_program(str) {
+		document.getElementById("text_in").value = str;
+		do_text_in();
+		}
+
+	var g_current_level = 0;
+
+	function butt_hint1() {
+		document.getElementById("hint1").innerHTML = levels[g_current_level].hint;
+		}
+
+	function butt_hint2() {
+		document.getElementById("hint2").innerHTML = levels[g_current_level].solution_idea;
+		}
+
+	function butt_hint3() {
+		var str = levels[g_current_level].solution;
+		document.getElementById("text_in").value = str;
+		MQ(document.getElementById("mq_in")).latex(rawfl_to_latex(str_to_rawfl(str)));
+		do_text_in();
+		}
+
+	function load_level(i) {
+		var str = "";
+		if ("guide" in levels[i]) {
+			str += levels[i].guide;
+			};
+		str += "<h3>Level Goal:</h3>";
+		str += "<table border=1 style='background-color:white'><tr><td>";
+		str += levels[i].desc;
+		str += "</td></tr></table>";
+		if ("hint" in levels[i]) {str += "<button onclick='butt_hint1()'>Hint</button>";}
+		if ("solution_idea" in levels[i]) {str += "<button onclick='butt_hint2()'>Solution Idea</button>";}
+		if ("solution" in levels[i]) {str += "<button onclick='butt_hint3()'>Show Solution</button>";}
+		str += "<div id='hint1'></div>";
+		str += "<div id='hint2'></div>";
+		g_current_level = i;
+		document.getElementById("level_text").innerHTML = str;
+		document.getElementById("check_out").innerHTML = "";
+
+		var loaded_rawfl = local_data.levels[g_current_level].program;
+		document.getElementById("text_in").value = rawfl_to_str(loaded_rawfl);
+		MQ(document.getElementById("mq_in")).latex(rawfl_to_latex(loaded_rawfl));
+		do_text_in();
+		load_comments();
+		}
+
+	function next_level() {
+		if (g_current_level < levels.length-1) {
+			load_level(g_current_level+1);
+			}
+		}
+
+	function test_level(i) {
+		g_check_out_string = "";
+		var str = "";
+		var k = levels[i].test();
+		if (k) {
+			str = "All tests " + passstr;
+			str += " <button onclick='next_level()'>Next Level</button>";
+			str += "<br><table border=1>" + g_check_out_string + "</table>";
+			local_data.levels[i].completed = true;
+			store_local_data();
+			}
+		else {
+			str = "Some tests " + failstr + "<br><table border=1>" + g_check_out_string + "</table>";
+			}
+		str = "<h2>Test Results:</h2><div class='zone'><table border=1 style='background-color:white'><tr><td>" + str + "</td></tr></table></div>";
+		document.getElementById("check_out").innerHTML = str;
+		document.getElementById("check_out").scrollIntoView();
+		}
+
+	function compare_pls(pl1,pl2) {
+		var i;
+		for (i = 0; i < Math.max(pl1.length,pl2.length); i++) {
+			if ((i in pl1) && (i in pl2) && (pl1[i] != pl2[i])) {return(false);}
+			if (!(i in pl1) && (i in pl2) && (pl2[i] != 0)) {return(false);}
+			if ((i in pl1) && !(i in pl2) && (pl1[i] != 0)) {return(false);}
+			}
+		return(true);
+		}
+
+	var g_check_out_string = "";
+
+	function checkotron(in_pl,out_pl,hard_steps = -1) { //checks to see if in_pl creates out_pl, returns boolean, updates g_check_out_string
+		var str = "<tr><td>" + rawpl_to_html(pl_to_rawpl(in_pl)) + "</td>";
+		var runstr = "";
+		var statusstr = "";
+		var max_iterations = 1000;
+		var visited_numbers = {};
+		var current_pl = in_pl;
+		visited_numbers[pl_to_int(current_pl)] = true;
+		var rval = false;
+		var i;
+		runstr += rawpl_to_html(pl_to_rawpl(current_pl));
+		for (i = 0; i < max_iterations; i++) {
+			var t = apply_fl_to_l_and_which(current_pl,g_fracl);
+			if (t == "nope" || i == hard_steps) {
+				if (compare_pls(out_pl,current_pl)) {
+					rval = true;
+					statusstr = passstr + " Expected: " + rawpl_to_html(pl_to_rawpl(out_pl));
+					}
+				else {
+					statusstr = failstr + " Got: " + rawpl_to_html(pl_to_rawpl(current_pl)) + " Expected: " + rawpl_to_html(pl_to_rawpl(out_pl));
+					}
+				break;
+				}
+			next_pl = t[0];
+			var next_pl_html_string = rawpl_to_html(pl_to_rawpl(next_pl));
+			if (pl_to_int(next_pl) in visited_numbers) {
+				runstr += arrowtron(t[1]) + next_pl_html_string;
+				statusstr = "Loop!";
+				break;
+				}
+			runstr += arrowtron(t[1]) + next_pl_html_string;
+			current_pl = next_pl;
+			}
+		str += "<td>" + statusstr + "</td>";
+		str += "<td>" + runstr + "</td>";
+		str += "</tr>";
+		g_check_out_string += str;
 		return(rval);
 		}
-	});
 
-levels.push({
-	name: "There and Back",
-	desc: "Create a program that turns <code>2<sup>n</sup>&sdot;11</code> into <code>2<sup>n</sup>&sdot;3<sup>n</sup>&sdot;17</code>.",
-	hint: "As in 'Intermediate Registers', you'll need a separate register.",
-	solution: "11/13, 3*5*13/2*11, 19/11, 17/19, 19*2/5*17",
-	solution_idea: "In order to measure how many 2s we have, we need to move all the exponent out of the 2s and into an intermediate register. Having a control prime allows us to detect when this process is finished, and we can switch to a different control prime to move n back into the 2s and into the 3s.",
-	test: function() {
-		var rval = true;
-		for (var i = 0; i < 7; i++) {
-			if (!checkotron([i,0,0,0,1],[i,i,0,0,0,0,1])) {rval = false;}
+	function do_chk_show_instructions() {
+		if (document.getElementById("chk_show_instructions").checked) {
+			document.getElementById("text_instructions").style.display = "";
+			document.getElementById("mq_instructions").style.display = "";
 			}
-		return(rval);
+		else {
+			document.getElementById("text_instructions").style.display = "none";
+			document.getElementById("mq_instructions").style.display = "none";
+			}
 		}
-	});
 
-levels.push({
-	name: "Multiplication",
-	guide: "<p>Now that we have the ability to copy data out of a register while leaving the original source unchanged, this opens up a wide variety of practical programs.</p>",
-	desc: "Create a program that turns <code>2<sup>n</sup>&sdot;3<sup>m</sup>11</code> into <code>5<sup>nm</sup>&sdot;13</code>.",
-	hint: "You can store one of the multiplicands in two places: one to keep it safe so it can be reused, and one to gradually decrement as you add it to the product.",
-	solution: "7*11/2*11, 17/3*11, 13/11, 2*5*17/7*17, 11/17, 1/7",
-	//solution: "7*11/19, 2*5*17/23, 19/2*11, 17/3*11, 13/11, 23/7*17, 11/17, 1/7",
-	solution_idea: "We start in (11). Here we copy all the 2s to 7s. When there are none left, we remove a 3 and switch to (17). In (17), we move 7s back to 2s and 5s. When that's finished, we switch back to (11).",
-	test: function() {
-		var rval = true;
-		for (var i = 0; i < 7; i++) {
-			for (var j = 0; j < 7; j++) {
-				if (!checkotron([i,j,0,0,1],[0,0,i*j,0,0,1])) {rval = false;}
+	function do_chk_comments() {
+		if (document.getElementById("chk_comments").checked) {
+			document.getElementById("comment_zone").style.display = "";
+			}
+		else {
+			document.getElementById("comment_zone").style.display = "none";
+			}
+		}
+
+	function do_comment_key(i, e) {
+		console.log(e.key);
+		if (e.key == "Enter") {
+			if (i == local_data.levels[g_current_level].notes.length-1) {
+				add_comment();
+				}
+			else {
+				document.getElementById("comment_box"+(i+1)).focus();
 				}
 			}
-		return(rval);
-		}
-	});
-
-levels.push({
-	name: "Squaring",
-	guide: "<p>It can help to modify programs from previous levels.</p>",
-	desc: "Create a program that turns <code>2<sup>n</sup>&sdot;19</code> into <code>5<sup>(n<sup>2</sup>)&sdot;</sup>13</code>.",
-	hint: "First, set things up so you can use your multiplication program.",
-	solution: "3*23*19/2*19, 11/19, 7*11/23*11, 17/3*11, 13/11, 23*5*17/7*17, 11/17, 1/7",
-	solution_idea: "(19) Copy all 2s into 3s and 23s. When there are no more, switch to (11) and implement multiplication but with 2 replaced by 23.",
-	test: function() {
-		var rval = true;
-		for (var i = 0; i < 7; i++) {
-			if (!checkotron([i,0,0,0,0,0,0,1],[0,0,i*i,0,0,1])) {rval = false;}
-			}
-		return(rval);
-		}
-	});
-
-levels.push({
-	name: "Division",
-	desc: "Create a program that turns <code>2<sup>m</sup>&sdot;3<sup>n</sup>&sdot;11</code> into <code>2<sup>r</sup>&sdot;5<sup>q</sup>&sdot;13</code>, where <code>m</code> divided by <code>n</code> is <code>q</code> remainder <code>r</code>. That is, <code>m = q&sdot;n+r</code>.",
-	test: function() {
-		var rval = true;
-		for (var m = 0; m <= 12; m++) {
-			for (var n = 1; n < 6; n++) {
-				if (!checkotron([m,n,0,0,1],[m%n,0,Math.floor(m/n),0,0,1])) {rval = false;}
+		if (e.key == "ArrowDown") {
+			if (i < local_data.levels[g_current_level].notes.length-1) {
+				document.getElementById("comment_box"+(i+1)).focus();
 				}
 			}
-		return(rval);
+		if (e.key == "ArrowUp") {
+			if (i > 0) {
+				document.getElementById("comment_box"+(i-1)).focus();
+				}
+			}
+		if (e.key == "Backspace") {
+			if (i > 0 && i == local_data.levels[g_current_level].notes.length-1 && local_data.levels[g_current_level].notes[i] == "") {
+				local_data.levels[g_current_level].notes.pop();
+				load_comments();
+				requestAnimationFrame(function() {
+					document.getElementById("comment_box"+(i-1)).focus();
+					});
+				}
+			}
 		}
-	});
 
-var automaton_table_string = "<code><table border=1><tr><td>p\\i</td><td>1</td><td>2</td></tr><tr><td>23</td><td>29</td><td>31</td></tr><tr><td>29</td><td>23</td><td>23</td></tr><tr><td>31</td><td>31</td><td>29</td></tr></table></code>"
-
-function f1(x) {if (x == 23) {return(29)} if (x == 29) {return(23)} if (x==31) {return(31)}}
-function f2(x) {if (x == 23) {return(31)} if (x == 29) {return(23)} if (x==31) {return(29)}}
-
-levels.push({
-	name: "Finite Automaton Setup",
-	desc: "Create a program that takes in an input of the form <code>3<sup>i</sup>&sdot;11&sdot;p</code>, where <code>i</code> is one of <code>1, 2</code> and <code>p</code> is one of <code>23,29,31</code>, and then outputs <code>11&sdot;q</code> where <code>q</code> is given by the table: " + automaton_table_string,
-	test: function() {
-		var rval = true;
-		if (!checkotron(prime_factor(3*11*23),prime_factor(11*f1(23)))) {rval = false;}
-		if (!checkotron(prime_factor(3*11*29),prime_factor(11*f1(29)))) {rval = false;}
-		if (!checkotron(prime_factor(3*11*31),prime_factor(11*f1(31)))) {rval = false;}
-		if (!checkotron(prime_factor(9*11*23),prime_factor(11*f2(23)))) {rval = false;}
-		if (!checkotron(prime_factor(9*11*29),prime_factor(11*f2(29)))) {rval = false;}
-		if (!checkotron(prime_factor(9*11*31),prime_factor(11*f2(31)))) {rval = false;}
-		return(rval);
+	function do_comments(i,v) {
+		local_data.levels[g_current_level].notes[i] = v;
+		store_local_data();
 		}
-	});
 
-levels.push({
-	name: "Finite Automata",
-	guide: "<p>Now that we have the ability to divide and multiply exponents, we can treat them as strings! We can 'read a character' from the end of the string by dividing by 10. The remainder is the character, and the quotient is the string with that character removed.<p>",
-	desc: "Create a program that takes in <code>2<sup>n</sup>&sdot;11&sdot;23</code> where <code>n</code> is some number whose only digits are <code>1</code>s and <code>2</code>s. Your program should successively read in the digits of <code>n</code> starting from the ones digit, and depending on which number it reads, should change which of <code>23, 29, 31</code> is present, according to the table: " + automaton_table_string,
-	hint: "Dividing by a fixed number like 10 is easier than dividing by a user-input number.",
-	test: function() {
-		var rval = true;
-		if (!checkotron(multiply_pls([1],prime_factor(11*23)),prime_factor(f1(23)))) {rval = false;}
-		if (!checkotron(multiply_pls([2],prime_factor(11*23)),prime_factor(f2(23)))) {rval = false;}
-		if (!checkotron(multiply_pls([11],prime_factor(11*23)),prime_factor(f1(f1(23))))) {rval = false;}
-		if (!checkotron(multiply_pls([12],prime_factor(11*23)),prime_factor(f1(f2(23))))) {rval = false;}
-		if (!checkotron(multiply_pls([21],prime_factor(11*23)),prime_factor(f2(f1(23))))) {rval = false;}
-		if (!checkotron(multiply_pls([22],prime_factor(11*23)),prime_factor(f2(f2(23))))) {rval = false;}
-		if (!checkotron(multiply_pls([111],prime_factor(11*23)),prime_factor(f1(f1(f1(23)))))) {rval = false;}
-		if (!checkotron(multiply_pls([112],prime_factor(11*23)),prime_factor(f1(f1(f2(23)))))) {rval = false;}
-		if (!checkotron(multiply_pls([121],prime_factor(11*23)),prime_factor(f1(f2(f1(23)))))) {rval = false;}
-		if (!checkotron(multiply_pls([122],prime_factor(11*23)),prime_factor(f1(f2(f2(23)))))) {rval = false;}
-		if (!checkotron(multiply_pls([211],prime_factor(11*23)),prime_factor(f2(f1(f1(23)))))) {rval = false;}
-		if (!checkotron(multiply_pls([212],prime_factor(11*23)),prime_factor(f2(f1(f2(23)))))) {rval = false;}
-		if (!checkotron(multiply_pls([221],prime_factor(11*23)),prime_factor(f2(f2(f1(23)))))) {rval = false;}
-		if (!checkotron(multiply_pls([222],prime_factor(11*23)),prime_factor(f2(f2(f2(23)))))) {rval = false;}
-		return(rval);
+	function add_comment() {
+		local_data.levels[g_current_level].notes.push("");
+		load_comments();
+		requestAnimationFrame(function() {
+			var i = local_data.levels[g_current_level].notes.length-1;
+			document.getElementById("comment_box"+i).focus();
+			})
 		}
-	});
 
-levels.push({
-	name: "Reversal",
-	guide: "<p>Not only can we read from the strings/stacks of digits that form exponents, but we can also write to them. You can reverse a string by simply reading digits one by one from one end of a string, and then pushing them onto another string as you read them.</p>",
-	desc: "Create a program that takes in an input of the form <code>2<sup>n</sup>&sdot;11</code>, and outputs a number of the form <code>3<sup>m</sup>&sdot;13</code>, where the digits of <code>m</code> are the reverse of the digits of <code>n</code> in base 10.",
-	test: function() {
-		var rval = true;
-		if (!checkotron(multiply_pls([3],prime_factor(11)),multiply_pls([0,3],prime_factor(13)))) {rval = false;}
-		if (!checkotron(multiply_pls([23],prime_factor(11)),multiply_pls([0,32],prime_factor(13)))) {rval = false;}
-		if (!checkotron(multiply_pls([123],prime_factor(11)),multiply_pls([0,321],prime_factor(13)))) {rval = false;}
-		if (!checkotron(multiply_pls([1234],prime_factor(11)),multiply_pls([0,4321],prime_factor(13)))) {rval = false;}
-		if (!checkotron(multiply_pls([567],prime_factor(11)),multiply_pls([0,765],prime_factor(13)))) {rval = false;}
-		if (!checkotron(multiply_pls([89],prime_factor(11)),multiply_pls([0,98],prime_factor(13)))) {rval = false;}
-		return(rval);
+	function remove_comment() {
+		local_data.levels[g_current_level].notes.pop();
+		load_comments();
 		}
-	});
 
-
-levels.push({
-	name: "Turing Completeness",
-	guide: "<p>If you're familiar with the notion of a <a href='https://esolangs.org/wiki/Minsky_machine'>Minsky Machine</a>, you're probably already convinced that <span class='fractran'>FRACTRAN</span> is Turing Complete. If not, you can build a Turing Machine using two stacks in the exponents, one representing the characters to the right of the head and one representing the characters to the left of the head, with the ones digits representing the characters closest to the head (so the characters to the right are stored backwards).</p>",
-	desc: "Create a program that turns <code>2<sup>n</sup>11</code> into <code>37</code> if <code>n</code> is a palindrome and <code>41</code> if <code>n</code> is not a palindrome. The digits of <code>n</code> will always be <code>1</code>s and <code>2</code>s. You can implement a palindrome-checker as a Turing machine that traverses a string back and forth, marking off digits from the outside in until it finds a pair that don't agree.",
-	test: function() {
-		var rval = true;
-		if (!checkotron(multiply_pls([11],prime_factor(11)),prime_factor(37))) {rval = false;}
-		if (!checkotron(multiply_pls([121],prime_factor(11)),prime_factor(37))) {rval = false;}
-		if (!checkotron(multiply_pls([12121],prime_factor(11)),prime_factor(37))) {rval = false;}
-		if (!checkotron(multiply_pls([122],prime_factor(11)),prime_factor(41))) {rval = false;}
-		if (!checkotron(multiply_pls([21],prime_factor(11)),prime_factor(41))) {rval = false;}
-		if (!checkotron(multiply_pls([2121],prime_factor(11)),prime_factor(41))) {rval = false;}
-		return(rval);
+	function load_comments() {
+		var l = local_data.levels[g_current_level].notes;
+		var i;
+		var str = "<ol>";
+		for (i = 0; i < l.length; i++) {
+			var n = "";
+			if (i in l) {n = l[i];}
+			var lg = n.length;
+			if (lg < 1) {lg = 1;}
+			str += "<li style='font-family:monospace' value='"+nth_prime(i)+"'><input id='comment_box"+i+"' size="+lg+" value='"+n+"' oninput='do_comments("+i+", event.target.value); input_expand(event.target)' onkeydown='do_comment_key("+i+", event)'>";
+			}
+		str += "<li style='font-family:monospace' value='"+nth_prime(i)+"'> <button onclick='add_comment()'>+</button>";
+		str += "<button onclick='remove_comment()'>-</button>";
+		str += "</ol>";
+		document.getElementById("comment_zone").innerHTML = str;
 		}
-	});
+
+	function call_this_on_changing_local_data() { //changes visual components reflecting local data
+		update_level_select();
+		if (local_data.no_cancel_unlocked) {
+			document.getElementById("chk_no_cancel_container").style.display = "";
+			}
+		else {
+			document.getElementById("chk_no_cancel_container").style.display = "none";
+			document.getElementById("chk_no_cancel").checked = false;	
+			}
+		if (local_data.comments_unlocked) {
+			document.getElementById("chk_comments_container").style.display = "";
+			}
+		else {
+			document.getElementById("chk_comments_container").style.display = "none";
+			document.getElementById("chk_comments").checked = false;
+			}
+		}
+
+	function reset_local_data() {
+		localStorage.clear();
+		var local_level_data = [];
+		var i;
+		for (i = 0; i < levels.length; i++) {
+			var prg = [];
+			if ("preprogram" in levels[i]) {prg = levels[i].preprogram;}
+			var n = ["","","","",""];
+			if ("notes" in levels[i]) {n = levels[i].notes;}
+			local_level_data.push({
+				completed: false,
+				program: prg,
+				notes: n
+				});
+			}
+		local_data.levels = local_level_data;
+		local_data.no_cancel_unlocked = false;
+		local_data.comments_unlocked = true;
+		store_local_data();
+		}
+
+	function boot_local_data() {
+		if (!localStorage.getItem("trkern_fractran_local_data")) {
+			reset_local_data();
+			}
+		else {
+			try{var lld_string = localStorage.getItem("trkern_fractran_local_data");
+			local_data = JSON.parse(lld_string);
+			call_this_on_changing_local_data();}
+			catch(e) {
+				reset_local_data();
+				}
+			}
+		}
+
+	function store_local_data() {
+		localStorage.setItem("trkern_fractran_local_data", JSON.stringify(local_data));
+		call_this_on_changing_local_data();
+		}
+
+	function update_level_select() {
+		var k = document.getElementById("sel_lev");
+		if (k) {
+			k = k.value;
+			}
+		var i;
+		var str = "<select id='sel_lev' onchange='load_level(event.target.value)'>";
+		for (i = 0; i < levels.length; i++) {
+			if (i == k) {
+				str += "<option value="+i+" selected>";
+				}
+			else {
+				str += "<option value="+i+" >";
+				}
+			if (local_data.levels[i].completed) {
+				str += "+";
+				}
+			else {
+				str += "-";
+				}
+			str += i+": "+levels[i].name+"</option>";
+			}
+		str += "</select>";
+		document.getElementById("level_sel").innerHTML = str;
+		update_level_select_butts();
+		}
+
+	function butt_level(k) {
+		load_level(k);
+		}
+
+	function update_level_select_butts() {
+		var k = g_current_level;
+		var str = `<table border=1 style='background-color:white'><tr><td>`;
+		var i;
+		for (i = 0; i < levels.length; i++) {
+			var style = 'level'
+			var bcolor = "#DDDDDD";
+			var color = "black";
+			var gem = "-";
+			if (local_data.levels[i].completed) {
+				style = 'level completed'
+				bcolor = passcolor; 
+				color = "black"; 
+				gem="+"
+			}
+			if (i == k) {
+				style = 'level current'
+				bcolor = "#225522"; 
+				color = "white";
+			}
+			str += "<button style='padding: 2px; margin:3px; background-color:"+bcolor+"; border-color:"+bcolor+"; color:"+color+";' onclick='butt_level("+i+")'>";
+			str += "<span style='display:inline-block; width:1em; margin:0px;'>"+gem+"</span>";
+			str += i + ". ";
+			str += levels[i].name;
+			str += "</button>";
+			}
+		str += "</td></tr></table>";
+		str += "<button onclick='reset_local_data()'>Reset Progress</button>";
+		document.getElementById("level_select_butts").innerHTML = str;
+		document.getElementById("current_level_name").innerHTML = k + ". " + levels[k].name;
+		}
+
+	function boot() {
+		MQ.MathField(document.getElementById("mq_in"), {
+			handlers: {
+				edit: do_mq_in,
+				},
+			charsThatBreakOutOfSupSub: '+-=<>*/'
+			});
+		boot_local_data();
+		do_sel_inp();
+		do_chk_comments();
+		load_level(0);
+		do_chk_show_instructions()
+		}
+
+// Level Definitions
+
+	var levels = [];
+	/*levels.push({
+		testing_ground_level: true,
+		preprogram: str_to_rawfl("17/91 78/85 19/51 23/38 29/33 77/29 95/23 77/19 1/17 11/13 13/11 15/2 1/7 55/1"),
+		name: "Welcome to Fractran!",
+		guide: "<p>Welcome to <span class='fractran'>FRACTRAN</span>! <span class='fractran'>FRACTRAN</span> is a Turing-complete programming language created by John Conway. This interactive will guide you through some basic programming practice in <span class='fractran'>FRACTRAN</span> until you are an EXPERT <span class='fractran'>FRACTRAN</span> PROGRAMMER!</p><p>A program in <span class='fractran'>FRACTRAN</span> is a list of fractions.</p> Execution:<ul><li> The program takes in a number as an input and stores it in the STATE VARIABLE<li> At each step of execution, the STATE VARIABLE number gets multiplied by the first fraction in your program that leaves the number as an integer.<li> This process repeats: the new STATE VARIABLE is multiplied by the FIRST fraction in your program that leaves the number as an integer.<li> If no fraction is available, the program HALTS and outputs the current STATE VARIABLE.</ul>",
+		desc: "Each level will ask you to create a program to perform a certain task. This level has been pre-programmed with the PRIMEGAME program: <kbd>17/91, 78/85, 19/51, 23/38, 29/33, 77/29, 95/23, 77/19, 1/17, 11/13, 13/11, 15/2, 1/7, 55/1</kbd><ol><li>Scroll down to the 'Testing Ground'<li>Enter the number <kbd>2</kbd><li>Press the 'Advance 1000 Steps' button a few times.<li>A little + will appear in the level select to indicate that you've completed this level.</ol>",
+		hint: "Read the directions carefully!",
+		solution: "",
+		solution_idea: "Press the 'Advance 1000 Steps' button under 'Testing Ground'",
+		test: function() {
+			alert("Normally, you should use this button to complete a level. However, the goal of this level is to get you to use the TESTING GROUND below. Please press the 'Advance 1000 Steps' button to complete this level.");
+			return(false);
+			}
+		});*/
+
+	levels.push({
+		name: "Introduction",
+		guide: "<p>Welcome to <span class='fractran'>FRACTRAN</span>! <span class='fractran'>FRACTRAN</span> is a Turing-complete programming language created by John Conway. This interactive will guide you through some basic programming practice in <span class='fractran'>FRACTRAN</span> until you are an EXPERT <span class='fractran'>FRACTRAN</span> PROGRAMMER!</p><p>A program in <span class='fractran'>FRACTRAN</span> is a list of fractions.</p>Execution:<ul><li> The program takes in a number as an input and stores it in the STATE VARIABLE<li> At each step of execution, the STATE VARIABLE number gets multiplied by the first fraction in your program that leaves the number as an integer.<li> This process repeats: the new STATE VARIABLE is multiplied by the FIRST fraction in your program that leaves the number as an integer.<li> If no fraction is available, the program HALTS and outputs the current STATE VARIABLE.</ul>",
+		desc: "Create a program that maps <code>2</code> to <code>3</code>. That is, when you input <code>2</code>, it outputs <code>3</code>. It can do anything you want on other inputs. Press the 'Test Solution' button to submit your answer.",
+		hint: "These first few levels are really simple to get you adjusted. One valid solution has only one fraction in it.",
+		solution: "3/2",
+		solution_idea: "What fraction, when multiplied by 2, gives you 3?",
+		test: function() {
+			return(checkotron([1],[0,1]));
+			}
+		});
+
+	levels.push({
+		name: "Multiple Fractions",
+		guide: "<p>REMEMBER: your program can consist of multiple fractions! At each step, the number gets multiplied by the first fraction that keeps it a whole number, and ignores the rest.</p>",
+		desc: "Create a program that maps <code>2</code> to <code>3</code> and <code>5</code> to <code>7</code>.",
+		hint: "Sometimes fractions won't interact with each other.",
+		solution: "3/2, 7/5",
+		solution_idea: "Find two fractions to do these two tasks (mapping 2 to 3 and 5 to 7) separately.",
+		test: function() {
+			var rval = true;
+			if (!checkotron([1],[0,1])) {rval = false;}
+			if (!checkotron([0,0,1],[0,0,0,1])) {rval = false;}
+			return(rval);
+			}
+		});
+
+	levels.push({
+		name: "Order Matters",
+		guide: "<p>REMEMBER: the order of fractions in your program matters! At each step, the number gets multiplied by the FIRST fraction that keeps it a whole number, and ignores the rest. In other words, the order of fractions is not the order to carry the instructions out, but an order of PRIORITY.</p>",
+		desc: "Create a program that maps <code>2</code> to <code>5</code>, <code>3</code> to <code>7</code>, and <code>6</code> to <code>11</code>.",
+		hint: "Each desired mapping will correspond to a separate fraction. Play around with the order you enter them in.",
+		solution: "11/6, 5/2, 7/3",
+		solution_idea: "The 11/6 must go first, since otherwise when you input a 6, it will get caught by the denominators 2 or 3.",
+		test: function() {
+			var rval = true;
+			if (!checkotron([1],[0,0,1])) {rval = false;}
+			if (!checkotron([0,1],[0,0,0,1])) {rval = false;}
+			if (!checkotron([1,1],[0,0,0,0,1])) {rval = false;}
+			return(rval);
+			}
+		});
+
+	levels.push({
+		name: "Introduction Again",
+		guide: "<p>This process of multiplying the current number by the first fraction happens repeatedly until there is no fraction in the list that can be multiplied by the current number to get an integer.</p>",
+		desc: "Create a program that maps <code>2<sup>n</sup></code> to <code>3<sup>n</sup></code>.",
+		hint: "This level is still really simple. There's no need to try to calculate n.",
+		solution: "3/2",
+		solution_idea: "A fraction will keep replacing the denominator by the numerator until it can't or a higher priority fraction can be applied.",
+		test: function() {
+			var rval = true;
+			for (var i = 0; i < 10; i++) {
+				if (!checkotron([i],[0,i])) {rval = false;}
+				}
+			return(rval);
+			}
+		});
+
+	levels.push({
+		name: "Multiple Fractions Again",
+		guide: "<p>This process of multiplying the current number by the first fraction happens repeatedly until there is no fraction in the list that can be multiplied by the current number to get an integer.</p>",
+		desc: "Create a program that maps <code>2<sup>n</sup></code> to <code>3<sup>n</sup></code> and <code>5<sup>n</sup></code> to <code>7<sup>n</sup></code>.",
+		hint: "This is the same problem as before.",
+		solution: "3/2, 7/5",
+		solution_idea: "Fractions are usually independent of each other, unless there are common factors.",
+		test: function() {
+			var rval = true;
+			for (var i = 0; i < 7; i++) {
+				if (!checkotron([i],[0,i])) {rval = false;}
+				}
+			for (var i = 0; i < 7; i++) {
+				if (!checkotron([0,0,i],[0,0,0,i])) {rval = false;}
+				}
+			return(rval);
+			}
+		});
+
+	levels.push({
+		name: "Deleting Data",
+		guide: "<p>Looking at numbers in terms of their prime factorizations is essential to understanding a <span class='fractran'>FRACTRAN</span> program.</p>",
+		desc: "Create a program that maps <code>2<sup>n</sup>&sdot;3<sup>m</sup></code> to <code>2<sup>n</sup></code>.",
+		hint: "How could you turn 2^n*3 into 2^n?",
+		solution: "1/3",
+		solution_idea: "Usually, fractions replace the denominator with the numerator. However, if the numerator is 1, the fraction simply deletes the denominator.",
+		test: function() {
+			var rval = true;
+			for (var i = 0; i < 6; i++) {
+				for (var j = 0; j < 6; j++) {
+					if (!checkotron([i,j],[i])) {rval = false;}
+					}
+				}
+			return(rval);
+			}
+		});
+
+	levels.push({
+		name: "Copying Data",
+		desc: "Create a program that turns <code>2<sup>n</sup></code> into <code>3<sup>n</sup>&sdot;5<sup>n</sup></code>.",
+		hint: "This level is still simple! There is a 1 fraction solution.",
+		solution: "15/2",
+		solution_idea: "Remember your exponent rules: a^n * b^n = (ab)^n.",
+		test: function() {
+			var rval = true;
+			for (var i = 0; i < 10; i++) {
+				if (!checkotron([i],[0,i,i])) {rval = false;}
+				}
+			return(rval);
+			}
+		});
+
+	levels.push({
+		name: "Addition",
+		desc: "Create a program that turns <code>2<sup>n</sup>&sdot;3<sup>m</sup></code> into <code>5<sup>n+m</sup></code>.",
+		hint: "It may help to think of each fraction as a path for draining exponent from one prime to another.",
+		solution: "5/2, 5/3",
+		solution_idea: "Turn the 2s into 5s and the 3s into 5s.",
+		test: function() {
+			var rval = true;
+			for (var i = 0; i < 7; i++) {
+				for (var j = 0; j < 7; j++) {
+					if (!checkotron([i,j],[0,0,i+j])) {rval = false;}
+					}
+				}
+			return(rval);
+			}
+		});
+
+	levels.push({
+		name: "Doubling",
+		desc: "Create a program that turns <code>2<sup>n</sup></code> to <code>3<sup>2n</sup></code>.",
+		hint: "Look back at the 'Copying Data' level.",
+		solution: "9/2",
+		solution_idea: "Remember your exponent rules: a^(2n) = (a^2)^n.",
+		test: function() {
+			var rval = true;
+			for (var i = 0; i < 10; i++) {
+				if (!checkotron([i],[0,2*i])) {rval = false;}
+				}
+			return(rval);
+			}
+		});
+
+	levels.push({
+		name: "Intermediate Registers",
+		desc: "Create a program that turns <code>2<sup>n</sup></code> to <code>3<sup>2n</sup></code>, but none of the numerators in your program can have <code>3</code> to a power larger than <code>1</code>.",
+		hint: "Start with your solution to 'Copying Data'.",
+		solution: "15/2, 3/5",
+		solution_idea: "Copy the 2s into 3s and 5s simultaneously, then turn the 5s into 3s.",
+		test: function() {
+			var rval = true;
+			for (var i = 0; i < g_fracl.length; i++) {
+				if (g_fracl[i][0][1] >= 2) {
+					g_check_out_string += failstr + " Fraction contains numerator divisible by 9.";
+					rval = false;
+					}
+				}
+			for (var i = 0; i < 10; i++) {
+				if (!checkotron([i],[0,2*i])) {rval = false;}
+				}
+			return(rval);
+			}
+		});
+
+	levels.push({
+		name: "Subtraction",
+		desc: "Create a program that turns <code>2<sup>n</sup>&sdot;3<sup>m</sup></code> (for <code>n < m</code>) into <code>3<sup>m-n</sup></code>.",
+		hint: "There is a single fraction solution to this puzzle.",
+		solution: "1/6",
+		test: function() {
+			var rval = true;
+			for (var i = 0; i < 7; i++) {
+				for (var j = i+1; j < 7; j++) {
+					if (!checkotron([i,j],[0,j-i])) {rval = false;}
+					}
+				}
+			return(rval);
+			}
+		});
+
+	levels.push({
+		name: "Absolute Subtraction",
+		desc: "Create a program that turns <code>2<sup>n</sup>&sdot;3<sup>m</sup></code> into <code>5<sup>|m-n|</sup></code>.",
+		hint: "Start with your solution to the 'Subtraction' level.",
+		solution: "1/6, 5/3, 5/2",
+		solution_idea: "First, remove 2s and 3s until one pile is empty. Then move the remaining pile to 5s.",
+		test: function() {
+			var rval = true;
+			for (var i = 0; i < 7; i++) {
+				for (var j = 0; j < 7; j++) {
+					if (!checkotron([i,j],[0,0,Math.abs(j-i)])) {rval = false;}
+					}
+				}
+			return(rval);
+			}
+		});
+
+	levels.push({
+		name: "Remainders",
+		desc: "Create a program that turns <code>2<sup>k</sup></code> into <code>1</code> if <code>k</code> is even and <code>3</code> if <code>k</code> is odd.",
+		hint: "You can remove multiple values at once if your denominator has multiple factors.",
+		solution: "1/4, 3/2",
+		solution_idea: "We first remove 2s in pairs. If there is a leftover 2, we turn it into a 3.",
+		test: function() {
+			var rval = true;
+			for (var i = 0; i < 5; i++) {
+				if (!checkotron([2*i],[])) {rval = false;}
+				if (!checkotron([2*i+1],[0,1])) {rval = false;}
+				}
+			return(rval);
+			}
+		});
+
+	levels.push({
+		name: "Control",
+		guide: "<p>We've seen the primes' exponents acting as registers to temporarily store data, but they can just as easily serve as booleans (<code>0</code> or <code>1</code>) to control the flow of our programs, executing different code depending on which of a list of primes is present.</p>",
+		desc: "Create a program that turns <code>2<sup>n</sup>&sdot;11</code> into <code>2<sup>n+1</sup></code> and <code>2<sup>n</sup>&sdot;17</code> into <code>2<sup>n-1</sup></code>.",
+		hint: "If there is a factor of 11 in the denominator of a fraction, it will only catch numbers that have a factor of 11.",
+		solution: "2/11, 1/17*2",
+		solution_idea: "You can view fractions as having two parts multiplied together: one part which performs an operation multiplied by a part that looks for the control primes.",
+		test: function() {
+			var rval = true;
+			for (var i = 0; i < 7; i++) {
+				if (!checkotron([i,0,0,0,1],[i+1])) {rval = false;}
+				}
+			for (var i = 1; i < 7; i++) {
+				if (!checkotron([i,0,0,0,0,0,1],[i-1])) {rval = false;}
+				}
+			return(rval);
+			}
+		});
+
+	levels.push({
+		name: "Control 2",
+		guide: "<p>Control is a bit tricky in <span class='fractran'>FRACTRAN</span>. When a program reads a control prime present in the current number, it consumes it, and one cannot put it back directly without creating fractions that cancel (losing their utility). Try the next level for a hint.</p>",
+		desc: "Create a program that turns <code>2<sup>n</sup>&sdot;11</code> into <code>3<sup>n</sup>&sdot;11</code> and <code>2<sup>n</sup>17&sdot;</code> into <code>5<sup>n</sup>&sdot;17</code>",
+		hint: "As usual, move exponents from one prime to another one unit at a time.",
+		solution: "3*13/11*2, 11/13, 5*19/17*2, 17/19",
+		solution_idea: "Every step, the control prime must change. To simulate the control prime not changing, you need to add a secondary control prime for each original control prime. Then, when that secondary control prime is active, do nothing but change back to the original control prime.",
+		test: function() {
+			var rval = true;
+			for (var i = 0; i < 7; i++) {
+				if (!checkotron([i,0,0,0,1],[0,i,0,0,1])) {rval = false;}
+				}
+			for (var i = 0; i < 7; i++) {
+				if (!checkotron([i,0,0,0,0,0,1],[0,0,i,0,0,0,1])) {rval = false;}
+				}
+			return(rval);
+			}
+		});
+
+	levels.push({
+		name: "Control 2 Hint",
+		desc: "Create a program that turns <code>2<sup>n</sup>&sdot;11</code> into <code>2<sup>n+1</sup>&sdot;13</code> and <code>2<sup>n</sup>&sdot;17</code> into <code>2<sup>n-1</sup>&sdot;19</code>",
+		hint: "Look back at your solution to 'Control'.",
+		solution_idea: "You can view fractions as having two parts multiplied together: one part which performs an operation multiplied by a part that looks for and operates on the control primes.",
+		solution: "2*13/11, 19/2*17",
+		test: function() {
+			var rval = true;
+			for (var i = 0; i < 7; i++) {
+				if (!checkotron([i,0,0,0,1],[i+1,0,0,0,0,1])) {rval = false;}
+				}
+			for (var i = 1; i < 7; i++) {
+				if (!checkotron([i,0,0,0,0,0,1],[i-1,0,0,0,0,0,0,1])) {rval = false;}
+				}
+			return(rval);
+			}
+		});
+
+	levels.push({
+		name: "Remainders 2",
+		guide: "<p>Having a control prime present in the input opens up some additional possibilities.</p>",
+		desc: "Create a program that turns <code>2<sup>n</sup>11</code> into <code>5</code> if <code>n</code> is even and <code>3</code> if <code>n</code> is odd.",
+		hint: "Start from your solution to 'Remainders'.",
+		solution: "1/4, 3/22, 5/11",
+		solution_idea: "If your program contains a fraction with denominator 1, it will run forever. So if the program state ever gets to 1, you can't escape. Having an extra prime present can prevent that.",
+		test: function() {
+			var rval = true;
+			for (var i = 0; i < 7; i++) {
+				if (!checkotron([2*i,0,0,0,1],[0,0,1])) {rval = false;}
+				if (!checkotron([2*i+1,0,0,0,1],[0,1])) {rval = false;}
+				}
+			return(rval);
+			}
+		});
+
+	levels.push({
+		name: "Unlocking nocancel",
+		guide: "<p>Constantly having to swap back and forth between control primes is a real nuisance. If only fractions didn't cancel, since this <span class='fractran'>FRACTRAN</span> interpreter first checks divisibility by the denominator before multiplying by the numerator, you could write programs much more simply! For instance, the program "+rawfl_to_html(str_to_rawfl("3*11/2*11, 5*17/2*17"))+ " would be a shorter solution to 'Control 2'. Complete this stage to unlock nocancel mode.</p>",
+		desc: "Create a program that, when run for two steps on a number, is the same as running the un-canceled program " + rawfl_to_html(str_to_rawfl("2^3*5^4*11/2^4*5^3*11")) + " i.e. " + rawfl_to_html(str_to_rawfl("55000/22000")) + " for one step. That is, if the number is divisible by <code>22000</code>, in two steps it divides by <code>22000</code> and multiplies by <code>55000</code> and otherwise does nothing.",
+		hint: "Don't worry about the specific composition of the fractions.",
+		solution: "55000/13, 13/22000",
+		solution_idea: "We add a new prime, that when present, indicates that we're halfway through the process of dividing by 22000 and then multiplying by 55000. Since this prime is new, it cannot cancel with 22000 or 55000.",
+		test: function() {
+			var rval = true;
+			for (var i = 2; i <= 5; i++) {
+				for (var j = 2; j <= 5; j++) {
+					for (var k = 0; k <= 2; k++) {
+						var t = [i,0,j,0,k];
+						if (i >= 4 && j >= 3 && k >= 1) {
+							t = [i-1,0,j+1,0,k];
+							}
+						if (!checkotron([i,0,j,0,k], t, 2)) {rval = false;}
+						}
+					}
+				}
+			if (rval) {
+				local_data.no_cancel_unlocked = true;
+				}
+			return(rval);
+			}
+		});
+
+	levels.push({
+		name: "There and Back",
+		desc: "Create a program that turns <code>2<sup>n</sup>&sdot;11</code> into <code>2<sup>n</sup>&sdot;3<sup>n</sup>&sdot;17</code>.",
+		hint: "As in 'Intermediate Registers', you'll need a separate register.",
+		solution: "11/13, 3*5*13/2*11, 19/11, 17/19, 19*2/5*17",
+		solution_idea: "In order to measure how many 2s we have, we need to move all the exponent out of the 2s and into an intermediate register. Having a control prime allows us to detect when this process is finished, and we can switch to a different control prime to move n back into the 2s and into the 3s.",
+		test: function() {
+			var rval = true;
+			for (var i = 0; i < 7; i++) {
+				if (!checkotron([i,0,0,0,1],[i,i,0,0,0,0,1])) {rval = false;}
+				}
+			return(rval);
+			}
+		});
+
+	levels.push({
+		name: "Multiplication",
+		guide: "<p>Now that we have the ability to copy data out of a register while leaving the original source unchanged, this opens up a wide variety of practical programs.</p>",
+		desc: "Create a program that turns <code>2<sup>n</sup>&sdot;3<sup>m</sup>11</code> into <code>5<sup>nm</sup>&sdot;13</code>.",
+		hint: "You can store one of the multiplicands in two places: one to keep it safe so it can be reused, and one to gradually decrement as you add it to the product.",
+		solution: "7*11/2*11, 17/3*11, 13/11, 2*5*17/7*17, 11/17, 1/7",
+		//solution: "7*11/19, 2*5*17/23, 19/2*11, 17/3*11, 13/11, 23/7*17, 11/17, 1/7",
+		solution_idea: "We start in (11). Here we copy all the 2s to 7s. When there are none left, we remove a 3 and switch to (17). In (17), we move 7s back to 2s and 5s. When that's finished, we switch back to (11).",
+		test: function() {
+			var rval = true;
+			for (var i = 0; i < 7; i++) {
+				for (var j = 0; j < 7; j++) {
+					if (!checkotron([i,j,0,0,1],[0,0,i*j,0,0,1])) {rval = false;}
+					}
+				}
+			return(rval);
+			}
+		});
+
+	levels.push({
+		name: "Squaring",
+		guide: "<p>It can help to modify programs from previous levels.</p>",
+		desc: "Create a program that turns <code>2<sup>n</sup>&sdot;19</code> into <code>5<sup>(n<sup>2</sup>)&sdot;</sup>13</code>.",
+		hint: "First, set things up so you can use your multiplication program.",
+		solution: "3*23*19/2*19, 11/19, 7*11/23*11, 17/3*11, 13/11, 23*5*17/7*17, 11/17, 1/7",
+		solution_idea: "(19) Copy all 2s into 3s and 23s. When there are no more, switch to (11) and implement multiplication but with 2 replaced by 23.",
+		test: function() {
+			var rval = true;
+			for (var i = 0; i < 7; i++) {
+				if (!checkotron([i,0,0,0,0,0,0,1],[0,0,i*i,0,0,1])) {rval = false;}
+				}
+			return(rval);
+			}
+		});
+
+	levels.push({
+		name: "Division",
+		desc: "Create a program that turns <code>2<sup>m</sup>&sdot;3<sup>n</sup>&sdot;11</code> into <code>2<sup>r</sup>&sdot;5<sup>q</sup>&sdot;13</code>, where <code>m</code> divided by <code>n</code> is <code>q</code> remainder <code>r</code>. That is, <code>m = q&sdot;n+r</code>.",
+		test: function() {
+			var rval = true;
+			for (var m = 0; m <= 12; m++) {
+				for (var n = 1; n < 6; n++) {
+					if (!checkotron([m,n,0,0,1],[m%n,0,Math.floor(m/n),0,0,1])) {rval = false;}
+					}
+				}
+			return(rval);
+			}
+		});
+
+	var automaton_table_string = "<code><table border=1><tr><td>p\\i</td><td>1</td><td>2</td></tr><tr><td>23</td><td>29</td><td>31</td></tr><tr><td>29</td><td>23</td><td>23</td></tr><tr><td>31</td><td>31</td><td>29</td></tr></table></code>"
+
+	function f1(x) {if (x == 23) {return(29)} if (x == 29) {return(23)} if (x==31) {return(31)}}
+	function f2(x) {if (x == 23) {return(31)} if (x == 29) {return(23)} if (x==31) {return(29)}}
+
+	levels.push({
+		name: "Finite Automaton Setup",
+		desc: "Create a program that takes in an input of the form <code>3<sup>i</sup>&sdot;11&sdot;p</code>, where <code>i</code> is one of <code>1, 2</code> and <code>p</code> is one of <code>23,29,31</code>, and then outputs <code>11&sdot;q</code> where <code>q</code> is given by the table: " + automaton_table_string,
+		test: function() {
+			var rval = true;
+			if (!checkotron(prime_factor(3*11*23),prime_factor(11*f1(23)))) {rval = false;}
+			if (!checkotron(prime_factor(3*11*29),prime_factor(11*f1(29)))) {rval = false;}
+			if (!checkotron(prime_factor(3*11*31),prime_factor(11*f1(31)))) {rval = false;}
+			if (!checkotron(prime_factor(9*11*23),prime_factor(11*f2(23)))) {rval = false;}
+			if (!checkotron(prime_factor(9*11*29),prime_factor(11*f2(29)))) {rval = false;}
+			if (!checkotron(prime_factor(9*11*31),prime_factor(11*f2(31)))) {rval = false;}
+			return(rval);
+			}
+		});
+
+	levels.push({
+		name: "Finite Automata",
+		guide: "<p>Now that we have the ability to divide and multiply exponents, we can treat them as strings! We can 'read a character' from the end of the string by dividing by 10. The remainder is the character, and the quotient is the string with that character removed.<p>",
+		desc: "Create a program that takes in <code>2<sup>n</sup>&sdot;11&sdot;23</code> where <code>n</code> is some number whose only digits are <code>1</code>s and <code>2</code>s. Your program should successively read in the digits of <code>n</code> starting from the ones digit, and depending on which number it reads, should change which of <code>23, 29, 31</code> is present, according to the table: " + automaton_table_string,
+		hint: "Dividing by a fixed number like 10 is easier than dividing by a user-input number.",
+		test: function() {
+			var rval = true;
+			if (!checkotron(multiply_pls([1],prime_factor(11*23)),prime_factor(f1(23)))) {rval = false;}
+			if (!checkotron(multiply_pls([2],prime_factor(11*23)),prime_factor(f2(23)))) {rval = false;}
+			if (!checkotron(multiply_pls([11],prime_factor(11*23)),prime_factor(f1(f1(23))))) {rval = false;}
+			if (!checkotron(multiply_pls([12],prime_factor(11*23)),prime_factor(f1(f2(23))))) {rval = false;}
+			if (!checkotron(multiply_pls([21],prime_factor(11*23)),prime_factor(f2(f1(23))))) {rval = false;}
+			if (!checkotron(multiply_pls([22],prime_factor(11*23)),prime_factor(f2(f2(23))))) {rval = false;}
+			if (!checkotron(multiply_pls([111],prime_factor(11*23)),prime_factor(f1(f1(f1(23)))))) {rval = false;}
+			if (!checkotron(multiply_pls([112],prime_factor(11*23)),prime_factor(f1(f1(f2(23)))))) {rval = false;}
+			if (!checkotron(multiply_pls([121],prime_factor(11*23)),prime_factor(f1(f2(f1(23)))))) {rval = false;}
+			if (!checkotron(multiply_pls([122],prime_factor(11*23)),prime_factor(f1(f2(f2(23)))))) {rval = false;}
+			if (!checkotron(multiply_pls([211],prime_factor(11*23)),prime_factor(f2(f1(f1(23)))))) {rval = false;}
+			if (!checkotron(multiply_pls([212],prime_factor(11*23)),prime_factor(f2(f1(f2(23)))))) {rval = false;}
+			if (!checkotron(multiply_pls([221],prime_factor(11*23)),prime_factor(f2(f2(f1(23)))))) {rval = false;}
+			if (!checkotron(multiply_pls([222],prime_factor(11*23)),prime_factor(f2(f2(f2(23)))))) {rval = false;}
+			return(rval);
+			}
+		});
+
+	levels.push({
+		name: "Reversal",
+		guide: "<p>Not only can we read from the strings/stacks of digits that form exponents, but we can also write to them. You can reverse a string by simply reading digits one by one from one end of a string, and then pushing them onto another string as you read them.</p>",
+		desc: "Create a program that takes in an input of the form <code>2<sup>n</sup>&sdot;11</code>, and outputs a number of the form <code>3<sup>m</sup>&sdot;13</code>, where the digits of <code>m</code> are the reverse of the digits of <code>n</code> in base 10.",
+		test: function() {
+			var rval = true;
+			if (!checkotron(multiply_pls([3],prime_factor(11)),multiply_pls([0,3],prime_factor(13)))) {rval = false;}
+			if (!checkotron(multiply_pls([23],prime_factor(11)),multiply_pls([0,32],prime_factor(13)))) {rval = false;}
+			if (!checkotron(multiply_pls([123],prime_factor(11)),multiply_pls([0,321],prime_factor(13)))) {rval = false;}
+			if (!checkotron(multiply_pls([1234],prime_factor(11)),multiply_pls([0,4321],prime_factor(13)))) {rval = false;}
+			if (!checkotron(multiply_pls([567],prime_factor(11)),multiply_pls([0,765],prime_factor(13)))) {rval = false;}
+			if (!checkotron(multiply_pls([89],prime_factor(11)),multiply_pls([0,98],prime_factor(13)))) {rval = false;}
+			return(rval);
+			}
+		});
 
 
-var local_data = {};
+	levels.push({
+		name: "Turing Completeness",
+		guide: "<p>If you're familiar with the notion of a <a href='https://esolangs.org/wiki/Minsky_machine'>Minsky Machine</a>, you're probably already convinced that <span class='fractran'>FRACTRAN</span> is Turing Complete. If not, you can build a Turing Machine using two stacks in the exponents, one representing the characters to the right of the head and one representing the characters to the left of the head, with the ones digits representing the characters closest to the head (so the characters to the right are stored backwards).</p>",
+		desc: "Create a program that turns <code>2<sup>n</sup>11</code> into <code>37</code> if <code>n</code> is a palindrome and <code>41</code> if <code>n</code> is not a palindrome. The digits of <code>n</code> will always be <code>1</code>s and <code>2</code>s. You can implement a palindrome-checker as a Turing machine that traverses a string back and forth, marking off digits from the outside in until it finds a pair that don't agree.",
+		test: function() {
+			var rval = true;
+			if (!checkotron(multiply_pls([11],prime_factor(11)),prime_factor(37))) {rval = false;}
+			if (!checkotron(multiply_pls([121],prime_factor(11)),prime_factor(37))) {rval = false;}
+			if (!checkotron(multiply_pls([12121],prime_factor(11)),prime_factor(37))) {rval = false;}
+			if (!checkotron(multiply_pls([122],prime_factor(11)),prime_factor(41))) {rval = false;}
+			if (!checkotron(multiply_pls([21],prime_factor(11)),prime_factor(41))) {rval = false;}
+			if (!checkotron(multiply_pls([2121],prime_factor(11)),prime_factor(41))) {rval = false;}
+			return(rval);
+			}
+		});
 
-var sample_primegame = "17/91 78/85 19/51 23/38 29/33 77/29 95/23 77/19 1/17 11/13 13/11 15/2 1/7 55/1"
+
+	var local_data = {};
+
+	var sample_primegame = "17/91 78/85 19/51 23/38 29/33 77/29 95/23 77/19 1/17 11/13 13/11 15/2 1/7 55/1"
 
 </script>
 <style>
-@font-face {
-	font-family: "tech";
-	src: url("lmmonoproplt10-regular-webfont.woff");
-	}
-@font-face {
-	font-family: "questrial";
-	src: url("Questrial-Regular.ttf");
-	}
-body {
-	font-size:130%;
-	font-family: questrial, sans-serif;
-	}
-button {
-	font-size:90%;
-	font-family: questrial, sans-serif;
-	}
-code {
-	font-family: tech, monospace;
-	}
-.fractran {
-	font-family: tech, monospace;
-	}
-kbd {
-	background-color:white;
-	border-radius: 3px;
-	padding: 2px;
-	border: 1px solid black;
-	font-family: monospace;
-	margin:2px;
-	display:inline-block;
-	}
-input {
-	font-family: monospace;
-	}
-button {
-	border-width:2px;
-	border-style: outset;
-	border-color: #DDDDDD;
-	background-color: #DDDDDD;
-	}
-button:active {
-	border-style: inset;
+	@font-face {
+		font-family: "tech";
+		src: url("lmmonoproplt10-regular-webfont.woff");
+		}
+	@font-face {
+		font-family: "questrial";
+		src: url("Questrial-Regular.ttf");
+		}
+	body {
+		font-size:130%;
+		font-family: questrial, sans-serif;
+		}
+	button {
+		font-size:90%;
+		font-family: questrial, sans-serif;
+		}
+	code {
+		font-family: tech, monospace;
+		}
+	.fractran {
+		font-family: tech, monospace;
+		}
+	kbd {
+		background-color:white;
+		border-radius: 3px;
+		padding: 2px;
+		border: 1px solid black;
+		font-family: monospace;
+		margin:2px;
+		display:inline-block;
+		}
+	input {
+		font-family: monospace;
+		}
+	button {
+		border-width:2px;
+		border-style: outset;
+		border-color: #DDDDDD;
+		background-color: #DDDDDD;
+		}
+	button:active {
+		border-style: inset;
+		}
+
+	h2 {
+		background-color: #266435;
+		margin-left:10px;
+		margin-right:10px;
+		margin-bottom:0px;
+		margin-top: 0px;
+		font-size:175%;
+		color:white;
+		font-family:tech, monospace;
+		display: inline-block;
+		font-weight: normal;
+		padding-left: 5px;
+		padding-right: 5px;
+		}
+
+	h3 {
+		background-color: white;
+		margin-left:0px;
+		margin-right:10px;
+		margin-bottom:0px;
+		margin-top: 0px;
+		font-size:175%;
+		color:black;
+		font-family:tech, monospace;
+		display: inline-block;
+		font-weight: normal;
+		padding-left: 5px;
+		padding-right: 5px;
+		}
+
+	.zone {
+		background-color: #CCDDAA; 
+		padding:10px; 
+		margin:10px;
+		margin-top:0px;
+		}
+
+	.cursor {
+		border-left: 1px solid black; 
+		margin-left:-1px;
+		padding:0;
 	}
 
-h2 {
-	background-color: #266435;
-	margin-left:10px;
-	margin-right:10px;
-	margin-bottom:0px;
-	margin-top: 0px;
-	font-size:175%;
-	color:white;
-	font-family:tech, monospace;
-	display: inline-block;
-	font-weight: normal;
-	padding-left: 5px;
-	padding-right: 5px;
+/*	.pass {background-color: #3BE;}*/
+/*	.fail {background-color: #E73;}*/
+	.pass {background-color: #7AD;}
+	.fail {background-color: #E86;}
+
+	.label-arrow {
+		position: relative
 	}
 
-h3 {
-	background-color: white;
-	margin-left:0px;
-	margin-right:10px;
-	margin-bottom:0px;
-	margin-top: 0px;
-	font-size:175%;
-	color:black;
-	font-family:tech, monospace;
-	display: inline-block;
-	font-weight: normal;
-	padding-left: 5px;
-	padding-right: 5px;
+	.label-arrow span {
+		position: absolute;
+		top:    0.4em;
+		left:  -0.2em;
+		right:  0; 
+		text-align: center;
+		font-size: 60%;
 	}
 
-.zone {
-	background-color: #CCDDAA; 
-	padding:10px; 
-	margin:10px;
-	margin-top:0px;
-	}
+
 </style>
 </head>
 <body onload="boot()">
